@@ -1,0 +1,14 @@
+li{
+    display: flex;
+    align-items: center;
+    font-weight: 400;
+    font-size: 16px;
+    padding: 0 .625rem;
+}
+li:hover, .active{
+    height: 100%;
+    cursor: pointer;
+    color: white;
+    background: #0078D4;
+    padding: 0 .625rem;
+}
