@@ -4,12 +4,7 @@ import viteLogo from "/vite.svg";
 import "./App.css";
 import ResponsiveAppBar from "./component/test";
 import { Box, Button } from "@mui/material";
-import Field from "./component/Atoms/Field";
-import FieldSelector from "./component/Molecules/FieldSelector";
-import FieldText from "./component/Molecules/FieldText";
-import SyncAltIcon from "@mui/icons-material/SyncAlt";
-import FieldDate from "./component/Molecules/FieldDate";
-import FieldDuration from "./component/Molecules/FieldDuration";
+import Label_parameter from "./component/Atoms/Label_parameter";
 
 //*********************************************
 // Sub Function
@@ -32,9 +27,7 @@ function App() {
   return (
     <>
       <ResponsiveAppBar />
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
+      <Box        
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -42,22 +35,7 @@ function App() {
           alignItems: "center",
         }}
       >
-        <FieldSelector />
-        <FieldText
-          name="Text"
-          icon={<SyncAltIcon />}
-          label="Label"
-          placeholder="Placeholder"
-          defauleValue="1234"
-          onChange={(event) => {
-            console.log(event.target.value);
-          }}
-        />
-        <FieldDate icon={<SyncAltIcon />}/>
-        <FieldDuration icon={<SyncAltIcon />}/>
-        <Button variant="contained" type="submit">
-          Comfirm
-        </Button>
+        <Label_parameter label="label" value={123} width="100px"/>
       </Box>
     </>
   );

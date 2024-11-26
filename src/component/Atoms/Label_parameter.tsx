@@ -1,26 +1,43 @@
-import React from 'react'
+import React from "react";
+import Box from "@mui/material/Box";
+import { Typography } from "@mui/material";
+import { SxProps, Theme } from "@mui/material";
 
-import style from './css/detail.module.css';
-
-interface DetailProps{
-    title: string;
-    result: string|null;
-    resultNumber: number|null;
-    stauts: boolean;
+//**********************************************
+// Style
+//**********************************************
+const Field: SxProps<Theme> = {
+  display: "flex",
+  alignItems: "center",
+};
+//**********************************************
+// Interface
+//**********************************************
+interface myProps {
+  label: string;
+  value: string | number;
+  color?: string;
+  gap?: string;
+  width?: string;
 }
-
-const Detail: React.FC<DetailProps> = ({ title, result, resultNumber, stauts }) => {
+//**********************************************
+// Component
+//**********************************************
+const Label_parameter: React.FC<myProps> = (props) => {
   return (
-    <div className={style.content}>
-        <strong className={stauts ? style.selected : ''}>{title}:</strong>
-        {result !== null &&(
-            <p className={stauts ? style.selected : ''}>{result}</p>
-        )}
-        {resultNumber !== null &&(
-            <p className={stauts ? style.selected : ''}>{resultNumber}</p>
-        )}
-    </div>
-  )
-}
+    <Box
+      sx={{
+        color: props.color,
+        justifyContent: props.gap===undefined?"space-between":"flex-start", 
+        gap: props.gap,  
+        width: props.width,     
+        ...Field,
+      }}
+    >
+      <Typography sx={{ fontWeight: "500" }}>{props.label}</Typography>
+      <Typography>{props.value}</Typography>
+    </Box>
+  );
+};
 
-export default Detail
+export default Label_parameter;
