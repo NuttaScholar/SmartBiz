@@ -1,0 +1,69 @@
+import * as React from "react";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Field from "../Atoms/Field";
+
+//*********************************************
+// Type
+//*********************************************
+type listSelect_t = { value: number; label: string };
+
+//*********************************************
+// Interface
+//*********************************************
+interface myProps {
+  label?: string;
+  list?: listSelect_t[];
+  defauleValue?: string;
+  onChange?: (value: number | null) => void;
+  name?: string;
+  icon?: React.ReactNode;
+}
+//*********************************************
+// Component
+//*********************************************
+const FieldSelector: React.FC<myProps> = (props) => {
+  const [value, setValue] = React.useState(props.defauleValue || "");
+
+  const handleChange = (event: SelectChangeEvent) => {
+    setValue(event.target.value);
+    if (props.onChange)
+      props.onChange(
+        event.target.value === "" ? null : Number(event.target.value)
+      );
+  };
+
+  return (
+    <Field>
+      {props.icon}
+      <FormControl
+        sx={{ backgroundColor: "white", flexGrow: "1" }}
+        size="small"
+      >
+        <InputLabel id={props.label}>{props.label}</InputLabel>
+        <Select
+          labelId={props.label}
+          //id="demo-select-small"
+          name={props.name}
+          value={value}
+          label={props.label}
+          onChange={handleChange}
+        >
+          <MenuItem value="">
+            <em>None</em>
+          </MenuItem>
+
+          {props.list?.map((list, index) => (
+            <MenuItem key={index} value={list.value}>
+              {list.label}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Field>
+  );
+};
+
+export default FieldSelector;

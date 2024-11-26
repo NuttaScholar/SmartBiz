@@ -1,0 +1,16 @@
+#root {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+}
+.field{
+  display: flex;
+  background-color: #E0EFFF;
+  max-width: 480px;
+  min-width: 300px;
+  width: 100%;
+  padding: 8px 16px;
+  border-radius: 8px;
+  align-items: center;
+  gap: 8px;
+}
