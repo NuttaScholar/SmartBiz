@@ -1,0 +1,1 @@
+export type iconLabel_t = { icon?: React.ReactNode; text: string };

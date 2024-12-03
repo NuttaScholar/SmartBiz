@@ -1,6 +1,5 @@
 import * as React from "react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import dayjs from "dayjs";
 import Field from "../Atoms/Field";
 
