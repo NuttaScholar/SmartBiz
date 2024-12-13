@@ -1,6 +1,7 @@
 import * as React from "react";
 import YearSelector_Mobile from "./Organisms/YearSelector_Mobile";
 import { Box, SxProps, Theme } from "@mui/material";
+import AppBar_c, { pageApp_e } from "./Organisms/AppBar_c";
 
 //************************************************
 // Style
@@ -26,11 +27,15 @@ function ResponsiveAppBar() {
   const handleOnChange = (year: number) => {
     setYear(year);
   };
+  const [page, setPage] = React.useState<pageApp_e>(pageApp_e.access)
 
   return (
-    <Box sx={field}>
-      <YearSelector_Mobile year={year} onChange={handleOnChange}/>
-    </Box>
+    <>
+      <AppBar_c page={page} onClick={(page)=>setPage(page)}/>
+      <Box sx={field}>
+        <YearSelector_Mobile year={year} onChange={handleOnChange} />
+      </Box>
+    </>
   );
 }
 export default ResponsiveAppBar;

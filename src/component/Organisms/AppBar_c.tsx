@@ -12,9 +12,22 @@ import AppBar_PC from "./AppBar_PC";
 import ButtonOption from "../Molecules/ButtonOption";
 
 //************************************************
+// Define
+//************************************************
+export enum pageApp_e {
+  access,
+  lone,
+  bill,
+  stock,
+  logger,
+  setPass,
+  logout,
+}
+//************************************************
 // Type
 //************************************************
 type iconLabel_t = { icon?: React.ReactNode; text: string };
+
 //************************************************
 // Variable
 //************************************************
@@ -27,22 +40,39 @@ const pages: iconLabel_t[] = [
 ];
 const settings = ["Set Password", "Logout"];
 
-function AppBar_c() {  
-  const [page, setPage] = React.useState<number>(0);
-  const handleOnClick = (index:number) => {
-    setPage(index);
+//*********************************************
+// Interface
+//*********************************************
+interface myProps {
+  page?: pageApp_e;
+  onClick?: (page: pageApp_e) => void;
+}
+
+//************************************************
+// Component
+//************************************************
+const AppBar_c: React.FC<myProps> = (props) => {
+  let index = props.page||0 - pageApp_e.access;
+  const handleAppBar = (index: number) => {
+    props.onClick?.(pageApp_e.access+index);
+  };
+  const handleOption = (index: number) => {
+    props.onClick?.(pageApp_e.setPass+index);
   }
 
   return (
     <AppBar color="secondary" position="fixed">
       <Toolbar variant="dense" disableGutters>
-      <AppBar_Mobile menuList={pages} value={page} onClick={handleOnClick}/>
-      <AppBar_PC menuList={pages} value={page} onClick={handleOnClick}/>
+        <AppBar_Mobile menuList={pages} value={index} onClick={handleAppBar} />
+        <AppBar_PC menuList={pages} value={index} onClick={handleAppBar} />
         <Box sx={{ flexGrow: 0 }}>
-          <ButtonOption menuList={settings} onClick={(index)=>console.log(index)}/>
+          <ButtonOption
+            menuList={settings}
+            onClick={handleOption}
+          />
         </Box>
       </Toolbar>
     </AppBar>
   );
-}
+};
 export default AppBar_c;
