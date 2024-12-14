@@ -31,19 +31,27 @@ type iconLabel_t = { icon?: React.ReactNode; text: string };
 //************************************************
 // Variable
 //************************************************
-const pages: iconLabel_t[] = [
+const pagesList_admin: iconLabel_t[] = [
   { text: "รายรับ/รายจ่าย", icon: <AccountBalanceWalletIcon /> },
   { text: "กู้ยืม", icon: <AccountBalanceIcon /> },
   { text: "ออกบิล", icon: <ReceiptLongIcon /> },
   { text: "สต็อก", icon: <WidgetsIcon /> },
   { text: "บันทึกเวลา", icon: <AssignmentIndIcon /> },
 ];
-const settings = ["Set Password", "Logout"];
-
+const pagesList_cashier: iconLabel_t[] = [
+  { text: "ออกบิล", icon: <ReceiptLongIcon /> },
+  { text: "บันทึกเวลา", icon: <AssignmentIndIcon /> },
+];
+const pagesList_labor: iconLabel_t[] = [
+  { text: "บันทึกเวลา", icon: <AssignmentIndIcon /> },
+];
+const option_admin = ["Set User", "Set Password", "Logout"];
+const option_staff = ["Set Password", "Logout"];
 //*********************************************
 // Interface
 //*********************************************
 interface myProps {
+  role?:"admin"|"cashier"|"laber"; 
   page?: pageApp_e;
   onClick?: (page: pageApp_e) => void;
 }
@@ -59,15 +67,23 @@ const AppBar_c: React.FC<myProps> = (props) => {
   const handleOption = (index: number) => {
     props.onClick?.(pageApp_e.setPass+index);
   }
+  let menuList_AppBar = pagesList_labor;
+  let menuList_Option = option_staff;
 
+  if(props.role==="admin"){
+    menuList_AppBar = pagesList_admin;
+    menuList_Option = option_admin;
+  }else if(props.role==="cashier"){
+    menuList_AppBar = pagesList_cashier;
+  }
   return (
     <AppBar color="secondary" position="fixed">
       <Toolbar variant="dense" disableGutters>
-        <AppBar_Mobile menuList={pages} value={index} onClick={handleAppBar} />
-        <AppBar_PC menuList={pages} value={index} onClick={handleAppBar} />
+        <AppBar_Mobile menuList={menuList_AppBar} value={index} onClick={handleAppBar} />
+        <AppBar_PC menuList={menuList_AppBar} value={index} onClick={handleAppBar} />
         <Box sx={{ flexGrow: 0 }}>
           <ButtonOption
-            menuList={settings}
+            menuList={menuList_Option}
             onClick={handleOption}
           />
         </Box>

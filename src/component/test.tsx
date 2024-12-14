@@ -31,7 +31,7 @@ function ResponsiveAppBar() {
 
   return (
     <>
-      <AppBar_c page={page} onClick={(page)=>setPage(page)}/>
+      <AppBar_c role="admin" page={page} onClick={(page)=>setPage(page)}/>
       <Box sx={field}>
         <YearSelector_Mobile year={year} onChange={handleOnChange} />
       </Box>
