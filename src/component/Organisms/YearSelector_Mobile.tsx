@@ -52,7 +52,6 @@ const YearSelector_Mobile: React.FC<myProps> = (props) => {
     const val = curent_year - Number(event.target.value);
     props.onChange?.(val);
   };
-
   function createElements(): JSX.Element[] {
     const year = new Date().getFullYear();
     return Array.from({ length: 9 }, (_, index) => (
@@ -61,6 +60,8 @@ const YearSelector_Mobile: React.FC<myProps> = (props) => {
       </MenuItem>
     ));
   }
+
+  /* Process */
   if (props.year !== undefined) {
     value = curent_year - props.year;
   }
