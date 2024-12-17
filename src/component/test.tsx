@@ -2,6 +2,8 @@ import * as React from "react";
 import { Box, SxProps, Theme } from "@mui/material";
 import AppBar_c, { pageApp_e } from "./Organisms/AppBar_c";
 import YearSelector from "./Organisms/YearSelector";
+import DailyTotalList from "./Molecules/DailyTotalList";
+import { DailyMoneyList } from "../dataSet/DataMoney";
 
 
 //************************************************
@@ -34,7 +36,7 @@ function ResponsiveAppBar() {
     <>
       <AppBar_c role="admin" page={page} onClick={(page)=>setPage(page)}/>
       <YearSelector year={year} onChange={handleOnChange}/>
-
+      <DailyTotalList value={DailyMoneyList[0]}/>
     </>
   );
 }
