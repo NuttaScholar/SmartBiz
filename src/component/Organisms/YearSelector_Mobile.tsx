@@ -17,6 +17,7 @@ const ITEM_PADDING_TOP = 8;
 const field: SxProps<Theme> = {
   flexGrow: 1,
   justifyContent: "center",
+  boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.25)",
 };
 const Menu_st: React.CSSProperties = {
   maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,

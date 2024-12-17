@@ -3,6 +3,16 @@ import { iconLabel_t } from "../../Typedef";
 import Box_PC from "../Atoms/Box_PC";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
+import { SxProps, Theme } from "@mui/material";
+
+//*********************************************
+// Style
+//*********************************************
+const Button_Style: SxProps<Theme> = {
+  borderRadius: 0,
+  minWidth: "120px",
+  height: "48px",
+};
 //*********************************************
 // Interface
 //*********************************************
@@ -22,7 +32,7 @@ const AppBar_PC: React.FC<myProps> = (props) => {
   }
   console.log(select);
   return (
-    <Box_PC sx={{ flexGrow: 1}}>
+    <Box_PC sx={{ flexGrow: 1 }}>
       {props.menuList.map((page, index) => (
         <React.Fragment key={index}>
           <Button
@@ -36,10 +46,8 @@ const AppBar_PC: React.FC<myProps> = (props) => {
               color: select === index ? "white" : "black",
               bgcolor:
                 select === index ? "primary.main" : "secondary.main" /* Note */,
-              borderRadius: 0,
               m: index === 0 ? "0 4px 0 0" : "0 4px",
-              minWidth: "120px",
-              height: "48px",
+              ...Button_Style
             }}
             startIcon={page.icon}
             variant="text"
