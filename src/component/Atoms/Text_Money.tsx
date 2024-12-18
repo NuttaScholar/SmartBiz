@@ -1,44 +1,37 @@
-import React from 'react'
-import { Box, SxProps, Theme, Typography } from "@mui/material";
+import React from "react";
+import { SxProps, Theme, Typography } from "@mui/material";
 
 /**************************************************** */
 //  Style
 /**************************************************** */
-const field: React.CSSProperties = {
-  width: "100%",
-  height: "100%",
-  display: "flex",
-  justifyContent: "space-between",
-}
 
-const textp: React.CSSProperties = {
-  
-  fontSize: "24px",
-  fontWeight: 500,
-  margin: 0,
-  padding: 0,
-}
 /**************************************************** */
 //  Interface
 /**************************************************** */
-export interface TextMoneyPropS {
-  Day: number,
-  Money: number
+export interface myProps {
+  value?: number;
+  sx?: SxProps<Theme>;
 }
 /**************************************************** */
 //  Component
 /**************************************************** */
-const Text_Money: React.FC<TextMoneyPropS> = (props) => {
+const Text_Money: React.FC<myProps> = (props) => {
+  /* Local Variable */
+  const value = props.value || 0;
+  /* Local Function */
   const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
   };
-
+  /* Return */
   return (
-    <Box sx={field}>
-      <Typography sx={textp}>Day: {props.Day}</Typography>
-      <Typography style={textp}>{(props.Money > 0)&& "+"}{formatMoney(props.Money)} ฿</Typography>
-    </Box>
-  )
-}
+    <Typography sx={props.sx}>
+      {value > 0 && "+"}
+      {formatMoney(value)} ฿
+    </Typography>
+  );
+};
 
-export default Text_Money
+export default Text_Money;

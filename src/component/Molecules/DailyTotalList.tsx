@@ -7,7 +7,9 @@ import TransactionDetail, { transactionProp } from './TransactionDetail';
 /* Style */
 
 const AccordionBox: React.CSSProperties = {
-  width: "350px"
+  maxWidth: "480px",
+  minWidth: "300px",
+  width: "100%",
 }
 
 /* Style */
@@ -41,7 +43,7 @@ const DailyTotalList: React.FC<DailyTotalListProps> = (Props) => {
     <Accordion
       sx={AccordionBox}
     >
-      <DailyTotal Day={dateNumber} Money={totalMoney} />
+      <DailyTotal value={{day: dateNumber, money: totalMoney}} />
 
       {transactions.map((transaction, index) => (
         <TransactionDetail
