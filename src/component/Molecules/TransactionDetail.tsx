@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import AccordionDetails from '@mui/material/AccordionDetails';
 
-/* Style */
-
+/**************************************************** */
+//  Style
+/**************************************************** */
 const container: React.CSSProperties = {
   border: "1px solid",
   padding: "8px 16px 16px 16px",
@@ -35,10 +36,13 @@ const detailp: React.CSSProperties = {
   margin: 0,
 }
 
-/* Style */
+/**************************************************** */
+//  Typedef
+/**************************************************** */
 
-/* Props */
-
+/**************************************************** */
+//  Interface
+/**************************************************** */
 export interface transactionProp {
   id: string;
   money: number;
@@ -48,8 +52,9 @@ export interface transactionProp {
   onClick?: (id: string) => void;
 }
 
-/* Props */
-
+/**************************************************** */
+//  Component
+/**************************************************** */
 const TransactionDetail: React.FC<transactionProp> = (Props) => {
   const [hover, setHover] = useState(false);
 

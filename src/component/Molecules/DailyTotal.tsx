@@ -14,7 +14,7 @@ const AccordionSummaryBox: SxProps<Theme> = {
   width: "100%",
   height: "67px",
   bgcolor: "primary.main",
-  color: "white",
+  color: "primary.contrastText",
   display: "flex",
 };
 const textp: React.CSSProperties = {
