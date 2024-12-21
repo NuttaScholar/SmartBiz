@@ -1,4 +1,5 @@
-import { DailyMoneyProps } from "../component/Molecules/DailyTotalList";
+import { DailyTotal_t } from "../component/Molecules/DailyTotalList";
+import { transactionType_e } from "../component/Molecules/TransactionDetail";
 
 interface moneyPerMonth {
     income: GLfloat;
@@ -24,63 +25,55 @@ export const moneyPerMonthData: moneyPerMonth[] = [
     },
 ];
 
-export const DailyMoneyList: DailyMoneyProps[] = [
+export const DailyMoneyList: DailyTotal_t[] = [
     {
-        at: new Date(2024, 7, 3),
+        date: new Date(2024, 7, 3),
         transactions: [
             {
-                id: "7324_0001",
+                id: 1,
                 money: 200.50,
-                Income: true,
-                name: "Part time",
+                type: transactionType_e.income,
+                topic: "Part time",
                 description: null,
             },
             {
-                id: "7324_0002",
+                id: 2,
                 money: 100.00,
-                Income: false,
-                name: "Eating",
+                type: transactionType_e.expenses,
+                topic: "Eating",
                 description: "Buying drinks and food dinner.",
             },
             {
-                id: "7324_0003",
+                id: 3,
                 money: 125.75,
-                Income: false,
-                name: "Hobby",
+                type: transactionType_e.expenses,
+                topic: "Hobby",
                 description: "Buying toys.",
             }
         ]
     },
     {
-        at: new Date(2024, 8, 2),
+        date: new Date(2024, 8, 2),
         transactions: [
             {
-                id: "8224_0001",
-                money: 400.00,
-                Income: true,
-                name: "Part time",
+                id: 4,
+                money: 200.50,
+                type: transactionType_e.lone,
+                topic: "ยืมเงิน",
                 description: null,
             },
             {
-                id: "8224_0001",
-                money: 150.00,
-                Income: false,
-                name: "Eating",
-                description: "Buying drinks and food dinner.",
-            }
+                id: 4,
+                money: 200.50,
+                type: transactionType_e.lend,
+                topic: "ให้ยืมเงิน",
+                description: null,
+            },
         ]
     },
     {
-        at: new Date(2024, 10, 1),
-        transactions: [
-            {
-                id: "10124_0001",
-                money: 10000.50,
-                Income: true,
-                name: "Income month",
-                description: null,
-            }
-        ] 
+        date: new Date(2024, 10, 1),
+        transactions: null
     },
     
 ];

@@ -1,19 +1,19 @@
 import React, { useState } from 'react'
 import AccordionDetails from '@mui/material/AccordionDetails';
+import Text_Money from '../Atoms/Text_Money';
+import { Box, SxProps, Theme, Typography } from '@mui/material';
 
 /**************************************************** */
 //  Style
 /**************************************************** */
-const container: React.CSSProperties = {
+const container: SxProps<Theme> = {
   border: "1px solid",
   padding: "8px 16px 16px 16px",
-};
-
-const elementHover: React.CSSProperties = {
-  ...container,
   cursor: "pointer",
-  background: "#E8E8E8"
-}
+  "&:hover": {
+    bgcolor: "grey.200"
+  }
+};
 
 const title: React.CSSProperties = {
   display: "flex",
@@ -24,7 +24,7 @@ const title: React.CSSProperties = {
 const titlep: React.CSSProperties = {
   fontSize: "24px",
   fontWeight: 400,
-  margin: 0, 
+  margin: 0,
 }
 
 const detail: React.CSSProperties = {
@@ -39,59 +39,59 @@ const detailp: React.CSSProperties = {
 /**************************************************** */
 //  Typedef
 /**************************************************** */
-
+export enum transactionType_e {
+  income,
+  expenses,
+  lone,
+  lend,
+}
+export type transactionDetail_t = {
+  id: number;
+  topic: string;
+  type: transactionType_e;
+  money: number;
+  description?: string | null;
+}
 /**************************************************** */
 //  Interface
 /**************************************************** */
-export interface transactionProp {
-  id: string;
-  money: number;
-  Income: boolean;
-  name: string|null;
-  description: string|null;
-  onClick?: (id: string) => void;
+interface transactionProp {
+  value: transactionDetail_t;
+  onClick?: (id: number) => void;
 }
 
 /**************************************************** */
 //  Component
 /**************************************************** */
 const TransactionDetail: React.FC<transactionProp> = (Props) => {
-  const [hover, setHover] = useState(false);
-
-  const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-  };
-
   const titleStyle: React.CSSProperties = {
     ...titlep,
-    color: Props.Income ? "green" : "red"
+    color: Props.value.type === transactionType_e.income || Props.value.type === transactionType_e.lone ? "green" : "red"
   };
 
+  let amount = Props.value.money;
+  if (Props.value.type === transactionType_e.expenses || Props.value.type === transactionType_e.lend) {
+    amount *= -1;
+  }
   return (
     <AccordionDetails
       sx={{
         padding: "0"
       }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
     >
-      <div 
-        style={hover ? elementHover : container}
-        onClick={() => Props.onClick?.(Props.id)}
+      <Box
+        sx={container}
+        onClick={() => Props.onClick?.(Props.value.id)}
       >
-        <div style={title}>
-          <p style={titlep}>{Props.name}</p>
-          <p style={titleStyle}>{Props.Income === true ? (
-            <>+</>
-          ):(
-            <>-</>
-          )} {formatMoney(Props.money)}</p>
-        </div>
+        <Box sx={title}>
+          <Typography sx={titlep}>{Props.value.topic}</Typography>
+          <Text_Money value={amount} sx={titleStyle} />
+        </Box>
 
-        <div style={detail}>
-          <p style={detailp}>{Props.description}</p>
-        </div>
-      </div>
+        <Box style={detail}>
+          <Typography sx={detailp}>{Props.value.description}</Typography>
+        </Box>
+      </Box>
     </AccordionDetails>
   )
 }
