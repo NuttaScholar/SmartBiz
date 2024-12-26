@@ -13,7 +13,7 @@ const AccordionBox: React.CSSProperties = {
 }
 
 /**************************************************** */
-//  Interface
+//  Type
 /**************************************************** */
 export type DailyTotal_t = {
   date: Date;
