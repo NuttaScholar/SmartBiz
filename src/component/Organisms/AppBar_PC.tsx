@@ -30,7 +30,6 @@ const AppBar_PC: React.FC<myProps> = (props) => {
   if (props.value !== undefined) {
     select = props.value;
   }
-  console.log(select);
   return (
     <Box_PC sx={{ flexGrow: 1 }}>
       {props.menuList.map((page, index) => (

@@ -1,8 +1,11 @@
 import "./App.css";
-import ResponsiveAppBar from "./component/test";
-import { Box } from "@mui/material";
-import Label_parameter from "./component/Atoms/Label_parameter";
-
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Page_Access from "./page/Access";
+import Page_Login from "./page/Login";
+import Page_Bill from "./page/Bill";
+import Page_Cadit from "./page/Cadit";
+import Page_CheckIn from "./page/CheckIn";
+import Page_Stock from "./page/Stork";
 //*********************************************
 // Sub Function
 //*********************************************
@@ -11,20 +14,19 @@ import Label_parameter from "./component/Atoms/Label_parameter";
 // Main Function
 //*********************************************
 function App() {
+  
   return (
-    <>
-      <ResponsiveAppBar />
-      <Box        
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-          alignItems: "center",
-        }}
-      >
-        <Label_parameter label="label" value={123} width="100px"/>
-      </Box>
-    </>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Page_Login />} />
+        <Route path="/access" element={<Page_Access />} />
+        <Route path="/login" element={<Page_Login />} />
+        <Route path="/bill" element={<Page_Bill />} />
+        <Route path="/cadit" element={<Page_Cadit />} />
+        <Route path="/checkIn" element={<Page_CheckIn />} />
+        <Route path="/stock" element={<Page_Stock />} />
+      </Routes>
+    </Router>
   );
 }
 

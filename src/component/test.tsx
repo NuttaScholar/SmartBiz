@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Box, SxProps, Theme } from "@mui/material";
 import AppBar_c, { pageApp_e } from "./Organisms/AppBar_c";
 import YearSelector from "./Organisms/YearSelector";
 import DailyTotalList from "./Molecules/DailyTotalList";
@@ -9,15 +8,16 @@ import { DailyMoneyList } from "../dataSet/DataMoney";
 //************************************************
 // Style
 //************************************************
+/*
 const field: SxProps<Theme> = {
   display: "flex",
   bgcolor: "secondary.main",
   width: "100%",
-};
+};*/
 //************************************************
 // Type
 //************************************************
-type iconLabel_t = { icon?: React.ReactNode; text: string };
+
 //************************************************
 // Variable
 //************************************************
