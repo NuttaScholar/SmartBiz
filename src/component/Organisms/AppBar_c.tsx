@@ -77,7 +77,7 @@ const AppBar_c: React.FC<myProps> = (props) => {
     menuList_AppBar = pagesList_cashier;
   }
   return (
-    <AppBar color="secondary" position="fixed">
+    <AppBar color="secondary" position="static">
       <Toolbar variant="dense" disableGutters>
         <AppBar_Mobile menuList={menuList_AppBar} value={index} onClick={handleAppBar} />
         <AppBar_PC menuList={menuList_AppBar} value={index} onClick={handleAppBar} />

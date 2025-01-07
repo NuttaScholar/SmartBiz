@@ -20,6 +20,18 @@ export type DailyTotal_t = {
   transactions?: transactionDetail_t[] | null;
 }
 /**************************************************** */
+//  Function
+/**************************************************** */
+export function sumDailyTotal(val: DailyTotal_t): number {
+  const totalMoney = val.transactions?.reduce((sum, transaction) => {
+    return transaction.type === transactionType_e.income ||
+      transaction.type === transactionType_e.lone
+      ? sum + transaction.money
+      : sum - transaction.money;
+  }, 0);
+  return totalMoney || 0;
+}
+/**************************************************** */
 //  Interface
 /**************************************************** */
 interface DailyTotalListProps {
@@ -33,16 +45,14 @@ interface DailyTotalListProps {
 const DailyTotalList: React.FC<DailyTotalListProps> = (Props) => {
   /* Local Variable */
   const { transactions, date } = Props.value;
-  const totalMoney = transactions?.reduce((sum, transaction) => {
-    return transaction.type === transactionType_e.income || transaction.type === transactionType_e.lone ? sum + transaction.money : sum - transaction.money;
-  }, 0);
+  const totalMoney = sumDailyTotal(Props.value)
   const dateNumber = date.getDate();
   /* Return */
   return (
     <Accordion
       sx={AccordionBox}
     >
-      <DailyTotal value={{ day: dateNumber, money: totalMoney || 0 }} />
+      <DailyTotal day={dateNumber} money = {totalMoney || 0}  />
 
       {transactions?.map((transaction, index) => (
         <TransactionDetail

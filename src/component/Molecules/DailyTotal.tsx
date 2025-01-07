@@ -24,17 +24,11 @@ const textp: React.CSSProperties = {
   padding: 0,
 };
 /**************************************************** */
-//  Type
-/**************************************************** */
-export type dailyTotal_t = {
-  day: number;
-  money: number;
-};
-/**************************************************** */
 //  Interface
 /**************************************************** */
 interface myProps {
-  value: dailyTotal_t;
+  day: number;
+  money: number;
 }
 /**************************************************** */
 //  Component
@@ -54,9 +48,9 @@ const DailyTotal: React.FC<myProps> = (props) => {
       id="panel1-header"
     >
       <Typography sx={{ ...textp, flexGrow: 1 }}>
-        Day: {props.value.day}
+        Day: {props.day}
       </Typography>
-      <Text_Money sx={textp} value={props.value.money} />
+      <Text_Money sx={textp} value={props.money} />
     </AccordionSummary>
   );
 };
