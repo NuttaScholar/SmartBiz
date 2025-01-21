@@ -36,7 +36,7 @@ const ButtonOption: React.FC<MyProps> = (props) => {
   return (
     <>
       <Tooltip title={props.title}>
-        <IconButton onClick={handleOpenUserMenu} sx={{ p: "10px" }}>
+        <IconButton onClick={handleOpenUserMenu} sx={{ p: "10px", height: "44px" }}>
           <MoreVertIcon />
         </IconButton>
       </Tooltip>
