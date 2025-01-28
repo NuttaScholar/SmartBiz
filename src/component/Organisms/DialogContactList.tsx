@@ -1,0 +1,68 @@
+import React from "react";
+import { Box, Dialog, Slide } from "@mui/material";
+import FieldSearch from "../Molecules/FieldSearch";
+import HeaderContactList from "./HeaderContactList";
+import ListContact from "./ListContact";
+import { ContactList_dataSet } from "../../dataSet/DataContactList";
+import { TransitionProps } from "@mui/material/transitions";
+
+//*********************************************
+// Style
+//*********************************************
+
+//*********************************************
+// Transition
+//*********************************************
+const Transition = React.forwardRef(function Transition(
+  props: TransitionProps & {
+    children: React.ReactElement<unknown>;
+  },
+  ref: React.Ref<unknown>
+) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
+//*********************************************
+// Interface
+//*********************************************
+interface myProps {
+  open: boolean;
+  onClose?: () => void;
+  onSearch?: (keyword: string) => void;
+}
+//*********************************************
+// Component
+//*********************************************
+const DialogContactList: React.FC<myProps> = (props) => {
+  const [key, setKey] = React.useState("");
+  const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setKey(event.target.value);
+  };
+
+  return (
+    <Dialog
+      fullScreen
+      open={props.open}
+      onClose={props.onClose}
+      TransitionComponent={Transition}
+    >
+      <HeaderContactList
+        onBack={props.onClose}
+        onChange={onChangeHandler}
+        onSearch={props.onSearch}
+        value={key}
+      />
+      <Box sx={{ display: "flex", justifyContent: "center" }}>
+        <FieldSearch
+          label="Search"
+          display={{ xs: "flex", sm: "none" }}
+          value={key}
+          onChange={onChangeHandler}
+          onSubmit={props.onSearch}
+        />
+      </Box>
+      <ListContact value={ContactList_dataSet} />
+    </Dialog>
+  );
+};
+export default DialogContactList;

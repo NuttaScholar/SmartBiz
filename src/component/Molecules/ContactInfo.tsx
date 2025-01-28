@@ -3,8 +3,6 @@ import {
   Box,
   ListItem,
   ListItemAvatar,
-  ListItemButton,
-  ListItemText,
 } from "@mui/material";
 import Label_parameter from "../Atoms/Label_parameter";
 import React from "react";
@@ -30,6 +28,7 @@ export type contactInfo_t = {
 //*********************************************
 interface myProps {
   value: contactInfo_t;
+  onClick?: (codeName: string) => void;
 }
 //*********************************************
 // Component
@@ -56,7 +55,7 @@ const ContactInfo: React.FC<myProps> = (props) => {
     return { children: initials };
   }
   return (
-    <ListItem  onClick={()=>console.log("ListItem")} sx={{cursor: 'pointer'}} alignItems="flex-start">
+    <ListItem  onClick={()=>props.onClick?.(props.value.codeName)} sx={{cursor: 'pointer'}} alignItems="flex-start">
       <ListItemAvatar>
         <Avatar
           {...stringAvatar(props.value.codeName)}
