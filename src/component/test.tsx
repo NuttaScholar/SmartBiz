@@ -1,6 +1,8 @@
 import * as React from "react";
-import Button from "@mui/material/Button";
-import DialogContactList from "./Organisms/DialogContactList";
+import FieldContact from "./Molecules/FieldContact";
+import AccountBoxIcon from "@mui/icons-material/AccountBox";
+import { Alert, Box } from "@mui/material";
+import { ContactList_dataSet } from "../dataSet/DataContactList";
 
 export default function FullScreenDialog() {
   const [open, setOpen] = React.useState(false);
@@ -14,11 +16,15 @@ export default function FullScreenDialog() {
   };
 
   return (
-    <React.Fragment>
-      <Button variant="outlined" onClick={handleClickOpen}>
-        Open full-screen dialog
-      </Button>
-      <DialogContactList open={open} onClose={handleClose} onSearch={(key)=>console.log(key)}/>
-    </React.Fragment>
+    <Box sx={{marginTop: "16px"}}>
+    <FieldContact
+      defaultValue="test"
+      placeholder="Contact"
+      onSearch={(key) => console.log(`onSearch: ${key}`)}
+      onChange={(value)=>{console.log(`onChange: ${value}`)}}
+      icon={<AccountBoxIcon />}
+      list={ContactList_dataSet}
+    />
+    </Box>
   );
 }

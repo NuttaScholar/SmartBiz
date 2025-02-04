@@ -5,6 +5,7 @@ import HeaderContactList from "./HeaderContactList";
 import ListContact from "./ListContact";
 import { ContactList_dataSet } from "../../dataSet/DataContactList";
 import { TransitionProps } from "@mui/material/transitions";
+import { contactInfo_t } from "../Molecules/ContactInfo";
 
 //*********************************************
 // Style
@@ -29,6 +30,8 @@ interface myProps {
   open: boolean;
   onClose?: () => void;
   onSearch?: (keyword: string) => void;
+  onSelect?: (codeName: string) => void;
+  list?: contactInfo_t[];
 }
 //*********************************************
 // Component
@@ -61,7 +64,7 @@ const DialogContactList: React.FC<myProps> = (props) => {
           onSubmit={props.onSearch}
         />
       </Box>
-      <ListContact value={ContactList_dataSet} />
+      <ListContact list={props.list||[]} onClick={props.onSelect}/>
     </Dialog>
   );
 };

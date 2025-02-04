@@ -15,7 +15,7 @@ const optionList: string[] = ["แก้ไข", "ลบ"];
 // Interface
 //*********************************************
 interface myProps {
-  value: contactInfo_t[];
+  list: contactInfo_t[];
   onClick?: (codeName: string) => void;
 }
 //*********************************************
@@ -24,7 +24,7 @@ interface myProps {
 const ListContact: React.FC<myProps> = (props) => {
   return (
     <List sx={{ width: "100%", bgcolor: "background.paper" }}>
-      {props.value.map((value, index) => (
+      {props.list.map((value, index) => (
         <React.Fragment key={index}>
           <Box
             sx={{
