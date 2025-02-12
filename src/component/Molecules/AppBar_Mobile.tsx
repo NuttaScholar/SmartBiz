@@ -6,7 +6,12 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import { iconLabel_t } from "../../Typedef";
+
+//************************************************
+// Type
+//************************************************
+export type iconLabel_t = { icon?: React.ReactNode; text: string };
+
 //*********************************************
 // Interface
 //*********************************************
@@ -46,14 +51,14 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
   }
   /* Return */
   return (
-    <Box_Mobile sx={{ flexGrow: 1 }}>
+    <Box sx={{ display: "flex", flexGrow: 1 }}>
       <IconButton
         size="large"
         aria-label="account of current user"
         aria-controls="menu-appbar"
         aria-haspopup="true"
         onClick={handleOpenNavMenu}
-        color="inherit"
+        sx={{color: "secondary.contrastText"}}
       >
         <MenuIcon />
       </IconButton>
@@ -102,14 +107,14 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
             display: { xs: "flex", md: "none" },
             fontWeight: 500,
             //letterSpacing: ".3rem",
-            color: "inherit",
+            color: "secondary.contrastText",
             textDecoration: "none",
           }}
         >
           {props.menuList[index].text}
         </Typography>
       </Box>
-    </Box_Mobile>
+    </Box>
   );
 };
 export default AppBar_Mobile;

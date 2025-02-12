@@ -1,9 +1,7 @@
 import * as React from "react";
-import { iconLabel_t } from "../../Typedef";
-import Box_PC from "../Atoms/Box_PC";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
-import { SxProps, Theme } from "@mui/material";
+import { Box, SxProps, Theme } from "@mui/material";
 
 //*********************************************
 // Style
@@ -13,6 +11,11 @@ const Button_Style: SxProps<Theme> = {
   minWidth: "120px",
   height: "48px",
 };
+//************************************************
+// Type
+//************************************************
+export type iconLabel_t = { icon?: React.ReactNode; text: string };
+
 //*********************************************
 // Interface
 //*********************************************
@@ -31,7 +34,7 @@ const AppBar_PC: React.FC<myProps> = (props) => {
     select = props.value;
   }
   return (
-    <Box_PC sx={{ flexGrow: 1 }}>
+    <Box sx={{ display: "flex" }}>
       {props.menuList.map((page, index) => (
         <React.Fragment key={index}>
           <Button
@@ -42,11 +45,11 @@ const AppBar_PC: React.FC<myProps> = (props) => {
               }
             }}
             sx={{
-              color: select === index ? "white" : "black",
+              color: select === index ? "primary.contrastText" : "secondary.contrastText",
               bgcolor:
                 select === index ? "primary.main" : "secondary.main" /* Note */,
               m: index === 0 ? "0 4px 0 0" : "0 4px",
-              ...Button_Style
+              ...Button_Style,
             }}
             startIcon={page.icon}
             variant="text"
@@ -57,7 +60,7 @@ const AppBar_PC: React.FC<myProps> = (props) => {
           <Divider orientation="vertical" variant="middle" flexItem />
         </React.Fragment>
       ))}
-    </Box_PC>
+    </Box>
   );
 };
 export default AppBar_PC;

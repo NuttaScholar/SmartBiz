@@ -23,6 +23,7 @@ interface myProps {
   color_Label?: string;
   color_Value?: string;
   weight_Label?: string;
+  unit?: string;
 }
 //**********************************************
 // Component
@@ -39,10 +40,21 @@ const Label_parameter: React.FC<myProps> = (props) => {
         ...Field,
       }}
     >
-      <Typography sx={{ fontWeight: props.weight_Label||"500", fontSize: props.size, color: props.color_Label }}>
+      <Typography
+        sx={{
+          fontWeight: props.weight_Label || "500",
+          fontSize: props.size,
+          color: props.color_Label,
+        }}
+      >
         {props.label}
       </Typography>
-      <Typography sx={{ fontSize: props.size, color:props.color_Value }}>{props.value}</Typography>
+      <Box>
+        <Typography sx={{ fontSize: props.size, color: props.color_Value }}>
+          {props.value} {props.unit}
+        </Typography>
+        
+      </Box>
     </Box>
   );
 };

@@ -4,4 +4,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
-
+#root {
+  width: 100%;
+  margin: 0;
+}

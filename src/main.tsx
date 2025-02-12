@@ -5,10 +5,16 @@ import "@fontsource/kanit/400.css";
 import "@fontsource/kanit/500.css";
 import "@fontsource/kanit/700.css";
 import "./index.css";
-import App from "./App.tsx";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import Page_Login from "./page/Login.tsx";
+import Page_Access from "./page/Access.tsx";
+import Page_Bill from "./page/Bill.tsx";
+import Page_Cadit from "./page/Cadit.tsx";
+import Page_CheckIn from "./page/CheckIn.tsx";
+import Page_Stock from "./page/Stork.tsx";
 
 const theme = createTheme({
   palette: {
@@ -32,9 +38,19 @@ const theme = createTheme({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <App />
-      </LocalizationProvider>
+      <BrowserRouter>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <Routes>
+            <Route path="/" element={<Page_Login />} />
+            <Route path="/access" element={<Page_Access />} />
+            <Route path="/login" element={<Page_Login />} />
+            <Route path="/bill" element={<Page_Bill />} />
+            <Route path="/cadit" element={<Page_Cadit />} />
+            <Route path="/checkIn" element={<Page_CheckIn />} />
+            <Route path="/stock" element={<Page_Stock />} />
+          </Routes>
+        </LocalizationProvider>
+      </BrowserRouter>
     </ThemeProvider>
   </StrictMode>
 );

@@ -11,7 +11,7 @@ import React from "react";
 import { VisibilityOff } from "@mui/icons-material";
 import ClearIcon from "@mui/icons-material/Clear";
 import AssignmentIndOutlinedIcon from "@mui/icons-material/AssignmentIndOutlined";
-import DialogContactList from "../Organisms/DialogContactList";
+import DialogContactList from "../../dialog/DialogContactList";
 import { ContactList_dataSet } from "../../dataSet/DataContactList";
 import { contactInfo_t } from "./ContactInfo";
 /**************************************************** */

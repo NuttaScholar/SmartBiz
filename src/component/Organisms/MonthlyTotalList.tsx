@@ -4,6 +4,7 @@ import Text_ThaiMonth from "../Atoms/Text_ThaiMonth";
 import Text_Money from "../Atoms/Text_Money";
 import DailyTotalList, { DailyTotal_t, sumDailyTotal } from "../Molecules/DailyTotalList";
 import { DailyMoneyList } from "../../dataSet/DataMoney";
+import Label_parameter from "../Atoms/Label_parameter";
 
 /**************************************************** */
 //  Style
@@ -40,9 +41,18 @@ interface myProps {
 /**************************************************** */
 //  Component
 /**************************************************** */
-const MonthlyTotalList: React.FC<myProps> = (props) => {
-  const buff = props.value.reduce((sum, item) => sum + sumDailyTotal(item), 0);
-  
+const MonthlyTotalList: React.FC<myProps> = (props) => {  
+  const buff = props.value.reduce((sum, item) => {
+    const val = sumDailyTotal(item);
+    if(val<0){
+      sum.expenses += val;
+    }else{
+      sum.income += val;
+    }
+    return sum;
+  }, {income:0,expenses:0});
+  const total = buff.expenses + buff.income;
+
   return (
     <Box sx={field}>
       <Box sx={{ px: "8px" }}>
@@ -52,9 +62,11 @@ const MonthlyTotalList: React.FC<myProps> = (props) => {
             value={props.value[0].date}
             showYear
           />
-          <Text_Money sx={date_st} value={buff} />
+          <Text_Money sx={{...date_st, color: total<0?"error.light":"success.light"}} value={total} />
         </Box>
         <Divider color="black" />
+        <Label_parameter size='18px' label="รายรับ" value={`+${buff.income}`} color_Value="success.main" unit="฿" />
+        <Label_parameter size='18px' label="รายจ่าย" value={buff.expenses} color_Value="error.main" unit="฿"/>
       </Box>
       {DailyMoneyList.map((val, index) => (
         <DailyTotalList value={val} key={index} />

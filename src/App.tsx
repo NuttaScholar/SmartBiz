@@ -14,19 +14,16 @@ import Page_Stock from "./page/Stork";
 // Main Function
 //*********************************************
 function App() {
-  
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Page_Login />} />
-        <Route path="/access" element={<Page_Access />} />
-        <Route path="/login" element={<Page_Login />} />
-        <Route path="/bill" element={<Page_Bill />} />
-        <Route path="/cadit" element={<Page_Cadit />} />
-        <Route path="/checkIn" element={<Page_CheckIn />} />
-        <Route path="/stock" element={<Page_Stock />} />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={<Page_Login />} />
+      <Route path="/access" element={<Page_Access />} />
+      <Route path="/login" element={<Page_Login />} />
+      <Route path="/bill" element={<Page_Bill />} />
+      <Route path="/cadit" element={<Page_Cadit />} />
+      <Route path="/checkIn" element={<Page_CheckIn />} />
+      <Route path="/stock" element={<Page_Stock />} />
+    </Routes>
   );
 }
 

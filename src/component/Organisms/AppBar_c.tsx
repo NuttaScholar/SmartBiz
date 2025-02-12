@@ -7,9 +7,11 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import WidgetsIcon from "@mui/icons-material/Widgets";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
-import AppBar_Mobile from "./AppBar_Mobile";
-import AppBar_PC from "./AppBar_PC";
+import AppBar_Mobile, { iconLabel_t } from "../Molecules/AppBar_Mobile";
+import AppBar_PC from "../Molecules/AppBar_PC";
 import ButtonOption from "../Molecules/ButtonOption";
+import Box_Mobile from "../Atoms/Box_Mobile";
+import Box_PC from "../Atoms/Box_PC";
 
 //************************************************
 // Define
@@ -23,10 +25,6 @@ export enum pageApp_e {
   setPass,
   logout,
 }
-//************************************************
-// Type
-//************************************************
-type iconLabel_t = { icon?: React.ReactNode; text: string };
 
 //************************************************
 // Variable
@@ -51,7 +49,7 @@ const option_staff = ["Set Password", "Logout"];
 // Interface
 //*********************************************
 interface myProps {
-  role?:"admin"|"cashier"|"laber"; 
+  role?: "admin" | "cashier" | "laber";
   page?: pageApp_e;
   onClick?: (page: pageApp_e) => void;
 }
@@ -60,32 +58,41 @@ interface myProps {
 // Component
 //************************************************
 const AppBar_c: React.FC<myProps> = (props) => {
-  let index = props.page||0 - pageApp_e.access;
+  let index = props.page || 0 - pageApp_e.access;
   const handleAppBar = (index: number) => {
-    props.onClick?.(pageApp_e.access+index);
+    props.onClick?.(pageApp_e.access + index);
   };
   const handleOption = (index: number) => {
-    props.onClick?.(pageApp_e.setPass+index);
-  }
+    props.onClick?.(pageApp_e.setPass + index);
+  };
   let menuList_AppBar = pagesList_labor;
   let menuList_Option = option_staff;
 
-  if(props.role==="admin"){
+  if (props.role === "admin") {
     menuList_AppBar = pagesList_admin;
     menuList_Option = option_admin;
-  }else if(props.role==="cashier"){
+  } else if (props.role === "cashier") {
     menuList_AppBar = pagesList_cashier;
   }
   return (
     <AppBar color="secondary" position="static">
       <Toolbar variant="dense" disableGutters>
-        <AppBar_Mobile menuList={menuList_AppBar} value={index} onClick={handleAppBar} />
-        <AppBar_PC menuList={menuList_AppBar} value={index} onClick={handleAppBar} />
-        <Box sx={{ flexGrow: 0 }}>
-          <ButtonOption
-            menuList={menuList_Option}
-            onClick={handleOption}
+        <Box_Mobile sx={{flexGrow: 1}}>
+          <AppBar_Mobile
+            menuList={menuList_AppBar}
+            value={index}
+            onClick={handleAppBar}
           />
+        </Box_Mobile>
+        <Box_PC sx={{flexGrow: 1}}>
+          <AppBar_PC
+            menuList={menuList_AppBar}
+            value={index}
+            onClick={handleAppBar}
+          />
+        </Box_PC>
+        <Box sx={{ flexGrow: 0 }}>
+          <ButtonOption menuList={menuList_Option} onClick={handleOption} />
         </Box>
       </Toolbar>
     </AppBar>
