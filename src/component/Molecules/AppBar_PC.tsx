@@ -2,6 +2,7 @@ import * as React from "react";
 import Divider from "@mui/material/Divider";
 import Button from "@mui/material/Button";
 import { Box, SxProps, Theme } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 //*********************************************
 // Style
@@ -14,13 +15,17 @@ const Button_Style: SxProps<Theme> = {
 //************************************************
 // Type
 //************************************************
-export type iconLabel_t = { icon?: React.ReactNode; text: string };
+export type menuList_t = {
+  icon?: React.ReactNode;
+  text: string;
+  path?: string;
+};
 
 //*********************************************
 // Interface
 //*********************************************
 interface myProps {
-  menuList: iconLabel_t[];
+  menuList: menuList_t[];
   value?: number;
   onClick?: (index: number) => void;
 }
@@ -29,10 +34,14 @@ interface myProps {
 //*********************************************
 const AppBar_PC: React.FC<myProps> = (props) => {
   /* Local Variable*/
-  let select = 0;
-  if (props.value !== undefined) {
-    select = props.value;
-  }
+  let select = props.value ?? 0; //  ถ้า props.value เป็น undefine หรือ Null ให้ select = 0
+  const navigate = useNavigate();
+
+  /* Local Function*/
+  const handleOnClick = (index: number) => {
+    props.onClick?.(index);
+    if (props.menuList[index].path) navigate(props.menuList[index].path);
+  };
   return (
     <Box sx={{ display: "flex" }}>
       {props.menuList.map((page, index) => (
@@ -40,12 +49,13 @@ const AppBar_PC: React.FC<myProps> = (props) => {
           <Button
             key={page.text}
             onClick={() => {
-              if (props.onClick) {
-                props.onClick(index);
-              }
+              handleOnClick(index);
             }}
             sx={{
-              color: select === index ? "primary.contrastText" : "secondary.contrastText",
+              color:
+                select === index
+                  ? "primary.contrastText"
+                  : "secondary.contrastText",
               bgcolor:
                 select === index ? "primary.main" : "secondary.main" /* Note */,
               m: index === 0 ? "0 4px 0 0" : "0 4px",

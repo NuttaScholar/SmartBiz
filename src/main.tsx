@@ -15,6 +15,7 @@ import Page_Bill from "./page/Bill.tsx";
 import Page_Cadit from "./page/Cadit.tsx";
 import Page_CheckIn from "./page/CheckIn.tsx";
 import Page_Stock from "./page/Stork.tsx";
+import Page_NotFound from "./page/NotFound.tsx";
 
 const theme = createTheme({
   palette: {
@@ -48,6 +49,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/cadit" element={<Page_Cadit />} />
             <Route path="/checkIn" element={<Page_CheckIn />} />
             <Route path="/stock" element={<Page_Stock />} />
+            <Route path="*" element={<Page_NotFound />}/>
           </Routes>
         </LocalizationProvider>
       </BrowserRouter>

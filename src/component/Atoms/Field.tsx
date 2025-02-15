@@ -1,7 +1,6 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import { SxProps, Theme } from "@mui/material";
-import { ResponsiveStyleValue } from "@mui/system";
 //*********************************************
 // Style
 //*********************************************

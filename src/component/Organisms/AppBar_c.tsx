@@ -7,7 +7,7 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import WidgetsIcon from "@mui/icons-material/Widgets";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
-import AppBar_Mobile, { iconLabel_t } from "../Molecules/AppBar_Mobile";
+import AppBar_Mobile, { menuList_t } from "../Molecules/AppBar_Mobile";
 import AppBar_PC from "../Molecules/AppBar_PC";
 import ButtonOption from "../Molecules/ButtonOption";
 import Box_Mobile from "../Atoms/Box_Mobile";
@@ -29,21 +29,29 @@ export enum pageApp_e {
 //************************************************
 // Variable
 //************************************************
-const pagesList_admin: iconLabel_t[] = [
-  { text: "รายรับ/รายจ่าย", icon: <AccountBalanceWalletIcon /> },
-  { text: "กู้ยืม", icon: <AccountBalanceIcon /> },
-  { text: "ออกบิล", icon: <ReceiptLongIcon /> },
-  { text: "สต็อก", icon: <WidgetsIcon /> },
-  { text: "บันทึกเวลา", icon: <AssignmentIndIcon /> },
+const pagesList_admin: menuList_t[] = [
+  {
+    text: "รายรับ/รายจ่าย",
+    icon: <AccountBalanceWalletIcon />,
+    path: "/access",
+  },
+  { text: "กู้ยืม", icon: <AccountBalanceIcon />, path: "/cadit" },
+  { text: "ออกบิล", icon: <ReceiptLongIcon />, path: "/bill" },
+  { text: "สต็อก", icon: <WidgetsIcon />, path: "/stock" },
+  { text: "บันทึกเวลา", icon: <AssignmentIndIcon />, path: "/checkIn" },
 ];
-const pagesList_cashier: iconLabel_t[] = [
-  { text: "ออกบิล", icon: <ReceiptLongIcon /> },
-  { text: "บันทึกเวลา", icon: <AssignmentIndIcon /> },
+const pagesList_cashier: menuList_t[] = [
+  { text: "ออกบิล", icon: <ReceiptLongIcon />, path: "/bill" },
+  { text: "บันทึกเวลา", icon: <AssignmentIndIcon />, path: "/checkIn" },
 ];
-const pagesList_labor: iconLabel_t[] = [
-  { text: "บันทึกเวลา", icon: <AssignmentIndIcon /> },
+const pagesList_labor: menuList_t[] = [
+  { text: "บันทึกเวลา", icon: <AssignmentIndIcon />, path: "/checkIn" },
 ];
-const option_admin = ["Set User", "Set Password", "Logout"];
+const option_admin: menuList_t[] = [
+  { text: "Set User", path: "/setUser" },
+  { text: "Set Password", path: "/setPass" },
+  { text: "Logout", path: "/"}
+];
 const option_staff = ["Set Password", "Logout"];
 //*********************************************
 // Interface
@@ -77,14 +85,14 @@ const AppBar_c: React.FC<myProps> = (props) => {
   return (
     <AppBar color="secondary" position="static">
       <Toolbar variant="dense" disableGutters>
-        <Box_Mobile sx={{flexGrow: 1}}>
+        <Box_Mobile sx={{ flexGrow: 1 }}>
           <AppBar_Mobile
             menuList={menuList_AppBar}
             value={index}
             onClick={handleAppBar}
           />
         </Box_Mobile>
-        <Box_PC sx={{flexGrow: 1}}>
+        <Box_PC sx={{ flexGrow: 1 }}>
           <AppBar_PC
             menuList={menuList_AppBar}
             value={index}

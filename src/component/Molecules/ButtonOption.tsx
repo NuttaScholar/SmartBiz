@@ -5,13 +5,22 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useNavigate } from "react-router-dom";
 
+//************************************************
+// Type
+//************************************************
+export type menuList_t = {
+  icon?: React.ReactNode;
+  text: string;
+  path?: string;
+};
 /**************************************************** */
 //  Interface
 /**************************************************** */
 interface MyProps {
   title?: string;
-  menuList: string[];
+  menuList: menuList_t[];
   onClick?: (index: number) => void;
 }
 /**************************************************** */
@@ -22,6 +31,7 @@ const ButtonOption: React.FC<MyProps> = (props) => {
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
     null
   );
+  const navigate = useNavigate();
   /* Local Function */
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -29,14 +39,18 @@ const ButtonOption: React.FC<MyProps> = (props) => {
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
-  const handleOnClick = (index:number) => {
+  const handleOnClick = (index: number) => {
     setAnchorElUser(null);
-    if(props.onClick)props.onClick(index)
+    props.onClick?.(index);
+    if (props.menuList[index].path) navigate(props.menuList[index].path);
   };
   return (
     <>
       <Tooltip title={props.title}>
-        <IconButton onClick={handleOpenUserMenu} sx={{ p: "10px", height: "44px", color: "secondary.contrastText" }}>
+        <IconButton
+          onClick={handleOpenUserMenu}
+          sx={{ p: "10px", height: "44px", color: "secondary.contrastText" }}
+        >
           <MoreVertIcon />
         </IconButton>
       </Tooltip>
@@ -57,8 +71,13 @@ const ButtonOption: React.FC<MyProps> = (props) => {
         onClose={handleCloseUserMenu}
       >
         {props.menuList.map((value, index) => (
-          <MenuItem key={value} onClick={()=>{handleOnClick(index)}}>
-            <Typography sx={{ textAlign: "center" }}>{value}</Typography>
+          <MenuItem
+            key={value.text}
+            onClick={() => {
+              handleOnClick(index);
+            }}
+          >
+            <Typography sx={{ textAlign: "center" }}>{value.text}</Typography>
           </MenuItem>
         ))}
       </Menu>

@@ -1,22 +1,26 @@
 import * as React from "react";
-import Box_Mobile from "../Atoms/Box_Mobile";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import { useNavigate } from "react-router-dom";
 
 //************************************************
 // Type
 //************************************************
-export type iconLabel_t = { icon?: React.ReactNode; text: string };
+export type menuList_t = {
+  icon?: React.ReactNode;
+  text: string;
+  path?: string;
+};
 
 //*********************************************
 // Interface
 //*********************************************
 interface myProps {
-  menuList: iconLabel_t[];
+  menuList: menuList_t[];
   value?: number;
   onClick?: (index: number) => void;
 }
@@ -28,6 +32,7 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
   const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(
     null
   );
+  const navigate = useNavigate();
   /* Local Function */
   const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
@@ -37,7 +42,8 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
   };
   const handleOnClick = (index: number) => {
     setAnchorElNav(null);
-    if (props.onClick) props.onClick(index);
+    props.onClick?.(index);
+    if (props.menuList[index].path) navigate(props.menuList[index].path);
   };
   /* Local Variable*/
   const size_list = props.menuList.length;
