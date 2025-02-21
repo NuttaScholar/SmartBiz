@@ -50,9 +50,12 @@ const pagesList_labor: menuList_t[] = [
 const option_admin: menuList_t[] = [
   { text: "Set User", path: "/setUser" },
   { text: "Set Password", path: "/setPass" },
-  { text: "Logout", path: "/"}
+  { text: "Logout", path: "/" },
 ];
-const option_staff = ["Set Password", "Logout"];
+const option_staff: menuList_t[] = [
+  { text: "Set Password", path: "/setPass" },
+  { text: "Logout", path: "/" },
+];
 //*********************************************
 // Interface
 //*********************************************

@@ -20,6 +20,7 @@ const field: SxProps<Theme> = {
   padding: "32px 16px 16px 16px",
   borderRadius: "10px",
   gap: "8px",
+  boxSizing: "border-box"
 };
 const date_st: SxProps<Theme> = {
   fontSize: "26px",
