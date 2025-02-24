@@ -1,7 +1,7 @@
 import { Box, Divider, List } from "@mui/material";
 import React from "react";
 import ContactInfo, { contactInfo_t } from "../Molecules/ContactInfo";
-import ButtonOption from "../Molecules/ButtonOption";
+import ButtonOption, { menuList_t } from "../Molecules/ButtonOption";
 
 //*********************************************
 // Style
@@ -10,7 +10,7 @@ import ButtonOption from "../Molecules/ButtonOption";
 //*********************************************
 // Variable
 //*********************************************
-const optionList: string[] = ["แก้ไข", "ลบ"];
+const optionList: menuList_t[] = [{text: "แก้ไข"}, {text: "ลบ"}];
 //*********************************************
 // Interface
 //*********************************************

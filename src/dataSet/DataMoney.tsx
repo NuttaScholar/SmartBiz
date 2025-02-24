@@ -1,30 +1,6 @@
 import { DailyTotal_t } from "../component/Molecules/DailyTotalList";
 import { transactionType_e } from "../component/Molecules/TransactionDetail";
 
-interface moneyPerMonth {
-  income: GLfloat;
-  expenses: GLfloat;
-  month: Date;
-}
-
-export const moneyPerMonthData: moneyPerMonth[] = [
-  {
-    income: 30000,
-    expenses: 25000,
-    month: new Date(2024, 7, 1),
-  },
-  {
-    income: 32000,
-    expenses: 27000,
-    month: new Date(2024, 8, 1),
-  },
-  {
-    income: 31000,
-    expenses: 26000,
-    month: new Date(2024, 9, 1),
-  },
-];
-
 export const DailyMoneyList: DailyTotal_t[] = [
   {
     date: new Date(2024, 8, 3),
