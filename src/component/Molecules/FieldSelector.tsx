@@ -8,7 +8,7 @@ import Field from "../Atoms/Field";
 //*********************************************
 // Type
 //*********************************************
-type listSelect_t = { value: number; label: string };
+export type listSelect_t = { value: number; label: string };
 
 //*********************************************
 // Interface
@@ -17,6 +17,7 @@ interface myProps {
   label?: string;
   list?: listSelect_t[];
   defauleValue?: string;
+  required?: boolean;
   onChange?: (value: number | null) => void;
   name?: string;
   icon?: React.ReactNode;
@@ -36,7 +37,7 @@ const FieldSelector: React.FC<myProps> = (props) => {
   };
 
   return (
-    <Field>
+    <Field alignItem="center">
       {props.icon}
       <FormControl
         sx={{ backgroundColor: "white", flexGrow: "1" }}
@@ -46,6 +47,7 @@ const FieldSelector: React.FC<myProps> = (props) => {
         <Select
           labelId={props.label}
           //id="demo-select-small"
+          required = {props.required}
           name={props.name}
           value={value}
           label={props.label}

@@ -1,5 +1,5 @@
 import { DailyTotal_t } from "../component/Molecules/DailyTotalList";
-import { transactionType_e } from "../component/Molecules/TransactionDetail";
+import { transactionType_e } from "../type";
 
 export const DailyMoneyList: DailyTotal_t[] = [
   {
@@ -10,6 +10,7 @@ export const DailyMoneyList: DailyTotal_t[] = [
         money: 200.5,
         type: transactionType_e.income,
         topic: "Part time",
+        who: "Nut",
         description: null,
       },
       {
@@ -34,7 +35,7 @@ export const DailyMoneyList: DailyTotal_t[] = [
       {
         id: 4,
         money: 200.5,
-        type: transactionType_e.lone,
+        type: transactionType_e.loan,
         topic: "ยืมเงิน",
         description: null,
       },
@@ -53,14 +54,14 @@ export const DailyMoneyList: DailyTotal_t[] = [
       {
         id: 4,
         money: 200.5,
-        type: transactionType_e.lone,
+        type: transactionType_e.loan,
         topic: "ยืมเงิน",
         description: null,
       },
       {
         id: 4,
         money: 200.5,
-        type: transactionType_e.lone,
+        type: transactionType_e.loan,
         topic: "ยืมเงิน",
         description: null,
       },

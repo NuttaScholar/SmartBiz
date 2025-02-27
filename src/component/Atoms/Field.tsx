@@ -11,6 +11,7 @@ const field: SxProps<Theme> = {
   padding: "8px 16px",
   borderRadius: "8px",
   gap: "8px",
+  boxSizing: "border-box",
 };
 //*************************************************
 // Interface

@@ -10,6 +10,7 @@ interface myProps {
   label?: string;
   placeholder?: string;
   defauleValue?: string;
+  required?: boolean;
   type?: React.HTMLInputTypeAttribute;
   multiline?: boolean;
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -21,13 +22,14 @@ interface myProps {
 //*********************************************
 const FieldText: React.FC<myProps> = (props) => {
   return (
-    <Field alignItem="center">
+    <Field alignItem={props.multiline?"baseline":"center"}>
       {props.icon}
       <TextField
         label={props.label}
         placeholder={props.placeholder}
         defaultValue={props.defauleValue}
         multiline={props.multiline}
+        required={props.required}
         type={props.type}
         onChange={props.onChange}
         name={props.name}

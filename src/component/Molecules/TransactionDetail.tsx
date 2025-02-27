@@ -2,6 +2,7 @@ import React from 'react'
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Text_Money from '../Atoms/Text_Money';
 import { Box, SxProps, Theme, Typography } from '@mui/material';
+import { transactionType_e } from '../../type';
 
 /**************************************************** */
 //  Style
@@ -39,17 +40,13 @@ const detailp: React.CSSProperties = {
 /**************************************************** */
 //  Typedef
 /**************************************************** */
-export enum transactionType_e {
-  income,
-  expenses,
-  lone,
-  lend,
-}
+
 export type transactionDetail_t = {
   id: number;
   topic: string;
   type: transactionType_e;
   money: number;
+  who?: string;
   description?: string | null;
 }
 /**************************************************** */
@@ -66,7 +63,7 @@ interface transactionProp {
 const TransactionDetail: React.FC<transactionProp> = (Props) => {
   const titleStyle: React.CSSProperties = {
     ...titlep,
-    color: Props.value.type === transactionType_e.income || Props.value.type === transactionType_e.lone ? "green" : "red"
+    color: Props.value.type === transactionType_e.income || Props.value.type === transactionType_e.loan ? "green" : "red"
   };
 
   let amount = Props.value.money;
@@ -89,7 +86,7 @@ const TransactionDetail: React.FC<transactionProp> = (Props) => {
         </Box>
 
         <Box style={detail}>
-          <Typography sx={detailp}>{Props.value.description}</Typography>
+          <Typography sx={detailp}>{Props.value.description} {(Props.value.who)&&`#${Props.value.who}`}</Typography>
         </Box>
       </Box>
     </AccordionDetails>

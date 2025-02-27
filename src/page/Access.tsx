@@ -11,10 +11,15 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import { DailyTotal_t } from "../component/Molecules/DailyTotalList";
+import DialogAddTransaction from "../dialog/DialogAddTransaction";
 
 const Page_Access: React.FC = () => {
   // Local Variable **************
   const [yearSelect, setYearSelect] = React.useState(new Date().getFullYear());
+  const [openDialog, setOpenDialog] = React.useState(false);
+  const [transaction, setTransaction] =
+    React.useState<DailyTotal_t[]>(DailyMoneyList);
   const TotalMoney = 10000;
   const MenuList: menuList_t[] = [
     { text: "Add", icon: <AddIcon /> },
@@ -28,6 +33,15 @@ const Page_Access: React.FC = () => {
   };
   const speedDialHandler = (index: number) => {
     console.log(`SpeedDial: ${index}`);
+    switch (index) {
+      case 0:
+        setOpenDialog(true);
+        break;
+      case 1:
+        break;
+      case 2:
+        break;
+    }
   };
   return (
     <>
@@ -39,9 +53,21 @@ const Page_Access: React.FC = () => {
       />
       <YearSelector year={yearSelect} onChange={yearSelectorHandler} />
       <Box sx={{ justifyItems: "center", my: "16px" }}>
-        <MonthlyTotalList value={DailyMoneyList} />
+        <MonthlyTotalList value={transaction} />
       </Box>
-      <MySpeedDial menuList={MenuList} icon={<MoreVertIcon />} onClick={speedDialHandler}/>
+      <MySpeedDial
+        menuList={MenuList}
+        icon={<MoreVertIcon />}
+        onClick={speedDialHandler}
+      />
+      <DialogAddTransaction
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        onSubmit={(data) => {
+          console.log(data);
+          setOpenDialog(false);
+        }}
+      />
     </>
   );
 };

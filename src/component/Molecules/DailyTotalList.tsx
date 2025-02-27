@@ -1,7 +1,8 @@
 import React from 'react'
 import Accordion from '@mui/material/Accordion';
 import DailyTotal from './DailyTotal';
-import TransactionDetail, { transactionDetail_t, transactionType_e } from './TransactionDetail';
+import TransactionDetail, { transactionDetail_t } from './TransactionDetail';
+import { transactionType_e } from '../../type';
 
 /**************************************************** */
 //  Style
@@ -25,7 +26,7 @@ export type DailyTotal_t = {
 export function sumDailyTotal(val: DailyTotal_t): number {
   const totalMoney = val.transactions?.reduce((sum, transaction) => {
     return transaction.type === transactionType_e.income ||
-      transaction.type === transactionType_e.lone
+      transaction.type === transactionType_e.loan
       ? sum + transaction.money
       : sum - transaction.money;
   }, 0);

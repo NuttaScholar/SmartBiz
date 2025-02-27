@@ -53,7 +53,7 @@ const FieldDuration: React.FC<MyProps> = (props) => {
     
   };
   return (
-    <Field>
+    <Field alignItem="center">
       <Box sx={{ display: "flex", position: "relative", top: "8px" }}>
         {props.icon}
       </Box>
