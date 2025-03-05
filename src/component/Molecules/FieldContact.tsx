@@ -18,6 +18,7 @@ interface MyProps {
   defaultValue?: string;
   onChange?: (value: string) => void;
   onSearch?: (keyword: string) => void;
+  onAdd?: () => void;
   name?: string;
   icon?: React.ReactNode;
   list?: contactInfo_t[];
@@ -80,6 +81,7 @@ const FieldContact: React.FC<MyProps> = (props) => {
         onClose={() => setOpen(false)}
         onSearch={props.onSearch}
         onSelect={onSelectHandler}
+        onAdd={props.onAdd}
       />
     </React.Fragment>
   );

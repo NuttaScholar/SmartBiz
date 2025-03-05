@@ -27,7 +27,7 @@ interface myProps {
 //*********************************************
 const HeaderContactList: React.FC<myProps> = (props) => {
   return (
-    <HeaderDialog label="Sound" onClick={props.onBack}>
+    <HeaderDialog label="รายชื่อผู้ติดต่อ" onClick={props.onBack}>
       <Box sx={{flexGrow: 1}}>
         <FieldSearch
           display={{ xs: "none", sm: "flex" }}

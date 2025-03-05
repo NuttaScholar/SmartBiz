@@ -5,6 +5,7 @@ import HeaderContactList from "../component/Organisms/HeaderContactList";
 import ListContact from "../component/Organisms/ListContact";
 import { TransitionProps } from "@mui/material/transitions";
 import { contactInfo_t } from "../component/Molecules/ContactInfo";
+import DialogAddContact from "./DialogAddContact";
 
 //*********************************************
 // Style
@@ -30,6 +31,7 @@ interface myProps {
   onClose?: () => void;
   onSearch?: (keyword: string) => void;
   onSelect?: (codeName: string) => void;
+  onAdd?: () => void;
   list?: contactInfo_t[];
 }
 //*********************************************
@@ -37,6 +39,7 @@ interface myProps {
 //*********************************************
 const DialogContactList: React.FC<myProps> = (props) => {
   const [key, setKey] = React.useState("");
+  
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setKey(event.target.value);
   };
@@ -52,6 +55,7 @@ const DialogContactList: React.FC<myProps> = (props) => {
         onBack={props.onClose}
         onChange={onChangeHandler}
         onSearch={props.onSearch}
+        onAdd={props.onAdd}
         value={key}
       />
       <Box sx={{ display: "flex", justifyContent: "center" }}>

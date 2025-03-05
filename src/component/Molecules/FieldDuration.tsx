@@ -63,7 +63,7 @@ const FieldDuration: React.FC<MyProps> = (props) => {
         <DatePicker
           sx={dateField_s}
           format="DD/MM/YYYY"
-          name={props.name}
+          name={props.name+"-From"}
           label="From"
           onChange={fromChangeHandler}
           defaultValue={
@@ -74,7 +74,7 @@ const FieldDuration: React.FC<MyProps> = (props) => {
         <DatePicker
           sx={dateField_s}
           format="DD/MM/YYYY"
-          name={props.name}
+          name={props.name+"-To"}
           label="To"
           onChange={toChangeHandler}
           defaultValue={

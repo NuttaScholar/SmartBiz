@@ -13,11 +13,13 @@ import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { DailyTotal_t } from "../component/Molecules/DailyTotalList";
 import DialogAddTransaction from "../dialog/DialogAddTransaction";
+import DialogSearchTransaction from "../dialog/DialogSearchTransaction";
 
 const Page_Access: React.FC = () => {
   // Local Variable **************
   const [yearSelect, setYearSelect] = React.useState(new Date().getFullYear());
-  const [openDialog, setOpenDialog] = React.useState(false);
+  const [openDialogAdd, setOpenDialogAdd] = React.useState(false);
+  const [openDialogSearch, setOpenDialogSearch] = React.useState(false);
   const [transaction, setTransaction] =
     React.useState<DailyTotal_t[]>(DailyMoneyList);
   const TotalMoney = 10000;
@@ -35,9 +37,11 @@ const Page_Access: React.FC = () => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
-        setOpenDialog(true);
+        setOpenDialogAdd(true);
         break;
       case 1:
+        setOpenDialogSearch(true);
+        console.log(`SpeedDial: ${index}`);
         break;
       case 2:
         break;
@@ -61,13 +65,15 @@ const Page_Access: React.FC = () => {
         onClick={speedDialHandler}
       />
       <DialogAddTransaction
-        open={openDialog}
-        onClose={() => setOpenDialog(false)}
-        onSubmit={(data) => {
+        open={openDialogAdd}
+        onClose={() => setOpenDialogAdd(false)}
+        onSubmitTransaction={(data) => {
           console.log(data);
-          setOpenDialog(false);
+          setOpenDialogAdd(false);
         }}
+        onSubmitContact={(data)=>{console.log(data)}}
       />
+      <DialogSearchTransaction open={openDialogSearch} onClose={() => setOpenDialogSearch(false)}/>
     </>
   );
 };

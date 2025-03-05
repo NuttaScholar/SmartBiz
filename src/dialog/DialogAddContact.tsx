@@ -15,27 +15,25 @@ import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import FieldDate from "../component/Molecules/FieldDate";
 import { ContactList_dataSet } from "../dataSet/DataContactList";
-import DialogAddContact, { ContactForm_t } from "./DialogAddContact";
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import ContactPageIcon from '@mui/icons-material/ContactPage';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import LocalPhoneIcon from '@mui/icons-material/LocalPhone';
+import RecentActorsIcon from '@mui/icons-material/RecentActors';
+import NotesIcon from '@mui/icons-material/Notes';
 
 //*********************************************
 // Type
 //*********************************************
-export type TransitionForm_t = {
-  date: Date;
-  topic: string;
-  type: transactionType_e;
-  money: number;
-  who?: string;
-  description?: string | null;
-};
-type form_t = {
-  date: string;
-  topic: string;
-  type: string;
-  money: string;
-  who: string;
+export type ContactForm_t = {
+  codeName: string;
+  billName: string;
+  address: string;
+  tel: string;
+  texID: string;
   description: string;
 };
+
 //*********************************************
 // Style
 //*********************************************
@@ -49,7 +47,7 @@ const Transition = React.forwardRef(function Transition(
   },
   ref: React.Ref<unknown>
 ) {
-  return <Slide direction="up" ref={ref} {...props} />;
+  return <Slide direction="left" ref={ref} {...props} />;
 });
 
 //*********************************************
@@ -58,40 +56,21 @@ const Transition = React.forwardRef(function Transition(
 interface myProps {
   open: boolean;
   onClose?: () => void;
-  onSubmitTransaction?: (data: TransitionForm_t) => void;
-  onSubmitContact?: (data: ContactForm_t) => void;
+  onSubmit?: (data: ContactForm_t) => void;
 }
 //*********************************************
 // Component
 //*********************************************
-const DialogAddTransaction: React.FC<myProps> = (props) => {
-  const [openAddContact, setOpenAddContact] = React.useState(false);
-  const listSelect: listSelect_t[] = [
-    { label: "รายรับ", value: transactionType_e.income },
-    { label: "รายจ่าย", value: transactionType_e.expenses },
-    { label: "เงินกู้", value: transactionType_e.loan },
-    { label: "ให้ยืม", value: transactionType_e.lend },
-  ];
+const DialogAddContact: React.FC<myProps> = (props) => {
+  
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
-    const form = formJson as form_t;
-    const [day, month, year] = form.date.split("/").map(Number);
+    const form = formJson as ContactForm_t;
 
-    props.onSubmitTransaction?.({
-      date: new Date(year, month - 1, day),
-      money: Number(form.money),
-      topic: form.topic,
-      type: Number(form.type),
-      description: form.description===""?undefined:form.description,
-      who: form.who===""?undefined:form.who,
-    });
+    props.onSubmit?.(form);
   };
-  const addContactHandler = (data: ContactForm_t) => {
-    props.onSubmitContact?.(data);
-    setOpenAddContact(false);
-  }
 
   return (
     <Dialog
@@ -103,6 +82,7 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
       <HeaderDialog label="เพิ่มรายการ" onClick={props.onClose} />
       <Box
         component="form"
+        id="formAddContact"
         onSubmit={handleSubmit}
         sx={{
           display: "flex",
@@ -114,34 +94,29 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
         }}
       >
         <FieldText
-          icon={<PaidIcon />}
+          icon={<AccountCircleIcon />}
           required
-          label="Amount"
-          name="money"
-          type="number"
+          label="Code Name"
+          name="codeName"
         />
-        <FieldSelector
-          icon={<SyncAltIcon />}
-          required
-          name="type"
-          label="Transaction"
-          list={listSelect}
-        />
-        <FieldText icon={<PaidIcon />} required name="topic" label="Topic" />
         <FieldText
-          icon={<SubjectIcon />}
-          name="description"
-          label="Description"
-          multiline
+          icon={<ContactPageIcon />}
+          required
+          label="Bill Name"
+          name="billName"
         />
-        <FieldContact
-          icon={<AccountBoxIcon />}
-          list={ContactList_dataSet}
-          onAdd={()=>setOpenAddContact(true)}
-          placeholder="Contact"
-          name="who"
+        <FieldText icon={<LocationOnIcon />} name="address" label="Address" multiline/>
+        <FieldText
+          icon={<LocalPhoneIcon />}
+          label="Tel."
+          name="tel"
         />
-        <FieldDate icon={<CalendarMonthIcon />} defaultValue={new Date()} name="date" />
+        <FieldText
+          icon={<RecentActorsIcon />}
+          label="Tax. ID"
+          name="texID"
+        />
+        <FieldText icon={<NotesIcon />} name="description" label="More Detail" multiline/>
         <Box
           sx={{
             display: "flex",
@@ -151,7 +126,7 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
             my: "32px",
           }}
         >
-          <Button variant="contained" type="submit" sx={{ width: "150px" }}>
+          <Button variant="contained" type="submit" form="formAddContact" sx={{ width: "150px" }}>
             save
           </Button>
           <Button
@@ -163,8 +138,7 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
           </Button>
         </Box>
       </Box>
-      <DialogAddContact open={openAddContact} onSubmit={addContactHandler} onClose={()=>setOpenAddContact(false)}/>
     </Dialog>
   );
 };
-export default DialogAddTransaction;
+export default DialogAddContact;
