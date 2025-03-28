@@ -12,19 +12,32 @@ import {
   Button,
   Stack,
   Chip,
-  Avatar
+  Avatar,
+  Divider
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import axios from "axios";
+import Search_Field from './Search_Field';
+import Filter_Field from './Filter_Field';
 
-interface Product {
-  id: string;
+export interface Product {
+  _id: string;
   name: string;
   code: string;
   price: number;
-  status: string;
+  status: number;
   stock: number;
   unit: string;
   isMine: boolean;
+  img: string;
+}
+
+interface ProductListProps {
+  products: Product[];
+  loading: boolean;
+  error: string | null;
+  fetchProducts: () => void;
+  onEditProduct: (productId: string) => void;
 }
 
 interface OptionsMenuProps {
@@ -72,7 +85,7 @@ const ProductListItem: React.FC<{
   onOptionClick: (action: string, id: string) => void;
 }> = ({ product, onOptionClick }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const isActive = product.status === "เปิดใช้งาน";
+  const isActive = product.status;
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -83,13 +96,13 @@ const ProductListItem: React.FC<{
   };
 
   const handleAction = (action: string) => {
-    onOptionClick(action, product.id);
+    onOptionClick(action, product._id);
     handleMenuClose();
   };
 
   return (
-    <Card sx={{ mb: 2, bgcolor: 'primary.50', position: 'relative' }}>
-      {product.isMine && (
+    <Card sx={{ mb: 2, bgcolor: '#E0EFFF', position: 'relative', maxWidth: '520px', minWidth: '350px' }}>
+      {product.isMine ? (
         <Chip
           label="My"
           size="small"
@@ -102,12 +115,14 @@ const ProductListItem: React.FC<{
             borderBottomLeftRadius: 0
           }}
         />
+      ):(
+        <></>
       )}
       <CardContent>
         <Box display="flex" alignItems="flex-start">
           <Avatar
             variant="rounded"
-            src="/api/placeholder/48/48"
+            src={product.img}
             alt={product.name}
             sx={{ width: 48, height: 48, mr: 2 }}
           />
@@ -124,7 +139,7 @@ const ProductListItem: React.FC<{
                 </Typography>
                 <Typography variant="body2">
                   <Box component="span" color={isActive ? 'success.main' : 'error.main'}>
-                    สถานะ: {product.status}
+                    สถานะ: {product.status ? "เปิดใช้งาน" : "ปิดใข้งาน"}
                   </Box>
                   <Box component="span" ml={2} color="text.secondary">
                     สต็อก: {product.stock}
@@ -141,10 +156,10 @@ const ProductListItem: React.FC<{
               <OptionsMenu
                 anchorEl={anchorEl}
                 onClose={handleMenuClose}
-                onEdit={() => handleAction('edit')}
+                onEdit={() => handleAction('edit' )}
                 onDelete={() => handleAction('delete')}
                 onToggleStatus={() => handleAction('toggleStatus')}
-                isActive={isActive}
+                isActive={Boolean(isActive)}
               />
             </Box>
           </Box>
@@ -154,101 +169,108 @@ const ProductListItem: React.FC<{
   );
 };
 
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    name: "ถังน้ำ",
-    code: "P001",
-    price: 299,
-    status: "เปิดใช้งาน",
-    stock: 150,
-    unit: "ถัง",
-    isMine: true
-  }
-];
+// const mockProducts: Product[] = [
+//   {
+//     id: "1",
+//     name: "ถังน้ำ",
+//     code: "P001",
+//     price: 299,
+//     status: "เปิดใช้งาน",
+//     stock: 150,
+//     unit: "ถัง",
+//     isMine: true
+//   },
+//   {
+//     id: "1",
+//     name: "ถังน้ำ",
+//     code: "P001",
+//     price: 299,
+//     status: "เปิดใช้งาน",
+//     stock: 150,
+//     unit: "ถัง",
+//     isMine: true
+//   }
+// ];
 
-const mockAPI = {
-  getProducts: (): Promise<Product[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([...mockProducts]);
-      }, 800);
-    });
-  },
+// const mockAPI = {
+//   getProducts: (): Promise<Product[]> => {
+//     return new Promise((resolve) => {
+//       setTimeout(() => {
+//         resolve([...mockProducts]);
+//       }, 800);
+//     });
+//   },
 
-  deleteProduct: (productId: string): Promise<{ success: boolean }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const index = mockProducts.findIndex(p => p.id === productId);
-        if (index !== -1) {
-          mockProducts.splice(index, 1);
-        }
-        resolve({ success: true });
-      }, 500);
-    });
-  },
+//   deleteProduct: (productId: string): Promise<{ success: boolean }> => {
+//     return new Promise((resolve) => {
+//       setTimeout(() => {
+//         const index = mockProducts.findIndex(p => p.id === productId);
+//         if (index !== -1) {
+//           mockProducts.splice(index, 1);
+//         }
+//         resolve({ success: true });
+//       }, 500);
+//     });
+//   },
 
-  toggleProductStatus: (productId: string): Promise<{ success: boolean }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const product = mockProducts.find(p => p.id === productId);
-        if (product) {
-          product.status = product.status === "เปิดใช้งาน" ? "ปิดใช้งาน" : "เปิดใช้งาน";
-        }
-        resolve({ success: true });
-      }, 500);
-    });
-  }
-};
+//   toggleProductStatus: (productId: string): Promise<{ success: boolean }> => {
+//     return new Promise((resolve) => {
+//       setTimeout(() => {
+//         const product = mockProducts.find(p => p.id === productId);
+//         if (product) {
+//           product.status = product.status === "เปิดใช้งาน" ? "ปิดใช้งาน" : "เปิดใช้งาน";
+//         }
+//         resolve({ success: true });
+//       }, 500);
+//     });
+//   }
+// };
 
-const ProductList: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const ProductList: React.FC<ProductListProps> = ({ products, loading, error, fetchProducts, onEditProduct }) => {
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isMineFilter, setIsMineFilter] = useState<string>("ทั้งหมด");
+  const [statusFilter, setStatusFilter] = useState<string>("ทั้งหมด");
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const data = await mockAPI.getProducts();
-      setProducts(data);
-      setError(null);
-    } catch (err) {
-      setError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleOptionClick = async (action: string, productId: string) => {
+    console.log(action, productId)
     try {
       switch (action) {
         case 'edit':
-          alert(`แก้ไขสินค้า ID: ${productId}`);
+          onEditProduct(productId);
           break;
 
         case 'delete':
           if (window.confirm('คุณต้องการลบสินค้านี้ใช่หรือไม่?')) {
-            await mockAPI.deleteProduct(productId);
-            await fetchProducts();
+            await axios.delete(`http://localhost:3001/product/deleteProduct/${productId}`);
+            fetchProducts();
           }
           break;
 
         case 'toggleStatus':
-          await mockAPI.toggleProductStatus(productId);
-          await fetchProducts();
+          await axios.put(`http://localhost:3001/product/toggleStatus/${productId}`);
+          fetchProducts();
           break;
 
         default:
           break;
       }
     } catch (err) {
-      setError('เกิดข้อผิดพลาดในการดำเนินการ');
+      alert('เกิดข้อผิดพลาดในการดำเนินการ');
     }
   };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" p={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   if (loading) {
     return (
@@ -275,15 +297,60 @@ const ProductList: React.FC = () => {
     );
   }
 
+  const isMineArray = Array.from(new Set(products.map((product) => product.isMine)));
+  const statusArray = Array.from(new Set(products.map((product) => product.status)));
+
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
+  };
+
+  const handleFilterChange = (isMine: string, status: string) => {
+    setIsMineFilter(isMine);
+    setStatusFilter(status);
+  };
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = searchTerm === "" || 
+      product.code.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesIsMine = isMineFilter === "ทั้งหมด" || 
+      (isMineFilter === "เจ้าของ" && product.isMine) || 
+      (isMineFilter === "ไม่ใช่เจ้าของ" && !product.isMine);
+
+    const matchesStatus = statusFilter === "ทั้งหมด" || 
+      (statusFilter === "เปิดใช้งาน" && product.status) || 
+      (statusFilter === "ปิดใช้งาน" && !product.status);
+
+    return matchesSearch && matchesIsMine && matchesStatus;
+  });
+
   return (
-    <Box maxWidth={800} mx="auto" p={4}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        รายการสินค้า ({products.length})
-      </Typography>
-      <Stack spacing={2}>
-        {products.map((product) => (
+    <Box width={'100%'} mx="auto" >
+      <Stack margin="20px" gap="8px">
+        <Search_Field onSearchChange={handleSearchChange}/>
+        <Filter_Field
+          isMine={isMineArray}
+          status={statusArray}
+          selectedIsMine={isMineFilter}
+          selectedStatus={statusFilter}
+          onFilterChange={handleFilterChange}
+        />
+      </Stack>
+
+      <Divider sx={{ margin: "8px 0px" }}/>
+      {/* <Typography variant="h5" component="h1" gutterBottom>
+        รายการสินค้า ({filteredProducts.length})
+      </Typography> */}
+      <Stack 
+        width={'100%'}
+        flexDirection={'row'}
+        flexWrap={'wrap'}
+        justifyContent={'center'}
+        gap={2}
+      >
+        {filteredProducts.map((product) => (
           <ProductListItem
-            key={product.id}
+            key={product._id}
             product={product}
             onOptionClick={handleOptionClick}
           />
