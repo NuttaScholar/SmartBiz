@@ -54,7 +54,7 @@ export type transactionDetail_t = {
 /**************************************************** */
 interface transactionProp {
   value: transactionDetail_t;
-  onClick?: (id: number) => void;
+  onClick?: (value: transactionDetail_t) => void;
 }
 
 /**************************************************** */
@@ -78,7 +78,7 @@ const TransactionDetail: React.FC<transactionProp> = (Props) => {
     >
       <Box
         sx={container}
-        onClick={() => Props.onClick?.(Props.value.id)}
+        onClick={() => Props.onClick?.(Props.value)}
       >
         <Box sx={title}>
           <Typography sx={titlep}>{Props.value.topic}</Typography>

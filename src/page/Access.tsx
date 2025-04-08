@@ -14,6 +14,7 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { DailyTotal_t } from "../component/Molecules/DailyTotalList";
 import DialogAddTransaction from "../dialog/DialogAddTransaction";
 import DialogSearchTransaction from "../dialog/DialogSearchTransaction";
+import { GoToTop } from "../function/Window";
 
 const Page_Access: React.FC = () => {
   // Local Variable **************
@@ -44,7 +45,7 @@ const Page_Access: React.FC = () => {
         console.log(`SpeedDial: ${index}`);
         break;
       case 2:
-        break;
+        GoToTop();
     }
   };
   return (

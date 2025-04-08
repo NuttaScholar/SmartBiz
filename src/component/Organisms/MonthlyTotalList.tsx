@@ -39,6 +39,7 @@ export type monthlyTotal_t = {
 /**************************************************** */
 interface myProps {
   value: DailyTotal_t[];
+
 }
 /**************************************************** */
 //  Component
@@ -71,7 +72,7 @@ const MonthlyTotalList: React.FC<myProps> = (props) => {
         <Label_parameter size='18px' label="รายจ่าย" value={buff.expenses} color_Value="error.main" unit="฿"/>
       </Box>
       {DailyMoneyList.map((val, index) => (
-        <DailyTotalList value={val} key={index} />
+        <DailyTotalList value={val} key={index} onClick={(date,value)=>{console.log(date); console.log(value)}} />
       ))}
     </Box>
   );

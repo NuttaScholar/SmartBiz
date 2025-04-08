@@ -37,7 +37,7 @@ export function sumDailyTotal(val: DailyTotal_t): number {
 /**************************************************** */
 interface DailyTotalListProps {
   value: DailyTotal_t;
-  onClick?: (id: number) => void;
+  onClick?: (date: Date,value: transactionDetail_t) => void;
 }
 
 /**************************************************** */
@@ -48,6 +48,12 @@ const DailyTotalList: React.FC<DailyTotalListProps> = (Props) => {
   const { transactions, date } = Props.value;
   const totalMoney = sumDailyTotal(Props.value)
   const dateNumber = date.getDate();
+
+  /* Local Function */
+  const onClickHandle = (value: transactionDetail_t)=>{
+    Props.onClick?.(date, value);
+  }
+
   /* Return */
   return (
     <Accordion
@@ -59,7 +65,7 @@ const DailyTotalList: React.FC<DailyTotalListProps> = (Props) => {
         <TransactionDetail
           key={index}
           value={transaction}
-          onClick={Props.onClick}
+          onClick={onClickHandle}
         />
       ))}
     </Accordion>

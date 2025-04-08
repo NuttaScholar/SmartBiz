@@ -1,4 +1,4 @@
-import { Box, Button, Dialog, Fab, Slide } from "@mui/material";
+import { Box, Button, Dialog, DialogContent, Fab, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import React from "react";
 import HeaderDialog from "../component/Molecules/HeaderDialog";
@@ -59,6 +59,7 @@ interface myProps {
 // Component
 //*********************************************
 const DialogSearchTransaction: React.FC<myProps> = (props) => {
+  const contentRef = React.useRef<HTMLDivElement>(null);
   const [transaction, setTransaction] =
     React.useState<DailyTotal_t[]>(DailyMoneyList);
   const listSelect: listSelect_t[] = [
@@ -74,6 +75,14 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
     const form = formJson;
     console.log(form);
   };
+  const scrollToTop = () => {
+    if (contentRef.current) {
+      contentRef.current.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  };
   return (
     <Dialog
       fullScreen
@@ -82,11 +91,11 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
       TransitionComponent={Transition}
     >
       <HeaderDialog label="ค้นหา" onClick={props.onClose} />
-      <Box
+      <DialogContent
+        ref={contentRef}
         sx={{
           display: "flex",
           flexDirection: "column",
-          width: "100%",
           alignItems: "center",
           my: "8px",
           gap: "8px",
@@ -137,13 +146,13 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
             </Button>
           </Box>
         </Box>
-        {transaction.length !== 0 &&<MonthlyTotalList value={transaction} />
-        }
-      </Box>
+        {transaction.length !== 0 && <MonthlyTotalList value={transaction} />}
+      </DialogContent>
       <Fab
         size="medium"
         color="primary"
         sx={{ position: "fixed", bottom: 16, right: 32 }}
+        onClick={scrollToTop}
       >
         <KeyboardArrowUpIcon />
       </Fab>

@@ -40,7 +40,7 @@ export const DailyMoneyList: DailyTotal_t[] = [
         description: null,
       },
       {
-        id: 4,
+        id: 5,
         money: 200.5,
         type: transactionType_e.lend,
         topic: "ให้ยืมเงิน",
@@ -52,14 +52,14 @@ export const DailyMoneyList: DailyTotal_t[] = [
     date: new Date(2024, 8, 1),
     transactions: [
       {
-        id: 4,
+        id: 6,
         money: 200.5,
         type: transactionType_e.loan,
         topic: "ยืมเงิน",
         description: null,
       },
       {
-        id: 4,
+        id: 7,
         money: 200.5,
         type: transactionType_e.loan,
         topic: "ยืมเงิน",
