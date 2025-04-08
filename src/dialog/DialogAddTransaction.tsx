@@ -26,7 +26,7 @@ export type TransitionForm_t = {
   type: transactionType_e;
   money: number;
   who?: string;
-  description?: string | null;
+  description?: string;
 };
 type form_t = {
   date: string;
@@ -57,6 +57,8 @@ const Transition = React.forwardRef(function Transition(
 //*********************************************
 interface myProps {
   open: boolean;
+  title?: string;
+  dafaultValue?: TransitionForm_t;
   onClose?: () => void;
   onSubmitTransaction?: (data: TransitionForm_t) => void;
   onSubmitContact?: (data: ContactForm_t) => void;
@@ -84,14 +86,14 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
       money: Number(form.money),
       topic: form.topic,
       type: Number(form.type),
-      description: form.description===""?undefined:form.description,
-      who: form.who===""?undefined:form.who,
+      description: form.description === "" ? undefined : form.description,
+      who: form.who === "" ? undefined : form.who,
     });
   };
   const addContactHandler = (data: ContactForm_t) => {
     props.onSubmitContact?.(data);
     setOpenAddContact(false);
-  }
+  };
 
   return (
     <Dialog
@@ -100,7 +102,10 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
       onClose={props.onClose}
       TransitionComponent={Transition}
     >
-      <HeaderDialog label="เพิ่มรายการ" onClick={props.onClose} />
+      <HeaderDialog
+        label={props.title || "เพิ่มรายการ"}
+        onClick={props.onClose}
+      />
       <Box
         component="form"
         onSubmit={handleSubmit}
@@ -116,6 +121,7 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
         <FieldText
           icon={<PaidIcon />}
           required
+          defauleValue={props.dafaultValue?.money.toString()}
           label="Amount"
           name="money"
           type="number"
@@ -123,13 +129,21 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
         <FieldSelector
           icon={<SyncAltIcon />}
           required
+          defauleValue={props.dafaultValue?.type.toString()}
           name="type"
           label="Transaction"
           list={listSelect}
         />
-        <FieldText icon={<PaidIcon />} required name="topic" label="Topic" />
+        <FieldText
+          icon={<PaidIcon />}
+          required
+          defauleValue={props.dafaultValue?.topic}
+          name="topic"
+          label="Topic"
+        />
         <FieldText
           icon={<SubjectIcon />}
+          defauleValue={props.dafaultValue?.description}
           name="description"
           label="Description"
           multiline
@@ -137,11 +151,16 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
         <FieldContact
           icon={<AccountBoxIcon />}
           list={ContactList_dataSet}
-          onAdd={()=>setOpenAddContact(true)}
+          onAdd={() => setOpenAddContact(true)}
+          defaultValue={props.dafaultValue?.who}
           placeholder="Contact"
           name="who"
         />
-        <FieldDate icon={<CalendarMonthIcon />} defaultValue={new Date()} name="date" />
+        <FieldDate
+          icon={<CalendarMonthIcon />}
+          defaultValue={props.dafaultValue?.date||new Date()}
+          name="date"
+        />
         <Box
           sx={{
             display: "flex",
@@ -163,7 +182,11 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
           </Button>
         </Box>
       </Box>
-      <DialogAddContact open={openAddContact} onSubmit={addContactHandler} onClose={()=>setOpenAddContact(false)}/>
+      <DialogAddContact
+        open={openAddContact}
+        onSubmit={addContactHandler}
+        onClose={() => setOpenAddContact(false)}
+      />
     </Dialog>
   );
 };

@@ -47,7 +47,7 @@ export type transactionDetail_t = {
   type: transactionType_e;
   money: number;
   who?: string;
-  description?: string | null;
+  description?: string;
 }
 /**************************************************** */
 //  Interface

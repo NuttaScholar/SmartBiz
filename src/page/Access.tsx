@@ -12,7 +12,7 @@ import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { DailyTotal_t } from "../component/Molecules/DailyTotalList";
-import DialogAddTransaction from "../dialog/DialogAddTransaction";
+import DialogAddTransaction, { TransitionForm_t } from "../dialog/DialogAddTransaction";
 import DialogSearchTransaction from "../dialog/DialogSearchTransaction";
 import { GoToTop } from "../function/Window";
 
@@ -20,7 +20,9 @@ const Page_Access: React.FC = () => {
   // Local Variable **************
   const [yearSelect, setYearSelect] = React.useState(new Date().getFullYear());
   const [openDialogAdd, setOpenDialogAdd] = React.useState(false);
+  const [openDialogEdit, setOpenDialogEdit] = React.useState(false);
   const [openDialogSearch, setOpenDialogSearch] = React.useState(false);
+  const [TransitionForm, setTransitionForm] = React.useState<TransitionForm_t>();
   const [transaction, setTransaction] =
     React.useState<DailyTotal_t[]>(DailyMoneyList);
   const TotalMoney = 10000;
@@ -34,6 +36,11 @@ const Page_Access: React.FC = () => {
   const yearSelectorHandler = (year: number) => {
     setYearSelect(year);
   };
+  const onClickTransHanler = (value: TransitionForm_t) =>{
+    setOpenDialogEdit(true);
+    console.log(value);
+    setTransitionForm(value);
+  }
   const speedDialHandler = (index: number) => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
@@ -58,7 +65,7 @@ const Page_Access: React.FC = () => {
       />
       <YearSelector year={yearSelect} onChange={yearSelectorHandler} />
       <Box sx={{ justifyItems: "center", my: "16px" }}>
-        <MonthlyTotalList value={transaction} />
+        <MonthlyTotalList value={transaction} onClick={onClickTransHanler}/>
       </Box>
       <MySpeedDial
         menuList={MenuList}
@@ -71,6 +78,17 @@ const Page_Access: React.FC = () => {
         onSubmitTransaction={(data) => {
           console.log(data);
           setOpenDialogAdd(false);
+        }}
+        onSubmitContact={(data)=>{console.log(data)}}
+      />
+      <DialogAddTransaction
+        title="แก้ไขรายการ"
+        dafaultValue={TransitionForm}
+        open={openDialogEdit}
+        onClose={() => setOpenDialogEdit(false)}
+        onSubmitTransaction={(data) => {
+          console.log(data);
+          setOpenDialogEdit(false);
         }}
         onSubmitContact={(data)=>{console.log(data)}}
       />

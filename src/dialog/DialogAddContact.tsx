@@ -55,6 +55,7 @@ const Transition = React.forwardRef(function Transition(
 //*********************************************
 interface myProps {
   open: boolean;
+  title?: string;
   onClose?: () => void;
   onSubmit?: (data: ContactForm_t) => void;
 }
@@ -79,7 +80,7 @@ const DialogAddContact: React.FC<myProps> = (props) => {
       onClose={props.onClose}
       TransitionComponent={Transition}
     >
-      <HeaderDialog label="เพิ่มรายการ" onClick={props.onClose} />
+      <HeaderDialog label={props.title||"เพิ่มรายการ"} onClick={props.onClose} />
       <Box
         component="form"
         id="formAddContact"

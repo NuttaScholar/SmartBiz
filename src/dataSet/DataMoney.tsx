@@ -10,8 +10,7 @@ export const DailyMoneyList: DailyTotal_t[] = [
         money: 200.5,
         type: transactionType_e.income,
         topic: "Part time",
-        who: "Nut",
-        description: null,
+        who: "Nut"
       },
       {
         id: 2,
@@ -36,15 +35,13 @@ export const DailyMoneyList: DailyTotal_t[] = [
         id: 4,
         money: 200.5,
         type: transactionType_e.loan,
-        topic: "ยืมเงิน",
-        description: null,
+        topic: "ยืมเงิน"
       },
       {
         id: 5,
         money: 200.5,
         type: transactionType_e.lend,
-        topic: "ให้ยืมเงิน",
-        description: null,
+        topic: "ให้ยืมเงิน"
       },
     ],
   },
@@ -55,15 +52,13 @@ export const DailyMoneyList: DailyTotal_t[] = [
         id: 6,
         money: 200.5,
         type: transactionType_e.loan,
-        topic: "ยืมเงิน",
-        description: null,
+        topic: "ยืมเงิน"
       },
       {
         id: 7,
         money: 200.5,
         type: transactionType_e.loan,
-        topic: "ยืมเงิน",
-        description: null,
+        topic: "ยืมเงิน"
       },
     ],
   },

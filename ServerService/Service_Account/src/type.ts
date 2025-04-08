@@ -1,0 +1,1 @@
+export enum transactionType_e {income, expenses, loan, lend};
