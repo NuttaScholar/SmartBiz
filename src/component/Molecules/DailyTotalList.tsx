@@ -45,8 +45,9 @@ interface DailyTotalListProps {
 /**************************************************** */
 const DailyTotalList: React.FC<DailyTotalListProps> = (Props) => {
   /* Local Variable */
-  const { transactions, date } = Props.value;
-  const totalMoney = sumDailyTotal(Props.value)
+  const transactions = Props.value.transactions;
+  const date = new Date(Props.value.date);
+  const totalMoney = sumDailyTotal(Props.value);
   const dateNumber = date.getDate();
 
   /* Local Function */

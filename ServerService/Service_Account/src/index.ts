@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { transactionType_e } from "./type";
+import { transactionType_e, DailyTotal_t, statement_t } from "./type";
 
 /*********************************************** */
 // Instance 
@@ -41,7 +41,7 @@ const transatcionSchema = new mongoose.Schema({
     amount: Number,
     desc: String,
     contact: { type: mongoose.Schema.Types.String, ref: "contact" },
-    data: Date,
+    date: { type: Date, required: true },
 });
 
 // สร้าง Model
@@ -76,8 +76,53 @@ app.get('/contact', async (req: Request, res: Response) => {
     })
 })
 app.get('/transaction', async (req: Request, res: Response) => {
-    Transatcion.find().populate("contact").limit(10).then((data) => {
-        res.send(data);
+    Transatcion.aggregate([
+        {
+            $group: {
+                _id: {
+                    date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+                    month: { $dateToString: { format: "%Y-%m", date: "$date" } }
+                },
+                transactions: {
+                    $push: {
+                        id: "$id",
+                        topic: "$topic",
+                        type: "$type",
+                        money: "$amount",
+                        who: "$contact",
+                        description: "$description"
+                    }
+                }
+            }
+        },
+        {
+            $sort: { "_id.date": 1 }
+        },
+        {
+            // 2. จัดกลุ่มใหม่ตามเดือน
+            $group: {
+                _id: "$_id.month",
+                detail: {
+                    $push: {
+                        date: "$_id.date",
+                        transactions: "$transactions"
+                    }
+                }
+            }
+        },
+        {
+            $sort: { _id: -1 }
+        }
+    ]).then((data) => {
+
+        const result: statement_t[] = data.map(monthGroup => ({
+            date: new Date(monthGroup._id + "-01"), // "2025-04" → "2025-04-01"
+            detail: monthGroup.detail.map((daily: any) => ({
+                date: new Date(daily.date),
+                transactions: daily.transactions
+            }))
+        }));
+        res.send(result);
     })
 })
 app.delete('/contact', async (req: Request, res: Response) => {

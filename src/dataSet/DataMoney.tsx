@@ -1,5 +1,5 @@
 import { DailyTotal_t } from "../component/Molecules/DailyTotalList";
-import { transactionType_e } from "../type";
+import { statement_t, transactionType_e } from "../type";
 
 export const DailyMoneyList: DailyTotal_t[] = [
   {
@@ -63,3 +63,9 @@ export const DailyMoneyList: DailyTotal_t[] = [
     ],
   },
 ];
+
+export const transactionList:statement_t[] = [
+  {date: new Date(2024, 8, 1),
+    detail: DailyMoneyList
+  }
+]

@@ -17,10 +17,11 @@ interface myProps {
 //  Component
 /**************************************************** */
 const Text_ThaiMonth: React.FC<myProps> = (props) => {
+  const date = new Date(props.value)
   const thaiMonth = new Intl.DateTimeFormat("th-TH", {
     month: "short",
     ...(props.showYear && { year: "numeric" }),
-  }).format(props.value);
+  }).format(date);
 
   return <Typography sx={props.sx}>{thaiMonth}</Typography>;
 };

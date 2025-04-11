@@ -96,7 +96,7 @@ const MonthlyTotalList: React.FC<myProps> = (props) => {
           unit="฿"
         />
       </Box>
-      {DailyMoneyList.map((val, index) => (
+      {props.value.map((val, index) => (
         <DailyTotalList value={val} key={index} onClick={(date,value)=>props.onClick?.({...value, date})} />
       ))}
     </Box>
