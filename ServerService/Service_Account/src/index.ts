@@ -1,7 +1,8 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { transactionType_e, DailyTotal_t, statement_t } from "./type";
+import { transactionType_e, DailyTotal_t, statement_t, responstDB_t } from "./type";
+import moment from 'moment-timezone'
 
 /*********************************************** */
 // Instance 
@@ -62,8 +63,10 @@ app.post('/contact', async (req: Request, res: Response) => {
 })
 app.post('/transaction', async (req: Request, res: Response) => {
     try {
+        const dateInBangkok = { ...req.body, date: moment.tz(req.body.date, "Asia/Bangkok").toDate() }
         console.log(req.body);
-        const newTransatcion = new Transatcion(req.body);
+        console.log(dateInBangkok);
+        const newTransatcion = new Transatcion(dateInBangkok);
         await newTransatcion.save().then(() => console.log("Transatcion added!"));
         res.send("Message received!");
     } catch (err) {
@@ -76,7 +79,21 @@ app.get('/contact', async (req: Request, res: Response) => {
     })
 })
 app.get('/transaction', async (req: Request, res: Response) => {
+    const { from, to, who, topic, type } = req.query;
+    let filter: any = {
+        date: {
+            $gte: new Date(from as string || Date.now()),
+            $lte: new Date(to as string || Date.now())
+        },
+    }
+    console.log(req.query);
+    if (who) filter.contact = who;
+    if (topic) filter.topic = topic;
+    if (type) filter.type = Number(type);
     Transatcion.aggregate([
+        {
+            $match: filter
+        },
         {
             $group: {
                 _id: {
@@ -85,18 +102,18 @@ app.get('/transaction', async (req: Request, res: Response) => {
                 },
                 transactions: {
                     $push: {
-                        id: "$id",
+                        id: "$_id",
                         topic: "$topic",
                         type: "$type",
                         money: "$amount",
                         who: "$contact",
-                        description: "$description"
+                        description: "$desc"
                     }
                 }
             }
         },
         {
-            $sort: { "_id.date": 1 }
+            $sort: { "_id.date": -1 }
         },
         {
             // 2. จัดกลุ่มใหม่ตามเดือน
@@ -115,7 +132,7 @@ app.get('/transaction', async (req: Request, res: Response) => {
         }
     ]).then((data) => {
 
-        const result: statement_t[] = data.map(monthGroup => ({
+        const result: responstDB_t<"getTransaction"> = data.map(monthGroup => ({
             date: new Date(monthGroup._id + "-01"), // "2025-04" → "2025-04-01"
             detail: monthGroup.detail.map((daily: any) => ({
                 date: new Date(daily.date),
@@ -132,9 +149,14 @@ app.delete('/contact', async (req: Request, res: Response) => {
     })
 })
 app.delete('/transaction', async (req: Request, res: Response) => {
-    console.log(`id: ${req.query._id}`)
-    Transatcion.deleteOne({ _id: req.query._id }).then((result) => {
-        console.log(`count: ${result.deletedCount}, acknowledged: ${result.acknowledged}`)
+    console.log(`id: ${req.query.id}`)
+    Transatcion.deleteOne({ _id: req.query.id }).then((data) => {
+        const result: responstDB_t<"del"> = { status: "success", deletedCount: data.deletedCount };
+
+        res.send(result);
+    }).catch(() => {
+        const result: responstDB_t<"del"> = { status: "error"};
+
         res.send(result);
     })
 })

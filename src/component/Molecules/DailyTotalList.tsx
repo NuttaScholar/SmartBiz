@@ -59,6 +59,7 @@ const DailyTotalList: React.FC<DailyTotalListProps> = (Props) => {
   return (
     <Accordion
       sx={AccordionBox}
+      defaultExpanded
     >
       <DailyTotal day={dateNumber} money = {totalMoney || 0}  />
 

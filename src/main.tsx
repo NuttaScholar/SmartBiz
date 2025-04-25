@@ -37,7 +37,7 @@ const theme = createTheme({
   },
 });
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+  //<StrictMode>
     <ThemeProvider theme={theme}>
       <BrowserRouter>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -54,5 +54,5 @@ createRoot(document.getElementById("root")!).render(
         </LocalizationProvider>
       </BrowserRouter>
     </ThemeProvider>
-  </StrictMode>
+  //</StrictMode>
 );

@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Button, Dialog, Slide } from "@mui/material";
+import { Box, Button, Dialog, IconButton, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import HeaderDialog from "../component/Molecules/HeaderDialog";
 import FieldText from "../component/Molecules/FieldText";
@@ -16,11 +16,13 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import FieldDate from "../component/Molecules/FieldDate";
 import { ContactList_dataSet } from "../dataSet/DataContactList";
 import DialogAddContact, { ContactForm_t } from "./DialogAddContact";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 //*********************************************
 // Type
 //*********************************************
 export type TransitionForm_t = {
+  id?: string;
   date: Date;
   topic: string;
   type: transactionType_e;
@@ -62,6 +64,7 @@ interface myProps {
   onClose?: () => void;
   onSubmitTransaction?: (data: TransitionForm_t) => void;
   onSubmitContact?: (data: ContactForm_t) => void;
+  onDelete?: (data?: TransitionForm_t) => void;
 }
 //*********************************************
 // Component
@@ -105,7 +108,20 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
       <HeaderDialog
         label={props.title || "เพิ่มรายการ"}
         onClick={props.onClose}
-      />
+      >
+        {props.onDelete && props.dafaultValue && (
+          <Box
+            sx={{ display: "flex", justifyContent: "flex-end", flexGrow: 1 }}
+          >
+            <IconButton
+              color="inherit"
+              onClick={() => props.onDelete?.(props.dafaultValue)}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        )}
+      </HeaderDialog>
       <Box
         component="form"
         onSubmit={handleSubmit}
@@ -158,7 +174,7 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
         />
         <FieldDate
           icon={<CalendarMonthIcon />}
-          defaultValue={props.dafaultValue?.date||new Date()}
+          defaultValue={props.dafaultValue?.date || new Date()}
           name="date"
         />
         <Box

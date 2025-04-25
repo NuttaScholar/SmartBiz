@@ -40,9 +40,8 @@ const detailp: React.CSSProperties = {
 /**************************************************** */
 //  Typedef
 /**************************************************** */
-
 export type transactionDetail_t = {
-  id: number;
+  id?: string;
   topic: string;
   type: transactionType_e;
   money: number;

@@ -30,7 +30,7 @@ export type ContactForm_t = {
   billName: string;
   address: string;
   tel: string;
-  texID: string;
+  taxID: string;
   description: string;
 };
 

@@ -30,6 +30,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "moment-timezone": "^0.5.48",
     "mongoose": "^8.13.0"
   }
 }
