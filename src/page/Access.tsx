@@ -45,9 +45,9 @@ const Page_Access: React.FC = () => {
     setYearSelect(year);
   };
   const onClickTransHandler = (value: TransitionForm_t) => {
-    setOpenDialogEdit(true);
     console.log(value);
     setTransitionForm(value);
+    setOpenDialogEdit(true);
   };
   const speedDialHandler = (index: number) => {
     console.log(`SpeedDial: ${index}`);
@@ -73,19 +73,20 @@ const Page_Access: React.FC = () => {
       while (!finish) {
         const res = await Access.getStatement(_month, yearSelect);
         if (res.length) {
-          console.log(res);          
-          trans.push(...res);        
-          
+          console.log(res);
+          trans.push(...res);
+
           cnt += res.length;
-          if(cnt>1){
+          if (cnt > 1) {
             console.log(cnt);
             setTransaction(trans);
             finish = true;
-          }          
+          }
         }
         if (_month > 1) {
           _month--;
         } else {
+          setTransaction(trans);
           finish = true;
         }
       }
@@ -94,7 +95,7 @@ const Page_Access: React.FC = () => {
     } catch (err) {
       console.log(err);
     }
-  }
+  };
   const fetchTrans = async () => {
     try {
       let finish = false;
@@ -103,13 +104,13 @@ const Page_Access: React.FC = () => {
         const res = await Access.getStatement(_month, yearSelect);
         if (res.length) {
           console.log(res);
-          
+
           setTransaction((prev) => {
             if (prev) {
               return [...prev, ...res];
             }
             return res;
-          });       
+          });
         }
         if (_month > 1) {
           _month--;
@@ -128,10 +129,34 @@ const Page_Access: React.FC = () => {
       try {
         const res = await Access.delStatement(data.id);
 
-        if(res.status=="success"){
+        if (res.status == "success") {
           initTrans();
-        }       
-        
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }
+    setOpenDialogEdit(false);
+  };
+  const onClickAddTransHandler = async (data: TransitionForm_t) => {
+    try {
+      const res = await Access.postStatement(data);
+      if (res.status == "success") {
+        initTrans();
+      }
+    } catch (err) {
+      console.log(err);
+    }
+    setOpenDialogAdd(false);
+  };
+  const onClickEditTransHandler = async (data: TransitionForm_t) => {
+    console.log(data.id);
+    if (data?.id) {      
+      try {
+        const res = await Access.putStatement(data.id, data);
+        if (res.status == "success") {
+          initTrans();
+        }
       } catch (err) {
         console.log(err);
       }
@@ -182,10 +207,7 @@ const Page_Access: React.FC = () => {
       <DialogAddTransaction
         open={openDialogAdd}
         onClose={() => setOpenDialogAdd(false)}
-        onSubmitTransaction={(data) => {
-          console.log(data);
-          setOpenDialogAdd(false);
-        }}
+        onSubmitTransaction={onClickAddTransHandler}
         onSubmitContact={(data) => {
           console.log(data);
         }}
@@ -195,10 +217,7 @@ const Page_Access: React.FC = () => {
         dafaultValue={TransitionForm}
         open={openDialogEdit}
         onClose={() => setOpenDialogEdit(false)}
-        onSubmitTransaction={(data) => {
-          console.log(data);
-          setOpenDialogEdit(false);
-        }}
+        onSubmitTransaction={onClickEditTransHandler}
         onSubmitContact={(data) => {
           console.log(data);
         }}

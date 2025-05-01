@@ -39,9 +39,9 @@ const contactSchema = new mongoose.Schema({
 const transatcionSchema = new mongoose.Schema({
     topic: String,
     type: Number,
-    amount: Number,
-    desc: String,
-    contact: { type: mongoose.Schema.Types.String, ref: "contact" },
+    money: Number,
+    description: String,
+    who: { type: mongoose.Schema.Types.String, ref: "contact" },
     date: { type: Date, required: true },
 });
 
@@ -66,11 +66,19 @@ app.post('/transaction', async (req: Request, res: Response) => {
         const dateInBangkok = { ...req.body, date: moment.tz(req.body.date, "Asia/Bangkok").toDate() }
         console.log(req.body);
         console.log(dateInBangkok);
-        const newTransatcion = new Transatcion(dateInBangkok);
-        await newTransatcion.save().then(() => console.log("Transatcion added!"));
-        res.send("Message received!");
+        const newTransatcion = new Transatcion(req.body);
+        newTransatcion.save().then(() => {
+            const result: responstDB_t<"post"> = { status: "success"};
+            res.send(result);
+        }).catch((err) => {            
+            const result: responstDB_t<"post"> = { status: "error"};
+            console.log(err);
+            res.send(result);
+        });
     } catch (err) {
-        res.send({ Error: err });
+        const result: responstDB_t<"post"> = { status: "error"};
+        console.log(err);
+        res.send(result);
     }
 })
 app.get('/contact', async (req: Request, res: Response) => {
@@ -97,7 +105,7 @@ app.get('/transaction', async (req: Request, res: Response) => {
         {
             $group: {
                 _id: {
-                    date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+                    date: { $dateToString: { format: "%Y-%m-%dT%H:%M:%S.000Z", date: "$date" } },
                     month: { $dateToString: { format: "%Y-%m", date: "$date" } }
                 },
                 transactions: {
@@ -105,9 +113,9 @@ app.get('/transaction', async (req: Request, res: Response) => {
                         id: "$_id",
                         topic: "$topic",
                         type: "$type",
-                        money: "$amount",
-                        who: "$contact",
-                        description: "$desc"
+                        money: "$money",
+                        who: "$who",
+                        description: "$description"
                     }
                 }
             }
@@ -155,7 +163,7 @@ app.delete('/transaction', async (req: Request, res: Response) => {
 
         res.send(result);
     }).catch(() => {
-        const result: responstDB_t<"del"> = { status: "error"};
+        const result: responstDB_t<"del"> = { status: "error" };
 
         res.send(result);
     })
@@ -166,7 +174,13 @@ app.put('/contact', async (req: Request, res: Response) => {
     })
 })
 app.put('/transaction', async (req: Request, res: Response) => {
-    Transatcion.updateOne({ _id: req.query._id }, req.body).then((result) => {
+    console.log(`id: ${req.query.id}`);
+    Transatcion.updateOne({ _id: req.query.id }, req.body).then((data) => {
+        const result: responstDB_t<"put"> = { status: "success", updatedCount: data.modifiedCount };
+        res.send(result);
+    }).catch((err)=>{
+        const result: responstDB_t<"put"> = { status: "error", updatedCount: 0 };
+        console.log(err);
         res.send(result);
     })
 })

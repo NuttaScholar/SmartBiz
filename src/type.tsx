@@ -19,7 +19,16 @@ export type DailyTotal_t = {
 export type statement_t = {
   date: Date;
   detail: DailyTotal_t[];
-}
+};
+export type TransitionForm_t = {
+  id?: string;
+  date: Date;
+  topic: string;
+  type: transactionType_e;
+  money: number;
+  who?: string;
+  description?: string;
+};
 export type responstDB_t<T extends "getTransaction" | "getContact" | "post" | "put" | "del" > =
   T extends "getTransaction" ? statement_t[] :
   T extends "getContact" ? {

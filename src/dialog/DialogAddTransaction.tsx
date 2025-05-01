@@ -85,6 +85,7 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
     const [day, month, year] = form.date.split("/").map(Number);
 
     props.onSubmitTransaction?.({
+      id: props.dafaultValue?.id,
       date: new Date(year, month - 1, day),
       money: Number(form.money),
       topic: form.topic,
