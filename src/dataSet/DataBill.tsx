@@ -13,7 +13,7 @@ export type Bill_t = {
   billName: string;
   price: number;
   status: billType_e;
-  products: product_t[];
+  products?: product_t[];
 }
 
 function createBill(no: number, date: string, billName: string, status: billType_e, rawProducts: Omit<product_t, 'total_amount'>[]): Bill_t {

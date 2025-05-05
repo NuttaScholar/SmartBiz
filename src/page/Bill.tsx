@@ -1,28 +1,49 @@
 import React from "react";
 import AppBar_c, { pageApp_e } from "../component/Organisms/AppBar_c";
-import FieldContact from "../component/Molecules/FieldContact";
-import DialogAddContact, { ContactForm_t } from "../dialog/DialogAddContact";
+import DialogAddContact from "../dialog/DialogAddContact";
 import { ContactList_dataSet } from "../dataSet/DataContactList";
 import { BillList } from "../dataSet/DataBill";
 import { billType_e } from "../type";
-import { IconButton, Stack, Typography } from "@mui/material";
-import SearchIcon from '@mui/icons-material/Search';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import { Stack } from "@mui/material";
+import Search_Contact_Field from "../component/Molecules/Search_Contact_Field";
+import Feild_Tab from "../component/Molecules/Feild_Tab";
+import Bill_Detail from "../component/Molecules/Bill_Detail";
 
-const getColorByStatus = (status: billType_e): string => {
-  switch (status) {
-    case billType_e.not_paid: return "red";
-    case billType_e.already_paid: return "green";
-    case billType_e.must_delivered: return "orange";
-    case billType_e.delivered: return "blue";
-    default: return "black";
-  }
-};
+const billTabs = [
+  {name: "รอชำระ", value: billType_e.not_paid},
+  {name: "ชำระแล้ว", value: billType_e.already_paid},
+  {name: "ที่ต้องส่ง", value: billType_e.must_delivered},
+  {name: "จัดส่งสำเร็จ", value: billType_e.delivered},
+];
+
+const billOptions = [ "Next Step", "Print", "Delete", "Add" ]
 
 const Page_Bill: React.FC = () => {
-  const [openAddContact, setOpenAddContact] = React.useState(false);
+  const [ openAddContact, setOpenAddContact ] = React.useState(false);
+  const [ openBillDialog, setOpenBillDialog ] = React.useState(false);
+  const [ openAddBill, setOpenAddBill ] = React.useState(false);
+  const [ openBillOptionNo, setOpenBillOptionNo ] = React.useState<number | null>(null);
+  const [ selectedBillName, setSelectedBillName ] = React.useState<string>("");
+  const [ selectedTab, setSelectedTab ] = React.useState(billTabs[0].value);
+  const [ billData, setBillData ] = React.useState(BillList.filter(bill => bill.status === billTabs[0].value));
 
-  console.log(BillList)
+  const handleSelectedBillName = (value: string) => {
+    setSelectedBillName(value);
+  };
+  
+  const handleSearchBillName = () => {
+    if(selectedBillName === ""){
+      setBillData(BillList.filter(bill => bill.status === selectedTab));
+      return;
+    }
+    setBillData(BillList.filter(bill => (bill.billName === selectedBillName && bill.status === selectedTab)));
+  }
+
+  const handleSelectedTab = (value: billType_e) => {
+    setSelectedTab(value);
+    setBillData(BillList.filter(bill => bill.status === value));
+  };
+
   return (
     <>
       <AppBar_c role="admin" page={pageApp_e.bill} />
@@ -33,26 +54,19 @@ const Page_Bill: React.FC = () => {
           marginTop: "32px"
         }}
       >
-        <Stack
-          flexDirection='row'
-          alignItems='center'
-          sx={{
-            width: "350px",
-            background: "#E0EFFF",
-            borderRadius: "8px",
-          }}
-        >
-          <FieldContact
-            list={ContactList_dataSet}
-            onAdd={()=>setOpenAddContact(true)}
-            placeholder="Contact"
-            name="who" 
-          />
-          <IconButton>
-            <SearchIcon 
-            />
-          </IconButton>
-        </Stack>
+        <Search_Contact_Field
+          data={ContactList_dataSet}
+          setOpenAddContact={setOpenAddContact}
+          selectedBillName={selectedBillName}
+          handleSelectedBillName={handleSelectedBillName}
+          handleSearchBillName={handleSearchBillName}
+        />
+
+        <Feild_Tab
+          tabs={billTabs}
+          selectedTab={selectedTab}
+          handleSelectedTab={handleSelectedTab}
+        />
         
         <Stack
           direction='row'
@@ -65,102 +79,14 @@ const Page_Bill: React.FC = () => {
             width: "80%",
           }}
         >        
-          {BillList.map((bill, index) => (
-            <Stack 
-              key={index} 
-              direction="column" 
-              alignItems="center"
-              sx={{
-                width: "516px",
-                border: "1px solid",
-                borderRadius: "8px",
-                background: "#E0EFFF"
-              }}
-            >
-              <Stack
-                direction="row"
-                alignItems="flex-start"
-                justifyContent="space-between"
-                sx={{
-                  width: "100%",
-                }}
-              >
-                <Stack 
-                  direction="column"
-                  sx={{
-                    padding: "4px 8px",
-                  }}
-                >
-                  <Stack direction="row" alignItems='baseline'>
-                    <Typography variant="h6">Bill No.: </Typography>
-                    <Typography variant="body1">{bill.no}</Typography>
-                  </Stack>
-
-                  <Stack direction="row" alignItems='baseline'>
-                    <Typography variant="h6">Date: </Typography>
-                    <Typography variant="body1">{bill.date.toLocaleDateString()}</Typography>
-                  </Stack>
-                </Stack>
-
-                <Stack 
-                  direction="column"
-                  sx={{
-                    padding: "4px 8px",
-                  }}
-                >
-                  <Stack direction="row" alignItems='baseline'>
-                    <Typography variant="h6">สถานะ: </Typography>
-                    <Typography variant="body1"
-                      sx={{ color: getColorByStatus(bill.status) }}
-                    >
-                      {bill.status === billType_e.not_paid && "ยังไม่ได้ชำระ"}
-                      {bill.status === billType_e.already_paid && "ชำระแล้ว"}
-                      {bill.status === billType_e.must_delivered && "ที่ต้องส่ง"}
-                      {bill.status === billType_e.delivered && "ส่งแล้ว"}
-                    </Typography>
-                  </Stack>
-                </Stack>
-              </Stack>
-
-              <Stack
-                direction="row"
-                alignItems="flex-start"
-                justifyContent="space-between"
-                sx={{
-                  width: "100%",
-                }}
-              >
-                <Stack 
-                  direction="column"
-                  sx={{
-                    padding: "4px 8px",
-                  }}
-                >
-                  <Stack direction="row" alignItems='baseline'>
-                    <Typography variant="h6">ลูกค้า: </Typography>
-                    <Typography variant="body1">{bill.billName}</Typography>
-                  </Stack>
-
-                  <Stack direction="row" alignItems='baseline'>
-                    <Typography variant="h6">ยอด: </Typography>
-                    <Typography variant="body1">{bill.price}</Typography>
-                  </Stack>
-                </Stack>
-
-                <Stack 
-                  direction="column"
-                  sx={{
-                    padding: "4px 8px",
-                  }}
-                >
-                  <Stack direction="row" alignItems='baseline'>
-                    <IconButton>
-                      <MoreHorizIcon/>
-                    </IconButton>
-                  </Stack>
-                </Stack>
-              </Stack>   
-            </Stack>
+          {billData.map((bill) => (
+            <Bill_Detail 
+              key={bill.no} 
+              bill={bill} 
+              billOptions={billOptions}
+              openBillOptionNo={openBillOptionNo}
+              setOpenBillOptionNo={setOpenBillOptionNo}
+            />
           ))}
         </Stack>
       </Stack>
