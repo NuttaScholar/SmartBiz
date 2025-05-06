@@ -29,17 +29,25 @@ export type TransitionForm_t = {
   who?: string;
   description?: string;
 };
-export type responstDB_t<T extends "getTransaction" | "getContact" | "post" | "put" | "del" > =
-  T extends "getTransaction" ? statement_t[] :
-  T extends "getContact" ? {
-    codeName: string;
+export type ContactForm_t = {
+  codeName: string;
+  billName: string;
+  address: string;
+  tel: string;
+  taxID: string;
+  description: string;
+};
+export type  ContactInfo_t = {
+  codeName: string;
     billName: string;
     description?: string;
     address?: string;
     vatID?: string;
     tel?: string;
-    img?: string;
-  } :
+}
+export type responstDB_t<T extends "getTransaction" | "getContact" | "post" | "put" | "del" > =
+  T extends "getTransaction" ? statement_t[] :
+  T extends "getContact" ? ContactInfo_t[] :
   T extends "post" ? {
     status: "success" | "error";
   } :

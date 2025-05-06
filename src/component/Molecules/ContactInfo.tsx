@@ -21,7 +21,7 @@ export type contactInfo_t = {
   address?: string;
   vatID?: string;
   tel?: string;
-  img?: string;
+  img?: string; // Image URL
 };
 //*********************************************
 // Interface

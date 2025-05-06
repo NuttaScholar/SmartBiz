@@ -39,7 +39,7 @@ interface myProps {
 //*********************************************
 const DialogContactList: React.FC<myProps> = (props) => {
   const [key, setKey] = React.useState("");
-  
+
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setKey(event.target.value);
   };
@@ -67,7 +67,12 @@ const DialogContactList: React.FC<myProps> = (props) => {
           onSubmit={props.onSearch}
         />
       </Box>
-      <ListContact list={props.list||[]} onClick={props.onSelect}/>
+      <ListContact
+        list={props.list || []}
+        onClick={props.onSelect}
+        onDel={(val) => console.log("del:", val)}
+        onEdit={(val) => console.log("edit:", val)}
+      />
     </Dialog>
   );
 };

@@ -33,8 +33,8 @@ const contactSchema = new mongoose.Schema({
     billName: String,
     address: String,
     tel: String,
-    tax: String,
-    detail: String,
+    vatID: String,
+    description: String,
 });
 const transatcionSchema = new mongoose.Schema({
     topic: String,
@@ -68,23 +68,37 @@ app.post('/transaction', async (req: Request, res: Response) => {
         console.log(dateInBangkok);
         const newTransatcion = new Transatcion(req.body);
         newTransatcion.save().then(() => {
-            const result: responstDB_t<"post"> = { status: "success"};
+            const result: responstDB_t<"post"> = { status: "success" };
             res.send(result);
-        }).catch((err) => {            
-            const result: responstDB_t<"post"> = { status: "error"};
+        }).catch((err) => {
+            const result: responstDB_t<"post"> = { status: "error" };
             console.log(err);
             res.send(result);
         });
     } catch (err) {
-        const result: responstDB_t<"post"> = { status: "error"};
+        const result: responstDB_t<"post"> = { status: "error" };
         console.log(err);
         res.send(result);
     }
 })
 app.get('/contact', async (req: Request, res: Response) => {
-    User.find().then((data) => {
+    User.aggregate([{
+        $project: {
+            codeName: "$_id", // เปลี่ยนชื่อ _id เป็น codeName
+            _id: 0,            // ไม่ต้องส่ง _id ออก
+            billName: "$billName",
+            description: "$description",
+            address: "$address",
+            vatID: "$vatID",
+            tel: "$tel",
+        }
+    },
+    {
+        $sort: { "codeName": 1 }
+    },
+    ]).then((data) => {
         res.send(data);
-    })
+    });
 })
 app.get('/transaction', async (req: Request, res: Response) => {
     const { from, to, who, topic, type } = req.query;
@@ -103,10 +117,21 @@ app.get('/transaction', async (req: Request, res: Response) => {
             $match: filter
         },
         {
+            $addFields: {
+              newDate: {
+                $dateAdd: {
+                  startDate: "$date",
+                  unit: "hour",
+                  amount: 7
+                }
+              }
+            }
+          },
+        {
             $group: {
                 _id: {
-                    date: { $dateToString: { format: "%Y-%m-%dT%H:%M:%S.000Z", date: "$date" } },
-                    month: { $dateToString: { format: "%Y-%m", date: "$date" } }
+                    date: "$date",
+                    month: { $dateToString: { format: "%Y-%m", date: "$newDate" } }
                 },
                 transactions: {
                     $push: {
@@ -178,7 +203,7 @@ app.put('/transaction', async (req: Request, res: Response) => {
     Transatcion.updateOne({ _id: req.query.id }, req.body).then((data) => {
         const result: responstDB_t<"put"> = { status: "success", updatedCount: data.modifiedCount };
         res.send(result);
-    }).catch((err)=>{
+    }).catch((err) => {
         const result: responstDB_t<"put"> = { status: "error", updatedCount: 0 };
         console.log(err);
         res.send(result);

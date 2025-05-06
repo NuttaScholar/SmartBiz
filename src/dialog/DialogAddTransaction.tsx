@@ -17,6 +17,7 @@ import FieldDate from "../component/Molecules/FieldDate";
 import { ContactList_dataSet } from "../dataSet/DataContactList";
 import DialogAddContact, { ContactForm_t } from "./DialogAddContact";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { contactInfo_t } from "../component/Molecules/ContactInfo";
 
 //*********************************************
 // Type
@@ -61,6 +62,7 @@ interface myProps {
   open: boolean;
   title?: string;
   dafaultValue?: TransitionForm_t;
+  contactList?: contactInfo_t[];
   onClose?: () => void;
   onSubmitTransaction?: (data: TransitionForm_t) => void;
   onSubmitContact?: (data: ContactForm_t) => void;
@@ -167,7 +169,7 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
         />
         <FieldContact
           icon={<AccountBoxIcon />}
-          list={ContactList_dataSet}
+          list={props.contactList}
           onAdd={() => setOpenAddContact(true)}
           defaultValue={props.dafaultValue?.who}
           placeholder="Contact"

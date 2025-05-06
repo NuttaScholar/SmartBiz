@@ -35,6 +35,7 @@ export async function delStatement(id: string): Promise<responstDB_t<"del">> {
 export async function postStatement(
   data: TransitionForm_t
 ): Promise<responstDB_t<"post">> {
+  console.log(data.date);
   try {
     const res = await axios.post(
       `http://${import.meta.env.VITE_HOST}:${

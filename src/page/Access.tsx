@@ -18,8 +18,10 @@ import DialogAddTransaction, {
 import DialogSearchTransaction from "../dialog/DialogSearchTransaction";
 import { GoToTop } from "../function/Window";
 import * as Access from "../API/Account";
+import * as Contact from "../API/Contact";
 import { statement_t } from "../type";
 import InfiniteScroll from "react-infinite-scroll-component";
+import { contactInfo_t } from "../component/Molecules/ContactInfo";
 
 const Page_Access: React.FC = () => {
   // Hook **************
@@ -32,6 +34,7 @@ const Page_Access: React.FC = () => {
   const [transaction, setTransaction] = React.useState<statement_t[]>([]);
   const [month, setMonth] = React.useState(12);
   const [hasMore, setHasMore] = React.useState(true);
+  const [contactList, setContactList] = React.useState<contactInfo_t[]>([]);
   // Local Variable **************
   const TotalMoney = 10000;
   const MenuList: menuList_t[] = [
@@ -96,6 +99,15 @@ const Page_Access: React.FC = () => {
       console.log(err);
     }
   };
+  const initPage = async () => {
+    try{
+      const res = await Contact.getContact();   
+      setContactList(res);
+      initTrans();
+    }catch(err){
+      console.log(err);
+    }
+  }
   const fetchTrans = async () => {
     try {
       let finish = false;
@@ -165,7 +177,7 @@ const Page_Access: React.FC = () => {
   };
   // Use Effect **************
   React.useEffect(() => {
-    initTrans();
+    initPage();   
   }, []);
   return (
     <>
@@ -206,6 +218,7 @@ const Page_Access: React.FC = () => {
       />
       <DialogAddTransaction
         open={openDialogAdd}
+        contactList={contactList}
         onClose={() => setOpenDialogAdd(false)}
         onSubmitTransaction={onClickAddTransHandler}
         onSubmitContact={(data) => {
@@ -215,6 +228,7 @@ const Page_Access: React.FC = () => {
       <DialogAddTransaction
         title="แก้ไขรายการ"
         dafaultValue={TransitionForm}
+        contactList={contactList}
         open={openDialogEdit}
         onClose={() => setOpenDialogEdit(false)}
         onSubmitTransaction={onClickEditTransHandler}
