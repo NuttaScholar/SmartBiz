@@ -73,4 +73,3 @@ export const BillList: Bill_t[] = [
     ]),
   ];
   
-  

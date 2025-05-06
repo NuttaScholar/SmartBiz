@@ -6,9 +6,11 @@ import { billType_e } from '../../type';
 
 interface Bill_Detail_Props {
   bill: Bill_t;
-  billOptions: string[];
-  openBillOptionNo: number | null;
-  setOpenBillOptionNo: (value: number | null) => void;
+  billOptions?: string[];
+  openBillOptionNo?: number | null;
+  setOpenBillOptionNo?: (value: number | null) => void;
+  handleSelectedBillOption?: (value: string, index: number) => void;
+  handleBillDialog?: () => void;
 }
 
 const getColorByStatus = (status: billType_e): string => {
@@ -32,8 +34,14 @@ const Bill_Detail: React.FC<Bill_Detail_Props> = (props) => {
         width: "516px",
         border: "1px solid",
         borderRadius: "8px",
-        background: "#E0EFFF"
+        background: "#E0EFFF",
+        ...(props.billOptions && {
+          ":hover": {
+            cursor: "pointer"
+          }
+        })
       }}
+      onClick={() => props.handleBillDialog?.()}
     >
       <Stack
         direction="row"
@@ -105,43 +113,64 @@ const Bill_Detail: React.FC<Bill_Detail_Props> = (props) => {
           </Stack>
         </Stack>
 
-        <Stack 
-          direction="column"
-          sx={{
-            padding: "4px 8px",
-          }}
-        >
-          <Stack direction="row" alignItems='baseline'>
-            <IconButton
-              onClick={(event) => setAnchorEl(event.currentTarget)}
-            >
-              <MoreHorizIcon/>
-            </IconButton>
-          </Stack>
-
-          <Menu
-            sx={{ mt: "45px" }}
-            id="menu-appbar"
-            anchorEl={anchorEl}
-            anchorOrigin={{
-              vertical: "top",
-              horizontal: "right",
+        {props.billOptions && (
+          <Stack 
+            direction="column"
+            sx={{
+              padding: "4px 8px",
             }}
-            keepMounted
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
-            open={Boolean(anchorEl)}
-            onClose={() => setAnchorEl(null)}
           >
-            {props.billOptions.map((option, index) => (
-              <MenuItem key={index}>
-                <Typography sx={{ textAlign: "center" }}>{option}</Typography>
-              </MenuItem>
-            ))}
-          </Menu>
-        </Stack>
+            <Stack direction="row" alignItems='baseline'>
+              <IconButton
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setAnchorEl(event.currentTarget)
+                }}
+              >
+                <MoreHorizIcon/>
+              </IconButton>
+            </Stack>
+
+            <Menu
+              sx={{ mt: "45px" }}
+              id="menu-appbar"
+              anchorEl={anchorEl}
+              anchorOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+              open={Boolean(anchorEl)}
+              onClose={(event: React.MouseEvent<HTMLElement> | Event) => {
+                event.stopPropagation();
+                setAnchorEl(null);
+              }}
+            >
+              {props.billOptions?.map((option, index) => {
+                const shouldRender = props.bill.status !== billType_e.delivered || option !== "Next Step";
+
+                return shouldRender ? (
+                  <MenuItem 
+                    key={index}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      props.handleSelectedBillOption?.(option, props.bill.no);
+                      setAnchorEl(null);
+                    }}
+                  >
+                    <Typography sx={{ textAlign: "center" }}>
+                      {option}
+                    </Typography>
+                  </MenuItem>
+                ) : null;
+              })}
+            </Menu>
+          </Stack>
+        )}
       </Stack>   
     </Stack>
   )
