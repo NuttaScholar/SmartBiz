@@ -66,13 +66,18 @@ interface myProps {
   onClose?: () => void;
   onSubmitTransaction?: (data: TransitionForm_t) => void;
   onSubmitContact?: (data: ContactForm_t) => void;
-  onDelete?: (data?: TransitionForm_t) => void;
+  onDelTransaction?: (data?: TransitionForm_t) => void;
+  onDelContact?: (data: contactInfo_t) => void;
+  onEditContact?: (data: ContactForm_t) => void;
 }
 //*********************************************
 // Component
 //*********************************************
 const DialogAddTransaction: React.FC<myProps> = (props) => {
   const [openAddContact, setOpenAddContact] = React.useState(false);
+  const [openEditContact, setOpenEditContact] = React.useState(false);
+  const [contactInfo, setContactInfo] = React.useState<contactInfo_t>();
+
   const listSelect: listSelect_t[] = [
     { label: "รายรับ", value: transactionType_e.income },
     { label: "รายจ่าย", value: transactionType_e.expenses },
@@ -100,6 +105,10 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
     props.onSubmitContact?.(data);
     setOpenAddContact(false);
   };
+  const editContactHandler = (data: ContactForm_t) => {
+    props.onEditContact?.(data);
+    setOpenEditContact(false);
+  };
 
   return (
     <Dialog
@@ -112,13 +121,13 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
         label={props.title || "เพิ่มรายการ"}
         onClick={props.onClose}
       >
-        {props.onDelete && props.dafaultValue && (
+        {props.onDelTransaction && props.dafaultValue && (
           <Box
             sx={{ display: "flex", justifyContent: "flex-end", flexGrow: 1 }}
           >
             <IconButton
               color="inherit"
-              onClick={() => props.onDelete?.(props.dafaultValue)}
+              onClick={() => props.onDelTransaction?.(props.dafaultValue)}
             >
               <DeleteIcon />
             </IconButton>
@@ -171,6 +180,11 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
           icon={<AccountBoxIcon />}
           list={props.contactList}
           onAdd={() => setOpenAddContact(true)}
+          onDel={props.onDelContact}
+          onEdit={(val) => {
+            setContactInfo(val);
+            setOpenEditContact(true);
+          }}
           defaultValue={props.dafaultValue?.who}
           placeholder="Contact"
           name="who"
@@ -205,6 +219,13 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
         open={openAddContact}
         onSubmit={addContactHandler}
         onClose={() => setOpenAddContact(false)}
+      />
+      <DialogAddContact
+        title="แก้ไขรายการ"
+        open={openEditContact}
+        onSubmit={editContactHandler}
+        defaultValue={contactInfo}
+        onClose={() => setOpenEditContact(false)}
       />
     </Dialog>
   );

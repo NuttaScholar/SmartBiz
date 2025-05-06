@@ -42,7 +42,7 @@ export type  ContactInfo_t = {
     billName: string;
     description?: string;
     address?: string;
-    vatID?: string;
+    taxID?: string;
     tel?: string;
 }
 export type responstDB_t<T extends "getTransaction" | "getContact" | "post" | "put" | "del" > =

@@ -19,6 +19,8 @@ interface MyProps {
   onChange?: (value: string) => void;
   onSearch?: (keyword: string) => void;
   onAdd?: () => void;
+  onEdit?: (val: contactInfo_t) => void;
+  onDel?: (val: contactInfo_t) => void;
   name?: string;
   icon?: React.ReactNode;
   list?: contactInfo_t[];
@@ -82,6 +84,8 @@ const FieldContact: React.FC<MyProps> = (props) => {
         onSearch={props.onSearch}
         onSelect={onSelectHandler}
         onAdd={props.onAdd}
+        onDel={props.onDel}
+        onEdit={props.onEdit}
       />
     </React.Fragment>
   );

@@ -33,7 +33,7 @@ const contactSchema = new mongoose.Schema({
     billName: String,
     address: String,
     tel: String,
-    vatID: String,
+    taxID: String,
     description: String,
 });
 const transatcionSchema = new mongoose.Schema({
@@ -53,12 +53,23 @@ const Transatcion = mongoose.model("transaction", transatcionSchema);
 /*********************************************** */
 app.post('/contact', async (req: Request, res: Response) => {
     try {
-        console.log(req.body);
-        const newUser = new User(req.body);
-        await newUser.save().then(() => console.log("User added!"));
-        res.send("Message received!");
+        const { codeName, ...rest } = req.body;
+        const newData = { _id: codeName, ...rest };
+        console.log(newData);
+
+        const newUser = new User(newData);
+        newUser.save().then(() => {
+            const result: responstDB_t<"post"> = { status: "success" };
+            res.send(result);
+        }).catch((err) => {
+            const result: responstDB_t<"post"> = { status: "error" };
+            console.log(err);
+            res.send(result);
+        });
     } catch (err) {
-        res.send({ Error: err });
+        const result: responstDB_t<"post"> = { status: "error" };
+        console.log(err);
+        res.send(result);
     }
 })
 app.post('/transaction', async (req: Request, res: Response) => {
@@ -89,7 +100,7 @@ app.get('/contact', async (req: Request, res: Response) => {
             billName: "$billName",
             description: "$description",
             address: "$address",
-            vatID: "$vatID",
+            taxID: "$taxID",
             tel: "$tel",
         }
     },
@@ -118,15 +129,15 @@ app.get('/transaction', async (req: Request, res: Response) => {
         },
         {
             $addFields: {
-              newDate: {
-                $dateAdd: {
-                  startDate: "$date",
-                  unit: "hour",
-                  amount: 7
+                newDate: {
+                    $dateAdd: {
+                        startDate: "$date",
+                        unit: "hour",
+                        amount: 7
+                    }
                 }
-              }
             }
-          },
+        },
         {
             $group: {
                 _id: {
@@ -194,7 +205,16 @@ app.delete('/transaction', async (req: Request, res: Response) => {
     })
 })
 app.put('/contact', async (req: Request, res: Response) => {
-    User.updateOne({ _id: req.query._id }, req.body).then((result) => {
+    const { codeName, ...rest } = req.body;
+    const newData = { ...rest };
+    console.log("put", newData);
+
+    User.updateOne({ _id: codeName }, newData).then((data) => {
+        const result: responstDB_t<"put"> = { status: "success", updatedCount: data.modifiedCount };
+        res.send(result);
+    }).catch((err) => {
+        const result: responstDB_t<"put"> = { status: "error", updatedCount: 0 };
+        console.log(err);
         res.send(result);
     })
 })

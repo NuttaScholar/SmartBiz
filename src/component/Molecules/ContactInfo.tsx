@@ -19,7 +19,7 @@ export type contactInfo_t = {
   billName: string;
   description?: string;
   address?: string;
-  vatID?: string;
+  taxID?: string;
   tel?: string;
   img?: string; // Image URL
 };
@@ -101,10 +101,10 @@ const ContactInfo: React.FC<myProps> = (props) => {
             color_Value="gray"
           />
         )}
-        {props.value.vatID && (
+        {props.value.taxID && (
           <Label_parameter
-            label="Tel:"
-            value={props.value.vatID}
+            label="Tax:"
+            value={props.value.taxID}
             gap="8px"
             color_Value="gray"
           />

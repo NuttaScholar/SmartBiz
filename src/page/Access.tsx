@@ -3,15 +3,12 @@ import AppBar_c, { pageApp_e } from "../component/Organisms/AppBar_c";
 import MoneyTotal from "../component/Organisms/MoneyTotal";
 import YearSelector from "../component/Organisms/YearSelector";
 import MonthlyTotalList from "../component/Organisms/MonthlyTotalList";
-import { DailyMoneyList, transactionList } from "../dataSet/DataMoney";
-import { Box } from "@mui/material";
 import MySpeedDial from "../component/Organisms/MySpeedDial";
 import { menuList_t } from "../component/Molecules/AppBar_Mobile";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { DailyTotal_t } from "../component/Molecules/DailyTotalList";
 import DialogAddTransaction, {
   TransitionForm_t,
 } from "../dialog/DialogAddTransaction";
@@ -19,7 +16,7 @@ import DialogSearchTransaction from "../dialog/DialogSearchTransaction";
 import { GoToTop } from "../function/Window";
 import * as Access from "../API/Account";
 import * as Contact from "../API/Contact";
-import { statement_t } from "../type";
+import { ContactForm_t, statement_t } from "../type";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { contactInfo_t } from "../component/Molecules/ContactInfo";
 
@@ -100,14 +97,15 @@ const Page_Access: React.FC = () => {
     }
   };
   const initPage = async () => {
-    try{
-      const res = await Contact.getContact();   
+    try {
+      const res = await Contact.get();
+      console.log(res);
       setContactList(res);
       initTrans();
-    }catch(err){
+    } catch (err) {
       console.log(err);
     }
-  }
+  };
   const fetchTrans = async () => {
     try {
       let finish = false;
@@ -163,7 +161,7 @@ const Page_Access: React.FC = () => {
   };
   const onClickEditTransHandler = async (data: TransitionForm_t) => {
     console.log(data.id);
-    if (data?.id) {      
+    if (data?.id) {
       try {
         const res = await Access.putStatement(data.id, data);
         if (res.status == "success") {
@@ -175,9 +173,31 @@ const Page_Access: React.FC = () => {
     }
     setOpenDialogEdit(false);
   };
+  const onAddContact = async (data: ContactForm_t) => {
+    try {
+      const res = await Contact.post(data);
+      if (res.status == "success") {
+        const res = await Contact.get();
+        setContactList(res);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  const onEditContact = async (data: ContactForm_t) => {
+    try {
+      const res = await Contact.put(data);
+      if (res.status == "success") {
+        const res = await Contact.get();
+        setContactList(res);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
   // Use Effect **************
   React.useEffect(() => {
-    initPage();   
+    initPage();
   }, []);
   return (
     <>
@@ -221,9 +241,8 @@ const Page_Access: React.FC = () => {
         contactList={contactList}
         onClose={() => setOpenDialogAdd(false)}
         onSubmitTransaction={onClickAddTransHandler}
-        onSubmitContact={(data) => {
-          console.log(data);
-        }}
+        onSubmitContact={onAddContact}
+        onEditContact={onEditContact}
       />
       <DialogAddTransaction
         title="แก้ไขรายการ"
@@ -232,10 +251,9 @@ const Page_Access: React.FC = () => {
         open={openDialogEdit}
         onClose={() => setOpenDialogEdit(false)}
         onSubmitTransaction={onClickEditTransHandler}
-        onSubmitContact={(data) => {
-          console.log(data);
-        }}
-        onDelete={onClickDelTransHandler}
+        onSubmitContact={onAddContact}
+        onEditContact={onEditContact}
+        onDelTransaction={onClickDelTransHandler}
       />
       <DialogSearchTransaction
         open={openDialogSearch}

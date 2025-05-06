@@ -32,6 +32,8 @@ interface myProps {
   onSearch?: (keyword: string) => void;
   onSelect?: (codeName: string) => void;
   onAdd?: () => void;
+  onEdit?: (val:contactInfo_t) => void;
+  onDel?: (val:contactInfo_t) => void;
   list?: contactInfo_t[];
 }
 //*********************************************
@@ -70,8 +72,8 @@ const DialogContactList: React.FC<myProps> = (props) => {
       <ListContact
         list={props.list || []}
         onClick={props.onSelect}
-        onDel={(val) => console.log("del:", val)}
-        onEdit={(val) => console.log("edit:", val)}
+        onDel={props.onDel}
+        onEdit={props.onEdit}
       />
     </Dialog>
   );

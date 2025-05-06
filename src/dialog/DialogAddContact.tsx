@@ -15,12 +15,13 @@ import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import FieldDate from "../component/Molecules/FieldDate";
 import { ContactList_dataSet } from "../dataSet/DataContactList";
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import ContactPageIcon from '@mui/icons-material/ContactPage';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import LocalPhoneIcon from '@mui/icons-material/LocalPhone';
-import RecentActorsIcon from '@mui/icons-material/RecentActors';
-import NotesIcon from '@mui/icons-material/Notes';
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import ContactPageIcon from "@mui/icons-material/ContactPage";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
+import RecentActorsIcon from "@mui/icons-material/RecentActors";
+import NotesIcon from "@mui/icons-material/Notes";
+import { contactInfo_t } from "../component/Molecules/ContactInfo";
 
 //*********************************************
 // Type
@@ -56,6 +57,7 @@ const Transition = React.forwardRef(function Transition(
 interface myProps {
   open: boolean;
   title?: string;
+  defaultValue?: contactInfo_t;
   onClose?: () => void;
   onSubmit?: (data: ContactForm_t) => void;
 }
@@ -63,7 +65,6 @@ interface myProps {
 // Component
 //*********************************************
 const DialogAddContact: React.FC<myProps> = (props) => {
-  
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -80,7 +81,10 @@ const DialogAddContact: React.FC<myProps> = (props) => {
       onClose={props.onClose}
       TransitionComponent={Transition}
     >
-      <HeaderDialog label={props.title||"เพิ่มรายการ"} onClick={props.onClose} />
+      <HeaderDialog
+        label={props.title || "เพิ่มรายการ"}
+        onClick={props.onClose}
+      />
       <Box
         component="form"
         id="formAddContact"
@@ -99,25 +103,41 @@ const DialogAddContact: React.FC<myProps> = (props) => {
           required
           label="Code Name"
           name="codeName"
+          defauleValue={props.defaultValue?.codeName}
         />
         <FieldText
           icon={<ContactPageIcon />}
           required
           label="Bill Name"
           name="billName"
+          defauleValue={props.defaultValue?.billName}
         />
-        <FieldText icon={<LocationOnIcon />} name="address" label="Address" multiline/>
+        <FieldText
+          icon={<LocationOnIcon />}
+          name="address"
+          label="Address"
+          multiline
+          defauleValue={props.defaultValue?.address}
+        />
         <FieldText
           icon={<LocalPhoneIcon />}
           label="Tel."
           name="tel"
+          defauleValue={props.defaultValue?.tel}
         />
         <FieldText
           icon={<RecentActorsIcon />}
           label="Tax. ID"
-          name="texID"
+          name="taxID"
+          defauleValue={props.defaultValue?.taxID}
         />
-        <FieldText icon={<NotesIcon />} name="description" label="More Detail" multiline/>
+        <FieldText
+          icon={<NotesIcon />}
+          name="description"
+          label="More Detail"
+          multiline
+          defauleValue={props.defaultValue?.description}
+        />
         <Box
           sx={{
             display: "flex",
@@ -127,7 +147,12 @@ const DialogAddContact: React.FC<myProps> = (props) => {
             my: "32px",
           }}
         >
-          <Button variant="contained" type="submit" form="formAddContact" sx={{ width: "150px" }}>
+          <Button
+            variant="contained"
+            type="submit"
+            form="formAddContact"
+            sx={{ width: "150px" }}
+          >
             save
           </Button>
           <Button
