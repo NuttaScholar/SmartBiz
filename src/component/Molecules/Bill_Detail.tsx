@@ -31,7 +31,7 @@ const Bill_Detail: React.FC<Bill_Detail_Props> = (props) => {
       direction="column" 
       alignItems="center"
       sx={{
-        width: "516px",
+        width: { xs: "100%", md: "516px"},
         border: "1px solid",
         borderRadius: "8px",
         background: "#E0EFFF",

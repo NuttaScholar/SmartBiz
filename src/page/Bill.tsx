@@ -2,13 +2,15 @@ import React from "react";
 import AppBar_c, { pageApp_e } from "../component/Organisms/AppBar_c";
 import DialogAddContact from "../dialog/DialogAddContact";
 import { ContactList_dataSet } from "../dataSet/DataContactList";
-import { Bill_t, BillList } from "../dataSet/DataBill";
+import { Bill_t, BillList, ProductList } from "../dataSet/DataBill";
 import { billType_e } from "../type";
-import { Stack } from "@mui/material";
+import { IconButton, Stack } from "@mui/material";
 import Search_Contact_Field from "../component/Molecules/Search_Contact_Field";
 import Feild_Tab from "../component/Molecules/Feild_Tab";
 import Bill_Detail from "../component/Molecules/Bill_Detail";
 import DialogBill from "../dialog/DialogBill";
+import AddIcon from '@mui/icons-material/Add';
+import DialogAddBill from "../dialog/DialogAddBill";
 
 const billTabs = [
   {name: "รอชำระ", value: billType_e.not_paid},
@@ -24,6 +26,7 @@ const Page_Bill: React.FC = () => {
   const [ openBillDialog, setOpenBillDialog ] = React.useState(false);
   const [ openAddBill, setOpenAddBill ] = React.useState(false);
   const [ selectedBill, setSelectedBill ] = React.useState<Bill_t | null>(null);
+  const [ selectedProduct, setSelectedProduct ] = React.useState<string[]>([]);
   const [ openBillOptionNo, setOpenBillOptionNo ] = React.useState<number | null>(null);
   const [ selectedBillName, setSelectedBillName ] = React.useState<string>("");
   const [ selectedTab, setSelectedTab ] = React.useState(billTabs[0].value);
@@ -70,15 +73,57 @@ const Page_Bill: React.FC = () => {
               status: nextStatus,
             };
           }
-
+          setOpenBillDialog(false);
           setBillData(prev => prev.filter(b => b.no !== billNo));
         }
         break;
       }
       case "Print": {
+        const billToPrint = billData.find(b => b.no === billNo);
+        if (!billToPrint) return;
+
+        let billStatus = billToPrint.status === billType_e.not_paid ? "ยังไม่ได้ชำระ" :
+                        billToPrint.status === billType_e.already_paid ? "ชำระแล้ว" :
+                        billToPrint.status === billType_e.must_delivered ? "ที่ต้องส่ง" :
+                        billToPrint.status === billType_e.delivered ? "ส่งแล้ว" :
+                        "ไม่ระบุสถานะ";
+
+        let csvContent = `เลขที่บิล,${billToPrint.no}\n`;
+        csvContent += `วันที่,${billToPrint.date.toDateString()}\n`;
+        csvContent += `สถานะ,${billStatus}\n\n`;
+
+        csvContent += `==================================================================\n`;
+        csvContent += "รหัสสินค้า,ชื่อสินค้า,จำนวน,หน่วยละ,รวม\n";
+        billToPrint.products?.forEach((p) => {
+          csvContent += `${p._id},${p.name},${p.quantity},${p.unit_price},${p.total_amount}\n`;
+        });
+        csvContent += `==================================================================\n\n`;
+
+        csvContent += `ยอดรวม,${billToPrint.price}\n`;
+        csvContent += `ผู้ซื้อ,${billToPrint.billName}\n`;
+
+        const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `Bill_${billToPrint.no}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         break;
       }
       case "Delete": {
+        alert(`ลบบิลที่ ${billNo} สำเร็จ`);
+        break;
+      }
+      case "Delete Product": {
+        if(selectedProduct.length === 0){
+          alert("กรุณาเลือกสินค้าก่อนลบ");
+          return;
+        }
+        if(selectedProduct.length > 0){
+          alert(`ลบสินค้า รหัส ${selectedProduct.join(", ")} จำนวน ${selectedProduct.length} รายการสำเร็จ`);
+        }
         break;
       }
       case "Add": {
@@ -89,6 +134,24 @@ const Page_Bill: React.FC = () => {
       }
     }
   }
+
+  const handleSelectedProduct = (id: string, all: boolean) => {
+    if (all && selectedBill) {
+      const allIds = selectedBill.products?.map(p => p._id) || [];
+      const isAllSelected = selectedProduct.length === allIds.length;
+      setSelectedProduct(isAllSelected ? [] : [...allIds]);
+    } 
+    else if(all && !selectedBill){
+      const allIds = ProductList.map(p => p._id) || [];
+      const isAllSelected = selectedProduct.length === allIds.length;
+      setSelectedProduct(isAllSelected ? [] : [...allIds]);
+    }
+    else {
+      setSelectedProduct(prev =>
+        prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
+      );
+    }
+  }; 
 
   return (
     <>
@@ -122,7 +185,7 @@ const Page_Bill: React.FC = () => {
           gap={2}
           sx={{
             marginTop: "32px",
-            width: "80%",
+            width: { sm: "50%", md:"100%" },
           }}
         >        
           {billData.map((bill) => (
@@ -137,9 +200,54 @@ const Page_Bill: React.FC = () => {
             />
           ))}
         </Stack>
+        <IconButton
+          sx={{
+            position: "absolute",
+            bottom: 32,
+            right: 32,
+            background: "#0078D4",
+            '&:hover': {
+              background: "#0078D4",
+              opacity: 0.8,           
+            }
+          }}
+          size="large"
+          onClick={() => setOpenAddBill(true)}
+        >
+          <AddIcon 
+            sx={{
+              color: "#fff"
+            }}
+          />
+        </IconButton>
       </Stack>
-      <DialogAddContact open={openAddContact} onClose={()=>setOpenAddContact(false)}/>
-      <DialogBill open={openBillDialog} onClose={()=>setOpenBillDialog(false)} bill={selectedBill}/>
+      <DialogAddContact 
+        open={openAddContact} 
+        onClose={()=>setOpenAddContact(false)}
+      />
+
+      <DialogAddBill 
+        open={openAddBill}
+        ContactData={ContactList_dataSet}
+        products={ProductList} 
+        selectedProduct={selectedProduct}
+        onClose={()=>setOpenAddBill(false)}
+        handleSelectedProduct={handleSelectedProduct}
+        setOpenAddContact={setOpenAddContact}
+        handleSelectedBillName={handleSelectedBillName}
+        
+      />
+
+      {selectedBill && (
+        <DialogBill 
+          open={openBillDialog} 
+          onClose={() => setOpenBillDialog(false)}
+          handleSelectedProduct={handleSelectedProduct}
+          handleSelectedBillOption={handleSelectedBillOption}
+          selectedProduct={selectedProduct} 
+          bill={selectedBill}
+        />
+      )}
     </>
   );
 };

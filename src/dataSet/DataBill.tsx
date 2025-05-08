@@ -16,6 +16,28 @@ export type Bill_t = {
   products?: product_t[];
 }
 
+export const ProductList: product_t[] = [
+  { _id: 'P001', name: 'Pen', quantity: 10, unit_price: 10, total_amount: 100 },
+  { _id: 'P002', name: 'Notebook', quantity: 5, unit_price: 50, total_amount: 250 },
+  { _id: 'P003', name: 'Ruler', quantity: 2, unit_price: 50, total_amount: 100 },
+  { _id: 'P004', name: 'Eraser', quantity: 50, unit_price: 5, total_amount: 250 },
+  { _id: 'P005', name: 'Pencil', quantity: 30, unit_price: 15, total_amount: 450 },
+  { _id: 'P006', name: 'Marker', quantity: 6, unit_price: 50, total_amount: 300 },
+  { _id: 'P007', name: 'Board', quantity: 1, unit_price: 300, total_amount: 300 },
+  { _id: 'P008', name: 'Chair', quantity: 2, unit_price: 200, total_amount: 400 },
+  { _id: 'P009', name: 'Desk Lamp', quantity: 3, unit_price: 120, total_amount: 360 },
+  { _id: 'P010', name: 'Table', quantity: 1, unit_price: 800, total_amount: 800 },
+  { _id: 'P011', name: 'Fan', quantity: 2, unit_price: 310, total_amount: 620 },
+  { _id: 'P012', name: 'Laptop Bag', quantity: 4, unit_price: 250, total_amount: 1000 },
+  { _id: 'P013', name: 'Mouse', quantity: 3, unit_price: 80, total_amount: 240 },
+  { _id: 'P014', name: 'Whiteboard', quantity: 1, unit_price: 500, total_amount: 500 },
+  { _id: 'P015', name: 'Marker Set', quantity: 2, unit_price: 215, total_amount: 430 },
+  { _id: 'P016', name: 'Bookshelf', quantity: 1, unit_price: 1200, total_amount: 1200 },
+  { _id: 'P017', name: 'Wall Clock', quantity: 2, unit_price: 190, total_amount: 380 },
+  { _id: 'P018', name: 'Monitor', quantity: 1, unit_price: 1500, total_amount: 1500 },
+  { _id: 'P019', name: 'HDMI Cable', quantity: 3, unit_price: 50.65, total_amount: 151.95}
+] 
+
 function createBill(no: number, date: string, billName: string, status: billType_e, rawProducts: Omit<product_t, 'total_amount'>[]): Bill_t {
     const products = rawProducts.map(product => ({
       ...product,
@@ -41,6 +63,11 @@ export const BillList: Bill_t[] = [
       { _id: 'P003', name: 'Ruler', quantity: 2, unit_price: 50 },
       { _id: 'P004', name: 'Eraser', quantity: 10, unit_price: 5 },
       { _id: 'P005', name: 'Pencil', quantity: 30, unit_price: 15 },
+      { _id: 'P006', name: 'Pen', quantity: 10, unit_price: 10 },
+      { _id: 'P007', name: 'Notebook', quantity: 5, unit_price: 50 },
+      { _id: 'P008', name: 'Ruler', quantity: 2, unit_price: 50 },
+      { _id: 'P009', name: 'Eraser', quantity: 10, unit_price: 5 },
+      { _id: 'P010', name: 'Pencil', quantity: 30, unit_price: 15 },
     ]),
     createBill(2, '2025-05-02', 'Mr.2', billType_e.already_paid, [
       { _id: 'P006', name: 'Marker', quantity: 6, unit_price: 50 },
