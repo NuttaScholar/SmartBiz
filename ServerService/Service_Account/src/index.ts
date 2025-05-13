@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { transactionType_e, DailyTotal_t, statement_t, responstDB_t } from "./type";
+import { transactionType_e, DailyTotal_t, statement_t, responstDB_t, errorCode_e } from "./type";
 import moment from 'moment-timezone'
 
 /*********************************************** */
@@ -93,20 +93,25 @@ app.post('/transaction', async (req: Request, res: Response) => {
     }
 })
 app.get('/contact', async (req: Request, res: Response) => {
-    User.aggregate([{
-        $project: {
-            codeName: "$_id", // เปลี่ยนชื่อ _id เป็น codeName
-            _id: 0,            // ไม่ต้องส่ง _id ออก
-            billName: "$billName",
-            description: "$description",
-            address: "$address",
-            taxID: "$taxID",
-            tel: "$tel",
-        }
-    },
-    {
-        $sort: { "codeName": 1 }
-    },
+    const id = req.query.id;
+    const matchStage = id ? { $match: { _id: { $regex: id, $options: "i" } } } : null;
+
+    User.aggregate([
+        ...(matchStage ? [matchStage] : []),
+        {
+            $project: {
+                codeName: "$_id", // เปลี่ยนชื่อ _id เป็น codeName
+                _id: 0,            // ไม่ต้องส่ง _id ออก
+                billName: "$billName",
+                description: "$description",
+                address: "$address",
+                taxID: "$taxID",
+                tel: "$tel",
+            }
+        },
+        {
+            $sort: { "codeName": 1 }
+        },
     ]).then((data) => {
         res.send(data);
     });
@@ -187,14 +192,27 @@ app.get('/transaction', async (req: Request, res: Response) => {
     })
 })
 app.delete('/contact', async (req: Request, res: Response) => {
-    User.deleteOne({ _id: req.body._id }).then((result) => {
-        console.log(`count: ${result.deletedCount}, acknowledged: ${result.acknowledged}`)
+    try {
+        const exists = await Transatcion.find({ who: req.query.id });
+        if (exists.length) {
+            const result: responstDB_t<"del"> = { status: "error", errCode: errorCode_e.InUseError };
+            res.send(result);
+        } else {
+            const data = await User.deleteOne({ _id: req.query.id });
+            const result: responstDB_t<"del"> = { status: "success", deletedCount: data.deletedCount };
+
+            res.send(result);
+        }
+
+    } catch (err) {
+        const result: responstDB_t<"del"> = { status: "error", errCode: errorCode_e.UnknownError };
         res.send(result);
-    })
+    }
 })
 app.delete('/transaction', async (req: Request, res: Response) => {
     console.log(`id: ${req.query.id}`)
     Transatcion.deleteOne({ _id: req.query.id }).then((data) => {
+
         const result: responstDB_t<"del"> = { status: "success", deletedCount: data.deletedCount };
 
         res.send(result);

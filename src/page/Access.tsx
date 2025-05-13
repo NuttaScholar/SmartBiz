@@ -16,9 +16,10 @@ import DialogSearchTransaction from "../dialog/DialogSearchTransaction";
 import { GoToTop } from "../function/Window";
 import * as Access from "../API/Account";
 import * as Contact from "../API/Contact";
-import { ContactForm_t, statement_t } from "../type";
+import { ContactForm_t, errorCode_e, statement_t } from "../type";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { contactInfo_t } from "../component/Molecules/ContactInfo";
+import Alert from "@mui/material/Alert";
 
 const Page_Access: React.FC = () => {
   // Hook **************
@@ -195,6 +196,36 @@ const Page_Access: React.FC = () => {
       console.log(err);
     }
   };
+  const onDelContacat = async (data: contactInfo_t) => {
+    try{
+      const res = await Contact.del(data);
+      if (res.status == "success") {
+        const res = await Contact.get();
+        setContactList(res);
+      }else{
+        switch(res.errCode){
+          case errorCode_e.InUseError:
+            alert("รายการนี้ยังมีการใช้งานอยู่");
+          break
+          default:
+            alert("Unknow Error");
+          break;
+        }
+      }
+    }catch(err){
+      alert("Unknow Error");
+      console.log(err);
+    }
+  }
+  const onSearchContact = async (keyword: string) => {
+    try{
+       const res = await Contact.get(keyword);
+       setContactList(res);
+    }catch(err){
+      alert("Unknow Error");
+      console.log(err);
+    }
+  }
   // Use Effect **************
   React.useEffect(() => {
     initPage();
@@ -243,6 +274,8 @@ const Page_Access: React.FC = () => {
         onSubmitTransaction={onClickAddTransHandler}
         onSubmitContact={onAddContact}
         onEditContact={onEditContact}
+        onDelTransaction={onClickDelTransHandler}
+        onDelContact={onDelContacat}
       />
       <DialogAddTransaction
         title="แก้ไขรายการ"
@@ -254,6 +287,8 @@ const Page_Access: React.FC = () => {
         onSubmitContact={onAddContact}
         onEditContact={onEditContact}
         onDelTransaction={onClickDelTransHandler}
+        onDelContact={onDelContacat}
+        onSearchContact={onSearchContact}
       />
       <DialogSearchTransaction
         open={openDialogSearch}

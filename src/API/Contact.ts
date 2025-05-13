@@ -1,12 +1,13 @@
 import axios from "axios";
 import { ContactForm_t, responstDB_t} from "../type";
+import { contactInfo_t } from "../component/Molecules/ContactInfo";
 
-export async function get(): Promise<responstDB_t<"getContact">> {
+export async function get(id?: string): Promise<responstDB_t<"getContact">> {
   try {
     const res = await axios.get(
       `http://${import.meta.env.VITE_HOST}:${
         import.meta.env.VITE_PORT_ACCESS
-      }/contact`
+      }/contact${id?`?id=${id}`:""}`
     );
     return res.data as responstDB_t<"getContact">;
   } catch (err) {
@@ -26,7 +27,6 @@ export async function post(data:ContactForm_t): Promise<responstDB_t<"post">> {
   }
 }
 export async function put(data:ContactForm_t): Promise<responstDB_t<"put">> {
-  console.log(data);
   try {
     const res = await axios.put(
       `http://${import.meta.env.VITE_HOST}:${
@@ -34,6 +34,19 @@ export async function put(data:ContactForm_t): Promise<responstDB_t<"put">> {
       }/contact`, data
     );
     return res.data as responstDB_t<"put">;
+  } catch (err) {
+    throw err;
+  }
+}
+export async function del(data:contactInfo_t): Promise<responstDB_t<"del">> {
+  console.log(data);
+  try {
+    const res = await axios.delete(
+      `http://${import.meta.env.VITE_HOST}:${
+        import.meta.env.VITE_PORT_ACCESS
+      }/contact?id=${data.codeName}`
+    );
+    return res.data as responstDB_t<"del">;
   } catch (err) {
     throw err;
   }

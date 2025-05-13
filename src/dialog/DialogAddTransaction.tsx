@@ -69,7 +69,9 @@ interface myProps {
   onDelTransaction?: (data?: TransitionForm_t) => void;
   onDelContact?: (data: contactInfo_t) => void;
   onEditContact?: (data: ContactForm_t) => void;
+  onSearchContact?: (keyword: string) => void;
 }
+
 //*********************************************
 // Component
 //*********************************************
@@ -98,7 +100,7 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
       topic: form.topic,
       type: Number(form.type),
       description: form.description === "" ? undefined : form.description,
-      who: form.who === "" ? undefined : form.who,
+      who: form.who === "" ? (props.dafaultValue?.who?"":undefined) : form.who,
     });
   };
   const addContactHandler = (data: ContactForm_t) => {
@@ -185,6 +187,7 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
             setContactInfo(val);
             setOpenEditContact(true);
           }}
+          onSearch={props.onSearchContact}
           defaultValue={props.dafaultValue?.who}
           placeholder="Contact"
           name="who"

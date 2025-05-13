@@ -4,6 +4,19 @@ export enum transactionType_e {
   loan,
   lend,
 }
+export enum errorCode_e {
+  UnknownError,         // ไม่สามารถระบุสาเหตุได้
+  InUseError,           // ยังถูกใช้งานอยู่ 
+  UnauthorizedError,    // ผู้ใช้ยังไม่ได้ล็อกอิน
+  ForbiddenError,       // ผู้ใช้ไม่มีสิทธิ์
+  TokenExpiredError,    // Token หมดอายุ
+  PermissionDeniedError,// ปฏิเสธสิทธิ์การเข้าถึง
+  InvalidInputError,    // อินพุตไม่ถูกต้อง
+  NotFoundError,        // ไม่พบข้อมูลที่ต้องการ
+  AlreadyExistsError,   // มีข้อมูลนี้อยู่แล้ว
+  InvalidStateError,    // สถานะไม่พร้อมสำหรับการดำเนินการ
+  TimeoutError,         // คำขอหมดเวลา
+}
 export type transactionDetail_t = {
   id?: string;
   topic: string;
@@ -37,15 +50,15 @@ export type ContactForm_t = {
   taxID: string;
   description: string;
 };
-export type  ContactInfo_t = {
+export type ContactInfo_t = {
   codeName: string;
-    billName: string;
-    description?: string;
-    address?: string;
-    taxID?: string;
-    tel?: string;
+  billName: string;
+  description?: string;
+  address?: string;
+  taxID?: string;
+  tel?: string;
 }
-export type responstDB_t<T extends "getTransaction" | "getContact" | "post" | "put" | "del" > =
+export type responstDB_t<T extends "getTransaction" | "getContact" | "post" | "put" | "del"> =
   T extends "getTransaction" ? statement_t[] :
   T extends "getContact" ? ContactInfo_t[] :
   T extends "post" ? {
@@ -58,5 +71,6 @@ export type responstDB_t<T extends "getTransaction" | "getContact" | "post" | "p
   T extends "del" ? {
     status: "success" | "error";
     deletedCount?: number;
+    errCode?: errorCode_e;
   }
   : never;

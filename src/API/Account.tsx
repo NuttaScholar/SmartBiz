@@ -52,6 +52,7 @@ export async function putStatement(
   id: string,
   data: TransitionForm_t
 ): Promise<responstDB_t<"put">> {
+  console.log(data);
   try {
     const res = await axios.put(
       `http://${import.meta.env.VITE_HOST}:${
