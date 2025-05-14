@@ -2,15 +2,18 @@ import React from "react";
 import AppBar_c, { pageApp_e } from "../component/Organisms/AppBar_c";
 import DialogAddContact from "../dialog/DialogAddContact";
 import { ContactList_dataSet } from "../dataSet/DataContactList";
-import { Bill_t, BillList, ProductList } from "../dataSet/DataBill";
+import { Bill_t, BillList, product_t, ProductList } from "../dataSet/DataBill";
 import { billType_e } from "../type";
 import { IconButton, Stack } from "@mui/material";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import Search_Contact_Field from "../component/Molecules/Search_Contact_Field";
 import Feild_Tab from "../component/Molecules/Feild_Tab";
 import Bill_Detail from "../component/Molecules/Bill_Detail";
 import DialogBill from "../dialog/DialogBill";
 import AddIcon from '@mui/icons-material/Add';
 import DialogAddBill from "../dialog/DialogAddBill";
+import DialogProductList from "../dialog/DialogProductList";
 
 const billTabs = [
   {name: "รอชำระ", value: billType_e.not_paid},
@@ -19,14 +22,17 @@ const billTabs = [
   {name: "จัดส่งสำเร็จ", value: billType_e.delivered},
 ];
 
-const billOptions = [ "Next Step", "Print", "Delete", "Add" ]
+const billOptions = [ "Next Step", "Print", "Delete" ]
 
 const Page_Bill: React.FC = () => {
   const [ openAddContact, setOpenAddContact ] = React.useState(false);
   const [ openBillDialog, setOpenBillDialog ] = React.useState(false);
   const [ openAddBill, setOpenAddBill ] = React.useState(false);
+  const [ openProductListDialog, setOpenProductListDialog ] = React.useState(false);
   const [ selectedBill, setSelectedBill ] = React.useState<Bill_t | null>(null);
   const [ selectedProduct, setSelectedProduct ] = React.useState<string[]>([]);
+  const [ selectedProductBill, setSelectedProductBill ] = React.useState<product_t[]>([]);
+  const [ productBillList, setProductBillList ] = React.useState<product_t[]>([]);
   const [ openBillOptionNo, setOpenBillOptionNo ] = React.useState<number | null>(null);
   const [ selectedBillName, setSelectedBillName ] = React.useState<string>("");
   const [ selectedTab, setSelectedTab ] = React.useState(billTabs[0].value);
@@ -82,34 +88,48 @@ const Page_Bill: React.FC = () => {
         const billToPrint = billData.find(b => b.no === billNo);
         if (!billToPrint) return;
 
-        let billStatus = billToPrint.status === billType_e.not_paid ? "ยังไม่ได้ชำระ" :
-                        billToPrint.status === billType_e.already_paid ? "ชำระแล้ว" :
-                        billToPrint.status === billType_e.must_delivered ? "ที่ต้องส่ง" :
-                        billToPrint.status === billType_e.delivered ? "ส่งแล้ว" :
-                        "ไม่ระบุสถานะ";
+        const doc = new jsPDF();
 
-        let csvContent = `เลขที่บิล,${billToPrint.no}\n`;
-        csvContent += `วันที่,${billToPrint.date.toDateString()}\n`;
-        csvContent += `สถานะ,${billStatus}\n\n`;
+        const billStatus = billToPrint.status === billType_e.not_paid ? "Not paid" :
+                          billToPrint.status === billType_e.already_paid ? "Paid" :
+                          billToPrint.status === billType_e.must_delivered ? "Must Delivered" :
+                          billToPrint.status === billType_e.delivered ? "Delivered" :
+                          "Not found status";
 
-        csvContent += `==================================================================\n`;
-        csvContent += "รหัสสินค้า,ชื่อสินค้า,จำนวน,หน่วยละ,รวม\n";
-        billToPrint.products?.forEach((p) => {
-          csvContent += `${p._id},${p.name},${p.quantity},${p.unit_price},${p.total_amount}\n`;
+        // หัวเอกสาร
+        doc.setFontSize(18);
+        doc.text("Purchase Order Receipt", 105, 20, { align: "center" });
+
+        doc.setFontSize(12);
+        doc.text(`Bill No: ${billToPrint.no}`, 14, 35);
+        doc.text(`Date: ${billToPrint.date.toDateString()}`, 14, 43);
+        doc.text(`Status: ${billStatus}`, 14, 51);
+        doc.text(`Customer: ${billToPrint.billName}`, 14, 59);
+
+        // ตารางสินค้า
+        autoTable(doc, {
+          startY: 70,
+          head: [["Product_id", "Product_name", "Quantity", "Unit_price", "Total_amount"]],
+          body: billToPrint.products?.map(p => [
+            p._id ?? "-", 
+            p.name ?? "-", 
+            p.quantity ?? 0, 
+            p.unit_price ?? 0, 
+            p.total_amount ?? 0
+          ]),
+          styles: { font: "THSarabun", fontSize: 12 },
+          headStyles: { fillColor: [0, 120, 212] },
         });
-        csvContent += `==================================================================\n\n`;
 
-        csvContent += `ยอดรวม,${billToPrint.price}\n`;
-        csvContent += `ผู้ซื้อ,${billToPrint.billName}\n`;
+        // ยอดรวม
+        const finalY = (doc as any).lastAutoTable.finalY ?? 80;
+        doc.text(`Total Price: ${billToPrint.price} Bath`, 14, finalY + 10);
 
-        const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `Bill_${billToPrint.no}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // เปิดในแท็บใหม่
+        const pdfBlob = doc.output("blob");
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, "_blank");
+
         break;
       }
       case "Delete": {
@@ -124,9 +144,6 @@ const Page_Bill: React.FC = () => {
         if(selectedProduct.length > 0){
           alert(`ลบสินค้า รหัส ${selectedProduct.join(", ")} จำนวน ${selectedProduct.length} รายการสำเร็จ`);
         }
-        break;
-      }
-      case "Add": {
         break;
       }
       default: {
@@ -152,6 +169,42 @@ const Page_Bill: React.FC = () => {
       );
     }
   }; 
+
+  const handleSelectedNewProduct = (product?: product_t | undefined, all: boolean = false) => {
+    if (all) {
+      if (selectedProductBill.length === ProductList.length) {
+        setSelectedProductBill([]);
+      } else {
+        setSelectedProductBill(ProductList);
+      }
+    } 
+    else if (product) {
+      const exists = selectedProductBill.find(p => p._id === product._id);
+      if (exists) {
+        setSelectedProductBill(selectedProductBill.filter(p => p._id !== product._id));
+      } else {
+        setSelectedProductBill([...selectedProductBill, product]);
+      }
+    }
+  };
+
+  const handleDeleteProductBill = (productId: string[]) => {
+    const newSelectedProductBill = productBillList.filter(p => !productId.includes(p._id));
+    setProductBillList(newSelectedProductBill);
+    setSelectedProduct([]);
+  };
+
+  const handleProductListConfirm = () => {
+    if(selectedProductBill.length === 0){
+      alert("กรุณาเลือกสินค้าก่อนเพิ่ม");
+      return;
+    }
+    else if(selectedProductBill.length > 0){
+      setProductBillList(selectedProductBill);
+      setOpenProductListDialog(false);
+    }
+    setSelectedProductBill([]);
+  }
 
   return (
     <>
@@ -229,13 +282,26 @@ const Page_Bill: React.FC = () => {
       <DialogAddBill 
         open={openAddBill}
         ContactData={ContactList_dataSet}
-        products={ProductList} 
+        products={productBillList} 
         selectedProduct={selectedProduct}
+        openProductListDialog={openProductListDialog}
         onClose={()=>setOpenAddBill(false)}
+        setProductBillList={setProductBillList}
         handleSelectedProduct={handleSelectedProduct}
         setOpenAddContact={setOpenAddContact}
         handleSelectedBillName={handleSelectedBillName}
-        
+        setOpenProductListDialog={setOpenProductListDialog}
+        handleDeleteProductBill={handleDeleteProductBill}
+      />
+
+      <DialogProductList
+        open={openProductListDialog}
+        selectedProductBill={selectedProductBill}
+        products={ProductList}
+        onClose={() => setOpenProductListDialog(false)}
+        setSelectedProductBill={setSelectedProductBill}
+        handleSelectedNewProduct={handleSelectedNewProduct}
+        handleProductListConfirm={handleProductListConfirm}
       />
 
       {selectedBill && (

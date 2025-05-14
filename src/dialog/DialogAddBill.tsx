@@ -10,7 +10,7 @@ import FieldContact from '../component/Molecules/FieldContact';
 import { contactInfo_t } from '../component/Molecules/ContactInfo';
 import { product_t } from '../dataSet/DataBill';
 
-const tableHeadCellStyle = {
+export const tableHeadCellStyle = {
   position: "sticky",
   top: 0,
   padding: "6px 16px",
@@ -33,14 +33,18 @@ interface myProps {
   ContactData: contactInfo_t[];
   products: product_t[];
   selectedProduct: string[];
+  openProductListDialog: boolean;
   onClose?: () => void;
+  setProductBillList: (products: product_t[]) => void;
   handleSelectedProduct?: (id: string, all: boolean) => void;
   setOpenAddContact: (enable: boolean) => void;
   handleSelectedBillName: (value: string) => void;
+  setOpenProductListDialog: (enable: boolean) => void;
+  handleDeleteProductBill: (productId: string[]) => void;
 }
 
 const DialogAddBill: React.FC<myProps> = (props) => {
-  const [mode, setMode] = React.useState<"add" | "delete" | "">("");
+
   return (
     <Dialog
       fullScreen
@@ -97,13 +101,10 @@ const DialogAddBill: React.FC<myProps> = (props) => {
                 <Button 
                   variant="outlined"
                   startIcon={<AddIcon />}
-                  onClick={() => setMode(mode === "add" ? "" : "add")}
+                  onClick={() => props.setOpenProductListDialog(!props.openProductListDialog)}
                   sx={{
-                    color: mode === "add" ? "#fff" : (props.selectedProduct.length > 0 ? "#0078D4" : "#888"),
-                    backgroundColor: mode === "add" ? "#0078D4" : "transparent",
-                    '&:hover': {
-                      backgroundColor: mode === "add" ? "#005fa3" : "rgba(0,0,0,0.04)"
-                    }
+                    color: props.openProductListDialog ? "#0078D4" : "#00000061",
+                    backgroundColor: "#fff" ,
                   }}
                 >
                   Add
@@ -112,14 +113,11 @@ const DialogAddBill: React.FC<myProps> = (props) => {
                 <Button 
                   variant="outlined"
                   startIcon={<DeleteIcon />}
-                  onClick={() => setMode(mode === "delete" ? "" : "delete")}
                   sx={{
-                    color: mode === "delete" ? "#fff" : (props.selectedProduct.length > 0 ? "#0078D4" : "#888"),
-                    backgroundColor: mode === "delete" ? "#0078D4" : "transparent",
-                    '&:hover': {
-                      backgroundColor: mode === "delete" ? "#005fa3" : "rgba(0,0,0,0.04)"
-                    }
+                    color: props.selectedProduct.length > 0 ? "#0078D4" : "#00000061",
+                    backgroundColor: "#fff" ,
                   }}
+                  onClick={() => props.handleDeleteProductBill(props.selectedProduct)}
                 >
                   Delete
                 </Button>
@@ -127,7 +125,7 @@ const DialogAddBill: React.FC<myProps> = (props) => {
               <TableContainer
                 component={Paper}
                 sx={{
-                  maxHeight: "626px",
+                  height: "626px",
                   border: "1px solid #000",
                 }}
               >
@@ -215,6 +213,23 @@ const DialogAddBill: React.FC<myProps> = (props) => {
                         <TableCell sx={{ borderRight: 0 }}>{row.total_amount}</TableCell>
                       </TableRow>
                     ))}
+                    {props.products?.length === 0 && (
+                      <TableRow
+                        sx={{ 
+                          backgroundColor: "#fff",
+                          '&:not(:last-child)': {
+                            borderBottom: '1px solid #e0e0e0'
+                          }
+                        }}
+                      >
+                        <TableCell 
+                          sx={{ borderRight: 0 }}
+                          colSpan={6}
+                        >
+                          Noot have product.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -244,7 +259,10 @@ const DialogAddBill: React.FC<myProps> = (props) => {
                 sx={{
                   padding: "8px 70px"
                 }}
-                onClick={props.onClose}
+                onClick={() => {
+                  props.setProductBillList([]);
+                  props.onClose?.();
+                }}
               >
                 CANCLE
               </Button>
