@@ -119,10 +119,10 @@ const DialogProductList: React.FC<myProps> = (props) => {
                                 indeterminateIcon={<IndeterminateCheckBox sx={{ color: "#fff" }} />}
                                 onChange={() => props.handleSelectedNewProduct(undefined, true)}
                                 sx={{
-                                color: "#fff",
-                                '&.Mui-checked': {
-                                    color: "#fff"
-                                },
+                                    color: "#fff",
+                                    '&.Mui-checked': {
+                                        color: "#fff"
+                                    },
                                 }}
                             />
                             No.
@@ -160,8 +160,8 @@ const DialogProductList: React.FC<myProps> = (props) => {
                                 gap={"12px"}
                             >
                                 <Checkbox 
-                                checked={props.selectedProductBill.some(p => p._id === row._id)}
-                                onChange={() => props.handleSelectedNewProduct?.(row, false)}
+                                    checked={props.selectedProductBill.some(p => p._id === row._id)}
+                                    onChange={() => props.handleSelectedNewProduct?.(row, false)}
                                 />
                                 {index + 1}
                             </Stack>

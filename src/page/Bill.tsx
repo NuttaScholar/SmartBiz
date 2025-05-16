@@ -14,6 +14,12 @@ import DialogBill from "../dialog/DialogBill";
 import AddIcon from '@mui/icons-material/Add';
 import DialogAddBill from "../dialog/DialogAddBill";
 import DialogProductList from "../dialog/DialogProductList";
+import DialogProductQuantity from "../dialog/DialogProductQuantity";
+
+export interface newProductBill {
+  product: product_t;
+  quantity: number;
+}
 
 const billTabs = [
   {name: "รอชำระ", value: billType_e.not_paid},
@@ -29,10 +35,12 @@ const Page_Bill: React.FC = () => {
   const [ openBillDialog, setOpenBillDialog ] = React.useState(false);
   const [ openAddBill, setOpenAddBill ] = React.useState(false);
   const [ openProductListDialog, setOpenProductListDialog ] = React.useState(false);
+  const [ openSetProductQuantityDialog, setOpenSetProductQuantityDialog ] = React.useState(false);
   const [ selectedBill, setSelectedBill ] = React.useState<Bill_t | null>(null);
   const [ selectedProduct, setSelectedProduct ] = React.useState<string[]>([]);
   const [ selectedProductBill, setSelectedProductBill ] = React.useState<product_t[]>([]);
-  const [ productBillList, setProductBillList ] = React.useState<product_t[]>([]);
+  const [ tempproductBillList, setTempproductBillList ] = React.useState<newProductBill[]>([]);
+  const [ productBillList, setProductBillList ] = React.useState<newProductBill[]>([]);
   const [ openBillOptionNo, setOpenBillOptionNo ] = React.useState<number | null>(null);
   const [ selectedBillName, setSelectedBillName ] = React.useState<string>("");
   const [ selectedTab, setSelectedTab ] = React.useState(billTabs[0].value);
@@ -189,7 +197,7 @@ const Page_Bill: React.FC = () => {
   };
 
   const handleDeleteProductBill = (productId: string[]) => {
-    const newSelectedProductBill = productBillList.filter(p => !productId.includes(p._id));
+    const newSelectedProductBill = productBillList.filter(p => !productId.includes(p.product._id));
     setProductBillList(newSelectedProductBill);
     setSelectedProduct([]);
   };
@@ -200,11 +208,69 @@ const Page_Bill: React.FC = () => {
       return;
     }
     else if(selectedProductBill.length > 0){
-      setProductBillList(selectedProductBill);
+      setTempproductBillList(
+        selectedProductBill.map(product => ({
+          product: product,
+          quantity: 1
+        }))
+      );
+      setSelectedProductBill([]);
+      setOpenSetProductQuantityDialog(true);
       setOpenProductListDialog(false);
     }
-    setSelectedProductBill([]);
   }
+
+  const handleProductQuantity = (quantity: number, index: number) => {
+    if (quantity <= 0) {
+      return;
+    }
+
+    const selectedProduct = tempproductBillList[index];
+
+    if (quantity > selectedProduct.product.quantity) {
+      alert(`สินค้า ${selectedProduct.product.name} มีจำนวนคงเหลือ ${selectedProduct.product.quantity}`);
+      return;
+    }
+
+    const newProductBillList = [...tempproductBillList];
+    newProductBillList[index].quantity = quantity;
+    setTempproductBillList(newProductBillList);
+  };
+  
+  const handleSetProductQuantityConfirm = () => {
+    if (tempproductBillList.length === 0) {
+      alert("กรุณาเลือกสินค้าก่อนเพิ่ม");
+      return;
+    }
+
+    const updatedProductBillList = [...productBillList]; 
+
+    for (const tempProduct of tempproductBillList) {
+      const existingIndex = updatedProductBillList.findIndex(
+        (item) => item.product._id === tempProduct.product._id
+      );
+
+      const existingQuantity = existingIndex !== -1 
+        ? updatedProductBillList[existingIndex].quantity 
+        : 0;
+
+      const totalQuantity = existingQuantity + tempProduct.quantity;
+
+      if (totalQuantity > tempProduct.product.quantity) {
+        alert(`สินค้า ${tempProduct.product.name} มีจำนวนคงเหลือ ${tempProduct.product.quantity} ชิ้น`);
+        return; // หยุดการดำเนินการทั้งหมด
+      }
+
+      if (existingIndex !== -1) {
+        updatedProductBillList[existingIndex].quantity = totalQuantity;
+      } else {
+        updatedProductBillList.push(tempProduct);
+      }
+    }
+
+    setProductBillList(updatedProductBillList);
+    setOpenSetProductQuantityDialog(false);
+  };
 
   return (
     <>
@@ -302,6 +368,15 @@ const Page_Bill: React.FC = () => {
         setSelectedProductBill={setSelectedProductBill}
         handleSelectedNewProduct={handleSelectedNewProduct}
         handleProductListConfirm={handleProductListConfirm}
+      />
+
+      <DialogProductQuantity
+        open={openSetProductQuantityDialog}
+        products_bill={tempproductBillList}
+        onClose={() => setOpenSetProductQuantityDialog(false)}
+        setTempproductBillList={setTempproductBillList}
+        handleProductQuantity={handleProductQuantity}
+        handleSetProductQuantityConfirm={handleSetProductQuantityConfirm}
       />
 
       {selectedBill && (

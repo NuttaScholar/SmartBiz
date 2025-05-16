@@ -8,7 +8,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { IndeterminateCheckBox } from '@mui/icons-material';
 import FieldContact from '../component/Molecules/FieldContact';
 import { contactInfo_t } from '../component/Molecules/ContactInfo';
-import { product_t } from '../dataSet/DataBill';
+import { newProductBill } from '../page/Bill';
 
 export const tableHeadCellStyle = {
   position: "sticky",
@@ -31,11 +31,11 @@ const Transition = React.forwardRef(function Transition(
 interface myProps {
   open: boolean;
   ContactData: contactInfo_t[];
-  products: product_t[];
+  products: newProductBill[];
   selectedProduct: string[];
   openProductListDialog: boolean;
   onClose?: () => void;
-  setProductBillList: (products: product_t[]) => void;
+  setProductBillList: (products: newProductBill[]) => void;
   handleSelectedProduct?: (id: string, all: boolean) => void;
   setOpenAddContact: (enable: boolean) => void;
   handleSelectedBillName: (value: string) => void;
@@ -200,17 +200,17 @@ const DialogAddBill: React.FC<myProps> = (props) => {
                             gap={"12px"}
                           >
                             <Checkbox
-                              checked={props.selectedProduct.includes(row._id)}
-                              onChange={() => props.handleSelectedProduct?.(row._id, false)}
+                              checked={props.selectedProduct.includes(row.product._id)}
+                              onChange={() => props.handleSelectedProduct?.(row.product._id, false)}
                             />
                             {index + 1}
                           </Stack>
                         </TableCell>
-                        <TableCell sx={{ borderRight: 0 }}>{row._id}</TableCell>
-                        <TableCell sx={{ borderRight: 0 }}>{row.name}</TableCell>
+                        <TableCell sx={{ borderRight: 0 }}>{row.product._id}</TableCell>
+                        <TableCell sx={{ borderRight: 0 }}>{row.product.name}</TableCell>
                         <TableCell sx={{ borderRight: 0 }}>{row.quantity}</TableCell>
-                        <TableCell sx={{ borderRight: 0 }}>{row.unit_price}</TableCell>
-                        <TableCell sx={{ borderRight: 0 }}>{row.total_amount}</TableCell>
+                        <TableCell sx={{ borderRight: 0 }}>{row.product.unit_price}</TableCell>
+                        <TableCell sx={{ borderRight: 0 }}>{row.quantity * row.product.unit_price}</TableCell>
                       </TableRow>
                     ))}
                     {props.products?.length === 0 && (
