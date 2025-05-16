@@ -1,19 +1,41 @@
 import axios from "axios";
-import { responstDB_t, statement_t, transactionDetail_t, TransitionForm_t } from "../type";
+import dayjs from "dayjs";
+import {
+  responstDB_t,
+  statement_t,
+  transactionDetail_t,
+  TransitionForm_t,
+} from "../type";
+import { SearchTransForm_t } from "../dialog/DialogSearchTransaction";
 
 export async function getStatement(
   month: number,
   year: number
 ): Promise<responstDB_t<"getTransaction">> {
+  const from = new Date(year,month-1,1);
+  const to = new Date(year,month,0);  // new Date(year, month, 0).getDate() = วันสิ้นเดือน
   try {
     const res = await axios.get(
       `http://${import.meta.env.VITE_HOST}:${
         import.meta.env.VITE_PORT_ACCESS
-      }/transaction?from=${year}-${month
-        .toString()
-        .padStart(2, "0")}-1&to=${year}-${month
-        .toString()
-        .padStart(2, "0")}-${new Date(year, month, 0).getDate()}` // new Date(year, month, 0).getDate() = วันสิ้นเดือน
+      }/transaction?from=${from.toISOString()}&to=${to.toISOString()}` 
+    );
+    return res.data as responstDB_t<"getTransaction">;
+  } catch (err) {
+    throw err;
+  }
+}
+export async function searchStatement(
+  data: SearchTransForm_t
+): Promise<responstDB_t<"getTransaction">> {
+  try {
+    const {from, to, type, who, topic} = data;
+    
+    const res = await axios.get(
+      `http://${import.meta.env.VITE_HOST}:${
+        import.meta.env.VITE_PORT_ACCESS
+      }/transaction?from=${from.toISOString()}&to=${to.toISOString()}${data.type && `&type=${type}`}${data.topic && `&topic=${topic}`}
+      ${who && `&who=${who}`}`
     );
     return res.data as responstDB_t<"getTransaction">;
   } catch (err) {
@@ -35,7 +57,6 @@ export async function delStatement(id: string): Promise<responstDB_t<"del">> {
 export async function postStatement(
   data: TransitionForm_t
 ): Promise<responstDB_t<"post">> {
-  console.log(data.date);
   try {
     const res = await axios.post(
       `http://${import.meta.env.VITE_HOST}:${

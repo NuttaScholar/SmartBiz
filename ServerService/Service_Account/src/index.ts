@@ -125,7 +125,7 @@ app.get('/transaction', async (req: Request, res: Response) => {
         },
     }
     console.log(req.query);
-    if (who) filter.contact = who;
+    if (who) filter.who = who;
     if (topic) filter.topic = topic;
     if (type) filter.type = Number(type);
     Transatcion.aggregate([

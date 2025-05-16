@@ -2,7 +2,7 @@ import { Box, Button, Dialog, DialogContent, Fab, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import React from "react";
 import HeaderDialog from "../component/Molecules/HeaderDialog";
-import { transactionType_e } from "../type";
+import { statement_t, transactionType_e, TransitionForm_t } from "../type";
 import FieldSelector, {
   listSelect_t,
 } from "../component/Molecules/FieldSelector";
@@ -17,8 +17,7 @@ import FieldDuration from "../component/Molecules/FieldDuration";
 import FieldContact from "../component/Molecules/FieldContact";
 import { ContactList_dataSet } from "../dataSet/DataContactList";
 import MonthlyTotalList from "../component/Organisms/MonthlyTotalList";
-import { DailyMoneyList } from "../dataSet/DataMoney";
-import { DailyTotal_t } from "../component/Molecules/DailyTotalList";
+import { contactInfo_t } from "../component/Molecules/ContactInfo";
 
 //*********************************************
 // Type
@@ -30,7 +29,6 @@ export type SearchTransForm_t = {
   type?: transactionType_e;
   who?: string;
 };
-type form_t = {};
 //*********************************************
 // Style
 //*********************************************
@@ -53,15 +51,16 @@ const Transition = React.forwardRef(function Transition(
 interface myProps {
   open: boolean;
   onClose?: () => void;
-  onSubmit?: (data: SearchTransForm_t) => void;
+  onSearch?: (data: SearchTransForm_t) => void;
+  onClick?: (value: TransitionForm_t) => void;
+  contactList?: contactInfo_t[];
+  value?: statement_t[];
 }
 //*********************************************
 // Component
 //*********************************************
 const DialogSearchTransaction: React.FC<myProps> = (props) => {
   const contentRef = React.useRef<HTMLDivElement>(null);
-  const [transaction, setTransaction] =
-    React.useState<DailyTotal_t[]>(DailyMoneyList);
   const listSelect: listSelect_t[] = [
     { label: "รายรับ", value: transactionType_e.income },
     { label: "รายจ่าย", value: transactionType_e.expenses },
@@ -72,8 +71,17 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
-    const form = formJson;
-    console.log(form);
+    
+    const {duration_From, duration_To, ...rest} = formJson;
+    const [fday, fmonth, fyear] = duration_From.split("/").map(Number);
+    const [tday, tmonth, tyear] = duration_To.split("/").map(Number);
+    const form: SearchTransForm_t = {
+      from: new Date(fyear, fmonth - 1, fday),
+      to: new Date(tyear, tmonth - 1, tday),
+      ...rest,
+    };
+
+    props.onSearch?.(form);
   };
   const scrollToTop = () => {
     if (contentRef.current) {
@@ -131,7 +139,7 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
             name="who"
             icon={<AccountBoxIcon />}
             placeholder="Contact"
-            list={ContactList_dataSet}
+            list={props.contactList}
           />
           <Box
             sx={{ width: "100%", display: "flex", justifyContent: "center" }}
@@ -146,7 +154,13 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
             </Button>
           </Box>
         </Box>
-        {transaction.length !== 0 && <MonthlyTotalList value={transaction} />}
+        {props.value?.map((val, index) => (
+          <MonthlyTotalList
+            key={index}
+            value={val.detail}
+            onClick={props.onClick}
+          />
+        ))}
       </DialogContent>
       <Fab
         size="medium"

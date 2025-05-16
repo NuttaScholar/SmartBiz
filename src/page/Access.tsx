@@ -12,7 +12,7 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import DialogAddTransaction, {
   TransitionForm_t,
 } from "../dialog/DialogAddTransaction";
-import DialogSearchTransaction from "../dialog/DialogSearchTransaction";
+import DialogSearchTransaction, { SearchTransForm_t } from "../dialog/DialogSearchTransaction";
 import { GoToTop } from "../function/Window";
 import * as Access from "../API/Account";
 import * as Contact from "../API/Contact";
@@ -33,6 +33,7 @@ const Page_Access: React.FC = () => {
   const [month, setMonth] = React.useState(12);
   const [hasMore, setHasMore] = React.useState(true);
   const [contactList, setContactList] = React.useState<contactInfo_t[]>([]);
+  const [searchTranResult, setSearchTranResult] = React.useState<statement_t[]>([]);
   // Local Variable **************
   const TotalMoney = 10000;
   const MenuList: menuList_t[] = [
@@ -226,10 +227,21 @@ const Page_Access: React.FC = () => {
       console.log(err);
     }
   }
+  const onSearchTran = async (data: SearchTransForm_t) => {
+    console.log(data); 
+    try{
+      const res = await Access.searchStatement(data);
+      
+      setSearchTranResult(res);
+    }catch(err){
+      alert("Unknow Error");
+      console.log(err);
+    }
+  }
   // Use Effect **************
   React.useEffect(() => {
     initPage();
-  }, []);
+  }, [yearSelect]);
   return (
     <>
       <AppBar_c role="admin" page={pageApp_e.access} />
@@ -292,7 +304,14 @@ const Page_Access: React.FC = () => {
       />
       <DialogSearchTransaction
         open={openDialogSearch}
-        onClose={() => setOpenDialogSearch(false)}
+        onClose={() => {
+          setOpenDialogSearch(false);
+          setSearchTranResult([]);
+        }}
+        onSearch={onSearchTran}
+        onClick={onClickTransHandler}
+        contactList={contactList}
+        value={searchTranResult}
       />
     </>
   );
