@@ -5,8 +5,6 @@ import { ContactList_dataSet } from "../dataSet/DataContactList";
 import { Bill_t, BillList, product_t, ProductList } from "../dataSet/DataBill";
 import { billType_e } from "../type";
 import { IconButton, Stack } from "@mui/material";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import Search_Contact_Field from "../component/Molecules/Search_Contact_Field";
 import Feild_Tab from "../component/Molecules/Feild_Tab";
 import Bill_Detail from "../component/Molecules/Bill_Detail";
@@ -15,6 +13,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DialogAddBill from "../dialog/DialogAddBill";
 import DialogProductList from "../dialog/DialogProductList";
 import DialogProductQuantity from "../dialog/DialogProductQuantity";
+import DialogPrintBill from "../dialog/DialogPrintBill";
 
 export interface newProductBill {
   product: product_t;
@@ -36,6 +35,7 @@ const Page_Bill: React.FC = () => {
   const [ openAddBill, setOpenAddBill ] = React.useState(false);
   const [ openProductListDialog, setOpenProductListDialog ] = React.useState(false);
   const [ openSetProductQuantityDialog, setOpenSetProductQuantityDialog ] = React.useState(false);
+  const [ openPrintBillDialog, setOpenPrintBillDialog ] = React.useState(false);
   const [ selectedBill, setSelectedBill ] = React.useState<Bill_t | null>(null);
   const [ selectedProduct, setSelectedProduct ] = React.useState<string[]>([]);
   const [ selectedProductBill, setSelectedProductBill ] = React.useState<product_t[]>([]);
@@ -93,51 +93,14 @@ const Page_Bill: React.FC = () => {
         break;
       }
       case "Print": {
-        const billToPrint = billData.find(b => b.no === billNo);
-        if (!billToPrint) return;
-
-        const doc = new jsPDF();
-
-        const billStatus = billToPrint.status === billType_e.not_paid ? "Not paid" :
-                          billToPrint.status === billType_e.already_paid ? "Paid" :
-                          billToPrint.status === billType_e.must_delivered ? "Must Delivered" :
-                          billToPrint.status === billType_e.delivered ? "Delivered" :
-                          "Not found status";
-
-        // หัวเอกสาร
-        doc.setFontSize(18);
-        doc.text("Purchase Order Receipt", 105, 20, { align: "center" });
-
-        doc.setFontSize(12);
-        doc.text(`Bill No: ${billToPrint.no}`, 14, 35);
-        doc.text(`Date: ${billToPrint.date.toDateString()}`, 14, 43);
-        doc.text(`Status: ${billStatus}`, 14, 51);
-        doc.text(`Customer: ${billToPrint.billName}`, 14, 59);
-
-        // ตารางสินค้า
-        autoTable(doc, {
-          startY: 70,
-          head: [["Product_id", "Product_name", "Quantity", "Unit_price", "Total_amount"]],
-          body: billToPrint.products?.map(p => [
-            p._id ?? "-", 
-            p.name ?? "-", 
-            p.quantity ?? 0, 
-            p.unit_price ?? 0, 
-            p.total_amount ?? 0
-          ]),
-          styles: { font: "THSarabun", fontSize: 12 },
-          headStyles: { fillColor: [0, 120, 212] },
-        });
-
-        // ยอดรวม
-        const finalY = (doc as any).lastAutoTable.finalY ?? 80;
-        doc.text(`Total Price: ${billToPrint.price} Bath`, 14, finalY + 10);
-
-        // เปิดในแท็บใหม่
-        const pdfBlob = doc.output("blob");
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        window.open(pdfUrl, "_blank");
-
+        const selectedBillIndex = billData.findIndex(b => b.no === billNo);
+        if (selectedBillIndex === -1) {
+          alert("ไม่พบบิลที่เลือก");
+          return;
+        }
+        const bill = billData[selectedBillIndex];
+        setSelectedBill(bill);
+        setOpenPrintBillDialog(true);
         break;
       }
       case "Delete": {
@@ -167,7 +130,7 @@ const Page_Bill: React.FC = () => {
       setSelectedProduct(isAllSelected ? [] : [...allIds]);
     } 
     else if(all && !selectedBill){
-      const allIds = ProductList.map(p => p._id) || [];
+      const allIds = productBillList.map(p => p.product._id) || [];
       const isAllSelected = selectedProduct.length === allIds.length;
       setSelectedProduct(isAllSelected ? [] : [...allIds]);
     }
@@ -378,6 +341,14 @@ const Page_Bill: React.FC = () => {
         handleProductQuantity={handleProductQuantity}
         handleSetProductQuantityConfirm={handleSetProductQuantityConfirm}
       />
+
+      {selectedBill && (
+        <DialogPrintBill
+          open={openPrintBillDialog}
+          bill={selectedBill}
+          onClose={() => setOpenPrintBillDialog(false)}
+        />
+      )}
 
       {selectedBill && (
         <DialogBill 

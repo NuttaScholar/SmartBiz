@@ -48,6 +48,7 @@ const DialogProductQuantity: React.FC<myProps> = (props) => {
                         <TableCell sx={tableHeadCellStyle}>ชื่อสินค้า</TableCell>
                         <TableCell sx={tableHeadCellStyle}>คงเหลือ</TableCell>
                         <TableCell sx={tableHeadCellStyle}>หน่วยละ</TableCell>
+                        <TableCell sx={tableHeadCellStyle}>ราคารวม</TableCell>
                         <TableCell sx={tableHeadCellStyle}>จำนวนที่ต้องการ</TableCell>
                     </TableRow>
                 </TableHead>
@@ -68,6 +69,7 @@ const DialogProductQuantity: React.FC<myProps> = (props) => {
                             <TableCell sx={{ borderRight: 0 }}>{row.product.name}</TableCell>
                             <TableCell sx={{ borderRight: 0 }}>{row.product.quantity}</TableCell>
                             <TableCell sx={{ borderRight: 0 }}>{row.product.unit_price}</TableCell>
+                            <TableCell sx={{ borderRight: 0 }}> {row.product.unit_price * row.quantity || 0} </TableCell>
                             <TableCell sx={{ borderRight: 0 }}>
                                 <TextField
                                     id="outlined-number"
@@ -84,12 +86,25 @@ const DialogProductQuantity: React.FC<myProps> = (props) => {
                                     onChange={(e) => props.handleProductQuantity(parseInt(e.target.value), index)}
                                 />
                             </TableCell>
+                            
                         </TableRow>
                     ))}
 
+                    {props.products_bill.length > 0 && (
+                        <TableRow>
+                            <TableCell colSpan={7}>
+                                ราคารวมทั้งหมด {`\t`} 
+                                {props.products_bill.reduce((total, product) => {
+                                    return total + product.product.unit_price * product.quantity;
+                                }, 0).toFixed(2)}
+                                {`\t`} บาท
+                            </TableCell>
+                        </TableRow>
+                    )}
+
                     {props.products_bill.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={6}>
+                            <TableCell colSpan={7}>
                                 ไม่พบรายการสินค้า
                             </TableCell>
                         </TableRow>
