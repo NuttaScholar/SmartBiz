@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { transactionType_e, DailyTotal_t, statement_t, responstDB_t, errorCode_e } from "./type";
+import { transactionType_e, DailyTotal_t, statement_t, responstDB_t, errorCode_e, TransitionForm_t, ContactForm_t } from "./type";
 import moment from 'moment-timezone'
 
 /*********************************************** */
@@ -30,30 +30,85 @@ mongoose.connect("mongodb://root:example@localhost:27017/Account?authSource=admi
 // กำหนด Schema
 const contactSchema = new mongoose.Schema({
     _id: String,    // codeName
-    billName: String,
+    billName: { type: String, required: true },
     address: String,
     tel: String,
     taxID: String,
     description: String,
 });
 const transatcionSchema = new mongoose.Schema({
-    topic: String,
-    type: Number,
-    money: Number,
+    topic: { type: String, required: true },
+    type: { type: Number, required: true },
+    money: { type: Number, required: true },
     description: String,
     who: { type: mongoose.Schema.Types.String, ref: "contact" },
     date: { type: Date, required: true },
+});
+const walletSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    amount: { type: Number, required: true },
 });
 
 // สร้าง Model
 const User = mongoose.model("contact", contactSchema);
 const Transatcion = mongoose.model("transaction", transatcionSchema);
+const Wallet = mongoose.model("wallet", walletSchema);
+
+Wallet.findOne({ name: "main" }).then((res) => {
+    if (!res) {
+        const newWallet = new Wallet({ name: "main", amount: 0 });
+        newWallet.save().then(() => {
+            console.log("Create Wallet Success!");
+        }).catch(() => {
+            console.log("Create Wallet Failed!");
+        });
+    }
+}).catch((err) => { console.log(err); })
+
+/*********************************************** */
+// Function
+/*********************************************** */
+const calWallet = (type: transactionType_e, wallet: number, val: number, invert?: boolean): number => {
+    let total = 0;
+
+    if (invert) {
+        switch (type) {
+            case transactionType_e.expenses:
+            case transactionType_e.lend:
+                total = wallet + val;
+                break;
+            case transactionType_e.income:
+            case transactionType_e.loan:
+                total = wallet - val;
+                break;
+            default:
+                total = wallet;
+                break;
+        }
+    } else {
+        switch (type) {
+            case transactionType_e.expenses:
+            case transactionType_e.lend:
+                total = wallet - val;
+                break;
+            case transactionType_e.income:
+            case transactionType_e.loan:
+                total = wallet + val;
+                break;
+            default:
+                total = wallet;
+                break;
+        }
+    }
+
+    return total;
+}
 /*********************************************** */
 // Routes Setup
 /*********************************************** */
 app.post('/contact', async (req: Request, res: Response) => {
     try {
-        const { codeName, ...rest } = req.body;
+        const { codeName, ...rest } = req.body as ContactForm_t;
         const newData = { _id: codeName, ...rest };
         console.log(newData);
 
@@ -74,20 +129,24 @@ app.post('/contact', async (req: Request, res: Response) => {
 })
 app.post('/transaction', async (req: Request, res: Response) => {
     try {
-        const dateInBangkok = { ...req.body, date: moment.tz(req.body.date, "Asia/Bangkok").toDate() }
         console.log(req.body);
-        console.log(dateInBangkok);
+        const { money, type, ...rest } = req.body as TransitionForm_t;
         const newTransatcion = new Transatcion(req.body);
-        newTransatcion.save().then(() => {
+        await newTransatcion.save();
+        const val = await Wallet.findOne({ name: "main" });
+        const resWallet = await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(type, val?.amount || 0, money) })
+
+        console.log(resWallet);
+        if (resWallet.acknowledged) {
             const result: responstDB_t<"post"> = { status: "success" };
             res.send(result);
-        }).catch((err) => {
-            const result: responstDB_t<"post"> = { status: "error" };
-            console.log(err);
+        } else {
+            const result: responstDB_t<"post"> = { status: "error", errCode: errorCode_e.TimeoutError };
             res.send(result);
-        });
+        }
+
     } catch (err) {
-        const result: responstDB_t<"post"> = { status: "error" };
+        const result: responstDB_t<"post"> = { status: "error", errCode: errorCode_e.UnknownError };
         console.log(err);
         res.send(result);
     }
@@ -191,6 +250,19 @@ app.get('/transaction', async (req: Request, res: Response) => {
         res.send(result);
     })
 })
+app.get('/wallet', async (req: Request, res: Response) => {
+    try {
+        const data = await Wallet.findOne({ name: "main" });
+        let resault: responstDB_t<"getWallet"> = { status: "success", amount: data?.amount || 0 };
+        res.send(resault);
+    } catch (err) {
+        let resault: responstDB_t<"getWallet"> = { status: "error", errCode: errorCode_e.UnknownError };
+
+        console.log(err);
+        res.send(resault);
+    }
+
+})
 app.delete('/contact', async (req: Request, res: Response) => {
     try {
         const exists = await Transatcion.find({ who: req.query.id });
@@ -210,17 +282,23 @@ app.delete('/contact', async (req: Request, res: Response) => {
     }
 })
 app.delete('/transaction', async (req: Request, res: Response) => {
-    console.log(`id: ${req.query.id}`)
-    Transatcion.deleteOne({ _id: req.query.id }).then((data) => {
+    try {
+        const dataTran = await Transatcion.findOne({ _id: req.query.id });
+        const resTran = await Transatcion.deleteOne({ _id: req.query.id });
+        const result: responstDB_t<"del"> = { status: "success", deletedCount: resTran.deletedCount };
 
-        const result: responstDB_t<"del"> = { status: "success", deletedCount: data.deletedCount };
+        if (resTran.deletedCount) {
+            const val = await Wallet.findOne({ name: "main" });
+            const resWallet = await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(dataTran?.type===undefined?255:dataTran?.type , val?.amount || 0, dataTran?.money || 0, true) })
+        }      
+        res.send(result);        
 
+    } catch (err) {
+        const result: responstDB_t<"del"> = { status: "error", errCode: errorCode_e.UnknownError };
+        console.log(err);
         res.send(result);
-    }).catch(() => {
-        const result: responstDB_t<"del"> = { status: "error" };
-
-        res.send(result);
-    })
+    }
+    
 })
 app.put('/contact', async (req: Request, res: Response) => {
     const { codeName, ...rest } = req.body;

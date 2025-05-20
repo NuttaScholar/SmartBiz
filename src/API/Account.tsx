@@ -25,6 +25,19 @@ export async function getStatement(
     throw err;
   }
 }
+export async function getWallet(
+): Promise<responstDB_t<"getWallet">> {
+  try {
+    const res = await axios.get(
+      `http://${import.meta.env.VITE_HOST}:${
+        import.meta.env.VITE_PORT_ACCESS
+      }/wallet` 
+    );
+    return res.data as responstDB_t<"getWallet">;
+  } catch (err) {
+    throw err;
+  }
+}
 export async function searchStatement(
   data: SearchTransForm_t
 ): Promise<responstDB_t<"getTransaction">> {
@@ -57,6 +70,7 @@ export async function delStatement(id: string): Promise<responstDB_t<"del">> {
 export async function postStatement(
   data: TransitionForm_t
 ): Promise<responstDB_t<"post">> {
+  console.log(data);
   try {
     const res = await axios.post(
       `http://${import.meta.env.VITE_HOST}:${

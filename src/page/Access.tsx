@@ -34,8 +34,9 @@ const Page_Access: React.FC = () => {
   const [hasMore, setHasMore] = React.useState(true);
   const [contactList, setContactList] = React.useState<contactInfo_t[]>([]);
   const [searchTranResult, setSearchTranResult] = React.useState<statement_t[]>([]);
+  const [totalMoney, setTotalMoney] = React.useState(0);
   // Local Variable **************
-  const TotalMoney = 10000;
+ 
   const MenuList: menuList_t[] = [
     { text: "Add", icon: <AddIcon /> },
     { text: "Search", icon: <SearchIcon /> },
@@ -71,6 +72,11 @@ const Page_Access: React.FC = () => {
       let _month = 12;
       let cnt = 0;
       let trans: statement_t[] = [];
+      const wallet = await Access.getWallet();
+
+      if(wallet.status==="success"){
+        setTotalMoney(wallet.amount||0);
+      }
 
       while (!finish) {
         const res = await Access.getStatement(_month, yearSelect);
@@ -92,6 +98,7 @@ const Page_Access: React.FC = () => {
           finish = true;
         }
       }
+
       setHasMore(_month > 1); // ถ้าไม่มีข้อมูลเพิ่ม = จบการโหลด
       setMonth(_month);
     } catch (err) {
@@ -155,6 +162,8 @@ const Page_Access: React.FC = () => {
       const res = await Access.postStatement(data);
       if (res.status == "success") {
         initTrans();
+      }else{
+        alert("ทำรายการไม่สำเร็จ!")
       }
     } catch (err) {
       console.log(err);
@@ -248,7 +257,7 @@ const Page_Access: React.FC = () => {
       <MoneyTotal
         sx={{ textAlign: "center", mt: "16px" }}
         label="ยอดเงินคงเหลือ"
-        value={TotalMoney}
+        value={totalMoney}
       />
       <YearSelector year={yearSelect} onChange={yearSelectorHandler} />
 
