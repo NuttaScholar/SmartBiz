@@ -24,7 +24,6 @@ import { IndeterminateCheckBox, MoreVert } from '@mui/icons-material';
 import CheckIcon from '@mui/icons-material/Check';
 import PrintIcon from '@mui/icons-material/Print';
 import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & { 
@@ -54,7 +53,6 @@ const tableHeadCellStyle = {
 }
 
 const dialActions = [
-  { icon: <AddIcon />, name: 'Add', action: "Add" },
   { icon: <DeleteIcon />, name: 'Delete', action: "Delete Product" },
   { icon: <PrintIcon />, name: 'Print', action: "Print" },
   { icon: <CheckIcon />, name: 'Next Step', action: "Next Step" },
