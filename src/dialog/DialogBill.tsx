@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import HeaderDialog from '../component/Molecules/HeaderDialog';
 import { Bill_t } from '../dataSet/DataBill';
-import Bill_Detail from '../component/Molecules/Bill_Detail';
+import Bill_Detail from '../component/Organisms/Bill_Detail';
 import Checkbox  from '@mui/material/Checkbox';
 import { IndeterminateCheckBox, MoreVert } from '@mui/icons-material';
 import CheckIcon from '@mui/icons-material/Check';

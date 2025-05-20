@@ -7,7 +7,7 @@ import { billType_e } from "../type";
 import { IconButton, Stack } from "@mui/material";
 import Search_Contact_Field from "../component/Molecules/Search_Contact_Field";
 import Feild_Tab from "../component/Molecules/Feild_Tab";
-import Bill_Detail from "../component/Molecules/Bill_Detail";
+import Bill_Detail from "../component/Organisms/Bill_Detail";
 import DialogBill from "../dialog/DialogBill";
 import AddIcon from '@mui/icons-material/Add';
 import DialogAddBill from "../dialog/DialogAddBill";
