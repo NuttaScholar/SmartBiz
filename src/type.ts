@@ -62,39 +62,71 @@ export type LoginForm_t = {
   email: string;
   pass: string;
 }
+
 export type responstDB_t<
   T extends
-    | "getTransaction"
-    | "getContact"
-    | "getWallet"
-    | "post"
-    | "put"
-    | "del"
+  | "getTransaction"
+  | "getContact"
+  | "getWallet"
+  | "post"
+  | "put"
+  | "del"
 > = T extends "getTransaction"
   ? statement_t[]
   : T extends "getContact"
   ? ContactInfo_t[]
   : T extends "getWallet"
   ? {
-      status: "success" | "error";
-      amount?: number;
-      errCode?: errorCode_e;
-    }
+    status: "success" | "error";
+    amount?: number;
+    errCode?: errorCode_e;
+  }
   : T extends "post"
   ? {
-      status: "success" | "error";
-      errCode?: errorCode_e;
-    }
+    status: "success" | "error";
+    errCode?: errorCode_e;
+  }
   : T extends "put"
   ? {
-      status: "success" | "error";
-      updatedCount?: number;
-      errCode?: errorCode_e;
-    }
+    status: "success" | "error";
+    updatedCount?: number;
+    errCode?: errorCode_e;
+  }
   : T extends "del"
   ? {
-      status: "success" | "error";
-      deletedCount?: number;
-      errCode?: errorCode_e;
-    }
+    status: "success" | "error";
+    deletedCount?: number;
+    errCode?: errorCode_e;
+  }
+  : never;
+
+export type jwtFullToken_t = {
+  status: "success" | "error";
+  errCode ?: errorCode_e;
+  role?: String;
+  accessToken?: String;
+  refreshToken?: String;
+}
+export type jwtRefreshToken_t = {
+  status: "success" | "error";
+  errCode ?: errorCode_e;
+  role?: String;
+  accessToken?: String;
+}
+export type responstLogin_t<
+  T extends
+  | "postUser"
+  | "postLogin"
+  | "postToken"
+  | "put"
+  | "del"
+> = T extends "postUser"
+  ? {
+    status: "success" | "error";
+    errCode?: errorCode_e;
+  }
+  : T extends "postLogin" 
+  ? jwtFullToken_t
+  : T extends "postToken" 
+  ? jwtRefreshToken_t
   : never;
