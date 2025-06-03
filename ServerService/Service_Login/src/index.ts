@@ -33,8 +33,8 @@ app.use(express.json());
 /*********************************************** */
 // Load SSL Certificate
 /*********************************************** */
-const key = fs.readFileSync(path.join(__dirname, "../cert/key.pem"));
-const cert = fs.readFileSync(path.join(__dirname, "../cert/cert.pem"));
+const key = fs.readFileSync(path.join(__dirname, process.env.SSL_KEY||""));
+const cert = fs.readFileSync(path.join(__dirname, process.env.SSL_CERT||""));
 
 /*********************************************** */
 // Mongoose Setup
