@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import https from "https";
 import fs from "fs";
 import path from "path";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 /*********************************************** */
@@ -27,14 +28,18 @@ const saltRounds = 10;
 // Middleware Setup
 /*********************************************** */
 // อนุญาตให้ React frontend สามารถส่งคำขอมาได้
-app.use(cors());
+app.use(cors({
+    origin: "http://localhost:3030", // URL ของ React (Web)
+    credentials: true, // อนุญาตให้ส่ง cookie ไปกลับ
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 /*********************************************** */
 // Load SSL Certificate
 /*********************************************** */
-const key = fs.readFileSync(path.join(__dirname, process.env.SSL_KEY||""));
-const cert = fs.readFileSync(path.join(__dirname, process.env.SSL_CERT||""));
+const key = fs.readFileSync(path.join(__dirname, process.env.SSL_KEY || ""));
+const cert = fs.readFileSync(path.join(__dirname, process.env.SSL_CERT || ""));
 
 /*********************************************** */
 // Mongoose Setup
@@ -150,7 +155,19 @@ app.post('/login', async (req: Request, res: Response) => {
                         expiresIn: "1d",
                     }
                 );
-                const result: responstLogin_t<"postLogin"> = { status: "success", accessToken: accessToken, refreshToken: refreshToken }
+                const result: responstLogin_t<"postLogin"> = { status: "success" }
+                res.cookie("accessToken", accessToken, {
+                    httpOnly: true,
+                    secure: true, // ตั้งเป็น true ถ้าใช้ HTTPS
+                    sameSite: "lax",
+                    maxAge: 1000 * 60 * 60, // 1 ชั่วโมง
+                });
+                res.cookie("refreshToken", refreshToken, {
+                    httpOnly: true,
+                    secure: true,       // ตั้ง true เมื่อใช้ HTTPS
+                    sameSite: "strict", // ป้องกัน CSRF
+                    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 วัน
+                });
                 res.send(result);
             } else {
                 const result: responstLogin_t<"postLogin"> = { status: "error", errCode: errorCode_e.InvalidInputError }
@@ -305,5 +322,5 @@ app.put('/user', async (req: Request, res: Response) => {
 /*********************************************** */
 const server = https.createServer({ key, cert }, app);
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`HTTPS Server is running at https://localhost:${PORT}`);
+    console.log(`HTTPS Server is running at https://localhost:${PORT}`);
 });

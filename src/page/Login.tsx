@@ -1,14 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import AppBar_c, { pageApp_e } from "../component/Organisms/AppBar_c";
 import {
   SignInPage,
   type AuthProvider,
   type AuthResponse,
 } from "@toolpad/core/SignInPage";
+import { LoginForm_t } from "../type";
+import * as login_F from "../API/Login";
 
-const providers = [
-  { id: "credentials", name: "Email and password" },
-];
+const providers = [{ id: "credentials", name: "Email and password" }];
 
 const Page_Login: React.FC = () => {
   const navigate = useNavigate();
@@ -18,13 +17,29 @@ const Page_Login: React.FC = () => {
     formData?: FormData
   ) => Promise<AuthResponse> | void = async (provider, formData) => {
     const promise = new Promise<AuthResponse>((resolve) => {
-      console.log("provider", provider);
-      console.log(
-        `formData: ${formData?.get("email")}, ${formData?.get("password")}`
-      );
-
-      navigate("/access")
-      resolve({ type: "CredentialsSignin", error: "Invalid credentials." });
+      if (formData) {
+        const data: LoginForm_t = {
+          email: formData.get("email")?.toString() || "",
+          pass: formData.get("password")?.toString() || "",
+        };
+        login_F
+          .postLogin(data)
+          .then((data) => {
+            console.log("success", data);
+            if (data.status === "success") {
+              navigate("/access");              
+            }else{
+              resolve({
+                type: "CredentialsSignin",
+                error: "Invalid credentials.",
+              });
+            }
+          })
+          .catch((err) => {
+            console.log("error", err);
+          });
+      } else {
+      }
     });
 
     return promise;
