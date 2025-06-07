@@ -29,7 +29,7 @@ const saltRounds = 10;
 /*********************************************** */
 // อนุญาตให้ React frontend สามารถส่งคำขอมาได้
 app.use(cors({
-    origin: "http://localhost:3030", // URL ของ React (Web)
+    origin: "https://localhost:3030", // URL ของ React (Web)
     credentials: true, // อนุญาตให้ส่ง cookie ไปกลับ
 }));
 app.use(express.json());
@@ -73,7 +73,7 @@ const User = mongoose.model("Profile", profileSchema);
 /*********************************************** */
 // Function
 /*********************************************** */
-function authorization(token: string): tokenPackage_t | null {
+function decoder(token: string): tokenPackage_t | null {
     try {
         var decoded = jwt.verify(token, secret) as tokenPackage_t;
         return decoded;
@@ -81,44 +81,47 @@ function authorization(token: string): tokenPackage_t | null {
         return null;
     }
 }
+function Auth(req: Request, res: Response, onSuccess: (data: tokenPackage_t) => void) {
+    if (req.headers.authorization) {
+        const accessToken = req.headers.authorization.split(" ")[1];
+        const decoded = decoder(accessToken);
+
+        if (decoded) {
+            onSuccess(decoded);
+        } else {
+            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.TokenExpiredError }
+            res.send(result);
+        }
+    } else {
+        const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
+        res.send(result);
+    }
+}
 /*********************************************** */
 // Routes Setup
 /*********************************************** */
 app.post('/user', async (req: Request, res: Response) => {
     try {
-        if (req.headers.authorization) {
-            const token = req.headers.authorization.split(" ")[1];
-            const decoded = authorization(token)
-
-            if (decoded) {
-                if (decoded?.type === "accessToken" && decoded.role === "admin") {
-                    const data = req.body as RegistFrom_t;
-                    const passHash = await bcrypt.hash(defaultPass, saltRounds)
-                    const newData = { passHash: passHash, ...data };
-                    const newUser = new User(newData);
-                    newUser.save().then(() => {
-                        const result: responstLogin_t<"post"> = { status: "success" };
-                        res.send(result);
-                    }).catch((err) => {
-                        const result: responstLogin_t<"post"> = { status: "error", errCode: errorCode_e.InvalidInputError }
-                        res.send(result);
-                    })
-                } else {
-                    const result: responstLogin_t<"post"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+        Auth(req, res, async (data) => {
+            if (data.type === "accessToken" && data.role === "admin") {
+                const data = req.body as RegistFrom_t;
+                const passHash = await bcrypt.hash(defaultPass, saltRounds)
+                const newData = { passHash: passHash, ...data };
+                const newUser = new User(newData);
+                newUser.save().then(() => {
+                    const result: responstLogin_t<"none"> = { status: "success" };
                     res.send(result);
-                }
+                }).catch((err) => {
+                    const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
+                    res.send(result);
+                })
             } else {
-                const result: responstLogin_t<"post"> = { status: "error", errCode: errorCode_e.TokenExpiredError }
+                const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
                 res.send(result);
             }
-
-        } else {
-            const result: responstLogin_t<"post"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
-            res.send(result);
-        }
-
+        })
     } catch (err) {
-        const result: responstLogin_t<"post"> = { status: "error", errCode: errorCode_e.UnknownError }
+        const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError }
         console.log(err);
         res.send(result);
     }
@@ -155,7 +158,7 @@ app.post('/login', async (req: Request, res: Response) => {
                         expiresIn: "1d",
                     }
                 );
-                const result: responstLogin_t<"postLogin"> = { status: "success" }
+                const result: responstLogin_t<"none"> = { status: "success" }
                 res.cookie("accessToken", accessToken, {
                     httpOnly: true,
                     secure: true, // ตั้งเป็น true ถ้าใช้ HTTPS
@@ -170,152 +173,115 @@ app.post('/login', async (req: Request, res: Response) => {
                 });
                 res.send(result);
             } else {
-                const result: responstLogin_t<"postLogin"> = { status: "error", errCode: errorCode_e.InvalidInputError }
+                const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
                 res.send(result);
             }
         } else {
-            const result: responstLogin_t<"postLogin"> = { status: "error", errCode: errorCode_e.InvalidInputError }
+            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
             res.send(result);
         }
     } catch (err) {
-        const result: responstLogin_t<"postLogin"> = { status: "error", errCode: errorCode_e.UnknownError }
-
-        console.log(err);
-        res.send(result);
-    }
-});
-app.post('/token', async (req: Request, res: Response) => {
-    try {
-        const { token } = req.body as TokenForm_t;
-        const decoded = authorization(token);
-
-        if (decoded) {
-            const token = jwt.sign(
-                {
-                    username: decoded.username,
-                    role: decoded.role,
-                    type: "accessToken",
-                },
-                secret,
-                {
-                    expiresIn: "15m",
-                }
-            );
-            const result: responstLogin_t<"postToken"> = { status: "success", accessToken: token };
-            res.send(result);
-        } else {
-            const result: responstLogin_t<"postToken"> = { status: "error", errCode: errorCode_e.TokenExpiredError }
-            res.send(result);
-        }
-    } catch (err) {
-        const result: responstLogin_t<"postToken"> = { status: "error", errCode: errorCode_e.UnknownError }
+        const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError }
 
         console.log(err);
         res.send(result);
     }
 });
 app.get('/user', async (req: Request, res: Response) => {
-    if (req.headers.authorization) {
-        const token = req.headers.authorization.split(" ")[1];
-        const decoded = authorization(token)
+    Auth(req, res, async (data) => {
+        if (data.type === "accessToken" && data.role === "admin") {
+            const name = req.query.name;
+            const matchStage = name ? { $match: { name: { $regex: name, $options: "i" } } } : null;
 
+            User.aggregate([
+                ...(matchStage ? [matchStage] : []),
+                {
+                    $project: {
+                        _id: "$_id",
+                        email: "$email",
+                        name: "$name",
+                        role: "$role"
+                    }
+                },
+                {
+                    $sort: { "codeName": 1 }
+                },
+            ]).then((data) => {
+                const result: responstLogin_t<"getUser"> = { status: "success", result: data }
+                res.send(result);
+            }).catch((err) => {
+                const result: responstLogin_t<"getUser"> = { status: "error", errCode: errorCode_e.UnknownError }
+                console.log(err);
+                res.send(result);
+            });
+        } else {
+            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            res.send(result);
+        }
+    })
+});
+app.get('/token', async (req: Request, res: Response) => {
+    if (req.cookies.refreshToken) {
+        const token = req.cookies.refreshToken;
+        const decoded = decoder(token);
         if (decoded) {
-            if (decoded.type === "accessToken" && decoded.role === "admin") {
-                const name = req.query.name;
-                const matchStage = name ? { $match: { name: { $regex: name, $options: "i" } } } : null;
-
-                User.aggregate([
-                    ...(matchStage ? [matchStage] : []),
+            if (decoded.type === "refreshToken") {
+                const accessToken = jwt.sign(
                     {
-                        $project: {
-                            _id: "$_id",
-                            email: "$email",
-                            name: "$name",
-                            role: "$role"
-                        }
+                        username: decoded.username,
+                        role: decoded.role,
+                        type: "accessToken",
                     },
+                    secret,
                     {
-                        $sort: { "codeName": 1 }
-                    },
-                ]).then((data) => {
-                    const result: responstLogin_t<"getUser"> = { status: "success", result: data }
-                    res.send(result);
-                }).catch((err) => {
-                    const result: responstLogin_t<"getUser"> = { status: "error", errCode: errorCode_e.UnknownError }
-                    console.log(err);
-                    res.send(result);
-                });
-            } else {
-                const result: responstLogin_t<"post"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+                        expiresIn: "15m",
+                    }
+                );
+                const result: responstLogin_t<"getToken"> = { status: "success", token: accessToken }
                 res.send(result);
             }
         } else {
-            const result: responstLogin_t<"post"> = { status: "error", errCode: errorCode_e.TokenExpiredError }
+            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.TokenExpiredError }
             res.send(result);
         }
     } else {
-        const result: responstLogin_t<"post"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
+        const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
         res.send(result);
     }
-});
+})
 app.delete('/user', async (req: Request, res: Response) => {
-    if (req.headers.authorization) {
-        const token = req.headers.authorization.split(" ")[1];
-        const decoded = authorization(token)
+    Auth(req, res, async (data) => {
+        if (data.type === "accessToken" && data.role === "admin") {
+            const data = await User.deleteOne({ _id: req.query.id });
+            const result: responstLogin_t<"none"> = { status: "success" };
 
-        if (decoded) {
-            if (decoded?.type === "accessToken" && decoded.role === "admin") {
-                const data = await User.deleteOne({ _id: req.query.id });
-                const result: responstLogin_t<"del"> = { status: "success" };
-
-                res.send(result);
-            } else {
-                const result: responstLogin_t<"del"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-                res.send(result);
-            }
-        }
-        else {
-            const result: responstLogin_t<"del"> = { status: "error", errCode: errorCode_e.TokenExpiredError }
+            res.send(result);
+        } else {
+            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             res.send(result);
         }
-    } else {
-        const result: responstLogin_t<"del"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
-        res.send(result);
-    }
+    });
 });
 app.put('/user', async (req: Request, res: Response) => {
-    if (req.headers.authorization) {
-        const token = req.headers.authorization.split(" ")[1];
-        const decoded = authorization(token)
+    Auth(req, res, async (data) => {
+        if (data?.type === "accessToken" && data.role === "admin") {
+            const data = req.body as EditUserFrom_t;
+            const { id, ...newData } = data;
 
-        if (decoded) {
-            if (decoded?.type === "accessToken" && decoded.role === "admin") {
-                const data = req.body as EditUserFrom_t;
-                const { id, ...newData } = data;
-
-                User.updateOne({ _id: id }, newData).then((data) => {
-                    const result: responstLogin_t<"put"> = { status: "success" };
-                    res.send(result);
-                }).catch((err) => {
-                    const result: responstLogin_t<"put"> = { status: "error", errCode: errorCode_e.UnknownError };
-                    console.log(err);
-                    res.send(result);
-                })
-            } else {
-                const result: responstLogin_t<"del"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            User.updateOne({ _id: id }, newData).then((data) => {
+                const result: responstLogin_t<"none"> = { status: "success" };
                 res.send(result);
-            }
-        }
-        else {
-            const result: responstLogin_t<"del"> = { status: "error", errCode: errorCode_e.TokenExpiredError }
+            }).catch((err) => {
+                const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+                console.log(err);
+                res.send(result);
+            })
+        } else {
+            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             res.send(result);
         }
-    } else {
-        const result: responstLogin_t<"del"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
-        res.send(result);
-    }
+    })
 });
-
 
 /*********************************************** */
 // Start Server
@@ -324,3 +290,6 @@ const server = https.createServer({ key, cert }, app);
 server.listen(PORT, "0.0.0.0", () => {
     console.log(`HTTPS Server is running at https://localhost:${PORT}`);
 });
+/*app.listen(PORT, () => {
+    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+});*/
