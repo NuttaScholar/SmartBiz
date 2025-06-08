@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { transactionType_e, DailyTotal_t, statement_t, responstDB_t, errorCode_e, TransitionForm_t, ContactForm_t, LoginForm_t, responstLogin_t, tokenPackage_t, TokenForm_t, RegistFrom_t, UserProfile_t, EditUserFrom_t } from "./type";
+import { LoginForm_t, responstLogin_t, tokenPackage_t, TokenForm_t, RegistFrom_t, UserProfile_t, EditUserFrom_t } from "./type";
 import moment from 'moment-timezone';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -10,6 +10,7 @@ import https from "https";
 import fs from "fs";
 import path from "path";
 import cookieParser from "cookie-parser";
+import { errorCode_e } from "./enum";
 
 dotenv.config();
 /*********************************************** */
@@ -281,6 +282,12 @@ app.put('/user', async (req: Request, res: Response) => {
             res.send(result);
         }
     })
+});
+app.get('/', async (req: Request, res: Response) => {
+    console.log("accessToken", req.cookies.accessToken);
+    console.log("refreshToken", req.cookies.refreshToken);
+    const result: responstLogin_t<"none"> = { status: "success" };
+    res.send(result);
 });
 
 /*********************************************** */
