@@ -2,7 +2,7 @@ import React from 'react'
 import Accordion from '@mui/material/Accordion';
 import DailyTotal from './DailyTotal';
 import TransactionDetail, { transactionDetail_t } from './TransactionDetail';
-import { transactionType_e } from '../../type';
+import { transactionType_e } from '../../enum';
 
 /**************************************************** */
 //  Style

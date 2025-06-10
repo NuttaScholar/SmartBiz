@@ -1,4 +1,4 @@
-import { errorCode_e } from "./enum";
+import { errorCode_e } from "../../enum";
 
 export type LoginForm_t = {
   email: string;
@@ -34,7 +34,6 @@ export type responstLogin_t<
   T extends
   | "getUser"
   | "getToken"
-  | "postLogin"
   | "none"
 > = T extends "getUser"
   ? {
@@ -42,7 +41,7 @@ export type responstLogin_t<
     result?: UserProfile_t[];
     errCode?: errorCode_e;
   }
-  : T extends "getToken" | "postLogin"
+  : T extends "getToken"
   ? {
     status: "success" | "error";
     token?: string;

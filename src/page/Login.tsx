@@ -4,8 +4,8 @@ import {
   type AuthProvider,
   type AuthResponse,
 } from "@toolpad/core/SignInPage";
-import { LoginForm_t } from "../type";
-import * as login_F from "../API/Login";
+import { LoginForm_t } from "../API/LoginService/type";
+import * as login_F from "../API/LoginService/Login";
 
 const providers = [{ id: "credentials", name: "Email and password" }];
 

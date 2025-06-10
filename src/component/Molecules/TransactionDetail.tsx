@@ -2,7 +2,7 @@ import React from 'react'
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Text_Money from '../Atoms/Text_Money';
 import { Box, SxProps, Theme, Typography } from '@mui/material';
-import { transactionType_e } from '../../type';
+import { transactionType_e } from '../../enum';
 
 /**************************************************** */
 //  Style

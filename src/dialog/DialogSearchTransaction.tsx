@@ -2,7 +2,7 @@ import { Box, Button, Dialog, DialogContent, Fab, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import React from "react";
 import HeaderDialog from "../component/Molecules/HeaderDialog";
-import { statement_t, transactionType_e, TransitionForm_t } from "../type";
+import { transactionType_e } from "../enum";
 import FieldSelector, {
   listSelect_t,
 } from "../component/Molecules/FieldSelector";
@@ -15,9 +15,9 @@ import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import FieldDuration from "../component/Molecules/FieldDuration";
 import FieldContact from "../component/Molecules/FieldContact";
-import { ContactList_dataSet } from "../dataSet/DataContactList";
 import MonthlyTotalList from "../component/Organisms/MonthlyTotalList";
 import { contactInfo_t } from "../component/Molecules/ContactInfo";
+import { statement_t, TransitionForm_t } from "../API/AccountService/type";
 
 //*********************************************
 // Type

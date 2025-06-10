@@ -8,13 +8,12 @@ import FieldSelector, {
   listSelect_t,
 } from "../component/Molecules/FieldSelector";
 import SyncAltIcon from "@mui/icons-material/SyncAlt";
-import { transactionType_e } from "../type";
+import { transactionType_e } from "../enum";
 import SubjectIcon from "@mui/icons-material/Subject";
 import FieldContact from "../component/Molecules/FieldContact";
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import FieldDate from "../component/Molecules/FieldDate";
-import { ContactList_dataSet } from "../dataSet/DataContactList";
 import DialogAddContact, { ContactForm_t } from "./DialogAddContact";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { contactInfo_t } from "../component/Molecules/ContactInfo";

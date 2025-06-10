@@ -14,12 +14,12 @@ import DialogAddTransaction, {
 } from "../dialog/DialogAddTransaction";
 import DialogSearchTransaction, { SearchTransForm_t } from "../dialog/DialogSearchTransaction";
 import { GoToTop } from "../function/Window";
-import * as Access from "../API/Account";
-import * as Contact from "../API/Contact";
-import { ContactForm_t, errorCode_e, statement_t } from "../type";
+import * as Access from "../API/AccountService/Account";
+import * as Contact from "../API/AccountService/Contact";
+import { ContactForm_t, statement_t } from "../API/AccountService/type";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { contactInfo_t } from "../component/Molecules/ContactInfo";
-import Alert from "@mui/material/Alert";
+import { errorCode_e } from "../enum";
 
 const Page_Access: React.FC = () => {
   // Hook **************
@@ -75,16 +75,16 @@ const Page_Access: React.FC = () => {
       const wallet = await Access.getWallet();
 
       if(wallet.status==="success"){
-        setTotalMoney(wallet.amount||0);
+        setTotalMoney(wallet.result||0);
       }
 
       while (!finish) {
         const res = await Access.getStatement(_month, yearSelect);
-        if (res.length) {
+        if (res.result.length) {
           console.log(res);
-          trans.push(...res);
+          trans.push(...res.result);
 
-          cnt += res.length;
+          cnt += res.result.length;
           if (cnt > 1) {
             console.log(cnt);
             setTransaction(trans);
@@ -109,7 +109,7 @@ const Page_Access: React.FC = () => {
     try {
       const res = await Contact.get();
       console.log(res);
-      setContactList(res);
+      setContactList(res.result);
       initTrans();
     } catch (err) {
       console.log(err);
@@ -121,14 +121,14 @@ const Page_Access: React.FC = () => {
       let _month = month;
       while (!finish) {
         const res = await Access.getStatement(_month, yearSelect);
-        if (res.length) {
-          console.log(res);
+        if (res.result.length) {
+          console.log(res); 
 
           setTransaction((prev) => {
             if (prev) {
-              return [...prev, ...res];
+              return [...prev, ...res.result];
             }
-            return res;
+            return res.result;
           });
         }
         if (_month > 1) {
@@ -189,7 +189,7 @@ const Page_Access: React.FC = () => {
       const res = await Contact.post(data);
       if (res.status == "success") {
         const res = await Contact.get();
-        setContactList(res);
+        setContactList(res.result);
       }
     } catch (err) {
       console.log(err);
@@ -200,7 +200,7 @@ const Page_Access: React.FC = () => {
       const res = await Contact.put(data);
       if (res.status == "success") {
         const res = await Contact.get();
-        setContactList(res);
+        setContactList(res.result);
       }
     } catch (err) {
       console.log(err);
@@ -211,7 +211,7 @@ const Page_Access: React.FC = () => {
       const res = await Contact.del(data);
       if (res.status == "success") {
         const res = await Contact.get();
-        setContactList(res);
+        setContactList(res.result);
       }else{
         switch(res.errCode){
           case errorCode_e.InUseError:
@@ -230,7 +230,7 @@ const Page_Access: React.FC = () => {
   const onSearchContact = async (keyword: string) => {
     try{
        const res = await Contact.get(keyword);
-       setContactList(res);
+       setContactList(res.result);
     }catch(err){
       alert("Unknow Error");
       console.log(err);
@@ -241,7 +241,7 @@ const Page_Access: React.FC = () => {
     try{
       const res = await Access.searchStatement(data);
       
-      setSearchTranResult(res);
+      setSearchTranResult(res.result);
     }catch(err){
       alert("Unknow Error");
       console.log(err);

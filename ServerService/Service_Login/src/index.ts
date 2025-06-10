@@ -159,13 +159,7 @@ app.post('/login', async (req: Request, res: Response) => {
                         expiresIn: "1d",
                     }
                 );
-                const result: responstLogin_t<"none"> = { status: "success" }
-                res.cookie("accessToken", accessToken, {
-                    httpOnly: true,
-                    secure: true, // ตั้งเป็น true ถ้าใช้ HTTPS
-                    sameSite: "lax",
-                    maxAge: 1000 * 60 * 60, // 1 ชั่วโมง
-                });
+                const result: responstLogin_t<"postLogin"> = { status: "success", token: accessToken }
                 res.cookie("refreshToken", refreshToken, {
                     httpOnly: true,
                     secure: true,       // ตั้ง true เมื่อใช้ HTTPS

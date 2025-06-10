@@ -3,18 +3,6 @@ import { Box, Button, Dialog, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import HeaderDialog from "../component/Molecules/HeaderDialog";
 import FieldText from "../component/Molecules/FieldText";
-import PaidIcon from "@mui/icons-material/Paid";
-import FieldSelector, {
-  listSelect_t,
-} from "../component/Molecules/FieldSelector";
-import SyncAltIcon from "@mui/icons-material/SyncAlt";
-import { transactionType_e } from "../type";
-import SubjectIcon from "@mui/icons-material/Subject";
-import FieldContact from "../component/Molecules/FieldContact";
-import AccountBoxIcon from "@mui/icons-material/AccountBox";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import FieldDate from "../component/Molecules/FieldDate";
-import { ContactList_dataSet } from "../dataSet/DataContactList";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ContactPageIcon from "@mui/icons-material/ContactPage";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
