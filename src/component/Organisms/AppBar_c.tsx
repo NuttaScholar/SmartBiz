@@ -22,6 +22,7 @@ export enum pageApp_e {
   bill,
   stock,
   logger,
+  setUser,
   setPass,
   logout,
 }
@@ -74,7 +75,7 @@ const AppBar_c: React.FC<myProps> = (props) => {
     props.onClick?.(pageApp_e.access + index);
   };
   const handleOption = (index: number) => {
-    props.onClick?.(pageApp_e.setPass + index);
+    props.onClick?.(pageApp_e.setUser + index);
   };
   let menuList_AppBar = pagesList_labor;
   let menuList_Option = option_staff;

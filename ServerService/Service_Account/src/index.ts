@@ -215,6 +215,7 @@ app.post('/transaction', async (req: Request, res: Response) => {
     })
 })
 app.get('/contact', (req: Request, res: Response) => {
+    console.log(req.header);
     Auth(req, res, async (data) => {
         try {
             if (data.role === "admin") {
@@ -449,7 +450,10 @@ app.put('/transaction', async (req: Request, res: Response) => {
 /*********************************************** */
 // Start Server
 /*********************************************** */
-const server = https.createServer({ key, cert }, app);
+/*const server = https.createServer({ key, cert }, app);
 server.listen(PORT, "0.0.0.0", () => {
     console.log(`HTTPS Server is running at https://localhost:${PORT}`);
+});*/
+app.listen(PORT, () => {
+    console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });

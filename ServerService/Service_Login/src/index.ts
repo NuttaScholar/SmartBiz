@@ -30,7 +30,7 @@ const saltRounds = 10;
 /*********************************************** */
 // อนุญาตให้ React frontend สามารถส่งคำขอมาได้
 app.use(cors({
-    origin: "https://localhost:3030", // URL ของ React (Web)
+    origin: "http://localhost:3030", // URL ของ React (Web)
     credentials: true, // อนุญาตให้ส่ง cookie ไปกลับ
 }));
 app.use(express.json());
@@ -182,6 +182,16 @@ app.post('/login', async (req: Request, res: Response) => {
         res.send(result);
     }
 });
+app.post('/logout', async (req: Request, res: Response) => {
+    const result: responstLogin_t<"none"> = {status: "success"}
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+        path: "/",
+    });
+    res.send(result);
+})
 app.get('/user', async (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         if (data.type === "accessToken" && data.role === "admin") {
@@ -287,10 +297,10 @@ app.get('/', async (req: Request, res: Response) => {
 /*********************************************** */
 // Start Server
 /*********************************************** */
-const server = https.createServer({ key, cert }, app);
+/*const server = https.createServer({ key, cert }, app);
 server.listen(PORT, "0.0.0.0", () => {
     console.log(`HTTPS Server is running at https://localhost:${PORT}`);
-});
-/*app.listen(PORT, () => {
-    console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });*/
+app.listen(PORT, () => {
+    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+});

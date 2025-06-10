@@ -36,6 +36,7 @@ const theme = createTheme({
     fontFamily: "Kanit, Roboto",
   },
 });
+
 createRoot(document.getElementById("root")!).render(
   //<StrictMode>
     <ThemeProvider theme={theme}>

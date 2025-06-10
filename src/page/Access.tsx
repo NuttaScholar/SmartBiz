@@ -12,17 +12,23 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import DialogAddTransaction, {
   TransitionForm_t,
 } from "../dialog/DialogAddTransaction";
-import DialogSearchTransaction, { SearchTransForm_t } from "../dialog/DialogSearchTransaction";
+import DialogSearchTransaction, {
+  SearchTransForm_t,
+} from "../dialog/DialogSearchTransaction";
 import { GoToTop } from "../function/Window";
-import * as Access from "../API/AccountService/Account";
-import * as Contact from "../API/AccountService/Contact";
+import * as Access_f from "../API/AccountService/Account";
+import * as Contact_f from "../API/AccountService/Contact";
+import * as Login_f from "../API/LoginService/Login";
 import { ContactForm_t, statement_t } from "../API/AccountService/type";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { contactInfo_t } from "../component/Molecules/ContactInfo";
 import { errorCode_e } from "../enum";
+import { useNavigate } from "react-router-dom";
 
 const Page_Access: React.FC = () => {
   // Hook **************
+  const navigate = useNavigate();
+  const [accessToken, setAccessToken] = React.useState("");
   const [yearSelect, setYearSelect] = React.useState(new Date().getFullYear());
   const [openDialogAdd, setOpenDialogAdd] = React.useState(false);
   const [openDialogEdit, setOpenDialogEdit] = React.useState(false);
@@ -33,10 +39,12 @@ const Page_Access: React.FC = () => {
   const [month, setMonth] = React.useState(12);
   const [hasMore, setHasMore] = React.useState(true);
   const [contactList, setContactList] = React.useState<contactInfo_t[]>([]);
-  const [searchTranResult, setSearchTranResult] = React.useState<statement_t[]>([]);
+  const [searchTranResult, setSearchTranResult] = React.useState<statement_t[]>(
+    []
+  );
   const [totalMoney, setTotalMoney] = React.useState(0);
   // Local Variable **************
- 
+
   const MenuList: menuList_t[] = [
     { text: "Add", icon: <AddIcon /> },
     { text: "Search", icon: <SearchIcon /> },
@@ -66,20 +74,21 @@ const Page_Access: React.FC = () => {
         GoToTop();
     }
   };
-  const initTrans = async () => {
+  const initTrans = async (token: string) => {
     try {
       let finish = false;
       let _month = 12;
       let cnt = 0;
       let trans: statement_t[] = [];
-      const wallet = await Access.getWallet();
-
-      if(wallet.status==="success"){
-        setTotalMoney(wallet.result||0);
+      const wallet = await Access_f.getWallet(token);
+      if (wallet.status === "success") {
+        setTotalMoney(wallet.result || 0);
+      } else {
+        navigate("/");
       }
 
       while (!finish) {
-        const res = await Access.getStatement(_month, yearSelect);
+        const res = await Access_f.getStatement(token, _month, yearSelect);
         if (res.result.length) {
           console.log(res);
           trans.push(...res.result);
@@ -107,10 +116,15 @@ const Page_Access: React.FC = () => {
   };
   const initPage = async () => {
     try {
-      const res = await Contact.get();
-      console.log(res);
-      setContactList(res.result);
-      initTrans();
+      const resLogin = await Login_f.getToken();
+      if (resLogin.status === "error" || !resLogin.token) {
+        navigate("/");
+      } else {
+        const resContact = await Contact_f.get(resLogin.token);
+        setContactList(resContact.result);
+        setAccessToken(resLogin.token);
+        initTrans(resLogin.token);
+      }
     } catch (err) {
       console.log(err);
     }
@@ -120,9 +134,13 @@ const Page_Access: React.FC = () => {
       let finish = false;
       let _month = month;
       while (!finish) {
-        const res = await Access.getStatement(_month, yearSelect);
+        const res = await Access_f.getStatement(
+          accessToken,
+          _month,
+          yearSelect
+        );
         if (res.result.length) {
-          console.log(res); 
+          console.log(res);
 
           setTransaction((prev) => {
             if (prev) {
@@ -146,10 +164,10 @@ const Page_Access: React.FC = () => {
   const onClickDelTransHandler = async (data?: TransitionForm_t) => {
     if (data?.id) {
       try {
-        const res = await Access.delStatement(data.id);
+        const res = await Access_f.delStatement(accessToken, data.id);
 
         if (res.status == "success") {
-          initTrans();
+          initTrans(accessToken);
         }
       } catch (err) {
         console.log(err);
@@ -159,11 +177,11 @@ const Page_Access: React.FC = () => {
   };
   const onClickAddTransHandler = async (data: TransitionForm_t) => {
     try {
-      const res = await Access.postStatement(data);
+      const res = await Access_f.postStatement(accessToken, data);
       if (res.status == "success") {
-        initTrans();
-      }else{
-        alert("ทำรายการไม่สำเร็จ!")
+        initTrans(accessToken);
+      } else {
+        alert("ทำรายการไม่สำเร็จ!");
       }
     } catch (err) {
       console.log(err);
@@ -174,9 +192,9 @@ const Page_Access: React.FC = () => {
     console.log(data.id);
     if (data?.id) {
       try {
-        const res = await Access.putStatement(data.id, data);
+        const res = await Access_f.putStatement(accessToken, data.id, data);
         if (res.status == "success") {
-          initTrans();
+          initTrans(accessToken);
         }
       } catch (err) {
         console.log(err);
@@ -186,9 +204,9 @@ const Page_Access: React.FC = () => {
   };
   const onAddContact = async (data: ContactForm_t) => {
     try {
-      const res = await Contact.post(data);
+      const res = await Contact_f.post(accessToken, data);
       if (res.status == "success") {
-        const res = await Contact.get();
+        const res = await Contact_f.get(accessToken);
         setContactList(res.result);
       }
     } catch (err) {
@@ -197,9 +215,9 @@ const Page_Access: React.FC = () => {
   };
   const onEditContact = async (data: ContactForm_t) => {
     try {
-      const res = await Contact.put(data);
+      const res = await Contact_f.put(accessToken, data);
       if (res.status == "success") {
-        const res = await Contact.get();
+        const res = await Contact_f.get(accessToken);
         setContactList(res.result);
       }
     } catch (err) {
@@ -207,53 +225,69 @@ const Page_Access: React.FC = () => {
     }
   };
   const onDelContacat = async (data: contactInfo_t) => {
-    try{
-      const res = await Contact.del(data);
+    try {
+      const res = await Contact_f.del(accessToken, data);
       if (res.status == "success") {
-        const res = await Contact.get();
+        const res = await Contact_f.get(accessToken);
         setContactList(res.result);
-      }else{
-        switch(res.errCode){
+      } else {
+        switch (res.errCode) {
           case errorCode_e.InUseError:
             alert("รายการนี้ยังมีการใช้งานอยู่");
-          break
+            break;
           default:
             alert("Unknow Error");
-          break;
+            break;
         }
       }
-    }catch(err){
+    } catch (err) {
       alert("Unknow Error");
       console.log(err);
     }
-  }
+  };
   const onSearchContact = async (keyword: string) => {
-    try{
-       const res = await Contact.get(keyword);
-       setContactList(res.result);
-    }catch(err){
+    try {
+      const res = await Contact_f.get(accessToken, keyword);
+
+      setContactList(res.result);
+    } catch (err) {
       alert("Unknow Error");
       console.log(err);
     }
-  }
+  };
   const onSearchTran = async (data: SearchTransForm_t) => {
-    console.log(data); 
-    try{
-      const res = await Access.searchStatement(data);
-      
+    console.log(data);
+    try {
+      const res = await Access_f.searchStatement(accessToken, data);
+
       setSearchTranResult(res.result);
-    }catch(err){
+    } catch (err) {
       alert("Unknow Error");
       console.log(err);
     }
-  }
+  };
+  const onClickPage = async (page: pageApp_e) => {
+    try {
+      console.log("page", page);
+      if (page === pageApp_e.logout) {
+        const res = await Login_f.postLogout();
+        console.log(res);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
   // Use Effect **************
   React.useEffect(() => {
     initPage();
   }, [yearSelect]);
   return (
     <>
-      <AppBar_c role="admin" page={pageApp_e.access} />
+      <AppBar_c
+        role="admin"
+        page={pageApp_e.access}
+        onClick={onClickPage}
+      />
       <MoneyTotal
         sx={{ textAlign: "center", mt: "16px" }}
         label="ยอดเงินคงเหลือ"
