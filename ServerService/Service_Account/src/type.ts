@@ -1,22 +1,5 @@
-export enum transactionType_e {
-  income,
-  expenses,
-  loan,
-  lend,
-}
-export enum errorCode_e {
-  UnknownError, // ไม่สามารถระบุสาเหตุได้
-  InUseError, // ยังถูกใช้งานอยู่
-  UnauthorizedError, // ผู้ใช้ยังไม่ได้ล็อกอิน
-  ForbiddenError, // ผู้ใช้ไม่มีสิทธิ์
-  TokenExpiredError, // Token หมดอายุ
-  PermissionDeniedError, // ปฏิเสธสิทธิ์การเข้าถึง
-  InvalidInputError, // อินพุตไม่ถูกต้อง
-  NotFoundError, // ไม่พบข้อมูลที่ต้องการ
-  AlreadyExistsError, // มีข้อมูลนี้อยู่แล้ว
-  InvalidStateError, // สถานะไม่พร้อมสำหรับการดำเนินการ
-  TimeoutError, // คำขอหมดเวลา
-}
+import { errorCode_e, transactionType_e } from "./enum";
+
 export type transactionDetail_t = {
   id?: string;
   topic: string;
@@ -58,39 +41,36 @@ export type ContactInfo_t = {
   taxID?: string;
   tel?: string;
 };
-export type responstDB_t<
+export type tokenPackage_t = {
+  username: string;
+  role: "admin" | "cashier" | "laber";
+  type: "accessToken" | "refreshToken";
+}
+export type responst_t<
   T extends
-    | "getTransaction"
-    | "getContact"
-    | "getWallet"
-    | "post"
-    | "put"
-    | "del"
+  | "getTransaction"
+  | "getContact"
+  | "getWallet"
+  | "none"
 > = T extends "getTransaction"
-  ? statement_t[]
+  ? {
+    status: "success" | "error";
+    result: statement_t[];
+    errCode?: errorCode_e;
+  }
   : T extends "getContact"
-  ? ContactInfo_t[]
+  ? {
+    status: "success" | "error";
+    result: ContactInfo_t[];
+    errCode?: errorCode_e;
+  }
   : T extends "getWallet"
   ? {
-      status: "success" | "error";
-      amount?: number;
-      errCode?: errorCode_e;
-    }
-  : T extends "post"
-  ? {
-      status: "success" | "error";
-      errCode?: errorCode_e;
-    }
-  : T extends "put"
-  ? {
-      status: "success" | "error";
-      updatedCount?: number;
-      errCode?: errorCode_e;
-    }
-  : T extends "del"
-  ? {
-      status: "success" | "error";
-      deletedCount?: number;
-      errCode?: errorCode_e;
-    }
-  : never;
+    status: "success" | "error";
+    result?: number;
+    errCode?: errorCode_e;
+  }  
+  : {
+    status: "success" | "error";
+    errCode?: errorCode_e;
+  }

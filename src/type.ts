@@ -135,44 +135,22 @@ export type tokenPackage_t = {
 
 export type responstLogin_t<
   T extends
-  | "post"
-  | "postLogin"
-  | "postToken"
   | "getUser"
-  | "put"
-  | "del"
-> = T extends "post"
-  ? {
-    status: "success" | "error";
-    errCode?: errorCode_e;
-  }
-  : T extends "postLogin"
-  ? {
-    status: "success" | "error";
-    errCode?: errorCode_e;
-    accessToken?: String;
-    refreshToken?: String;
-  }
-  : T extends "postToken"
-  ? {
-    status: "success" | "error";
-    errCode?: errorCode_e;
-    accessToken?: String;
-  }
-  : T extends "getUser"
+  | "getToken"
+  | "none"
+> = T extends "getUser"
   ? {
     status: "success" | "error";
     result?: UserProfile_t[];
     errCode?: errorCode_e;
   }
-  : T extends "put"
+  : T extends "getToken"
   ? {
     status: "success" | "error";
+    token?: string;
     errCode?: errorCode_e;
   }
-  : T extends "del"
-  ? {
+  : {
     status: "success" | "error";
     errCode?: errorCode_e;
-  }
-  : never;
+  } ;
