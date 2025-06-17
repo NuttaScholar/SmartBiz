@@ -22,7 +22,7 @@ export type menuList_t = {
 interface myProps {
   menuList: menuList_t[];
   value?: number;
-  onClick?: (index: number) => void;
+  onClick?: (page: menuList_t) => void;
 }
 //*********************************************
 // Component
@@ -40,10 +40,10 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
   const handleCloseNavMenu = () => {
     setAnchorElNav(null);
   };
-  const handleOnClick = (index: number) => {
+  const handleOnClick = (menuList: menuList_t) => {
     setAnchorElNav(null);
-    props.onClick?.(index);
-    if (props.menuList[index].path) navigate(props.menuList[index].path);
+    props.onClick?.(menuList);
+    menuList.path&&navigate(menuList.path);
   };
   /* Local Variable*/
   const size_list = props.menuList.length;
@@ -55,6 +55,7 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
       index = props.value;
     }
   }
+  console.log(index);
   /* Return */
   return (
     <Box sx={{ display: "flex", flexGrow: 1 }}>
@@ -87,7 +88,7 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
         {props.menuList.map((page, index) => (
           <MenuItem
             key={index}
-            onClick={() => handleOnClick(index)}
+            onClick={() => handleOnClick(page)}
             sx={{ gap: "4px" }}
           >
             {page.icon}
@@ -104,7 +105,7 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
           gap: "4px",
         }}
       >
-        {props.menuList[index].icon}
+        {(index>=0)&&props.menuList[index].icon}
         <Typography
           variant="h5"
           noWrap
@@ -117,7 +118,7 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
             textDecoration: "none",
           }}
         >
-          {props.menuList[index].text}
+          {(index>=0)?props.menuList[index].text:"Page Not Found!"}
         </Typography>
       </Box>
     </Box>

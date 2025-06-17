@@ -12,6 +12,7 @@ import AppBar_PC from "../Molecules/AppBar_PC";
 import ButtonOption from "../Molecules/ButtonOption";
 import Box_Mobile from "../Atoms/Box_Mobile";
 import Box_PC from "../Atoms/Box_PC";
+import { useLocation } from "react-router-dom";
 
 //************************************************
 // Define
@@ -49,12 +50,12 @@ const pagesList_labor: menuList_t[] = [
   { text: "บันทึกเวลา", icon: <AssignmentIndIcon />, path: "/checkIn" },
 ];
 const option_admin: menuList_t[] = [
-  { text: "Set User", path: "/setUser" },
-  { text: "Set Password", path: "/setPass" },
+  { text: "Set User"},
+  { text: "Set Password"},
   { text: "Logout", path: "/" },
 ];
 const option_staff: menuList_t[] = [
-  { text: "Set Password", path: "/setPass" },
+  { text: "Set Password" },
   { text: "Logout", path: "/" },
 ];
 //*********************************************
@@ -62,20 +63,19 @@ const option_staff: menuList_t[] = [
 //*********************************************
 interface myProps {
   role?: "admin" | "cashier" | "laber";
-  page?: pageApp_e;
-  onClick?: (page: pageApp_e) => void;
+  onClick?: (page: menuList_t) => void;
 }
 
 //************************************************
 // Component
 //************************************************
 const AppBar_c: React.FC<myProps> = (props) => {
-  let index = props.page || 0 - pageApp_e.access;
-  const handleAppBar = (index: number) => {
-    props.onClick?.(pageApp_e.access + index);
+  const location = useLocation();
+  const handleAppBar = (menuList: menuList_t) => {
+    props.onClick?.(menuList);
   };
-  const handleOption = (index: number) => {
-    props.onClick?.(pageApp_e.setUser + index);
+  const handleOption = (menuList: menuList_t) => {
+    props.onClick?.(menuList);
   };
   let menuList_AppBar = pagesList_labor;
   let menuList_Option = option_staff;
@@ -86,6 +86,7 @@ const AppBar_c: React.FC<myProps> = (props) => {
   } else if (props.role === "cashier") {
     menuList_AppBar = pagesList_cashier;
   }
+  const index = menuList_AppBar.findIndex(val=>val.path===location.pathname);
   return (
     <AppBar color="secondary" position="static">
       <Toolbar variant="dense" disableGutters>

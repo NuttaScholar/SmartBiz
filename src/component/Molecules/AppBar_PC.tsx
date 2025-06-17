@@ -27,7 +27,7 @@ export type menuList_t = {
 interface myProps {
   menuList: menuList_t[];
   value?: number;
-  onClick?: (index: number) => void;
+  onClick?: (page: menuList_t) => void;
 }
 //*********************************************
 // Component
@@ -38,9 +38,9 @@ const AppBar_PC: React.FC<myProps> = (props) => {
   const navigate = useNavigate();
 
   /* Local Function*/
-  const handleOnClick = (index: number) => {
-    props.onClick?.(index);
-    if (props.menuList[index].path) navigate(props.menuList[index].path);
+  const handleOnClick = (menuList: menuList_t) => {
+    props.onClick?.(menuList);
+    if (menuList.path) navigate(menuList.path);
   };
   return (
     <Box sx={{ display: "flex" }}>
@@ -49,7 +49,7 @@ const AppBar_PC: React.FC<myProps> = (props) => {
           <Button
             key={page.text}
             onClick={() => {
-              handleOnClick(index);
+              handleOnClick(page);
             }}
             sx={{
               color:

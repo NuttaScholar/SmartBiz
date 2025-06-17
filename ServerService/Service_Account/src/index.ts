@@ -215,7 +215,6 @@ app.post('/transaction', async (req: Request, res: Response) => {
     })
 })
 app.get('/contact', (req: Request, res: Response) => {
-    console.log(req.header);
     Auth(req, res, async (data) => {
         try {
             if (data.role === "admin") {

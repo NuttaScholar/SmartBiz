@@ -24,12 +24,14 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { contactInfo_t } from "../component/Molecules/ContactInfo";
 import { errorCode_e } from "../enum";
 import { useNavigate } from "react-router-dom";
+import DialogSetUser from "../dialog/DialogSetUser";
 
 const Page_Access: React.FC = () => {
   // Hook **************
   const navigate = useNavigate();
   const [accessToken, setAccessToken] = React.useState("");
   const [yearSelect, setYearSelect] = React.useState(new Date().getFullYear());
+  const [openDialogSetUser, setOpenDialogSetUser] = React.useState(false);
   const [openDialogAdd, setOpenDialogAdd] = React.useState(false);
   const [openDialogEdit, setOpenDialogEdit] = React.useState(false);
   const [openDialogSearch, setOpenDialogSearch] = React.useState(false);
@@ -266,12 +268,14 @@ const Page_Access: React.FC = () => {
       console.log(err);
     }
   };
-  const onClickPage = async (page: pageApp_e) => {
+  const onClickPage = async (page: menuList_t) => {
     try {
-      console.log("page", page);
-      if (page === pageApp_e.logout) {
+      if (page.path === "/") {
         const res = await Login_f.postLogout();
         console.log(res);
+      } else if (page.text === "Set User") {
+        setOpenDialogSetUser(true);
+      } else if (page.text === "Set Password") {
       }
     } catch (err) {
       console.log(err);
@@ -283,11 +287,7 @@ const Page_Access: React.FC = () => {
   }, [yearSelect]);
   return (
     <>
-      <AppBar_c
-        role="admin"
-        page={pageApp_e.access}
-        onClick={onClickPage}
-      />
+      <AppBar_c role="admin" onClick={onClickPage} />
       <MoneyTotal
         sx={{ textAlign: "center", mt: "16px" }}
         label="ยอดเงินคงเหลือ"
@@ -355,6 +355,12 @@ const Page_Access: React.FC = () => {
         onClick={onClickTransHandler}
         contactList={contactList}
         value={searchTranResult}
+      />
+      <DialogSetUser
+        open={openDialogSetUser}
+        onClose={() => {
+          setOpenDialogSetUser(false);
+        }}
       />
     </>
   );
