@@ -99,7 +99,8 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
       topic: form.topic,
       type: Number(form.type),
       description: form.description === "" ? undefined : form.description,
-      who: form.who === "" ? (props.dafaultValue?.who?"":undefined) : form.who,
+      who:
+        form.who === "" ? (props.dafaultValue?.who ? "" : undefined) : form.who,
     });
   };
   const addContactHandler = (data: ContactForm_t) => {
@@ -116,7 +117,9 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
       fullScreen
       open={props.open}
       onClose={props.onClose}
-      TransitionComponent={Transition}
+      slots={{
+        transition: Transition,
+      }}
     >
       <HeaderDialog
         label={props.title || "เพิ่มรายการ"}

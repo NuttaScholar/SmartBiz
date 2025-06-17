@@ -71,8 +71,8 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
-    
-    const {duration_From, duration_To, ...rest} = formJson;
+
+    const { duration_From, duration_To, ...rest } = formJson;
     const [fday, fmonth, fyear] = duration_From.split("/").map(Number);
     const [tday, tmonth, tyear] = duration_To.split("/").map(Number);
     const form: SearchTransForm_t = {
@@ -96,7 +96,9 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
       fullScreen
       open={props.open}
       onClose={props.onClose}
-      TransitionComponent={Transition}
+      slots={{
+        transition: Transition,
+      }}
     >
       <HeaderDialog label="ค้นหา" onClick={props.onClose} />
       <DialogContent

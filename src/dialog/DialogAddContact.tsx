@@ -67,7 +67,9 @@ const DialogAddContact: React.FC<myProps> = (props) => {
       fullScreen
       open={props.open}
       onClose={props.onClose}
-      TransitionComponent={Transition}
+      slots={{
+        transition: Transition,
+      }}
     >
       <HeaderDialog
         label={props.title || "เพิ่มรายการ"}

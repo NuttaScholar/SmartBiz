@@ -4,8 +4,10 @@ import FieldSearch from "../component/Molecules/FieldSearch";
 import HeaderContactList from "../component/Organisms/HeaderDialog_Search";
 import ListContact from "../component/Organisms/ListContact";
 import { TransitionProps } from "@mui/material/transitions";
-import { contactInfo_t } from "../component/Molecules/ContactInfo";
 import DialogAddContact from "./DialogAddContact";
+import HeaderDialog_Search from "../component/Organisms/HeaderDialog_Search";
+import ListUser from "../component/Organisms/ListUser";
+import { userInfo_t } from "../component/Molecules/UserInfo";
 
 //*********************************************
 // Style
@@ -29,23 +31,42 @@ const Transition = React.forwardRef(function Transition(
 interface myProps {
   open: boolean;
   onClose?: () => void;
-  onSearch?: (keyword: string) => void;
-  onSelect?: (codeName: string) => void;
-  onAdd?: () => void;
-  onEdit?: (val: contactInfo_t) => void;
-  onDel?: (val: contactInfo_t) => void;
-  list?: contactInfo_t[];
 }
 //*********************************************
 // Component
 //*********************************************
-const DialogContactList: React.FC<myProps> = (props) => {
+const DialogSetUser: React.FC<myProps> = (props) => {
   const [key, setKey] = React.useState("");
+  const [list, setList] = React.useState<userInfo_t[]>([]);
 
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setKey(event.target.value);
   };
-
+  // Local Function **************
+  const onSearch = (keyword: string) => {};
+  const onAdd = () => {};
+  const onEdit = (val: userInfo_t) => {};
+  const onDel = (val: userInfo_t) => {};
+  // Use Effect **************
+  React.useEffect(() => {
+    console.log("get user!");
+    setList([
+      {
+        email: "admin@default.com",
+        enable: true,
+        name: "NuttaScholar",
+        role: "admin",
+        tel: "123456789",
+      },
+      {
+        email: "admin@default.com",
+        enable: false,
+        name: "NuttaScholar",
+        role: "admin",
+        tel: "123456789",
+      },
+    ]);
+  }, [props.open]);
   return (
     <Dialog
       fullScreen
@@ -55,12 +76,12 @@ const DialogContactList: React.FC<myProps> = (props) => {
         transition: Transition,
       }}
     >
-      <HeaderContactList
-        label="รายชื่อผู้ติดต่อ"
+      <HeaderDialog_Search
+        label="Set User"
         onBack={props.onClose}
         onChange={onChangeHandler}
-        onSearch={props.onSearch}
-        onAdd={props.onAdd}
+        onSearch={onSearch}
+        onAdd={onAdd}
         value={key}
       />
       <Box sx={{ display: "flex", justifyContent: "center" }}>
@@ -69,16 +90,11 @@ const DialogContactList: React.FC<myProps> = (props) => {
           display={{ xs: "flex", sm: "none" }}
           value={key}
           onChange={onChangeHandler}
-          onSubmit={props.onSearch}
+          onSubmit={onSearch}
         />
       </Box>
-      <ListContact
-        list={props.list || []}
-        onClick={props.onSelect}
-        onDel={props.onDel}
-        onEdit={props.onEdit}
-      />
+      <ListUser list={list} onDel={onDel} onEdit={onEdit} />
     </Dialog>
   );
 };
-export default DialogContactList;
+export default DialogSetUser;

@@ -21,13 +21,14 @@ interface myProps {
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onSearch?: (keyword: string) => void;
   value?: string;
+  label: string;
 }
 //*********************************************
 // Component
 //*********************************************
-const HeaderContactList: React.FC<myProps> = (props) => {
+const HeaderDialog_Search: React.FC<myProps> = (props) => {
   return (
-    <HeaderDialog label="รายชื่อผู้ติดต่อ" onClick={props.onBack}>
+    <HeaderDialog label={props.label} onClick={props.onBack}>
       <Box sx={{flexGrow: 1}}>
         <FieldSearch
           display={{ xs: "none", sm: "flex" }}
@@ -44,4 +45,4 @@ const HeaderContactList: React.FC<myProps> = (props) => {
     </HeaderDialog>
   );
 };
-export default HeaderContactList;
+export default HeaderDialog_Search;
