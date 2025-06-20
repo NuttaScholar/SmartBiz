@@ -11,7 +11,10 @@ import { userInfo_t } from "../component/Molecules/UserInfo";
 import DialogAddUser from "./DialogAddUser";
 import DialogEditUser from "./DialogEditUser";
 import { role_e } from "../enum";
-
+import * as User_f from "../API/LoginService/User"
+import * as Login_f from '../API/LoginService/Login'
+import { useNavigate } from "react-router-dom";
+import { UserProfile_t } from "../API/LoginService/type";
 //*********************************************
 // Style
 //*********************************************
@@ -39,42 +42,49 @@ interface myProps {
 // Component
 //*********************************************
 const DialogSetUser: React.FC<myProps> = (props) => {
+  // Hook **************
+  const navigate = useNavigate();
   const [key, setKey] = React.useState("");
-  const [list, setList] = React.useState<userInfo_t[]>([]);
+  const [list, setList] = React.useState<UserProfile_t[]>([]);
   const [openAdd, setOpenAdd] = React.useState(false);
   const [openEdit, setOpenEdit] = React.useState(false);
 
-  const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setKey(event.target.value);
-  };
   // Local Function **************
+  function onChangeHandler(event: React.ChangeEvent<HTMLInputElement>) {
+    setKey(event.target.value);
+  }
   const onSearch = (keyword: string) => {};
   const onAdd = () => {
     setOpenAdd(true);
   };
-  const onEdit = (val: userInfo_t) => {
+  const onEdit = (val: UserProfile_t) => {
     setOpenEdit(true);
   };
-  const onDel = (val: userInfo_t) => {};
+  const onDel = (val: UserProfile_t) => {};
+  const initPage = async () => {
+      try {
+        const resLogin = await Login_f.getToken();
+        console.log(resLogin);
+        if (resLogin.status === "error" || !resLogin.token) {
+          navigate("/");
+        } else {
+          const resUser = await User_f.get(resLogin.token);
+          if(resUser.status==="success"&&resUser.result){
+            setList(resUser.result);
+            console.log(resUser);
+          }else{
+            // Alert Err Msg 
+          }
+          
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
   // Use Effect **************
   React.useEffect(() => {
     console.log("get user!");
-    setList([
-      {
-        email: "admin@default.com",
-        enable: true,
-        name: "NuttaScholar",
-        role: "admin",
-        tel: "123456789",
-      },
-      {
-        email: "admin@default.com",
-        enable: false,
-        name: "NuttaScholar",
-        role: "admin",
-        tel: "123456789",
-      },
-    ]);
+    initPage();
   }, [props.open]);
   return (
     <Dialog

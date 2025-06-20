@@ -1,11 +1,8 @@
-import {
-  Avatar,
-  Box,
-  ListItem,
-  ListItemAvatar,
-} from "@mui/material";
+import { Avatar, Box, ListItem, ListItemAvatar } from "@mui/material";
 import Label_parameter from "../Atoms/Label_parameter";
 import React from "react";
+import { UserProfile_t } from "../../API/LoginService/type";
+import { RoleString } from "../../function/Enum";
 
 //*********************************************
 // Style
@@ -26,7 +23,7 @@ export type userInfo_t = {
 // Interface
 //*********************************************
 interface myProps {
-  value: userInfo_t;
+  value: UserProfile_t;
 }
 //*********************************************
 // Component
@@ -63,23 +60,26 @@ const UserInfo: React.FC<myProps> = (props) => {
           gap="8px"
           color_Value="gray"
         />
-        <Label_parameter
-          label="Phone:"
-          value={props.value.tel}
-          gap="8px"
-          color_Value="gray"
-        />
+        {props.value.tel && (
+          <Label_parameter
+            label="Phone:"
+            value={props.value.tel}
+            gap="8px"
+            color_Value="gray"
+          />
+        )}
+
         <Label_parameter
           label="Role:"
-          value={props.value.role}
+          value={RoleString(props.value.role)}
           gap="8px"
           color_Value="gray"
         />
         <Label_parameter
           label="Status:"
-          value={props.value.enable?"Enable":"Disable"}
+          value={props.value.enable ? "Enable" : "Disable"}
           gap="8px"
-          color_Value={props.value.enable?"green":"red"}
+          color_Value={props.value.enable ? "green" : "red"}
         />
       </Box>
     </ListItem>

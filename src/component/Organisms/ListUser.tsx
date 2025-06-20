@@ -4,6 +4,7 @@ import ContactInfo, { contactInfo_t } from "../Molecules/ContactInfo";
 import ButtonOption, { menuList_t } from "../Molecules/ButtonOption";
 import UserInfo, { userInfo_t } from "../Molecules/UserInfo";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import { UserProfile_t } from "../../API/LoginService/type";
 
 //*********************************************
 // Style
@@ -17,15 +18,15 @@ const optionList: menuList_t[] = [{ text: "แก้ไข" }, { text: "ลบ" 
 // Interface
 //*********************************************
 interface myProps {
-  list: userInfo_t[];
-  onEdit?: (value: userInfo_t) => void;
-  onDel?: (value: userInfo_t) => void;
+  list: UserProfile_t[];
+  onEdit?: (value: UserProfile_t) => void;
+  onDel?: (value: UserProfile_t) => void;
 }
 //*********************************************
 // Component
 //*********************************************
 const ListUser: React.FC<myProps> = (props) => {
-  const OptionHandler = (option: menuList_t, value: userInfo_t) => {
+  const OptionHandler = (option: menuList_t, value: UserProfile_t) => {
     if (option.text === optionList[0].text) {
       props.onEdit?.(value);
     } else if (option.text === optionList[1].text) {

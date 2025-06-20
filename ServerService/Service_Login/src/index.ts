@@ -202,6 +202,7 @@ app.get('/user', async (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         if (data.type === "accessToken" && data.role === role_e.admin) {
             const name = req.query.name;
+            console.log("key",name);
             const matchStage = name ? { $match: { name: { $regex: name, $options: "i" } } } : null;
 
             User.aggregate([
@@ -213,7 +214,7 @@ app.get('/user', async (req: Request, res: Response) => {
                         name: "$name",
                         role: "$role",
                         enable: "$enable",
-                        tel: "$enable",
+                        tel: "$tel",
                         img: "$img" // Image URL
                     }
                 },
