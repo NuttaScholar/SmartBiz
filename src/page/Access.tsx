@@ -83,6 +83,7 @@ const Page_Access: React.FC = () => {
       let cnt = 0;
       let trans: statement_t[] = [];
       const wallet = await Access_f.getWallet(token);
+      console.log(wallet);
       if (wallet.status === "success") {
         setTotalMoney(wallet.result || 0);
       } else {
@@ -119,6 +120,7 @@ const Page_Access: React.FC = () => {
   const initPage = async () => {
     try {
       const resLogin = await Login_f.getToken();
+      console.log(resLogin);
       if (resLogin.status === "error" || !resLogin.token) {
         navigate("/");
       } else {

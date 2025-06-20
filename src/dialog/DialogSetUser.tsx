@@ -8,6 +8,9 @@ import DialogAddContact from "./DialogAddContact";
 import HeaderDialog_Search from "../component/Organisms/HeaderDialog_Search";
 import ListUser from "../component/Organisms/ListUser";
 import { userInfo_t } from "../component/Molecules/UserInfo";
+import DialogAddUser from "./DialogAddUser";
+import DialogEditUser from "./DialogEditUser";
+import { role_e } from "../enum";
 
 //*********************************************
 // Style
@@ -38,14 +41,20 @@ interface myProps {
 const DialogSetUser: React.FC<myProps> = (props) => {
   const [key, setKey] = React.useState("");
   const [list, setList] = React.useState<userInfo_t[]>([]);
+  const [openAdd, setOpenAdd] = React.useState(false);
+  const [openEdit, setOpenEdit] = React.useState(false);
 
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setKey(event.target.value);
   };
   // Local Function **************
   const onSearch = (keyword: string) => {};
-  const onAdd = () => {};
-  const onEdit = (val: userInfo_t) => {};
+  const onAdd = () => {
+    setOpenAdd(true);
+  };
+  const onEdit = (val: userInfo_t) => {
+    setOpenEdit(true);
+  };
   const onDel = (val: userInfo_t) => {};
   // Use Effect **************
   React.useEffect(() => {
@@ -94,6 +103,18 @@ const DialogSetUser: React.FC<myProps> = (props) => {
         />
       </Box>
       <ListUser list={list} onDel={onDel} onEdit={onEdit} />
+      <DialogAddUser open={openAdd} onClose={() => setOpenAdd(false)} />
+      <DialogEditUser
+        open={openEdit}
+        defaultValue={{
+          email: "admin@default.com",
+          enable: true,
+          name: "NuttaScholar",
+          role: role_e.admin,    
+          tel: "123456789"      
+        }}
+        onClose={() => setOpenEdit(false)}
+      />
     </Dialog>
   );
 };

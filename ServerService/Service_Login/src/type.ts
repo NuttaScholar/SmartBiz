@@ -1,4 +1,4 @@
-import { errorCode_e } from "./enum";
+import { errorCode_e, role_e } from "./enum";
 
 export type LoginForm_t = {
   email: string;
@@ -10,23 +10,32 @@ export type TokenForm_t = {
 export type RegistFrom_t = {
   email: string;
   name: string;
-  role: "admin" | "cashier" | "laber";
+  role: role_e;
+  tel?: string;
+  img?: string; // Image URL
 }
 export type EditUserFrom_t = {
   id: string;
   email?: string;
   name?: string;
-  role?: "admin" | "cashier" | "laber";
+  role?: role_e;
+  enable?: boolean;
+  tel?: string;
+  img?: string; // Image URL
 }
 export type UserProfile_t = {
-  _id: string;
+  _id?: string;
   email: string;
   name: string;
-  role: string;
+  role: role_e;
+  enable: boolean;
+  passHash?: string;
+  tel?: string;
+  img?: string; // Image URL
 }
 export type tokenPackage_t = {
   username: string;
-  role: "admin" | "cashier" | "laber";
+  role: role_e;
   type: "accessToken" | "refreshToken";
 }
 

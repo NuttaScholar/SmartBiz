@@ -8,7 +8,7 @@ import cookieParser from "cookie-parser";
 import https from "https";
 import fs from "fs";
 import path from "path";
-import { errorCode_e, transactionType_e } from "./enum";
+import { errorCode_e, role_e, transactionType_e } from "./enum";
 
 dotenv.config();
 /*********************************************** */
@@ -160,7 +160,7 @@ function Auth(req: Request, res: Response, onSuccess: (data: tokenPackage_t) => 
 app.post('/contact', (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         try {
-            if (data.role === "admin") {
+            if (data.role === role_e.admin) {
                 const data = req.body as ContactForm_t;
 
                 if (await User.findOne({ codeName: data.codeName })) {
@@ -187,7 +187,7 @@ app.post('/contact', (req: Request, res: Response) => {
 app.post('/transaction', async (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         try {
-            if (data.role === "admin") {
+            if (data.role === role_e.admin) {
                 console.log(req.body);
                 const { money, type, ...rest } = req.body as TransitionForm_t;
                 const newTransatcion = new Transatcion(req.body);
@@ -217,7 +217,7 @@ app.post('/transaction', async (req: Request, res: Response) => {
 app.get('/contact', (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         try {
-            if (data.role === "admin") {
+            if (data.role === role_e.admin) {
                 const id = req.query.id;
                 const matchStage = id ? { $match: { codeName: { $regex: id, $options: "i" } } } : null;
                 const data: ContactInfo_t[] = await User.aggregate([
@@ -253,7 +253,7 @@ app.get('/contact', (req: Request, res: Response) => {
 app.get('/transaction', (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         try {
-            if (data.role === "admin") {
+            if (data.role === role_e.admin) {
                 const { from, to, who, topic, type } = req.query;
                 let filter: any = {
                     date: {
@@ -340,7 +340,7 @@ app.get('/wallet', (req: Request, res: Response) => {
 
     Auth(req, res, async (data) => {
         try {
-            if (data.role === "admin") {
+            if (data.role === role_e.admin) {
                 const data = await Wallet.findOne({ name: "main" });
                 let resault: responst_t<"getWallet"> = { status: "success", result: data?.amount || 0 };
                 return res.send(resault);
@@ -358,7 +358,7 @@ app.get('/wallet', (req: Request, res: Response) => {
 app.delete('/contact', (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         try {
-            if (data.role === "admin") {
+            if (data.role === role_e.admin) {
                 const exists = await Transatcion.find({ who: req.query.id });
                 if (exists.length) {
                     const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InUseError };
@@ -384,7 +384,7 @@ app.delete('/contact', (req: Request, res: Response) => {
 app.delete('/transaction', (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         try {
-            if (data.role === "admin") {
+            if (data.role === role_e.admin) {
                 const dataTran = await Transatcion.findOne({ _id: req.query.id });
                 const resTran = await Transatcion.deleteOne({ _id: req.query.id });
                 const result: responst_t<"none"> = { status: "success" };
@@ -408,7 +408,7 @@ app.delete('/transaction', (req: Request, res: Response) => {
 app.put('/contact', (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         try {
-            if (data.role === "admin") {
+            if (data.role === role_e.admin) {
                 const { codeName, ...rest } = req.body;
                 const newData = { ...rest };
                 console.log("put", newData);
@@ -430,7 +430,7 @@ app.put('/contact', (req: Request, res: Response) => {
 app.put('/transaction', async (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         try {
-            if (data.role === "admin") {
+            if (data.role === role_e.admin) {
                 await Transatcion.updateOne({ _id: req.query.id }, req.body)
                 const result: responst_t<"none"> = { status: "success" };
                 return res.send(result);

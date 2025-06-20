@@ -4,6 +4,11 @@ export enum transactionType_e {
   loan,
   lend,
 }
+export enum role_e{
+  admin,
+  cashier,
+  laber,
+}
 export enum errorCode_e {
   UnknownError, // ไม่สามารถระบุสาเหตุได้
   InUseError, // ยังถูกใช้งานอยู่

@@ -10,7 +10,7 @@ import https from "https";
 import fs from "fs";
 import path from "path";
 import cookieParser from "cookie-parser";
-import { errorCode_e } from "./enum";
+import { errorCode_e, role_e } from "./enum";
 
 dotenv.config();
 /*********************************************** */
@@ -60,13 +60,19 @@ const profileSchema = new mongoose.Schema({
         required: true,
     },
     role: {
-        type: String,
+        type: Number,
         required: true,
     },
     passHash: {
         type: String,
         required: true
-    }
+    },
+    enable: {
+        type: Boolean,
+        required: true
+    },
+    tel: String,
+    img: String // Image URL
 });
 
 // สร้าง Model
@@ -104,10 +110,10 @@ function Auth(req: Request, res: Response, onSuccess: (data: tokenPackage_t) => 
 app.post('/user', async (req: Request, res: Response) => {
     try {
         Auth(req, res, async (data) => {
-            if (data.type === "accessToken" && data.role === "admin") {
+            if (data.type === "accessToken" && data.role === role_e.admin) {
                 const data = req.body as RegistFrom_t;
                 const passHash = await bcrypt.hash(defaultPass, saltRounds)
-                const newData = { passHash: passHash, ...data };
+                const newData: UserProfile_t = { passHash: passHash, enable: true, ...data };
                 const newUser = new User(newData);
                 newUser.save().then(() => {
                     const result: responstLogin_t<"none"> = { status: "success" };
@@ -183,7 +189,7 @@ app.post('/login', async (req: Request, res: Response) => {
     }
 });
 app.post('/logout', async (req: Request, res: Response) => {
-    const result: responstLogin_t<"none"> = {status: "success"}
+    const result: responstLogin_t<"none"> = { status: "success" }
     res.clearCookie("refreshToken", {
         httpOnly: true,
         secure: true,
@@ -194,7 +200,7 @@ app.post('/logout', async (req: Request, res: Response) => {
 })
 app.get('/user', async (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
-        if (data.type === "accessToken" && data.role === "admin") {
+        if (data.type === "accessToken" && data.role === role_e.admin) {
             const name = req.query.name;
             const matchStage = name ? { $match: { name: { $regex: name, $options: "i" } } } : null;
 
@@ -205,7 +211,10 @@ app.get('/user', async (req: Request, res: Response) => {
                         _id: "$_id",
                         email: "$email",
                         name: "$name",
-                        role: "$role"
+                        role: "$role",
+                        enable: "$enable",
+                        tel: "$enable",
+                        img: "$img" // Image URL
                     }
                 },
                 {
@@ -256,7 +265,7 @@ app.get('/token', async (req: Request, res: Response) => {
 })
 app.delete('/user', async (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
-        if (data.type === "accessToken" && data.role === "admin") {
+        if (data.type === "accessToken" && data.role === role_e.admin) {
             const data = await User.deleteOne({ _id: req.query.id });
             const result: responstLogin_t<"none"> = { status: "success" };
 
@@ -269,7 +278,7 @@ app.delete('/user', async (req: Request, res: Response) => {
 });
 app.put('/user', async (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
-        if (data?.type === "accessToken" && data.role === "admin") {
+        if (data?.type === "accessToken" && data.role === role_e.admin) {
             const data = req.body as EditUserFrom_t;
             const { id, ...newData } = data;
 
