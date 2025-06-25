@@ -50,7 +50,7 @@ const Transition = React.forwardRef(function Transition(
 interface myProps {
   open: boolean;
   title?: string;
-  defaultValue: UserProfile_t;
+  defaultValue?: UserProfile_t;
   onClose?: () => void;
   onSubmit?: (data: EditUserFrom_t) => void;
 }
@@ -62,7 +62,7 @@ const DialogEditUser: React.FC<myProps> = (props) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
-    const form = formJson as EditUserFrom_t;
+    const form:EditUserFrom_t = {id:props.defaultValue?._id||"", ...formJson}
 
     props.onSubmit?.(form);
   };

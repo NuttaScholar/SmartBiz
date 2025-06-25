@@ -92,18 +92,18 @@ const DialogAddUser: React.FC<myProps> = (props) => {
           icon={<AccountCircleIcon />}
           required
           label="Email"
-          name="codeName"
+          name="email"
         />
         <FieldText
           icon={<ContactPageIcon />}
           required
           label="Name"
-          name="billName"
+          name="name"
         />
         <FieldSelector
           required
           icon={<ManageAccountsIcon />}
-          name="type"
+          name="role"
           label="Role"
           list={listSelect}
         />

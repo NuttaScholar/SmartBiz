@@ -202,7 +202,6 @@ app.get('/user', async (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         if (data.type === "accessToken" && data.role === role_e.admin) {
             const name = req.query.name;
-            console.log("key",name);
             const matchStage = name ? { $match: { name: { $regex: name, $options: "i" } } } : null;
 
             User.aggregate([

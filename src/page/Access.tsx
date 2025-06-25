@@ -35,6 +35,7 @@ const Page_Access: React.FC = () => {
   const [openDialogAdd, setOpenDialogAdd] = React.useState(false);
   const [openDialogEdit, setOpenDialogEdit] = React.useState(false);
   const [openDialogSearch, setOpenDialogSearch] = React.useState(false);
+  const [openSpeedDial, setOpenSpeedDial] = React.useState(false);
   const [TransitionForm, setTransitionForm] =
     React.useState<TransitionForm_t>();
   const [transaction, setTransaction] = React.useState<statement_t[]>([]);
@@ -70,7 +71,6 @@ const Page_Access: React.FC = () => {
         break;
       case 1:
         setOpenDialogSearch(true);
-        console.log(`SpeedDial: ${index}`);
         break;
       case 2:
         GoToTop();
@@ -289,7 +289,7 @@ const Page_Access: React.FC = () => {
   }, [yearSelect]);
   return (
     <>
-      <AppBar_c role="admin" onClick={onClickPage} />
+      <AppBar_c role="admin" onClick={onClickPage} openOption={!openDialogSetUser} />
       <MoneyTotal
         sx={{ textAlign: "center", mt: "16px" }}
         label="ยอดเงินคงเหลือ"
@@ -318,12 +318,14 @@ const Page_Access: React.FC = () => {
           />
         ))}
       </InfiniteScroll>
+      {!openDialogAdd && !openDialogSearch && (
+        <MySpeedDial
+          menuList={MenuList}
+          icon={<MoreVertIcon />}
+          onClick={speedDialHandler}
+        />
+      )}
 
-      <MySpeedDial
-        menuList={MenuList}
-        icon={<MoreVertIcon />}
-        onClick={speedDialHandler}
-      />
       <DialogAddTransaction
         open={openDialogAdd}
         contactList={contactList}

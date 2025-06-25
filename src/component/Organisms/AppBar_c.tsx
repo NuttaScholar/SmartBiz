@@ -50,8 +50,8 @@ const pagesList_labor: menuList_t[] = [
   { text: "บันทึกเวลา", icon: <AssignmentIndIcon />, path: "/checkIn" },
 ];
 const option_admin: menuList_t[] = [
-  { text: "Set User"},
-  { text: "Set Password"},
+  { text: "Set User" },
+  { text: "Set Password" },
   { text: "Logout", path: "/" },
 ];
 const option_staff: menuList_t[] = [
@@ -63,6 +63,7 @@ const option_staff: menuList_t[] = [
 //*********************************************
 interface myProps {
   role?: "admin" | "cashier" | "laber";
+  openOption?: boolean;
   onClick?: (page: menuList_t) => void;
 }
 
@@ -86,7 +87,9 @@ const AppBar_c: React.FC<myProps> = (props) => {
   } else if (props.role === "cashier") {
     menuList_AppBar = pagesList_cashier;
   }
-  const index = menuList_AppBar.findIndex(val=>val.path===location.pathname);
+  const index = menuList_AppBar.findIndex(
+    (val) => val.path === location.pathname
+  );
   return (
     <AppBar color="secondary" position="static">
       <Toolbar variant="dense" disableGutters>
@@ -104,9 +107,11 @@ const AppBar_c: React.FC<myProps> = (props) => {
             onClick={handleAppBar}
           />
         </Box_PC>
-        <Box sx={{ flexGrow: 0 }}>
-          <ButtonOption menuList={menuList_Option} onClick={handleOption} />
-        </Box>
+        {props.openOption && (
+          <Box sx={{ flexGrow: 0 }}>
+            <ButtonOption menuList={menuList_Option} onClick={handleOption} />
+          </Box>
+        )}
       </Toolbar>
     </AppBar>
   );

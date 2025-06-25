@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Dialog, Slide } from "@mui/material";
+import { Alert, Box, Dialog, Slide } from "@mui/material";
 import FieldSearch from "../component/Molecules/FieldSearch";
 import HeaderContactList from "../component/Organisms/HeaderDialog_Search";
 import ListContact from "../component/Organisms/ListContact";
@@ -10,11 +10,16 @@ import ListUser from "../component/Organisms/ListUser";
 import { userInfo_t } from "../component/Molecules/UserInfo";
 import DialogAddUser from "./DialogAddUser";
 import DialogEditUser from "./DialogEditUser";
-import { role_e } from "../enum";
-import * as User_f from "../API/LoginService/User"
-import * as Login_f from '../API/LoginService/Login'
+import { errorCode_e, role_e } from "../enum";
+import * as User_f from "../API/LoginService/User";
+import * as Login_f from "../API/LoginService/Login";
 import { useNavigate } from "react-router-dom";
-import { UserProfile_t } from "../API/LoginService/type";
+import {
+  EditUserFrom_t,
+  RegistFrom_t,
+  UserProfile_t,
+} from "../API/LoginService/type";
+import { resolvePtr } from "dns";
 //*********************************************
 // Style
 //*********************************************
@@ -42,90 +47,151 @@ interface myProps {
 // Component
 //*********************************************
 const DialogSetUser: React.FC<myProps> = (props) => {
+  // Local Function **************
   // Hook **************
   const navigate = useNavigate();
+  const [token, setToken] = React.useState("");
   const [key, setKey] = React.useState("");
   const [list, setList] = React.useState<UserProfile_t[]>([]);
   const [openAdd, setOpenAdd] = React.useState(false);
   const [openEdit, setOpenEdit] = React.useState(false);
-
+  const [editValue, setEditValue] = React.useState<UserProfile_t>();
   // Local Function **************
   function onChangeHandler(event: React.ChangeEvent<HTMLInputElement>) {
     setKey(event.target.value);
   }
   const onSearch = (keyword: string) => {};
-  const onAdd = () => {
-    setOpenAdd(true);
+  const onAdd = async (val: RegistFrom_t) => {
+    try {
+      const resPost = await User_f.post(token, val);
+      if (resPost.status === "success") {
+        const resGet = await User_f.get(token);
+        if (resGet.status === "success" && resGet.result) {
+          setList(resGet.result);
+          setOpenAdd(false);
+        } else {
+          alert("รับรายการ User ล้มเหลว");
+          console.log("errCode", resGet.errCode);
+        }
+      } else if (resPost.errCode === errorCode_e.TokenExpiredError) {
+        const res = await Login_f.getToken();
+        if (res.token) {
+          setToken(res.token);
+        } else {
+          navigate("/");
+        }
+      } else {
+        alert("สร้างบัญชี User ล้มเหลว");
+        console.log("errCode", resPost.errCode);
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
-  const onEdit = (val: UserProfile_t) => {
-    setOpenEdit(true);
+  const onEdit = async (val: EditUserFrom_t) => {
+    try {
+      const resPut = await User_f.put(token, val);
+      if (resPut.status === "success") {
+        const resGet = await User_f.get(token);
+        if (resGet.status === "success" && resGet.result) {
+          setList(resGet.result);
+          setOpenEdit(false);
+        } else {
+          alert("รับรายการ User ล้มเหลว");
+          console.log("errCode", resGet.errCode);
+        }
+      } else if (resPut.errCode === errorCode_e.TokenExpiredError) {
+        const res = await Login_f.getToken();
+        console.log("get Token");
+        if (res.token) {
+          setToken(res.token);
+        } else {
+          navigate("/");
+        }
+      } else {
+        alert("แก้ไข User ล้มเหลว");
+        console.log("errCode", resPut.errCode);
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
   const onDel = (val: UserProfile_t) => {};
   const initPage = async () => {
-      try {
-        const resLogin = await Login_f.getToken();
-        console.log(resLogin);
-        if (resLogin.status === "error" || !resLogin.token) {
-          navigate("/");
+    try {
+      const resLogin = await Login_f.getToken();
+      console.log(resLogin);
+      if (resLogin.status === "error" || !resLogin.token) {
+        navigate("/");
+      } else {
+        const resUser = await User_f.get(resLogin.token);
+        setToken(resLogin.token);
+        if (resUser.status === "success" && resUser.result) {
+          setList(resUser.result);
+          console.log(resUser);
         } else {
-          const resUser = await User_f.get(resLogin.token);
-          if(resUser.status==="success"&&resUser.result){
-            setList(resUser.result);
-            console.log(resUser);
-          }else{
-            // Alert Err Msg 
-          }
-          
+          alert("รับรายการ User ล้มเหลว");
         }
-      } catch (err) {
-        console.log(err);
       }
-    };
+    } catch (err) {
+      console.log(err);
+    }
+  };
   // Use Effect **************
   React.useEffect(() => {
     console.log("get user!");
     initPage();
   }, [props.open]);
   return (
-    <Dialog
-      fullScreen
-      open={props.open}
-      onClose={props.onClose}
-      slots={{
-        transition: Transition,
-      }}
-    >
-      <HeaderDialog_Search
-        label="Set User"
-        onBack={props.onClose}
-        onChange={onChangeHandler}
-        onSearch={onSearch}
-        onAdd={onAdd}
-        value={key}
+    <>
+      {!openAdd && !openEdit && (
+        <Dialog
+          fullScreen
+          open={props.open}
+          onClose={props.onClose}
+          slots={{
+            transition: Transition,
+          }}
+        >
+          <HeaderDialog_Search
+            label="Set User"
+            onBack={props.onClose}
+            onChange={onChangeHandler}
+            onSearch={onSearch}
+            onAdd={() => setOpenAdd(true)}
+            value={key}
+          />
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <FieldSearch
+              label="Search"
+              display={{ xs: "flex", sm: "none" }}
+              value={key}
+              onChange={onChangeHandler}
+              onSubmit={onSearch}
+            />
+          </Box>
+          <ListUser
+            list={list}
+            onDel={onDel}
+            onEdit={(val) => {
+              setEditValue(val);
+              setOpenEdit(true);
+            }}
+          />
+        </Dialog>
+      )}
+      <DialogAddUser
+        open={openAdd}
+        onClose={() => setOpenAdd(false)}
+        onSubmit={onAdd}
       />
-      <Box sx={{ display: "flex", justifyContent: "center" }}>
-        <FieldSearch
-          label="Search"
-          display={{ xs: "flex", sm: "none" }}
-          value={key}
-          onChange={onChangeHandler}
-          onSubmit={onSearch}
-        />
-      </Box>
-      <ListUser list={list} onDel={onDel} onEdit={onEdit} />
-      <DialogAddUser open={openAdd} onClose={() => setOpenAdd(false)} />
       <DialogEditUser
         open={openEdit}
-        defaultValue={{
-          email: "admin@default.com",
-          enable: true,
-          name: "NuttaScholar",
-          role: role_e.admin,    
-          tel: "123456789"      
-        }}
+        defaultValue={editValue}
         onClose={() => setOpenEdit(false)}
+        onSubmit={onEdit}
       />
-    </Dialog>
+    </>
   );
 };
 export default DialogSetUser;

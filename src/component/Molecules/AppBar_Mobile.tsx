@@ -55,7 +55,6 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
       index = props.value;
     }
   }
-  console.log(index);
   /* Return */
   return (
     <Box sx={{ display: "flex", flexGrow: 1 }}>
