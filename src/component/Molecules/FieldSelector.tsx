@@ -47,15 +47,17 @@ const FieldSelector: React.FC<myProps> = (props) => {
         <Select
           labelId={props.label}
           //id="demo-select-small"
-          required = {props.required}
+          required={props.required}
           name={props.name}
           value={value}
           label={props.label}
           onChange={handleChange}
         >
-          <MenuItem value="">
-            <em>None</em>
-          </MenuItem>
+          {!props.required && (
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+          )}
 
           {props.list?.map((list, index) => (
             <MenuItem key={index} value={list.value}>

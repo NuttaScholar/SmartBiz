@@ -20,6 +20,7 @@ import {
   UserProfile_t,
 } from "../API/LoginService/type";
 import { resolvePtr } from "dns";
+import AlertConfirm from "../component/Molecules/AlertConfirm";
 //*********************************************
 // Style
 //*********************************************
@@ -53,6 +54,8 @@ const DialogSetUser: React.FC<myProps> = (props) => {
   const [token, setToken] = React.useState("");
   const [key, setKey] = React.useState("");
   const [list, setList] = React.useState<UserProfile_t[]>([]);
+  const [targetID, setTargetID] = React.useState("");
+  const [openDel, setOpenDel] = React.useState(false);
   const [openAdd, setOpenAdd] = React.useState(false);
   const [openEdit, setOpenEdit] = React.useState(false);
   const [editValue, setEditValue] = React.useState<UserProfile_t>();
@@ -116,7 +119,34 @@ const DialogSetUser: React.FC<myProps> = (props) => {
       console.log(err);
     }
   };
-  const onDel = (val: UserProfile_t) => {};
+  const onDel = async() => {
+    try{
+      const resDel = await User_f.del(token, targetID);
+      if(resDel.status==="success"){
+        const resGet = await User_f.get(token);
+        if (resGet.status === "success" && resGet.result) {
+          setList(resGet.result);
+          setOpenDel(false);
+        } else {
+          alert("รับรายการ User ล้มเหลว");
+          console.log("errCode", resGet.errCode);
+        }
+      } else if (resDel.errCode === errorCode_e.TokenExpiredError) {
+        const res = await Login_f.getToken();
+        console.log("get Token");
+        if (res.token) {
+          setToken(res.token);
+        } else {
+          navigate("/");
+        }
+      } else {
+        alert("ลบ User ล้มเหลว");
+        console.log("errCode", resDel.errCode);
+      }
+    }catch(err){
+      console.log(err);
+    }
+  };
   const initPage = async () => {
     try {
       const resLogin = await Login_f.getToken();
@@ -172,7 +202,10 @@ const DialogSetUser: React.FC<myProps> = (props) => {
           </Box>
           <ListUser
             list={list}
-            onDel={onDel}
+            onDel={(val) => {
+              setOpenDel(true);
+              setTargetID(val._id||"");
+            }}
             onEdit={(val) => {
               setEditValue(val);
               setOpenEdit(true);
@@ -190,6 +223,13 @@ const DialogSetUser: React.FC<myProps> = (props) => {
         defaultValue={editValue}
         onClose={() => setOpenEdit(false)}
         onSubmit={onEdit}
+      />
+      <AlertConfirm
+        open={openDel}
+        title="Delete User"
+        content="คุณกำลังลบบัญชีผู้ใช้งาน กระบวนการนี้หากดำเนิดการแล้วจะไม่สามารถกู้คืนกลับมาได้ คุณต้องการดำเนินการต่อหรือไม่?"
+        onClose={() => setOpenDel(false)}
+        onConfirm={onDel}
       />
     </>
   );
