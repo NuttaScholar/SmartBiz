@@ -1,16 +1,12 @@
 import React from "react";
-import { Alert, Box, Dialog, Slide } from "@mui/material";
+import { Box, Dialog, Slide } from "@mui/material";
 import FieldSearch from "../component/Molecules/FieldSearch";
-import HeaderContactList from "../component/Organisms/HeaderDialog_Search";
-import ListContact from "../component/Organisms/ListContact";
 import { TransitionProps } from "@mui/material/transitions";
-import DialogAddContact from "./DialogAddContact";
 import HeaderDialog_Search from "../component/Organisms/HeaderDialog_Search";
 import ListUser from "../component/Organisms/ListUser";
-import { userInfo_t } from "../component/Molecules/UserInfo";
 import DialogAddUser from "./DialogAddUser";
 import DialogEditUser from "./DialogEditUser";
-import { errorCode_e, role_e } from "../enum";
+import { errorCode_e } from "../enum";
 import * as User_f from "../API/LoginService/User";
 import * as Login_f from "../API/LoginService/Login";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +15,6 @@ import {
   RegistFrom_t,
   UserProfile_t,
 } from "../API/LoginService/type";
-import { resolvePtr } from "dns";
 import AlertConfirm from "../component/Molecules/AlertConfirm";
 //*********************************************
 // Style
@@ -63,11 +58,30 @@ const DialogSetUser: React.FC<myProps> = (props) => {
   function onChangeHandler(event: React.ChangeEvent<HTMLInputElement>) {
     setKey(event.target.value);
   }
-  const onSearch = (keyword: string) => {};
+  const onSearch = async (keyword: string) => {
+    try {
+      const resUser = await User_f.get(token, keyword);
+      if (resUser.status === "success") {
+        setList(resUser.result || []);
+      } else if (resUser.errCode === errorCode_e.TokenExpiredError) {
+        const resToken = await Login_f.getToken();
+        if (resToken.result?.token) {
+          setToken(resToken.result.token);
+        } else {
+          navigate("/");
+        }
+      } else {
+        alert("รับรายการ User ล้มเหลว");
+        console.log("errCode", resUser.errCode);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
   const onAdd = async (val: RegistFrom_t) => {
     try {
-      const resPost = await User_f.post(token, val);
-      if (resPost.status === "success") {
+      const resUser = await User_f.post(token, val);
+      if (resUser.status === "success") {
         const resGet = await User_f.get(token);
         if (resGet.status === "success" && resGet.result) {
           setList(resGet.result);
@@ -76,16 +90,16 @@ const DialogSetUser: React.FC<myProps> = (props) => {
           alert("รับรายการ User ล้มเหลว");
           console.log("errCode", resGet.errCode);
         }
-      } else if (resPost.errCode === errorCode_e.TokenExpiredError) {
+      } else if (resUser.errCode === errorCode_e.TokenExpiredError) {
         const res = await Login_f.getToken();
-        if (res.token) {
-          setToken(res.token);
+        if (res.result?.token) {
+          setToken(res.result.token);
         } else {
           navigate("/");
         }
       } else {
         alert("สร้างบัญชี User ล้มเหลว");
-        console.log("errCode", resPost.errCode);
+        console.log("errCode", resUser.errCode);
       }
     } catch (err) {
       console.log(err);
@@ -106,8 +120,8 @@ const DialogSetUser: React.FC<myProps> = (props) => {
       } else if (resPut.errCode === errorCode_e.TokenExpiredError) {
         const res = await Login_f.getToken();
         console.log("get Token");
-        if (res.token) {
-          setToken(res.token);
+        if (res.result?.token) {
+          setToken(res.result.token);
         } else {
           navigate("/");
         }
@@ -119,10 +133,10 @@ const DialogSetUser: React.FC<myProps> = (props) => {
       console.log(err);
     }
   };
-  const onDel = async() => {
-    try{
+  const onDel = async () => {
+    try {
       const resDel = await User_f.del(token, targetID);
-      if(resDel.status==="success"){
+      if (resDel.status === "success") {
         const resGet = await User_f.get(token);
         if (resGet.status === "success" && resGet.result) {
           setList(resGet.result);
@@ -134,8 +148,8 @@ const DialogSetUser: React.FC<myProps> = (props) => {
       } else if (resDel.errCode === errorCode_e.TokenExpiredError) {
         const res = await Login_f.getToken();
         console.log("get Token");
-        if (res.token) {
-          setToken(res.token);
+        if (res.result?.token) {
+          setToken(res.result.token);
         } else {
           navigate("/");
         }
@@ -143,7 +157,7 @@ const DialogSetUser: React.FC<myProps> = (props) => {
         alert("ลบ User ล้มเหลว");
         console.log("errCode", resDel.errCode);
       }
-    }catch(err){
+    } catch (err) {
       console.log(err);
     }
   };
@@ -151,11 +165,11 @@ const DialogSetUser: React.FC<myProps> = (props) => {
     try {
       const resLogin = await Login_f.getToken();
       console.log(resLogin);
-      if (resLogin.status === "error" || !resLogin.token) {
+      if (resLogin.status === "error" || !resLogin.result?.token) {
         navigate("/");
       } else {
-        const resUser = await User_f.get(resLogin.token);
-        setToken(resLogin.token);
+        const resUser = await User_f.get(resLogin.result?.token);
+        setToken(resLogin.result?.token);
         if (resUser.status === "success" && resUser.result) {
           setList(resUser.result);
           console.log(resUser);
@@ -203,8 +217,11 @@ const DialogSetUser: React.FC<myProps> = (props) => {
           <ListUser
             list={list}
             onDel={(val) => {
-              setOpenDel(true);
-              setTargetID(val._id||"");
+              setTimeout(() => {
+                setOpenDel(true);
+              }, 500);
+              
+              setTargetID(val._id || "");
             }}
             onEdit={(val) => {
               setEditValue(val);

@@ -1,5 +1,5 @@
 import * as React from "react";
-import AppBar_c, { pageApp_e } from "../component/Organisms/AppBar_c";
+import AppBar_c from "../component/Organisms/AppBar_c";
 import MoneyTotal from "../component/Organisms/MoneyTotal";
 import YearSelector from "../component/Organisms/YearSelector";
 import MonthlyTotalList from "../component/Organisms/MonthlyTotalList";
@@ -35,7 +35,6 @@ const Page_Access: React.FC = () => {
   const [openDialogAdd, setOpenDialogAdd] = React.useState(false);
   const [openDialogEdit, setOpenDialogEdit] = React.useState(false);
   const [openDialogSearch, setOpenDialogSearch] = React.useState(false);
-  const [openSpeedDial, setOpenSpeedDial] = React.useState(false);
   const [TransitionForm, setTransitionForm] =
     React.useState<TransitionForm_t>();
   const [transaction, setTransaction] = React.useState<statement_t[]>([]);
@@ -121,13 +120,13 @@ const Page_Access: React.FC = () => {
     try {
       const resLogin = await Login_f.getToken();
       console.log(resLogin);
-      if (resLogin.status === "error" || !resLogin.token) {
+      if (resLogin.status === "error" || !resLogin.result?.token) {
         navigate("/");
       } else {
-        const resContact = await Contact_f.get(resLogin.token);
+        const resContact = await Contact_f.get(resLogin.result.token);
         setContactList(resContact.result);
-        setAccessToken(resLogin.token);
-        initTrans(resLogin.token);
+        setAccessToken(resLogin.result.token);
+        initTrans(resLogin.result.token);
       }
     } catch (err) {
       console.log(err);
@@ -276,8 +275,9 @@ const Page_Access: React.FC = () => {
         const res = await Login_f.postLogout();
         console.log(res);
       } else if (page.text === "Set User") {
-        setOpenDialogSetUser(true);
+        setTimeout(()=>setOpenDialogSetUser(true),300);
       } else if (page.text === "Set Password") {
+
       }
     } catch (err) {
       console.log(err);
@@ -289,7 +289,7 @@ const Page_Access: React.FC = () => {
   }, [yearSelect]);
   return (
     <>
-      <AppBar_c role="admin" onClick={onClickPage} openOption={!openDialogSetUser} />
+      <AppBar_c role="admin" onClick={onClickPage}/>
       <MoneyTotal
         sx={{ textAlign: "center", mt: "16px" }}
         label="ยอดเงินคงเหลือ"

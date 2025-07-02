@@ -63,14 +63,13 @@ const option_staff: menuList_t[] = [
 //*********************************************
 interface myProps {
   role?: "admin" | "cashier" | "laber";
-  openOption?: boolean;
   onClick?: (page: menuList_t) => void;
 }
 
 //************************************************
 // Component
 //************************************************
-const AppBar_c: React.FC<myProps> = (props) => {
+const AppBar_c:React.FC<myProps> = (props) => {
   const location = useLocation();
   const handleAppBar = (menuList: menuList_t) => {
     props.onClick?.(menuList);
@@ -107,11 +106,10 @@ const AppBar_c: React.FC<myProps> = (props) => {
             onClick={handleAppBar}
           />
         </Box_PC>
-        {props.openOption && (
-          <Box sx={{ flexGrow: 0 }}>
-            <ButtonOption menuList={menuList_Option} onClick={handleOption} />
-          </Box>
-        )}
+
+        <Box sx={{ flexGrow: 0 }}>
+          <ButtonOption menuList={menuList_Option} onClick={handleOption} />
+        </Box>
       </Toolbar>
     </AppBar>
   );

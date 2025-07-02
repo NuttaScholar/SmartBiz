@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { LoginForm_t, responstLogin_t, tokenPackage_t, TokenForm_t, RegistFrom_t, UserProfile_t, EditUserFrom_t } from "./type";
+import { LoginForm_t, responstLogin_t, tokenPackage_t, TokenForm_t, RegistFrom_t, UserProfile_t, EditUserFrom_t, EditPassFrom_t } from "./type";
 import moment from 'moment-timezone';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -165,7 +165,7 @@ app.post('/login', async (req: Request, res: Response) => {
                         expiresIn: "1d",
                     }
                 );
-                const result: responstLogin_t<"postLogin"> = { status: "success", token: accessToken }
+                const result: responstLogin_t<"postLogin"> = { status: "success", result: { role: resultDB.role, token: accessToken } }
                 res.cookie("refreshToken", refreshToken, {
                     httpOnly: true,
                     secure: true,       // ตั้ง true เมื่อใช้ HTTPS
@@ -251,7 +251,7 @@ app.get('/token', async (req: Request, res: Response) => {
                         expiresIn: "15m",
                     }
                 );
-                const result: responstLogin_t<"getToken"> = { status: "success", token: accessToken }
+                const result: responstLogin_t<"getToken"> = { status: "success", result: {role: decoded.role, token: accessToken} }
                 res.send(result);
             }
         } else {
@@ -263,6 +263,12 @@ app.get('/token', async (req: Request, res: Response) => {
         res.send(result);
     }
 })
+app.get('/', async (req: Request, res: Response) => {
+    console.log("accessToken", req.cookies.accessToken);
+    console.log("refreshToken", req.cookies.refreshToken);
+    const result: responstLogin_t<"none"> = { status: "success" };
+    res.send(result);
+});
 app.delete('/user', async (req: Request, res: Response) => {
     Auth(req, res, async (data) => {
         if (data.type === "accessToken" && data.role === role_e.admin) {
@@ -296,11 +302,39 @@ app.put('/user', async (req: Request, res: Response) => {
         }
     })
 });
-app.get('/', async (req: Request, res: Response) => {
-    console.log("accessToken", req.cookies.accessToken);
-    console.log("refreshToken", req.cookies.refreshToken);
-    const result: responstLogin_t<"none"> = { status: "success" };
-    res.send(result);
+app.put('/pass', async (req: Request, res: Response) => {
+    Auth(req, res, async (data) => {
+        if (data?.type === "accessToken") {
+            const fromData = req.body as EditPassFrom_t;
+
+            try {
+                const resultDB = await User.findOne({ email: data.username });
+                if (resultDB) {
+                    const compare = await bcrypt.compare(fromData.oldPass, resultDB.passHash)
+                    if (compare) {
+                        const passHash = await bcrypt.hash(fromData.newPass, saltRounds);
+                        const edit = await User.updateOne({ _id: resultDB._id }, { passHash: passHash });
+                        const result: responstLogin_t<"none"> = { status: "success" };
+                        console.log(edit);
+                        res.send(result);
+                    } else {
+                        const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError };
+                        res.send(result);
+                    }
+                } else {
+                    const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.NotFoundError };
+                    res.send(result);
+                }
+            } catch (err) {
+                const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+                console.log(err);
+                res.send(result);
+            }
+        } else {
+            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            res.send(result);
+        }
+    })
 });
 
 /*********************************************** */

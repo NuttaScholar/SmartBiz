@@ -23,6 +23,10 @@ export type EditUserFrom_t = {
   tel?: string;
   img?: string; // Image URL
 }
+export type EditPassFrom_t = {
+  oldPass: string;
+  newPass: string;
+}
 export type UserProfile_t = {
   _id?: string;
   email: string;
@@ -38,6 +42,7 @@ export type tokenPackage_t = {
   role: role_e;
   type: "accessToken" | "refreshToken";
 }
+export type Auth_t = { token: string; role: role_e };
 
 export type responstLogin_t<
   T extends
@@ -54,12 +59,12 @@ export type responstLogin_t<
   : T extends "getToken" | "postLogin"
   ? {
     status: "success" | "error";
-    token?: string;
+    result?: Auth_t;
     errCode?: errorCode_e;
   }
   : {
     status: "success" | "error";
     errCode?: errorCode_e;
-  } ;
+  };
 
 
