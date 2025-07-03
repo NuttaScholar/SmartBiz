@@ -1,22 +1,22 @@
 import React from "react";
 import { Box, Button, Dialog, IconButton, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
-import HeaderDialog from "../component/Molecules/HeaderDialog";
-import FieldText from "../component/Molecules/FieldText";
+import HeaderDialog from "./HeaderDialog";
+import FieldText from "./FieldText";
 import PaidIcon from "@mui/icons-material/Paid";
 import FieldSelector, {
   listSelect_t,
-} from "../component/Molecules/FieldSelector";
+} from "./FieldSelector";
 import SyncAltIcon from "@mui/icons-material/SyncAlt";
-import { transactionType_e } from "../enum";
+import { transactionType_e } from "../../enum";
 import SubjectIcon from "@mui/icons-material/Subject";
-import FieldContact from "../component/Molecules/FieldContact";
+import FieldContact from "./FieldContact";
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import FieldDate from "../component/Molecules/FieldDate";
-import DialogAddContact, { ContactForm_t } from "./DialogAddContact";
+import FieldDate from "./FieldDate";
+import DialogAddContact, { ContactForm_t } from "./DialogFormContact";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { contactInfo_t } from "../component/Molecules/ContactInfo";
+import { contactInfo_t } from "./ContactInfo";
 
 //*********************************************
 // Type

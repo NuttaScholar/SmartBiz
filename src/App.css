@@ -2,6 +2,12 @@
   width: 100%;
   margin: 0;
 }
+body {
+  margin: 0;
+  display: flex;
+  min-width: 320px;
+  min-height: 100vh;
+}
 .field{
   display: flex;
   background-color: #E0EFFF;

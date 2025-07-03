@@ -2,7 +2,7 @@ import React from "react";
 import { Dialog, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import { useNavigate } from "react-router-dom";
-import HeaderDialog from "../component/Molecules/HeaderDialog";
+import HeaderDialog from "../Molecules/HeaderDialog";
 //*********************************************
 // Style
 //*********************************************
@@ -25,7 +25,6 @@ const Transition = React.forwardRef(function Transition(
 interface myProps {
   open: boolean;
   onClose?: () => void;
-  token: string;
 }
 //*********************************************
 // Component

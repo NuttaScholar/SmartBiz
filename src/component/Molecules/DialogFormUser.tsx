@@ -1,8 +1,8 @@
 import React from "react";
 import { Box, Button, Dialog, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
-import HeaderDialog from "../component/Molecules/HeaderDialog";
-import FieldText from "../component/Molecules/FieldText";
+import HeaderDialog from "./HeaderDialog";
+import FieldText from "./FieldText";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ContactPageIcon from "@mui/icons-material/ContactPage";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -10,11 +10,15 @@ import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
 import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import NotesIcon from "@mui/icons-material/Notes";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
-import { RegistFrom_t } from "../API/LoginService/type";
+import {
+  EditUserFrom_t,
+  RegistFrom_t,
+  UserProfile_t,
+} from "../../API/LoginService/type";
 import FieldSelector, {
   listSelect_t,
-} from "../component/Molecules/FieldSelector";
-import { role_e } from "../enum";
+} from "./FieldSelector";
+import { role_e } from "../../enum";
 
 //*********************************************
 // Type
@@ -23,10 +27,14 @@ import { role_e } from "../enum";
 //*********************************************
 // ListSelect
 //*********************************************
-const listSelect: listSelect_t[] = [
+const roleSelect: listSelect_t[] = [
   { label: "Admin", value: role_e.admin },
   { label: "Cashier", value: role_e.cashier },
   { label: "Laber", value: role_e.laber },
+];
+const enSelect: listSelect_t[] = [
+  { label: "Disable", value: 0 },
+  { label: "Enable", value: 1 },
 ];
 //*********************************************
 // Transition
@@ -46,20 +54,37 @@ const Transition = React.forwardRef(function Transition(
 interface myProps {
   open: boolean;
   title?: string;
+  defaultValue?: UserProfile_t;
   onClose?: () => void;
-  onSubmit?: (data: RegistFrom_t) => void;
+  onAdd?: (data: RegistFrom_t) => void;
+  onEdit?: (data: EditUserFrom_t) => void;
 }
 //*********************************************
 // Component
 //*********************************************
-const DialogAddUser: React.FC<myProps> = (props) => {
+const DialogFormUser: React.FC<myProps> = (props) => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
-    const form = formJson as RegistFrom_t;
 
-    props.onSubmit?.(form);
+    if (props.defaultValue?._id) {
+      const form: EditUserFrom_t = {
+        id: props.defaultValue._id || "",
+        ...formJson,
+      };
+      props.onEdit?.(form);
+    } else {
+      const { email, name, role, ...rest }: RegistFrom_t =
+        formJson as RegistFrom_t;
+      const form: RegistFrom_t = {
+        email: email,
+        name: name,
+        role: role,
+        ...rest,
+      };
+      props.onAdd?.(form);
+    }
   };
 
   return (
@@ -72,7 +97,7 @@ const DialogAddUser: React.FC<myProps> = (props) => {
       }}
     >
       <HeaderDialog
-        label={props.title || "เพิ่มรายการ"}
+        label={props.title || "แก้ไขรายการ"}
         onClick={props.onClose}
       />
       <Box
@@ -93,25 +118,39 @@ const DialogAddUser: React.FC<myProps> = (props) => {
           required
           label="Email"
           name="email"
+          defauleValue={props.defaultValue?.email}
         />
         <FieldText
           icon={<ContactPageIcon />}
           required
           label="Name"
           name="name"
+          defauleValue={props.defaultValue?.name}
         />
         <FieldSelector
           required
           icon={<ManageAccountsIcon />}
+          defauleValue={props.defaultValue?.role.toString()}
           name="role"
           label="Role"
-          list={listSelect}
+          list={roleSelect}
         />
         <FieldText
           icon={<LocalPhoneIcon />}
           label="Tel."
           name="tel"
+          defauleValue={props.defaultValue?.tel}
         />
+        {props.defaultValue && (
+          <FieldSelector
+            required
+            icon={<ManageAccountsIcon />}
+            defauleValue={props.defaultValue?.enable ? "1" : "0"}
+            name="enable"
+            label="Enable"
+            list={enSelect}
+          />
+        )}
         <Box
           sx={{
             display: "flex",
@@ -141,4 +180,4 @@ const DialogAddUser: React.FC<myProps> = (props) => {
     </Dialog>
   );
 };
-export default DialogAddUser;
+export default DialogFormUser;

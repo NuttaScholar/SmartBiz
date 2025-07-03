@@ -1,15 +1,15 @@
 import React from "react";
 import { Box, Button, Dialog, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
-import HeaderDialog from "../component/Molecules/HeaderDialog";
-import FieldText from "../component/Molecules/FieldText";
+import HeaderDialog from "./HeaderDialog";
+import FieldText from "./FieldText";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ContactPageIcon from "@mui/icons-material/ContactPage";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
 import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import NotesIcon from "@mui/icons-material/Notes";
-import { contactInfo_t } from "../component/Molecules/ContactInfo";
+import { contactInfo_t } from "./ContactInfo";
 
 //*********************************************
 // Type

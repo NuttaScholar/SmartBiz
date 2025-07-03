@@ -7,7 +7,7 @@ import DailyTotalList, {
   sumDailyTotal,
 } from "../Molecules/DailyTotalList";
 import Label_parameter from "../Atoms/Label_parameter";
-import { TransitionForm_t } from "../../dialog/DialogAddTransaction";
+import { TransitionForm_t } from "../Molecules/DialogFormTransaction";
 
 /**************************************************** */
 //  Style

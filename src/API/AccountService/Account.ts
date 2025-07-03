@@ -3,7 +3,7 @@ import {
   responst_t,
   TransitionForm_t,
 } from "./type";
-import { SearchTransForm_t } from "../../dialog/DialogSearchTransaction";
+import { SearchTransForm_t } from "../../component/Organisms/DialogSearchTransaction";
 
 export async function getStatement(
   token: string,

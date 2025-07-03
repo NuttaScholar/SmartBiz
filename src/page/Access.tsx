@@ -1,9 +1,9 @@
 import * as React from "react";
 import AppBar_c from "../component/Organisms/AppBar_c";
-import MoneyTotal from "../component/Organisms/MoneyTotal";
+import MoneyTotal from "../component/Molecules/MoneyTotal";
 import YearSelector from "../component/Organisms/YearSelector";
 import MonthlyTotalList from "../component/Organisms/MonthlyTotalList";
-import MySpeedDial from "../component/Organisms/MySpeedDial";
+import MySpeedDial from "../component/Molecules/MySpeedDial";
 import { menuList_t } from "../component/Molecules/AppBar_Mobile";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import AddIcon from "@mui/icons-material/Add";
@@ -11,10 +11,10 @@ import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import DialogAddTransaction, {
   TransitionForm_t,
-} from "../dialog/DialogAddTransaction";
+} from "../component/Molecules/DialogFormTransaction";
 import DialogSearchTransaction, {
   SearchTransForm_t,
-} from "../dialog/DialogSearchTransaction";
+} from "../component/Organisms/DialogSearchTransaction";
 import { GoToTop } from "../function/Window";
 import * as Access_f from "../API/AccountService/Account";
 import * as Contact_f from "../API/AccountService/Contact";
@@ -24,7 +24,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { contactInfo_t } from "../component/Molecules/ContactInfo";
 import { errorCode_e } from "../enum";
 import { useNavigate } from "react-router-dom";
-import DialogSetUser from "../dialog/DialogSetUser";
+import DialogSetUser from "../component/Organisms/DialogSetUser";
 
 const Page_Access: React.FC = () => {
   // Hook **************
@@ -274,11 +274,7 @@ const Page_Access: React.FC = () => {
       if (page.path === "/") {
         const res = await Login_f.postLogout();
         console.log(res);
-      } else if (page.text === "Set User") {
-        setTimeout(()=>setOpenDialogSetUser(true),300);
-      } else if (page.text === "Set Password") {
-
-      }
+      } 
     } catch (err) {
       console.log(err);
     }
@@ -363,7 +359,8 @@ const Page_Access: React.FC = () => {
       <DialogSetUser
         open={openDialogSetUser}
         onClose={() => {
-          setOpenDialogSetUser(false);
+          setTimeout(()=>setOpenDialogSetUser(false),300)
+          
         }}
       />
     </>

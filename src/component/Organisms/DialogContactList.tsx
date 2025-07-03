@@ -1,11 +1,10 @@
 import React from "react";
 import { Box, Dialog, Slide } from "@mui/material";
-import FieldSearch from "../component/Molecules/FieldSearch";
-import HeaderContactList from "../component/Organisms/HeaderDialog_Search";
-import ListContact from "../component/Organisms/ListContact";
+import FieldSearch from "../Molecules/FieldSearch";
+import HeaderContactList from "../Molecules/HeaderDialog_Search";
+import ListContact from "./ListContact";
 import { TransitionProps } from "@mui/material/transitions";
-import { contactInfo_t } from "../component/Molecules/ContactInfo";
-import DialogAddContact from "./DialogAddContact";
+import { contactInfo_t } from "../Molecules/ContactInfo";
 
 //*********************************************
 // Style

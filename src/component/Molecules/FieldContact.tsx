@@ -8,7 +8,7 @@ import Field from "../Atoms/Field";
 import React from "react";
 import ClearIcon from "@mui/icons-material/Clear";
 import AssignmentIndOutlinedIcon from "@mui/icons-material/AssignmentIndOutlined";
-import DialogContactList from "../../dialog/DialogContactList";
+import DialogContactList from "../Organisms/DialogContactList";
 import { contactInfo_t } from "./ContactInfo";
 /**************************************************** */
 //  Interface

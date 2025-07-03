@@ -1,8 +1,8 @@
 import React from "react";
-import HeaderDialog from "../Molecules/HeaderDialog";
+import HeaderDialog from "./HeaderDialog";
 import { Box, IconButton } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
-import FieldSearch from "../Molecules/FieldSearch";
+import FieldSearch from "./FieldSearch";
 
 //*********************************************
 // Style

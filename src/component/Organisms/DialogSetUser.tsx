@@ -1,21 +1,20 @@
 import React from "react";
 import { Box, Dialog, Slide } from "@mui/material";
-import FieldSearch from "../component/Molecules/FieldSearch";
+import FieldSearch from "../Molecules/FieldSearch";
 import { TransitionProps } from "@mui/material/transitions";
-import HeaderDialog_Search from "../component/Organisms/HeaderDialog_Search";
-import ListUser from "../component/Organisms/ListUser";
-import DialogAddUser from "./DialogAddUser";
-import DialogEditUser from "./DialogEditUser";
-import { errorCode_e } from "../enum";
-import * as User_f from "../API/LoginService/User";
-import * as Login_f from "../API/LoginService/Login";
+import HeaderDialog_Search from "../Molecules/HeaderDialog_Search";
+import ListUser from "./ListUser";
+import { errorCode_e } from "../../enum";
+import * as User_f from "../../API/LoginService/User";
+import * as Login_f from "../../API/LoginService/Login";
 import { useNavigate } from "react-router-dom";
 import {
   EditUserFrom_t,
   RegistFrom_t,
   UserProfile_t,
-} from "../API/LoginService/type";
-import AlertConfirm from "../component/Molecules/AlertConfirm";
+} from "../../API/LoginService/type";
+import AlertConfirm from "../Molecules/AlertConfirm";
+import DialogFormUser from "../Molecules/DialogFormUser";
 //*********************************************
 // Style
 //*********************************************
@@ -189,14 +188,7 @@ const DialogSetUser: React.FC<myProps> = (props) => {
   return (
     <>
       {!openAdd && !openEdit && (
-        <Dialog
-          fullScreen
-          open={props.open}
-          onClose={props.onClose}
-          slots={{
-            transition: Transition,
-          }}
-        >
+        <Dialog fullScreen open={props.open} onClose={props.onClose}>
           <HeaderDialog_Search
             label="Set User"
             onBack={props.onClose}
@@ -220,7 +212,7 @@ const DialogSetUser: React.FC<myProps> = (props) => {
               setTimeout(() => {
                 setOpenDel(true);
               }, 500);
-              
+
               setTargetID(val._id || "");
             }}
             onEdit={(val) => {
@@ -230,17 +222,18 @@ const DialogSetUser: React.FC<myProps> = (props) => {
           />
         </Dialog>
       )}
-      <DialogAddUser
+      <DialogFormUser
         open={openAdd}
         onClose={() => setOpenAdd(false)}
-        onSubmit={onAdd}
+        onAdd={onAdd}
       />
-      <DialogEditUser
+      <DialogFormUser
         open={openEdit}
         defaultValue={editValue}
         onClose={() => setOpenEdit(false)}
-        onSubmit={onEdit}
+        onEdit={onEdit}
       />
+      
       <AlertConfirm
         open={openDel}
         title="Delete User"

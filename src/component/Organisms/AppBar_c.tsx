@@ -50,12 +50,12 @@ const pagesList_labor: menuList_t[] = [
   { text: "บันทึกเวลา", icon: <AssignmentIndIcon />, path: "/checkIn" },
 ];
 const option_admin: menuList_t[] = [
-  { text: "Set User" },
-  { text: "Set Password" },
+  { text: "Set User", path: "/setuser" },
+  { text: "Set Password", path: "/setpass" },
   { text: "Logout", path: "/" },
 ];
 const option_staff: menuList_t[] = [
-  { text: "Set Password" },
+  { text: "Set Password", path: "/setpass" },
   { text: "Logout", path: "/" },
 ];
 //*********************************************
