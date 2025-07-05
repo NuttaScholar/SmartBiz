@@ -34,7 +34,5 @@ export function ErrorString(data: errorCode_e): string {
             return "Unauthorized Error"
         case errorCode_e.UnknownError:
             return "UnknownError"
-
-
     }
 }

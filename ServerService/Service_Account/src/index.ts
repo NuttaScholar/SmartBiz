@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import { TransitionForm_t, ContactForm_t, responst_t, tokenPackage_t, statement_t, ContactInfo_t } from "./type";
@@ -155,6 +155,34 @@ function Auth(req: Request, res: Response, onSuccess: (data: tokenPackage_t) => 
     }
 }
 /*********************************************** */
+// Middleware
+/*********************************************** */
+interface AuthRequest extends Request {
+    authData?: tokenPackage_t;
+}
+function AuthMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+    if (req.headers.authorization) {
+        const accessToken = req.headers.authorization.split(" ")[1];
+        const decoded = decoder(accessToken);
+
+        if (decoded) {
+            if (decoded.type === "accessToken") {
+                req.authData = decoded
+                next();
+            } else {
+                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
+                res.send(result);
+            }
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.TokenExpiredError }
+            res.send(result);
+        }
+    } else {
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
+        res.send(result);
+    }
+}
+/*********************************************** */
 // Routes Setup
 /*********************************************** */
 app.post('/contact', (req: Request, res: Response) => {
@@ -250,91 +278,89 @@ app.get('/contact', (req: Request, res: Response) => {
         }
     })
 })
-app.get('/transaction', (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        try {
-            if (data.role === role_e.admin) {
-                const { from, to, who, topic, type } = req.query;
-                let filter: any = {
-                    date: {
-                        $gte: new Date(from as string || Date.now()),
-                        $lte: new Date(to as string || Date.now())
-                    },
-                }
-                if (who) filter.who = who;
-                if (topic) filter.topic = topic;
-                if (type) filter.type = Number(type);
-                const data = await Transatcion.aggregate([
-                    {
-                        $match: filter
-                    },
-                    {
-                        $addFields: {
-                            newDate: {
-                                $dateAdd: {
-                                    startDate: "$date",
-                                    unit: "hour",
-                                    amount: 7
-                                }
-                            }
-                        }
-                    },
-                    {
-                        $group: {
-                            _id: {
-                                date: "$date",
-                                month: { $dateToString: { format: "%Y-%m", date: "$newDate" } }
-                            },
-                            transactions: {
-                                $push: {
-                                    id: "$_id",
-                                    topic: "$topic",
-                                    type: "$type",
-                                    money: "$money",
-                                    who: "$who",
-                                    description: "$description"
-                                }
-                            }
-                        }
-                    },
-                    {
-                        $sort: { "_id.date": -1 }
-                    },
-                    {
-                        // 2. จัดกลุ่มใหม่ตามเดือน
-                        $group: {
-                            _id: "$_id.month",
-                            detail: {
-                                $push: {
-                                    date: "$_id.date",
-                                    transactions: "$transactions"
-                                }
-                            }
-                        }
-                    },
-                    {
-                        $sort: { _id: -1 }
-                    }
-                ])
-                const newData: statement_t[] = data.map(monthGroup => ({
-                    date: new Date(monthGroup._id + "-01"), // "2025-04" → "2025-04-01"
-                    detail: monthGroup.detail.map((daily: any) => ({
-                        date: new Date(daily.date),
-                        transactions: daily.transactions
-                    }))
-                }));
-                const result: responst_t<"getTransaction"> = { status: "success", result: newData }
-                return res.send(result);
-            } else {
-                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-                return res.send(result);
+app.get('/transaction', AuthMiddleware, async(req: AuthRequest, res: Response) => {
+    try {
+        if (req.authData?.role === role_e.admin) {
+            const { from, to, who, topic, type } = req.query;
+            let filter: any = {
+                date: {
+                    $gte: new Date(from as string || Date.now()),
+                    $lte: new Date(to as string || Date.now())
+                },
             }
-        } catch (err) {
-            console.error(err);
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+            if (who) filter.who = who;
+            if (topic) filter.topic = topic;
+            if (type) filter.type = Number(type);
+            const data = await Transatcion.aggregate([
+                {
+                    $match: filter
+                },
+                {
+                    $addFields: {
+                        newDate: {
+                            $dateAdd: {
+                                startDate: "$date",
+                                unit: "hour",
+                                amount: 7
+                            }
+                        }
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            date: "$date",
+                            month: { $dateToString: { format: "%Y-%m", date: "$newDate" } }
+                        },
+                        transactions: {
+                            $push: {
+                                id: "$_id",
+                                topic: "$topic",
+                                type: "$type",
+                                money: "$money",
+                                who: "$who",
+                                description: "$description"
+                            }
+                        }
+                    }
+                },
+                {
+                    $sort: { "_id.date": -1 }
+                },
+                {
+                    // 2. จัดกลุ่มใหม่ตามเดือน
+                    $group: {
+                        _id: "$_id.month",
+                        detail: {
+                            $push: {
+                                date: "$_id.date",
+                                transactions: "$transactions"
+                            }
+                        }
+                    }
+                },
+                {
+                    $sort: { _id: -1 }
+                }
+            ])
+            const newData: statement_t[] = data.map(monthGroup => ({
+                date: new Date(monthGroup._id + "-01"), // "2025-04" → "2025-04-01"
+                detail: monthGroup.detail.map((daily: any) => ({
+                    date: new Date(daily.date),
+                    transactions: daily.transactions
+                }))
+            }));
+            const result: responst_t<"getTransaction"> = { status: "success", result: newData }
+            return res.send(result);
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             return res.send(result);
         }
-    })
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
 })
 app.get('/wallet', (req: Request, res: Response) => {
 

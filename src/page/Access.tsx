@@ -48,7 +48,6 @@ const Page_Access: React.FC = () => {
   );
   const [totalMoney, setTotalMoney] = React.useState(0);
   // Local Variable **************
-
   const MenuList: menuList_t[] = [
     { text: "Add", icon: <AddIcon /> },
     { text: "Search", icon: <SearchIcon /> },
