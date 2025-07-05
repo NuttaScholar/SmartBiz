@@ -25,10 +25,12 @@ import { contactInfo_t } from "../component/Molecules/ContactInfo";
 import { errorCode_e } from "../enum";
 import { useNavigate } from "react-router-dom";
 import DialogSetUser from "../component/Organisms/DialogSetUser";
+import { useAuth } from "../hooks/useAuth";
 
 const Page_Access: React.FC = () => {
   // Hook **************
   const navigate = useNavigate();
+  const {auth ,setAuth} = useAuth();
   const [accessToken, setAccessToken] = React.useState("");
   const [yearSelect, setYearSelect] = React.useState(new Date().getFullYear());
   const [openDialogSetUser, setOpenDialogSetUser] = React.useState(false);
@@ -123,10 +125,10 @@ const Page_Access: React.FC = () => {
       if (resLogin.status === "error" || !resLogin.result?.token) {
         navigate("/");
       } else {
-        const resContact = await Contact_f.get(resLogin.result.token);
+        const resContact = await Contact_f.get(auth.token);
         setContactList(resContact.result);
-        setAccessToken(resLogin.result.token);
-        initTrans(resLogin.result.token);
+        setAccessToken(auth.token);
+        initTrans(auth.token);
       }
     } catch (err) {
       console.log(err);

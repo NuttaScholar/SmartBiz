@@ -15,6 +15,8 @@ import "@fontsource/kanit/300.css";
 import "@fontsource/kanit/400.css";
 import "@fontsource/kanit/500.css";
 import "@fontsource/kanit/700.css";
+import { AuthProvider } from "./context/AuthContext";
+import Page_SetPass from "./page/SetPass";
 //*********************************************
 // Set Theme
 //*********************************************
@@ -44,19 +46,22 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Page_Login />} />
-            <Route path="/access" element={<Page_Access />} />
-            <Route path="/login" element={<Page_Login />} />
-            <Route path="/bill" element={<Page_Bill />} />
-            <Route path="/cadit" element={<Page_Cadit />} />
-            <Route path="/checkIn" element={<Page_CheckIn />} />
-            <Route path="/stock" element={<Page_Stock />} />
-            <Route path="/setuser" element={<Page_SetUser />} />
-            <Route path="*" element={<Page_NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Page_Login />} />
+              <Route path="/access" element={<Page_Access />} />
+              <Route path="/login" element={<Page_Login />} />
+              <Route path="/bill" element={<Page_Bill />} />
+              <Route path="/cadit" element={<Page_Cadit />} />
+              <Route path="/checkIn" element={<Page_CheckIn />} />
+              <Route path="/stock" element={<Page_Stock />} />
+              <Route path="/setuser" element={<Page_SetUser />} />
+              <Route path="/setpass" element={<Page_SetPass />} />
+              <Route path="*" element={<Page_NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
       </LocalizationProvider>
     </ThemeProvider>
   );

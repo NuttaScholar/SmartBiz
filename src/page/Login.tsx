@@ -6,11 +6,15 @@ import {
 } from "@toolpad/core/SignInPage";
 import { LoginForm_t } from "../API/LoginService/type";
 import * as login_F from "../API/LoginService/Login";
+import { useContext } from "react";
+import { AuthContext } from "../context";
+import { useAuth } from "../hooks/useAuth";
 
 const providers = [{ id: "credentials", name: "Email and password" }];
 
 const Page_Login: React.FC = () => {
   const navigate = useNavigate();
+  const {setAuth} = useAuth();
 
   const signIn: (
     provider: AuthProvider,
@@ -26,7 +30,8 @@ const Page_Login: React.FC = () => {
           .postLogin(data)
           .then((data) => {
             console.log("success", data);
-            if (data.status === "success") {
+            if (data.status === "success"&&data.result) {              
+              setAuth(data.result)
               navigate("/access");              
             }else{
               resolve({

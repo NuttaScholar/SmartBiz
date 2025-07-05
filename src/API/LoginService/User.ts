@@ -1,5 +1,6 @@
 import axios from "axios";
-import { EditUserFrom_t, RegistFrom_t, responstLogin_t } from "./type";
+import { EditPassFrom_t, EditUserFrom_t, RegistFrom_t, responstLogin_t } from "./type";
+import { axios_user } from "../../lib/axios";
 
 export async function post(
     token: string,
@@ -72,6 +73,23 @@ export async function put(
                     Authorization: `Bearer ${token}`,
                 },
             }
+        );
+        return res.data as responstLogin_t<"none">;
+    } catch (err) {
+        throw err;
+    }
+}
+export async function putPass(
+    token: string,
+    data: EditPassFrom_t
+): Promise<responstLogin_t<"none">> {
+    try {
+        const res = await axios_user.put(
+            "pass", data, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
         );
         return res.data as responstLogin_t<"none">;
     } catch (err) {

@@ -9,6 +9,11 @@ export enum role_e{
   cashier,
   laber,
 }
+export enum service_e{
+  login,
+  account,
+  stock
+}
 export enum errorCode_e {
   UnknownError, // ไม่สามารถระบุสาเหตุได้
   InUseError, // ยังถูกใช้งานอยู่
