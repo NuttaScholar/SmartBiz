@@ -133,27 +133,6 @@ function decoder(token: string): tokenPackage_t | null {
         return null;
     }
 }
-function Auth(req: Request, res: Response, onSuccess: (data: tokenPackage_t) => void) {
-    if (req.headers.authorization) {
-        const accessToken = req.headers.authorization.split(" ")[1];
-        const decoded = decoder(accessToken);
-
-        if (decoded) {
-            if (decoded.type === "accessToken") {
-                onSuccess(decoded);
-            } else {
-                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
-                res.send(result);
-            }
-        } else {
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.TokenExpiredError }
-            res.send(result);
-        }
-    } else {
-        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
-        res.send(result);
-    }
-}
 /*********************************************** */
 // Middleware
 /*********************************************** */
@@ -185,102 +164,99 @@ function AuthMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
 /*********************************************** */
 // Routes Setup
 /*********************************************** */
-app.post('/contact', (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        try {
-            if (data.role === role_e.admin) {
-                const data = req.body as ContactForm_t;
-
-                if (await User.findOne({ codeName: data.codeName })) {
-                    const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InUseError };
-                    return res.send(result);
-                } else {
-                    const newUser = new User(data);
-                    await newUser.save();
-                    const result: responst_t<"none"> = { status: "success" };
-                    return res.send(result);
-                }
-            } else {
-                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-                return res.send(result);
-            }
-        } catch (err) {
-            console.error(err);
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
-            return res.send(result);
-        }
-
-    })
-})
-app.post('/transaction', async (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        try {
-            if (data.role === role_e.admin) {
-                console.log(req.body);
-                const { money, type, ...rest } = req.body as TransitionForm_t;
-                const newTransatcion = new Transatcion(req.body);
-                await newTransatcion.save();
-                const val = await Wallet.findOne({ name: "main" });
-                const resWallet = await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(type, val?.amount || 0, money) })
-
-                console.log(resWallet);
-                if (resWallet.acknowledged) {
-                    const result: responst_t<"none"> = { status: "success" };
-                    return res.send(result);
-                } else {
-                    const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.TimeoutError };
-                    return res.send(result);
-                }
-            } else {
-                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-                return res.send(result);
-            }
-        } catch (err) {
-            console.error(err);
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
-            return res.send(result);
-        }
-    })
-})
-app.get('/contact', (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        try {
-            if (data.role === role_e.admin) {
-                const id = req.query.id;
-                const matchStage = id ? { $match: { codeName: { $regex: id, $options: "i" } } } : null;
-                const data: ContactInfo_t[] = await User.aggregate([
-                    ...(matchStage ? [matchStage] : []),
-                    {
-                        $project: {
-                            _id: 0,            // ไม่ต้องส่ง _id ออก
-                            codeName: "$codeName", // เปลี่ยนชื่อ _id เป็น codeName                            
-                            billName: "$billName",
-                            description: "$description",
-                            address: "$address",
-                            taxID: "$taxID",
-                            tel: "$tel",
-                        }
-                    },
-                    {
-                        $sort: { "codeName": 1 }
-                    },
-                ]);
-                const result: responst_t<"getContact"> = { status: "success", result: data };
-                return res.send(result);
-            } else {
-                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-                return res.send(result);
-            }
-        } catch (err) {
-            console.error(err);
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
-            return res.send(result);
-        }
-    })
-})
-app.get('/transaction', AuthMiddleware, async(req: AuthRequest, res: Response) => {
+app.post('/contact', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
     try {
-        if (req.authData?.role === role_e.admin) {
+        if (data?.role === role_e.admin) {
+            const data = req.body as ContactForm_t;
+
+            if (await User.findOne({ codeName: data.codeName })) {
+                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InUseError };
+                return res.send(result);
+            } else {
+                const newUser = new User(data);
+                await newUser.save();
+                const result: responst_t<"none"> = { status: "success" };
+                return res.send(result);
+            }
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
+})
+app.post('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            console.log(req.body);
+            const { money, type, ...rest } = req.body as TransitionForm_t;
+            const newTransatcion = new Transatcion(req.body);
+            await newTransatcion.save();
+            const val = await Wallet.findOne({ name: "main" });
+            const resWallet = await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(type, val?.amount || 0, money) })
+
+            console.log(resWallet);
+            if (resWallet.acknowledged) {
+                const result: responst_t<"none"> = { status: "success" };
+                return res.send(result);
+            } else {
+                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.TimeoutError };
+                return res.send(result);
+            }
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
+})
+app.get('/contact', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const id = req.query.id;
+            const matchStage = id ? { $match: { codeName: { $regex: id, $options: "i" } } } : null;
+            const data: ContactInfo_t[] = await User.aggregate([
+                ...(matchStage ? [matchStage] : []),
+                {
+                    $project: {
+                        _id: 0,            // ไม่ต้องส่ง _id ออก
+                        codeName: "$codeName", // เปลี่ยนชื่อ _id เป็น codeName                            
+                        billName: "$billName",
+                        description: "$description",
+                        address: "$address",
+                        taxID: "$taxID",
+                        tel: "$tel",
+                    }
+                },
+                {
+                    $sort: { "codeName": 1 }
+                },
+            ]);
+            const result: responst_t<"getContact"> = { status: "success", result: data };
+            return res.send(result);
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
+})
+app.get('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
             const { from, to, who, topic, type } = req.query;
             let filter: any = {
                 date: {
@@ -362,114 +338,107 @@ app.get('/transaction', AuthMiddleware, async(req: AuthRequest, res: Response) =
         return res.send(result);
     }
 })
-app.get('/wallet', (req: Request, res: Response) => {
-
-    Auth(req, res, async (data) => {
-        try {
-            if (data.role === role_e.admin) {
-                const data = await Wallet.findOne({ name: "main" });
-                let resault: responst_t<"getWallet"> = { status: "success", result: data?.amount || 0 };
-                return res.send(resault);
-            } else {
-                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-                return res.send(result);
-            }
-        } catch (err) {
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
-            console.log(err);
+app.get('/wallet', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const data = await Wallet.findOne({ name: "main" });
+            let resault: responst_t<"getWallet"> = { status: "success", result: data?.amount || 0 };
+            return res.send(resault);
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             return res.send(result);
         }
-    })
+    } catch (err) {
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        console.log(err);
+        return res.send(result);
+    }
 })
-app.delete('/contact', (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        try {
-            if (data.role === role_e.admin) {
-                const exists = await Transatcion.find({ who: req.query.id });
-                if (exists.length) {
-                    const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InUseError };
-                    return res.send(result);
-                } else {
-                    await User.deleteOne({ codeName: req.query.id });
-                    const result: responst_t<"none"> = { status: "success" };
-                    return res.send(result);
-                }
-            } else {
-                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-                return res.send(result);
-            }
-        } catch (err) {
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
-            console.log(err);
-            return res.send(result);
-        }
-
-    })
-
-})
-app.delete('/transaction', (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        try {
-            if (data.role === role_e.admin) {
-                const dataTran = await Transatcion.findOne({ _id: req.query.id });
-                const resTran = await Transatcion.deleteOne({ _id: req.query.id });
-                const result: responst_t<"none"> = { status: "success" };
-
-                if (resTran.deletedCount) {
-                    const val = await Wallet.findOne({ name: "main" });
-                    await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(dataTran?.type === undefined ? 255 : dataTran?.type, val?.amount || 0, dataTran?.money || 0, true) })
-                }
+app.delete('/contact', AuthMiddleware, async(req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const exists = await Transatcion.find({ who: req.query.id });
+            if (exists.length) {
+                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InUseError };
                 return res.send(result);
             } else {
-                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-                return res.send(result);
-            }
-        } catch (err) {
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
-            console.log(err);
-            return res.send(result);
-        }
-    })
-})
-app.put('/contact', (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        try {
-            if (data.role === role_e.admin) {
-                const { codeName, ...rest } = req.body;
-                const newData = { ...rest };
-                console.log("put", newData);
-
-                await User.updateOne({ codeName: codeName }, newData)
+                await User.deleteOne({ codeName: req.query.id });
                 const result: responst_t<"none"> = { status: "success" };
                 return res.send(result);
-            } else {
-                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-                return res.send(result);
             }
-        } catch (err) {
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
-            console.log(err);
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             return res.send(result);
         }
-    })
+    } catch (err) {
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        console.log(err);
+        return res.send(result);
+    }
 })
-app.put('/transaction', async (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        try {
-            if (data.role === role_e.admin) {
-                await Transatcion.updateOne({ _id: req.query.id }, req.body)
-                const result: responst_t<"none"> = { status: "success" };
-                return res.send(result);
-            } else {
-                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-                return res.send(result);
+app.delete('/transaction', AuthMiddleware, async(req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const dataTran = await Transatcion.findOne({ _id: req.query.id });
+            const resTran = await Transatcion.deleteOne({ _id: req.query.id });
+            const result: responst_t<"none"> = { status: "success" };
+
+            if (resTran.deletedCount) {
+                const val = await Wallet.findOne({ name: "main" });
+                await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(dataTran?.type === undefined ? 255 : dataTran?.type, val?.amount || 0, dataTran?.money || 0, true) })
             }
-        } catch (err) {
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
-            console.log(err);
+            return res.send(result);
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             return res.send(result);
         }
-    })
+    } catch (err) {
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        console.log(err);
+        return res.send(result);
+    }
+})
+app.put('/contact', AuthMiddleware, async(req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const { codeName, ...rest } = req.body;
+            const newData = { ...rest };
+            console.log("put", newData);
+
+            await User.updateOne({ codeName: codeName }, newData)
+            const result: responst_t<"none"> = { status: "success" };
+            return res.send(result);
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        console.log(err);
+        return res.send(result);
+    }
+
+})
+app.put('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            await Transatcion.updateOne({ _id: req.query.id }, req.body)
+            const result: responst_t<"none"> = { status: "success" };
+            return res.send(result);
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        console.log(err);
+        return res.send(result);
+    }
 })
 
 /*********************************************** */

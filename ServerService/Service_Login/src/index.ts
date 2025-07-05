@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import { LoginForm_t, responstLogin_t, tokenPackage_t, TokenForm_t, RegistFrom_t, UserProfile_t, EditUserFrom_t, EditPassFrom_t } from "./type";
@@ -88,13 +88,25 @@ function decoder(token: string): tokenPackage_t | null {
         return null;
     }
 }
-function Auth(req: Request, res: Response, onSuccess: (data: tokenPackage_t) => void) {
+/*********************************************** */
+// Middleware
+/*********************************************** */
+interface AuthRequest extends Request {
+    authData?: tokenPackage_t;
+}
+function AuthMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
     if (req.headers.authorization) {
         const accessToken = req.headers.authorization.split(" ")[1];
         const decoded = decoder(accessToken);
 
         if (decoded) {
-            onSuccess(decoded);
+            if (decoded.type === "accessToken") {
+                req.authData = decoded
+                next();
+            } else {
+                const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnauthorizedError }
+                res.send(result);
+            }
         } else {
             const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.TokenExpiredError }
             res.send(result);
@@ -107,26 +119,26 @@ function Auth(req: Request, res: Response, onSuccess: (data: tokenPackage_t) => 
 /*********************************************** */
 // Routes Setup
 /*********************************************** */
-app.post('/user', async (req: Request, res: Response) => {
+app.post('/user', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
     try {
-        Auth(req, res, async (data) => {
-            if (data.type === "accessToken" && data.role === role_e.admin) {
-                const data = req.body as RegistFrom_t;
-                const passHash = await bcrypt.hash(defaultPass, saltRounds)
-                const newData: UserProfile_t = { passHash: passHash, enable: true, ...data };
-                const newUser = new User(newData);
-                newUser.save().then(() => {
-                    const result: responstLogin_t<"none"> = { status: "success" };
-                    res.send(result);
-                }).catch((err) => {
-                    const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
-                    res.send(result);
-                })
-            } else {
-                const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+
+        if (data?.type === "accessToken" && data.role === role_e.admin) {
+            const data = req.body as RegistFrom_t;
+            const passHash = await bcrypt.hash(defaultPass, saltRounds)
+            const newData: UserProfile_t = { passHash: passHash, enable: true, ...data };
+            const newUser = new User(newData);
+            newUser.save().then(() => {
+                const result: responstLogin_t<"none"> = { status: "success" };
                 res.send(result);
-            }
-        })
+            }).catch((err) => {
+                const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
+                res.send(result);
+            })
+        } else {
+            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            res.send(result);
+        }
     } catch (err) {
         const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError }
         console.log(err);
@@ -198,41 +210,40 @@ app.post('/logout', async (req: Request, res: Response) => {
     });
     res.send(result);
 })
-app.get('/user', async (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        if (data.type === "accessToken" && data.role === role_e.admin) {
-            const name = req.query.name;
-            const matchStage = name ? { $match: { name: { $regex: name, $options: "i" } } } : null;
+app.get('/user', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    if (data?.type === "accessToken" && data.role === role_e.admin) {
+        const name = req.query.name;
+        const matchStage = name ? { $match: { name: { $regex: name, $options: "i" } } } : null;
 
-            User.aggregate([
-                ...(matchStage ? [matchStage] : []),
-                {
-                    $project: {
-                        _id: "$_id",
-                        email: "$email",
-                        name: "$name",
-                        role: "$role",
-                        enable: "$enable",
-                        tel: "$tel",
-                        img: "$img" // Image URL
-                    }
-                },
-                {
-                    $sort: { "codeName": 1 }
-                },
-            ]).then((data) => {
-                const result: responstLogin_t<"getUser"> = { status: "success", result: data }
-                res.send(result);
-            }).catch((err) => {
-                const result: responstLogin_t<"getUser"> = { status: "error", errCode: errorCode_e.UnknownError }
-                console.log(err);
-                res.send(result);
-            });
-        } else {
-            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+        User.aggregate([
+            ...(matchStage ? [matchStage] : []),
+            {
+                $project: {
+                    _id: "$_id",
+                    email: "$email",
+                    name: "$name",
+                    role: "$role",
+                    enable: "$enable",
+                    tel: "$tel",
+                    img: "$img" // Image URL
+                }
+            },
+            {
+                $sort: { "codeName": 1 }
+            },
+        ]).then((data) => {
+            const result: responstLogin_t<"getUser"> = { status: "success", result: data }
             res.send(result);
-        }
-    })
+        }).catch((err) => {
+            const result: responstLogin_t<"getUser"> = { status: "error", errCode: errorCode_e.UnknownError }
+            console.log(err);
+            res.send(result);
+        });
+    } else {
+        const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+        res.send(result);
+    }
 });
 app.get('/token', async (req: Request, res: Response) => {
     if (req.cookies.refreshToken) {
@@ -251,7 +262,7 @@ app.get('/token', async (req: Request, res: Response) => {
                         expiresIn: "15m",
                     }
                 );
-                const result: responstLogin_t<"getToken"> = { status: "success", result: {role: decoded.role, token: accessToken} }
+                const result: responstLogin_t<"getToken"> = { status: "success", result: { role: decoded.role, token: accessToken } }
                 res.send(result);
             }
         } else {
@@ -269,72 +280,69 @@ app.get('/', async (req: Request, res: Response) => {
     const result: responstLogin_t<"none"> = { status: "success" };
     res.send(result);
 });
-app.delete('/user', async (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        if (data.type === "accessToken" && data.role === role_e.admin) {
-            const data = await User.deleteOne({ _id: req.query.id });
+app.delete('/user', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    if (data?.type === "accessToken" && data.role === role_e.admin) {
+        const data = await User.deleteOne({ _id: req.query.id });
+        const result: responstLogin_t<"none"> = { status: "success" };
+
+        res.send(result);
+    } else {
+        const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+        res.send(result);
+    }
+});
+app.put('/user', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    if (data?.type === "accessToken" && data.role === role_e.admin) {
+        const data = req.body as EditUserFrom_t;
+        const { id, ...newData } = data;
+
+        User.updateOne({ _id: id }, newData).then((data) => {
             const result: responstLogin_t<"none"> = { status: "success" };
-
             res.send(result);
-        } else {
-            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+        }).catch((err) => {
+            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+            console.log(err);
             res.send(result);
-        }
-    });
+        })
+    } else {
+        const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+        res.send(result);
+    }
 });
-app.put('/user', async (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        if (data?.type === "accessToken" && data.role === role_e.admin) {
-            const data = req.body as EditUserFrom_t;
-            const { id, ...newData } = data;
+app.put('/pass', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    if (data?.type === "accessToken") {
+        const fromData = req.body as EditPassFrom_t;
 
-            User.updateOne({ _id: id }, newData).then((data) => {
-                const result: responstLogin_t<"none"> = { status: "success" };
-                res.send(result);
-            }).catch((err) => {
-                const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
-                console.log(err);
-                res.send(result);
-            })
-        } else {
-            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
-            res.send(result);
-        }
-    })
-});
-app.put('/pass', async (req: Request, res: Response) => {
-    Auth(req, res, async (data) => {
-        if (data?.type === "accessToken") {
-            const fromData = req.body as EditPassFrom_t;
-
-            try {
-                const resultDB = await User.findOne({ email: data.username });
-                if (resultDB) {
-                    const compare = await bcrypt.compare(fromData.oldPass, resultDB.passHash)
-                    if (compare) {
-                        const passHash = await bcrypt.hash(fromData.newPass, saltRounds);
-                        const edit = await User.updateOne({ _id: resultDB._id }, { passHash: passHash });
-                        const result: responstLogin_t<"none"> = { status: "success" };
-                        console.log(edit);
-                        res.send(result);
-                    } else {
-                        const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError };
-                        res.send(result);
-                    }
+        try {
+            const resultDB = await User.findOne({ email: data.username });
+            if (resultDB) {
+                const compare = await bcrypt.compare(fromData.oldPass, resultDB.passHash)
+                if (compare) {
+                    const passHash = await bcrypt.hash(fromData.newPass, saltRounds);
+                    const edit = await User.updateOne({ _id: resultDB._id }, { passHash: passHash });
+                    const result: responstLogin_t<"none"> = { status: "success" };
+                    console.log(edit);
+                    res.send(result);
                 } else {
-                    const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.NotFoundError };
+                    const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError };
                     res.send(result);
                 }
-            } catch (err) {
-                const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
-                console.log(err);
+            } else {
+                const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.NotFoundError };
                 res.send(result);
             }
-        } else {
-            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+        } catch (err) {
+            const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+            console.log(err);
             res.send(result);
         }
-    })
+    } else {
+        const result: responstLogin_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+        res.send(result);
+    }
 });
 
 /*********************************************** */
