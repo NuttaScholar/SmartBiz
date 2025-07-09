@@ -244,7 +244,7 @@ app.get('/contact', AuthMiddleware, async (req: AuthRequest, res: Response) => {
             const result: responst_t<"getContact"> = { status: "success", result: data };
             return res.send(result);
         } else {
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            const result: responst_t<"getContact"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             return res.send(result);
         }
     } catch (err) {
@@ -329,12 +329,12 @@ app.get('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) 
             const result: responst_t<"getTransaction"> = { status: "success", result: newData }
             return res.send(result);
         } else {
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            const result: responst_t<"getTransaction"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             return res.send(result);
         }
     } catch (err) {
         console.error(err);
-        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        const result: responst_t<"getTransaction"> = { status: "error", errCode: errorCode_e.UnknownError };
         return res.send(result);
     }
 })
@@ -346,11 +346,11 @@ app.get('/wallet', AuthMiddleware, async (req: AuthRequest, res: Response) => {
             let resault: responst_t<"getWallet"> = { status: "success", result: data?.amount || 0 };
             return res.send(resault);
         } else {
-            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            const result: responst_t<"getWallet"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             return res.send(result);
         }
     } catch (err) {
-        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        const result: responst_t<"getWallet"> = { status: "error", errCode: errorCode_e.UnknownError };
         console.log(err);
         return res.send(result);
     }

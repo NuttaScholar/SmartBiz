@@ -55,13 +55,13 @@ export type responst_t<
 > = T extends "getTransaction"
   ? {
     status: "success" | "error";
-    result: statement_t[];
+    result?: statement_t[];
     errCode?: errorCode_e;
   }
   : T extends "getContact"
   ? {
     status: "success" | "error";
-    result: ContactInfo_t[];
+    result?: ContactInfo_t[];
     errCode?: errorCode_e;
   }
   : T extends "getWallet"
