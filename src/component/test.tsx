@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import MonthlyTotalList from "./Organisms/MonthlyTotalList";
+import MonthlyTotalList from "./Molecules/MonthlyTotalList";
 import { DailyMoneyList } from "../dataSet/DataMoney";
 
 export default function FullScreenDialog() {

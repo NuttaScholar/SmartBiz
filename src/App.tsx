@@ -1,6 +1,6 @@
 import "./App.css";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
-import Page_Access from "./page/Access";
+import Page_Access from "./page/Access/Access";
 import Page_Login from "./page/Login";
 import Page_Bill from "./page/Bill";
 import Page_Cadit from "./page/Cadit";

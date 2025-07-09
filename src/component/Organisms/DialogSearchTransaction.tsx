@@ -14,8 +14,8 @@ import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import FieldDuration from "../Molecules/FieldDuration";
-import FieldContact from "../Molecules/FieldContact";
-import MonthlyTotalList from "./MonthlyTotalList";
+import FieldContact from "./FieldContact";
+import MonthlyTotalList from "../Molecules/MonthlyTotalList";
 import { contactInfo_t } from "../Molecules/ContactInfo";
 import { statement_t, TransitionForm_t } from "../../API/AccountService/type";
 
