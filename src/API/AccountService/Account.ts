@@ -119,3 +119,14 @@ export async function putStatement(
     throw err;
   }
 }
+
+const Access_f = {
+  getStatement,
+  getWallet,
+  searchStatement,
+  delStatement,
+  postStatement,
+  putStatement
+}
+
+export default Access_f;

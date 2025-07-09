@@ -62,3 +62,12 @@ export async function del(token: string, data: contactInfo_t): Promise<responst_
     throw err;
   }
 }
+
+const Contact_f = {
+  get,
+  post,
+  put,
+  del
+}
+
+export default Contact_f;

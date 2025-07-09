@@ -1,6 +1,5 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { EditPassFrom_t, LoginForm_t, responstLogin_t } from "./type";
-import useAxios from "../../hooks/useAxios";
 import { errorCode_e, service_e } from "../../enum";
 import { axios_login } from "../../lib/axios";
 
@@ -40,3 +39,10 @@ export async function postLogout(
     }
 }
 
+const Login_f = {
+    postLogin,
+    getToken,
+    postLogout
+};
+
+export default Login_f

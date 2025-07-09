@@ -11,7 +11,7 @@ export default defineConfig({
       cert: fs.readFileSync('./cert/cert.pem'),
     },*/
     port: 3030,
-    host: true
+    //host: true
   },
   preview: {
     port: 8080,
