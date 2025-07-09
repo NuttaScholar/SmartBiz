@@ -2,14 +2,17 @@ import {
   FormControl,
   IconButton,
   InputAdornment,
-  OutlinedInput,  
+  OutlinedInput,
 } from "@mui/material";
 import Field from "../Atoms/Field";
 import React from "react";
 import ClearIcon from "@mui/icons-material/Clear";
 import AssignmentIndOutlinedIcon from "@mui/icons-material/AssignmentIndOutlined";
-import DialogContactList from "../Organisms/DialogContactList";
-import { contactInfo_t } from "./ContactInfo";
+import DialogContactList from "../../page/Access/component/DialogContactList";
+import { contactInfo_t } from "../Molecules/ContactInfo";
+import { useAuth } from "../../hooks/useAuth";
+import { useAccess } from "../../hooks/useAccess";
+import * as Contact_f from "../../API/AccountService/Contact";
 /**************************************************** */
 //  Interface
 /**************************************************** */
@@ -18,8 +21,6 @@ interface MyProps {
   defaultValue?: string;
   onChange?: (value: string) => void;
   onSearch?: (keyword: string) => void;
-  onAdd?: () => void;
-  onEdit?: (val: contactInfo_t) => void;
   onDel?: (val: contactInfo_t) => void;
   name?: string;
   icon?: React.ReactNode;
@@ -29,23 +30,30 @@ interface MyProps {
 //  Function
 /**************************************************** */
 const FieldContact: React.FC<MyProps> = (props) => {
+  // Hook *********************
+  const { auth, setAuth } = useAuth();
+  const { state, setState } = useAccess();
   const [value, setValue] = React.useState(props.defaultValue || "");
   const [open, setOpen] = React.useState(false);
-
+  // Local function ***********
   const onClearHandler = () => {
     setValue("");
     props.onChange?.("");
   };
-
-  const onOpenList = () => {
-    setOpen(true);
+  const onOpenList = async () => {
+    if (auth) {
+      const res = await Contact_f.get(auth.token);
+      if(res.status==="success"&&res.result){
+        setState({...state, contactList:res.result});
+      }
+      setOpen(true);
+    }
   };
-
-  const onSelectHandler = (codeName: string) =>{
+  const onSelectHandler = (codeName: string) => {
     setValue(codeName);
     props.onChange?.(codeName);
     setOpen(false);
-  }
+  };
   return (
     <React.Fragment>
       <Field alignItem="center">
@@ -79,13 +87,9 @@ const FieldContact: React.FC<MyProps> = (props) => {
       </Field>
       <DialogContactList
         open={open}
-        list={props.list}
         onClose={() => setOpen(false)}
-        onSearch={props.onSearch}
         onSelect={onSelectHandler}
-        onAdd={props.onAdd}
-        onDel={props.onDel}
-        onEdit={props.onEdit}
+        onDel={props.onDel}        
       />
     </React.Fragment>
   );

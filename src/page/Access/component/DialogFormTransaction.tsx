@@ -1,22 +1,22 @@
 import React from "react";
 import { Box, Button, Dialog, IconButton, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
-import HeaderDialog from "./HeaderDialog";
-import FieldText from "./FieldText";
+import HeaderDialog from "../../../component/Molecules/HeaderDialog";
+import FieldText from "../../../component/Molecules/FieldText";
 import PaidIcon from "@mui/icons-material/Paid";
 import FieldSelector, {
   listSelect_t,
-} from "./FieldSelector";
+} from "../../../component/Molecules/FieldSelector";
 import SyncAltIcon from "@mui/icons-material/SyncAlt";
-import { transactionType_e } from "../../enum";
+import { transactionType_e } from "../../../enum";
 import SubjectIcon from "@mui/icons-material/Subject";
-import FieldContact from "./FieldContact";
+import FieldContact from "../../../component/Organisms/FieldContact";
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import FieldDate from "./FieldDate";
-import DialogAddContact, { ContactForm_t } from "./DialogFormContact";
+import FieldDate from "../../../component/Molecules/FieldDate";
+import DialogAddContact, { ContactForm_t } from "../../../component/Molecules/DialogFormContact";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { contactInfo_t } from "./ContactInfo";
+import { contactInfo_t } from "../../../component/Molecules/ContactInfo";
 
 //*********************************************
 // Type
@@ -183,13 +183,7 @@ const DialogAddTransaction: React.FC<myProps> = (props) => {
         <FieldContact
           icon={<AccountBoxIcon />}
           list={props.contactList}
-          onAdd={() => setOpenAddContact(true)}
           onDel={props.onDelContact}
-          onEdit={(val) => {
-            setContactInfo(val);
-            setOpenEditContact(true);
-          }}
-          onSearch={props.onSearchContact}
           defaultValue={props.dafaultValue?.who}
           placeholder="Contact"
           name="who"
