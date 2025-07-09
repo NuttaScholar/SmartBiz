@@ -46,7 +46,6 @@ const Page_Access: React.FC = () => {
     { text: "Search", icon: <SearchIcon /> },
     { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
   ];
-
   // Local Function **************
   const onClickTransHandler = (value: TransitionForm_t) => {
     console.log(value);

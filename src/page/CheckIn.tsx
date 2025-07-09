@@ -3,7 +3,7 @@ import AppBar_c, { pageApp_e } from "../component/Organisms/AppBar_c";
 const Page_CheckIn: React.FC = () => {
   return (
     <>
-      <AppBar_c role="admin" />
+      <AppBar_c />
       <h1>Welcome to the CheckIn Page</h1>
     </>
   );

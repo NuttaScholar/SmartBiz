@@ -30,7 +30,7 @@ const Page_Login: React.FC = () => {
           .postLogin(data)
           .then((data) => {
             console.log("success", data);
-            if (data.status === "success"&&data.result) {              
+            if (data.status === "success"&&data.result) {      
               setAuth(data.result)
               navigate("/access");              
             }else{

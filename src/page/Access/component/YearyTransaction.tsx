@@ -25,9 +25,9 @@ interface myProps {}
 //  Component
 /**************************************************** */
 const YearyTransaction: React.FC<myProps> = (props) => {
-  const { state, setState } = useAccess();
   // Hook *********************
   const { auth, setAuth } = useAuth();
+  const { state, setState } = useAccess();
   // Local Function ***********
   const initTrans = async (token: string) => {
     try {

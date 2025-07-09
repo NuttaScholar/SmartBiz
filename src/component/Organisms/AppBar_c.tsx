@@ -13,6 +13,9 @@ import ButtonOption from "../Molecules/ButtonOption";
 import Box_Mobile from "../Atoms/Box_Mobile";
 import Box_PC from "../Atoms/Box_PC";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import { role_e } from "../../enum";
+import * as Login_f from "../../API/LoginService/Login";
 
 //************************************************
 // Define
@@ -62,49 +65,51 @@ const option_staff: menuList_t[] = [
 // Interface
 //*********************************************
 interface myProps {
-  role?: "admin" | "cashier" | "laber";
   onClick?: (page: menuList_t) => void;
 }
 
 //************************************************
 // Component
 //************************************************
-const AppBar_c:React.FC<myProps> = (props) => {
+const AppBar_c: React.FC<myProps> = (props) => {
+  // Hook ********************
   const location = useLocation();
-  const handleAppBar = (menuList: menuList_t) => {
-    props.onClick?.(menuList);
+  const { auth, setAuth } = useAuth();
+  // Local Function **********
+  const handleOption = async(menuList: menuList_t) => {
+    try {
+      if (menuList.path === "/") {
+        const res = await Login_f.postLogout();
+        console.log(res);
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
-  const handleOption = (menuList: menuList_t) => {
-    props.onClick?.(menuList);
-  };
+  // Local Variable **********
   let menuList_AppBar = pagesList_labor;
   let menuList_Option = option_staff;
-
-  if (props.role === "admin") {
-    menuList_AppBar = pagesList_admin;
-    menuList_Option = option_admin;
-  } else if (props.role === "cashier") {
-    menuList_AppBar = pagesList_cashier;
+  switch (auth?.role) {
+    case role_e.admin:
+      menuList_AppBar = pagesList_admin;
+      menuList_Option = option_admin;
+      break;
+    case role_e.cashier:
+      menuList_AppBar = pagesList_cashier;
+      break;
   }
   const index = menuList_AppBar.findIndex(
     (val) => val.path === location.pathname
   );
+  // XML Code *****************
   return (
     <AppBar color="secondary" position="static">
       <Toolbar variant="dense" disableGutters>
         <Box_Mobile sx={{ flexGrow: 1 }}>
-          <AppBar_Mobile
-            menuList={menuList_AppBar}
-            value={index}
-            onClick={handleAppBar}
-          />
+          <AppBar_Mobile menuList={menuList_AppBar} value={index} />
         </Box_Mobile>
         <Box_PC sx={{ flexGrow: 1 }}>
-          <AppBar_PC
-            menuList={menuList_AppBar}
-            value={index}
-            onClick={handleAppBar}
-          />
+          <AppBar_PC menuList={menuList_AppBar} value={index} />
         </Box_PC>
 
         <Box sx={{ flexGrow: 0 }}>
