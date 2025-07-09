@@ -24,6 +24,12 @@ const app = express();
 const PORT = Number(process.env.PORT);
 const secret = process.env.SECRET as jwt.Secret;
 const defaultPass = "Default";
+const defaultUser:UserProfile_t = {
+    email: "admin@default.com",
+    enable: true,
+    name: "NuttaScholar",
+    role: role_e.admin
+}
 const saltRounds = 10;
 /*********************************************** */
 // Middleware Setup
@@ -352,6 +358,13 @@ app.put('/pass', AuthMiddleware, async (req: AuthRequest, res: Response) => {
 server.listen(PORT, "0.0.0.0", () => {
     console.log(`HTTPS Server is running at https://localhost:${PORT}`);
 });*/
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
+    const isEmpty = (await User.countDocuments()) === 0;
+    if (isEmpty) {
+        const passHash = await bcrypt.hash(defaultPass, saltRounds)
+        const newData: UserProfile_t = { passHash: passHash, ...defaultUser };
+        const newUser = new User(newData);
+        newUser.save().then(()=>{console.log("Create default User.")})       
+    }
 });
