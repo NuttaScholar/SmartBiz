@@ -8,11 +8,12 @@ import { contactInfo_t } from "../../../component/Molecules/ContactInfo";
 import { useAuth } from "../../../hooks/useAuth";
 import { useAccess } from "../../../hooks/useAccess";
 import { useNavigate } from "react-router-dom";
-import apiWithRetry_f from "../../../lib/apiWithRetry";
+import contactWithRetry_f from "../../../lib/contactWithRetry";
 import DialogAddContact, {
   ContactForm_t,
 } from "../../../component/Molecules/DialogFormContact";
-import Contact_f from "../../../API/AccountService/Contact";
+import { ErrorString } from "../../../function/Enum";
+import { errorCode_e } from "../../../enum";
 //*********************************************
 // Type
 //*********************************************
@@ -31,7 +32,7 @@ const Transition = React.forwardRef(function Transition(
   },
   ref: React.Ref<unknown>
 ) {
-  return <Slide direction="up" ref={ref} {...props} />;
+  return <Slide direction="left" ref={ref} {...props} />;
 });
 
 //*********************************************
@@ -41,7 +42,6 @@ interface myProps {
   open: boolean;
   onClose?: () => void;
   onSelect?: (codeName: string) => void;
-  onDel?: (val: contactInfo_t) => void;
 }
 //*********************************************
 // Component
@@ -62,34 +62,69 @@ const DialogContactList: React.FC<myProps> = (props) => {
   };
   const onSearch = async (keyword: string) => {
     console.log(keyword);
-    apiWithRetry_f
-      .getContact(authContext, keyword)
+    contactWithRetry_f
+      .get(authContext, keyword)
       .then((val) => {
-        setState({ ...state, contactList: val });
+        if (val.result) {
+          setState({ ...state, contactList: val.result });
+        } else if (val.errCode) {
+          alert(ErrorString(val.errCode));
+          if (val.errCode === errorCode_e.TokenExpiredError) {
+            navigate("/");
+          }
+        }
       })
       .catch((err) => {
         console.log(err);
-        navigate("/");
       });
   };
   const onAddContact = async (data: ContactForm_t) => {
-    apiWithRetry_f
-      .postContact(authContext, data)
-      .then((val) => {
-        setTimeout(()=>setState({ ...state, contactList: val}),500);
-        setMyState({...myState, openAdd: false});
+    contactWithRetry_f
+      .post(authContext, data)
+      .then((res) => {
+        if (res.result) {
+          const val = res.result;
+          setTimeout(() => setState({ ...state, contactList: val }), 500);
+        } else if (res.errCode) {
+          alert(ErrorString(res.errCode));
+          if (res.errCode === errorCode_e.TokenExpiredError) {
+            navigate("/");
+          }
+        }
+        setMyState({ ...myState, openAdd: false });
       })
       .catch((err) => {
         console.log(err);
-        navigate("/");
       });
   };
   const onEditContact = async (data: ContactForm_t) => {
-    apiWithRetry_f
-      .putContact(authContext, data)
-      .then((val) => {
-        setTimeout(()=>setState({ ...state, contactList: val }),500);
-        setMyState({...myState, openEdit: false});
+    contactWithRetry_f
+      .put(authContext, data)
+      .then((res) => {
+        if (res.result) {
+          const val = res.result;
+          setTimeout(() => setState({ ...state, contactList: val }), 500);
+        } else if (res.errCode) {
+          alert(ErrorString(res.errCode));
+          if (res.errCode === errorCode_e.TokenExpiredError) {
+            navigate("/");
+          }
+        }
+        setMyState({ ...myState, openEdit: false });
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+  const onDelContacat = async (data: contactInfo_t) => {
+    contactWithRetry_f
+      .del(authContext, data)
+      .then((res) => {
+        if (res.status === "success") {
+          res.result && setState({ ...state, contactList: res.result });
+        } else {
+          res.errCode && alert(ErrorString(res.errCode));
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -97,38 +132,43 @@ const DialogContactList: React.FC<myProps> = (props) => {
       });
   };
   return (
-    <Dialog
-      fullScreen
-      open={props.open}
-      onClose={props.onClose}
-      slots={{
-        transition: Transition,
-      }}
-    >
-      <HeaderDialog_Search
-        label="รายชื่อผู้ติดต่อ"
-        onBack={props.onClose}
-        onChange={onChangeHandler}
-        onAdd={() => setMyState({ ...myState, openAdd: true })}
-        value={myState.key}
-        onSearch={onSearch}
-      />
-      <Box sx={{ display: "flex", justifyContent: "center" }}>
-        <FieldSearch
-          label="Search"
-          display={{ xs: "flex", sm: "none" }}
-          value={myState.key}
-          onChange={onChangeHandler}
-          onSubmit={onSearch}
-        />
-      </Box>
-      <ListContact
-        list={state.contactList}
-        onClick={props.onSelect}
-        onDel={props.onDel}
-        onEdit={(val) => setMyState({ ...myState, openEdit: true, contactInfo: val })}
-      />
-
+    <>
+      {(!myState.openEdit && !myState.openAdd) && (
+        <Dialog
+          fullScreen
+          open={props.open}
+          onClose={props.onClose}
+          slots={{
+            transition: Transition,
+          }}
+        >
+          <HeaderDialog_Search
+            label="รายชื่อผู้ติดต่อ"
+            onBack={props.onClose}
+            onChange={onChangeHandler}
+            onAdd={() => setMyState({ ...myState, openAdd: true })}
+            value={myState.key}
+            onSearch={onSearch}
+          />
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <FieldSearch
+              label="Search"
+              display={{ xs: "flex", sm: "none" }}
+              value={myState.key}
+              onChange={onChangeHandler}
+              onSubmit={onSearch}
+            />
+          </Box>
+          <ListContact
+            list={state.contactList}
+            onClick={props.onSelect}
+            onDel={onDelContacat}
+            onEdit={(val) =>
+              setMyState({ ...myState, openEdit: true, contactInfo: val })
+            }
+          />
+        </Dialog>
+      )}
       <DialogAddContact
         open={myState.openAdd}
         onSubmit={onAddContact}
@@ -141,7 +181,7 @@ const DialogContactList: React.FC<myProps> = (props) => {
         defaultValue={myState.contactInfo}
         onClose={() => setMyState({ ...myState, openEdit: false })}
       />
-    </Dialog>
+    </>
   );
 };
 export default DialogContactList;
