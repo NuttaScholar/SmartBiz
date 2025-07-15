@@ -52,7 +52,7 @@ interface myProps {
 //*********************************************
 // Component
 //*********************************************
-const DialogAddContact: React.FC<myProps> = (props) => {
+const DialogFormContact: React.FC<myProps> = (props) => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -157,4 +157,4 @@ const DialogAddContact: React.FC<myProps> = (props) => {
     </Dialog>
   );
 };
-export default DialogAddContact;
+export default DialogFormContact;

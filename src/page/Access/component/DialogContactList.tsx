@@ -9,7 +9,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { useAccess } from "../../../hooks/useAccess";
 import { useNavigate } from "react-router-dom";
 import contactWithRetry_f from "../../../lib/contactWithRetry";
-import DialogAddContact, {
+import DialogFormContact, {
   ContactForm_t,
 } from "../../../component/Molecules/DialogFormContact";
 import { ErrorString } from "../../../function/Enum";
@@ -169,12 +169,12 @@ const DialogContactList: React.FC<myProps> = (props) => {
           />
         </Dialog>
       )}
-      <DialogAddContact
+      <DialogFormContact
         open={myState.openAdd}
         onSubmit={onAddContact}
         onClose={() => setMyState({ ...myState, openAdd: false })}
       />
-      <DialogAddContact
+      <DialogFormContact
         title="แก้ไขรายการ"
         open={myState.openEdit}
         onSubmit={onEditContact}
