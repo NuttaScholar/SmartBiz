@@ -1,4 +1,4 @@
-import { errorCode_e, transactionType_e } from "../../enum";
+import { errorCode_e, role_e, transactionType_e } from "../../enum";
 
 export type transactionDetail_t = {
   id?: string;
@@ -43,12 +43,13 @@ export type ContactInfo_t = {
 };
 export type tokenPackage_t = {
   username: string;
-  role: "admin" | "cashier" | "laber";
+  role: role_e;
   type: "accessToken" | "refreshToken";
 }
 export type responst_t<
   T extends
   | "getTransaction"
+  | "getTransDetail"
   | "getContact"
   | "getWallet"
   | "none"
@@ -56,6 +57,12 @@ export type responst_t<
   ? {
     status: "success" | "error";
     result?: statement_t[];
+    errCode?: errorCode_e;
+  }
+  :T extends "getTransDetail"
+  ? {
+    status: "success" | "error";
+    result?: TransitionForm_t;
     errCode?: errorCode_e;
   }
   : T extends "getContact"

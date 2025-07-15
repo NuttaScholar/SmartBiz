@@ -49,6 +49,7 @@ export type tokenPackage_t = {
 export type responst_t<
   T extends
   | "getTransaction"
+  | "getTransDetail"
   | "getContact"
   | "getWallet"
   | "none"
@@ -56,6 +57,12 @@ export type responst_t<
   ? {
     status: "success" | "error";
     result?: statement_t[];
+    errCode?: errorCode_e;
+  }
+  :T extends "getTransDetail"
+  ? {
+    status: "success" | "error";
+    result?: TransitionForm_t;
     errCode?: errorCode_e;
   }
   : T extends "getContact"

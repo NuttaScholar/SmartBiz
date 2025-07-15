@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { TransitionForm_t, ContactForm_t, responst_t, tokenPackage_t, statement_t, ContactInfo_t } from "./type";
+import { TransitionForm_t, ContactForm_t, responst_t, tokenPackage_t, statement_t, ContactInfo_t, transactionDetail_t } from "./type";
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
@@ -45,6 +45,14 @@ const cert = fs.readFileSync(path.join(__dirname, process.env.SSL_CERT || ""));
 // เชื่อมต่อ MongoDB
 mongoose.connect("mongodb://root:example@localhost:27017/Account?authSource=admin");
 
+interface transatcion_t {
+    topic: string;
+    type: number;
+    money: number;
+    description?: string;
+    who?: string;
+    date: Date;
+}
 // กำหนด Schema
 const contactSchema = new mongoose.Schema({
     codeName: {
@@ -58,7 +66,7 @@ const contactSchema = new mongoose.Schema({
     taxID: String,
     description: String,
 });
-const transatcionSchema = new mongoose.Schema({
+const transatcionSchema = new mongoose.Schema<transatcion_t>({
     topic: { type: String, required: true },
     type: { type: Number, required: true },
     money: { type: Number, required: true },
@@ -73,7 +81,7 @@ const walletSchema = new mongoose.Schema({
 
 // สร้าง Model
 const User = mongoose.model("contact", contactSchema);
-const Transatcion = mongoose.model("transaction", transatcionSchema);
+const Transatcion = mongoose.model<transatcion_t>("transaction", transatcionSchema);
 const Wallet = mongoose.model("wallet", walletSchema);
 
 Wallet.findOne({ name: "main" }).then((res) => {
@@ -253,11 +261,37 @@ app.get('/contact', AuthMiddleware, async (req: AuthRequest, res: Response) => {
         return res.send(result);
     }
 })
+app.get('/trandetail', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const id = req.query.id;
+            const trans: transatcion_t | null = await Transatcion.findOne({ _id: id });
+            if (trans !== null) {
+                const { date, money, topic, type, description, who }: transatcion_t = trans;
+                const result: TransitionForm_t = { date: date, money: money, topic: topic, type: type, description: description, who: who };
+                const response: responst_t<"getTransDetail"> = { status: "success", result: result };
+                return res.send(response);
+            } else {
+                const response: responst_t<"getTransDetail"> = { status: "error", errCode: errorCode_e.NotFoundError };
+                return res.send(response);
+            }
+        } else {
+            const response: responst_t<"getTransDetail"> = { status: "error", errCode: errorCode_e.PermissionDeniedError };
+            return res.send(response);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"getTransaction"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
+})
 app.get('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) => {
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
             const { from, to, who, topic, type } = req.query;
+            console.log(req.query);
             let filter: any = {
                 date: {
                     $gte: new Date(from as string || Date.now()),
@@ -355,7 +389,7 @@ app.get('/wallet', AuthMiddleware, async (req: AuthRequest, res: Response) => {
         return res.send(result);
     }
 })
-app.delete('/contact', AuthMiddleware, async(req: AuthRequest, res: Response) => {
+app.delete('/contact', AuthMiddleware, async (req: AuthRequest, res: Response) => {
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
@@ -378,7 +412,7 @@ app.delete('/contact', AuthMiddleware, async(req: AuthRequest, res: Response) =>
         return res.send(result);
     }
 })
-app.delete('/transaction', AuthMiddleware, async(req: AuthRequest, res: Response) => {
+app.delete('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) => {
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
@@ -401,7 +435,7 @@ app.delete('/transaction', AuthMiddleware, async(req: AuthRequest, res: Response
         return res.send(result);
     }
 })
-app.put('/contact', AuthMiddleware, async(req: AuthRequest, res: Response) => {
+app.put('/contact', AuthMiddleware, async (req: AuthRequest, res: Response) => {
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
@@ -427,9 +461,15 @@ app.put('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) 
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
-            await Transatcion.updateOne({ _id: req.query.id }, req.body)
-            const result: responst_t<"none"> = { status: "success" };
-            return res.send(result);
+            const updateRes = await Transatcion.updateOne({ _id: req.query.id }, req.body)
+            console.log(updateRes);
+            if (updateRes.matchedCount) {
+                const result: responst_t<"none"> = { status: "success" };
+                return res.send(result);
+            } else {
+                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.NotFoundError };
+                return res.send(result);
+            }
         } else {
             const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             return res.send(result);
