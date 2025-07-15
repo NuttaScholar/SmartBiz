@@ -1,5 +1,7 @@
 import { Box, SxProps, Theme, Typography } from "@mui/material";
-import Text_Money from "../Atoms/Text_Money";
+import Text_Money from "../../../component/Atoms/Text_Money";
+import React from "react";
+import { useAccess } from "../../../hooks/useAccess";
 
 //*********************************************
 // Style
@@ -15,20 +17,19 @@ import Text_Money from "../Atoms/Text_Money";
 // Interface
 //*********************************************
 interface myProps{
-    label: string;
-    value: number;
     sx?: SxProps<Theme>;
 }
 //*********************************************
 // Component
 //*********************************************
 const MoneyTotal: React.FC<myProps> = (props) => {
+    const { state } = useAccess();
     return (
         <Box sx={props.sx}>
             <Typography variant="h5">
-                {props.label}
+                ยอดเงินคงเหลือ
             </Typography>
-            <Text_Money sx={{fontSize: "36px"}} value={props.value}/>
+            <Text_Money sx={{fontSize: "36px"}} value={state.totalMoney}/>
         </Box>
     )
 }
