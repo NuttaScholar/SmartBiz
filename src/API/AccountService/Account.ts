@@ -1,37 +1,33 @@
-import axios from "axios";
 import {
   responst_t,
   TransitionForm_t,
 } from "./type";
-import { SearchTransForm_t } from "../../component/Organisms/DialogSearchTransaction";
+import { SearchTransForm_t } from "../../page/Access/component/DialogSearchTransaction";
+import { axios_account } from "../../lib/axios";
 
-export async function getStatement(
+export async function getDetail(
   token: string,
-  month: number,
-  year: number
-): Promise<responst_t<"getTransaction">> {
-  const from = new Date(year, month - 1, 1);
-  const to = new Date(year, month, 0);  // new Date(year, month, 0).getDate() = วันสิ้นเดือน
+  id: string
+): Promise<responst_t<"getTransDetail">> {
   try {
-    const res = await axios.get(
-      `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/transaction?from=${from.toISOString()}&to=${to.toISOString()}`, {
+    const res = await axios_account.get(
+      `/trandetail?id=${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     }
     );
-    return res.data as responst_t<"getTransaction">;
+    return res.data as responst_t<"getTransDetail">;
   } catch (err) {
     throw err;
   }
 }
+
 export async function getWallet(token: string
 ): Promise<responst_t<"getWallet">> {
   try {
-    const res = await axios.get(
-      `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/wallet`, {
+    const res = await axios_account.get(
+      `/wallet`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -42,17 +38,18 @@ export async function getWallet(token: string
     throw err;
   }
 }
-export async function searchStatement(
+export async function get(
   token: string,
   data: SearchTransForm_t
 ): Promise<responst_t<"getTransaction">> {
   try {
     const { from, to, type, who, topic } = data;
-
-    const res = await axios.get(
-      `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/transaction?from=${from.toISOString()}&to=${to.toISOString()}${data.type && `&type=${type}`}${data.topic && `&topic=${topic}`}
-      ${who && `&who=${who}`}`, {
+    let condition:string = `from=${from.toISOString()}&to=${to.toISOString()}`;
+    type && (condition += `&type=${type}`);
+    who && (condition += `&who=${who}`);
+    topic && (condition += `&topic=${topic}`);
+    const res = await axios_account.get(
+      `/transaction?${condition}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -63,11 +60,10 @@ export async function searchStatement(
     throw err;
   }
 }
-export async function delStatement(token: string, id: string): Promise<responst_t<"none">> {
+export async function del(token: string, id: string): Promise<responst_t<"none">> {
   try {
-    const res = await axios.delete(
-      `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/transaction?id=${id}`, {
+    const res = await axios_account.delete(
+      `/transaction?id=${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -78,15 +74,13 @@ export async function delStatement(token: string, id: string): Promise<responst_
     throw err;
   }
 }
-export async function postStatement(
+export async function post(
   token: string,
   data: TransitionForm_t
 ): Promise<responst_t<"none">> {
-  console.log(data);
   try {
-    const res = await axios.post(
-      `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/transaction`,
+    const res = await axios_account.post(
+      `/transaction`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -98,16 +92,14 @@ export async function postStatement(
     throw err;
   }
 }
-export async function putStatement(
+export async function put(
   token: string,
-  id: string,
   data: TransitionForm_t
 ): Promise<responst_t<"none">> {
   console.log(data);
   try {
-    const res = await axios.put(
-      `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/transaction?id=${id}`,
+    const res = await axios_account.put(
+      `/transaction?id=${data.id}`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -121,12 +113,12 @@ export async function putStatement(
 }
 
 const Access_f = {
-  getStatement,
+  getDetail,
   getWallet,
-  searchStatement,
-  delStatement,
-  postStatement,
-  putStatement
+  get,
+  del,
+  post,
+  put
 }
 
 export default Access_f;
