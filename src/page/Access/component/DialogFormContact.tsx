@@ -1,15 +1,19 @@
 import React from "react";
 import { Box, Button, Dialog, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
-import HeaderDialog from "./HeaderDialog";
-import FieldText from "./FieldText";
+import HeaderDialog from "../../../component/Molecules/HeaderDialog";
+import FieldText from "../../../component/Molecules/FieldText";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ContactPageIcon from "@mui/icons-material/ContactPage";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
 import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import NotesIcon from "@mui/icons-material/Notes";
-import { contactInfo_t } from "./ContactInfo";
+import { useAccess } from "../hooks/useAccess";
+import { accessDialog_e } from "../context/AccessContext";
+import contactWithRetry_f from "../lib/contactWithRetry";
+import { useAuth } from "../../../hooks/useAuth";
+import { ErrorString } from "../../../function/Enum";
 
 //*********************************************
 // Type
@@ -42,38 +46,70 @@ const Transition = React.forwardRef(function Transition(
 //*********************************************
 // Interface
 //*********************************************
-interface myProps {
-  open: boolean;
-  title?: string;
-  defaultValue?: contactInfo_t;
-  onClose?: () => void;
-  onSubmit?: (data: ContactForm_t) => void;
-}
+
 //*********************************************
 // Component
 //*********************************************
-const DialogFormContact: React.FC<myProps> = (props) => {
+const DialogFormContact: React.FC = () => {
+  const { state, setState } = useAccess();
+  const authContext = useAuth();
+  // Local Function ***********
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
     const form = formJson as ContactForm_t;
-
-    props.onSubmit?.(form);
+    if (state.contactInfo) {
+      // Edit
+      contactWithRetry_f
+        .put(authContext, form)
+        .then((val) => {
+          if(val.result) {
+            setState({...state, contactList: val.result, open: accessDialog_e.contactList });
+          }else if (val.errCode) {
+            alert(ErrorString(val.errCode));
+          }          
+        })
+        .catch((err) => {
+          console.log(err);
+          alert("Error: " + err.message);
+        });
+    } else {
+      // Add
+      contactWithRetry_f
+        .post(authContext, form)
+        .then((val) => {
+          if(val.result) {
+            setState({...state, contactList: val.result, open: accessDialog_e.contactList });
+          }else if (val.errCode) {
+            alert(ErrorString(val.errCode));
+          }          
+        })
+        .catch((err) => {
+          console.log(err);
+          alert("Error: " + err.message);
+        });
+    }
   };
-
+  const onClose = () => {
+    setState({
+      ...state,
+      open: accessDialog_e.contactList,
+      contactInfo: undefined,
+    });
+  };
   return (
     <Dialog
       fullScreen
-      open={props.open}
-      onClose={props.onClose}
+      open={state.open === accessDialog_e.contactFrom}
+      onClose={onClose}
       slots={{
         transition: Transition,
       }}
     >
       <HeaderDialog
-        label={props.title || "เพิ่มรายการ"}
-        onClick={props.onClose}
+        label={state.contactInfo ? "แก้ไขรายการ" : "เพิ่มรายการ"}
+        onClick={onClose}
       />
       <Box
         component="form"
@@ -93,40 +129,40 @@ const DialogFormContact: React.FC<myProps> = (props) => {
           required
           label="Code Name"
           name="codeName"
-          defauleValue={props.defaultValue?.codeName}
+          defauleValue={state.contactInfo?.codeName}
         />
         <FieldText
           icon={<ContactPageIcon />}
           required
           label="Bill Name"
           name="billName"
-          defauleValue={props.defaultValue?.billName}
+          defauleValue={state.contactInfo?.billName}
         />
         <FieldText
           icon={<LocationOnIcon />}
           name="address"
           label="Address"
           multiline
-          defauleValue={props.defaultValue?.address}
+          defauleValue={state.contactInfo?.address}
         />
         <FieldText
           icon={<LocalPhoneIcon />}
           label="Tel."
           name="tel"
-          defauleValue={props.defaultValue?.tel}
+          defauleValue={state.contactInfo?.tel}
         />
         <FieldText
           icon={<RecentActorsIcon />}
           label="Tax. ID"
           name="taxID"
-          defauleValue={props.defaultValue?.taxID}
+          defauleValue={state.contactInfo?.taxID}
         />
         <FieldText
           icon={<NotesIcon />}
           name="description"
           label="More Detail"
           multiline
-          defauleValue={props.defaultValue?.description}
+          defauleValue={state.contactInfo?.description}
         />
         <Box
           sx={{
@@ -145,11 +181,7 @@ const DialogFormContact: React.FC<myProps> = (props) => {
           >
             save
           </Button>
-          <Button
-            variant="outlined"
-            sx={{ width: "150px" }}
-            onClick={props.onClose}
-          >
+          <Button variant="outlined" sx={{ width: "150px" }} onClick={onClose}>
             cancle
           </Button>
         </Box>

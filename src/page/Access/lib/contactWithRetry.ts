@@ -1,9 +1,9 @@
-import Contact_f from "../API/AccountService/Contact";
-import { ContactForm_t, ContactInfo_t } from "../API/AccountService/type";
-import Login_f from "../API/LoginService/Login";
-import { contactInfo_t } from "../component/Molecules/ContactInfo";
-import { AuthContext_t } from "../context/AuthContext";
-import { errorCode_e } from "../enum";
+import Contact_f from "../../../API/AccountService/Contact";
+import { ContactForm_t, ContactInfo_t } from "../../../API/AccountService/type";
+import Login_f from "../../../API/LoginService/Login";
+import { contactInfo_t } from "../../../component/Molecules/ContactInfo";
+import { AuthContext_t } from "../../../context/AuthContext";
+import { errorCode_e } from "../../../enum";
 
 interface resApiWithRetry_t {
     result?: any;
