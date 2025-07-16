@@ -50,7 +50,9 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Page_Login />} />
-              <Route path="/access" element={<Page_Access />} />
+              <Route path="/access">
+                <Route index element={<Page_Access />} />
+              </Route>
               <Route path="/login" element={<Page_Login />} />
               <Route path="/bill" element={<Page_Bill />} />
               <Route path="/cadit" element={<Page_Cadit />} />
