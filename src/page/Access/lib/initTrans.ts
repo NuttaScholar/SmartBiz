@@ -1,8 +1,8 @@
 import { statement_t } from "../../../API/AccountService/type";
 import { SearchTransForm_t } from "../component/DialogSearchTransaction";
-import { AccessContext_t } from "../../../context/AccessContext";
+import { AccessContext_t } from "../context/AccessContext";
 import { AuthContext_t } from "../../../context/AuthContext";
-import accessWithRetry_f from "../../../lib/accessWithRetry";
+import accessWithRetry_f from "./accessWithRetry";
 
 export const initTrans = async (authContext: AuthContext_t, accessContext: AccessContext_t):Promise<void> => {
   const { state, setState } = accessContext;
