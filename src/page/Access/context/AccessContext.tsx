@@ -20,7 +20,6 @@ export type access_t = {
   contactList: ContactInfo_t[];
   contactInfo?: ContactInfo_t;
   fieldContact?: string;
-  searchTranResult: statement_t[];
   totalMoney: number;
   refaceTrans: number;
 };
@@ -33,7 +32,6 @@ export const AccessDefaultState: access_t = {
   hasMore: true,
   month: 12,
   open: accessDialog_e.none,
-  searchTranResult: [],
   totalMoney: 0,
   transaction: [],
   yearSelect: new Date().getFullYear(),

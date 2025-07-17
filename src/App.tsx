@@ -17,6 +17,7 @@ import "@fontsource/kanit/500.css";
 import "@fontsource/kanit/700.css";
 import { AuthProvider } from "./context/AuthContext";
 import Page_SetPass from "./page/SetPass";
+import Page_AccessSearch from "./page/Access/page/AccessSearch";
 //*********************************************
 // Set Theme
 //*********************************************
@@ -52,6 +53,7 @@ function App() {
               <Route path="/" element={<Page_Login />} />
               <Route path="/access">
                 <Route index element={<Page_Access />} />
+                <Route path="search" element={<Page_AccessSearch/>} />
               </Route>
               <Route path="/login" element={<Page_Login />} />
               <Route path="/bill" element={<Page_Bill />} />

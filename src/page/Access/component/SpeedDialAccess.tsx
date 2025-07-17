@@ -19,7 +19,7 @@ import { accessDialog_e } from "../context/AccessContext";
 //*********************************************
 const MenuList: menuList_t[] = [
   { text: "Add", icon: <AddIcon /> },
-  { text: "Search", icon: <SearchIcon /> },
+  { text: "Search", icon: <SearchIcon />, path: "/access/search" },
   { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
 ];
 //*********************************************
@@ -50,10 +50,6 @@ const SpeedDial_Access: React.FC = () => {
         GoToTop();
     }
   };
-  const onClickTransHandler = (value: TransitionForm_t) => {
-    console.log(value);
-    setState({ ...state, transitionForm: value });
-  };
   return (
     <>
       {state.open===accessDialog_e.none && (
@@ -62,21 +58,7 @@ const SpeedDial_Access: React.FC = () => {
           icon={<MoreVertIcon />}
           onClick={speedDialHandler}
         />
-      )}
-
-      <DialogSearchTransaction
-        open={state.open=== accessDialog_e.searchTransaction}
-        onClose={() => {
-          setState({
-            ...state,
-            open: accessDialog_e.none,
-            searchTranResult: [],
-          });
-        }}
-        onClick={onClickTransHandler}
-        contactList={state.contactList}
-        value={state.searchTranResult}
-      />
+      )}      
     </>
   );
 };
