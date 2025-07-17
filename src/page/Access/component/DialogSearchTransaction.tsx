@@ -3,9 +3,7 @@ import { TransitionProps } from "@mui/material/transitions";
 import React from "react";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import { transactionType_e } from "../../../enum";
-import FieldSelector, {
-  listSelect_t,
-} from "../../../component/Molecules/FieldSelector";
+import FieldSelector from "../../../component/Molecules/FieldSelector";
 import SyncAltIcon from "@mui/icons-material/SyncAlt";
 import PaidIcon from "@mui/icons-material/Paid";
 import FieldText from "../../../component/Molecules/FieldText";
@@ -14,10 +12,11 @@ import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import FieldDuration from "../../../component/Molecules/FieldDuration";
-import FieldContact from "../../../component/Organisms/FieldContact";
+import FieldContact from "../../../component/Molecules/FieldContact";
 import MonthlyTotalList from "../../../component/Molecules/MonthlyTotalList";
 import { contactInfo_t } from "../../../component/Molecules/ContactInfo";
 import { statement_t, TransitionForm_t } from "../../../API/AccountService/type";
+import { TypeSelect } from "../constants/typeSelect";
 
 //*********************************************
 // Type
@@ -61,12 +60,6 @@ interface myProps {
 //*********************************************
 const DialogSearchTransaction: React.FC<myProps> = (props) => {
   const contentRef = React.useRef<HTMLDivElement>(null);
-  const listSelect: listSelect_t[] = [
-    { label: "รายรับ", value: transactionType_e.income },
-    { label: "รายจ่าย", value: transactionType_e.expenses },
-    { label: "เงินกู้", value: transactionType_e.loan },
-    { label: "ให้ยืม", value: transactionType_e.lend },
-  ];
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -129,7 +122,7 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
             name="type"
             icon={<SyncAltIcon />}
             label="Transaction"
-            list={listSelect}
+            list={TypeSelect}
           />
           <FieldText icon={<PaidIcon />} name="topic" label="Topic" />
           <FieldDuration
@@ -141,7 +134,6 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
             name="who"
             icon={<AccountBoxIcon />}
             placeholder="Contact"
-            list={props.contactList}
           />
           <Box
             sx={{ width: "100%", display: "flex", justifyContent: "center" }}

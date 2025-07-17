@@ -1,16 +1,15 @@
-import { SxProps, Theme } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { ReactNode } from "react";
 import MySpeedDial from "../../../component/Molecules/MySpeedDial";
-import { useAccess } from "../../../hooks/useAccess";
+import { useAccess } from "../hooks/useAccess";
 import { menuList_t } from "../../../component/Molecules/ButtonOption";
 import { GoToTop } from "../../../function/Window";
-import DialogFormTransaction, { TransitionForm_t } from "./DialogFormTransaction";
+import { TransitionForm_t } from "./DialogFormTransaction";
 import DialogSearchTransaction from "./DialogSearchTransaction";
 import React from "react";
+import { accessDialog_e } from "../context/AccessContext";
 //*********************************************
 // Style
 //*********************************************
@@ -26,26 +25,26 @@ const MenuList: menuList_t[] = [
 //*********************************************
 // Interface
 //*********************************************
-interface myProps {
-  sx?: SxProps<Theme>;
-  onClick?: (index: number) => void;
-  icon?: ReactNode;
-}
+
 //*********************************************
 // Component
 //*********************************************
-const SpeedDial_Access: React.FC<myProps> = (props) => {
+const SpeedDial_Access: React.FC = () => {
   const { state, setState } = useAccess();
-  const [openAdd, setOpenAdd] = React.useState(false);
 
   const speedDialHandler = (index: number) => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
-        setOpenAdd(true);
+        setState({
+          ...state,
+          open: accessDialog_e.transactionForm,
+          transitionForm: undefined,
+          fieldContact: undefined,
+        });
         break;
       case 1:
-        setState({ ...state, openDialogSearch: true });
+        setState({ ...state,open: accessDialog_e.searchTransaction });
         break;
       case 2:
         GoToTop();
@@ -57,24 +56,20 @@ const SpeedDial_Access: React.FC<myProps> = (props) => {
   };
   return (
     <>
-      {!openAdd && !state.openDialogSearch && (
-        <MySpeedDial
+      {state.open===accessDialog_e.none && (
+        <MySpeedDial          
           menuList={MenuList}
           icon={<MoreVertIcon />}
           onClick={speedDialHandler}
         />
       )}
 
-      <DialogFormTransaction
-        open={openAdd}
-        onClose={() => setOpenAdd(false)}
-      />
       <DialogSearchTransaction
-        open={state.openDialogSearch}
+        open={state.open=== accessDialog_e.searchTransaction}
         onClose={() => {
           setState({
             ...state,
-            openDialogSearch: false,
+            open: accessDialog_e.none,
             searchTranResult: [],
           });
         }}

@@ -4,19 +4,21 @@ import { TransitionProps } from "@mui/material/transitions";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import FieldText from "../../../component/Molecules/FieldText";
 import PaidIcon from "@mui/icons-material/Paid";
-import FieldSelector, {
-  listSelect_t,
-} from "../../../component/Molecules/FieldSelector";
+import FieldSelector from "../../../component/Molecules/FieldSelector";
 import SyncAltIcon from "@mui/icons-material/SyncAlt";
 import { transactionType_e } from "../../../enum";
 import SubjectIcon from "@mui/icons-material/Subject";
-import FieldContact from "../../../component/Organisms/FieldContact";
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import FieldDate from "../../../component/Molecules/FieldDate";
-import DialogAddContact, { ContactForm_t } from "../../../component/Molecules/DialogFormContact";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { contactInfo_t } from "../../../component/Molecules/ContactInfo";
+import { useAccess } from "../hooks/useAccess";
+import DialogContactList from "./DialogContactList";
+import FieldContactAccess from "./FieldContactAccess";
+import accessWithRetry_f from "../lib/accessWithRetry";
+import { useAuth } from "../../../hooks/useAuth";
+import { TypeSelect } from "../constants/typeSelect";
+import { accessDialog_e } from "../context/AccessContext";
 
 //*********************************************
 // Type
@@ -57,176 +59,214 @@ const Transition = React.forwardRef(function Transition(
 //*********************************************
 // Interface
 //*********************************************
-interface myProps {
-  open: boolean;
-  title?: string;
-  dafaultValue?: TransitionForm_t;
-  contactList?: contactInfo_t[];
-  onClose?: () => void;
-  onSubmitTransaction?: (data: TransitionForm_t) => void;
-  onSubmitContact?: (data: ContactForm_t) => void;
-  onDelTransaction?: (data?: TransitionForm_t) => void;
-  onDelContact?: (data: contactInfo_t) => void;
-  onEditContact?: (data: ContactForm_t) => void;
-  onSearchContact?: (keyword: string) => void;
-}
 
 //*********************************************
 // Component
 //*********************************************
-const DialogAddTransaction: React.FC<myProps> = (props) => {
-  const [openAddContact, setOpenAddContact] = React.useState(false);
-  const [openEditContact, setOpenEditContact] = React.useState(false);
-  const [contactInfo, setContactInfo] = React.useState<contactInfo_t>();
-
-  const listSelect: listSelect_t[] = [
-    { label: "รายรับ", value: transactionType_e.income },
-    { label: "รายจ่าย", value: transactionType_e.expenses },
-    { label: "เงินกู้", value: transactionType_e.loan },
-    { label: "ให้ยืม", value: transactionType_e.lend },
-  ];
+const DialogFormTransaction: React.FC = () => {
+  // Hook *********************
+  const { state, setState } = useAccess();
+  const authContext = useAuth();
+  // Local Function ***********
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
     const form = formJson as form_t;
     const [day, month, year] = form.date.split("/").map(Number);
-
-    props.onSubmitTransaction?.({
-      id: props.dafaultValue?.id,
+    const data: TransitionForm_t = {
+      id: state.transitionForm?.id,
       date: new Date(year, month - 1, day),
-      money: Number(form.money),
       topic: form.topic,
       type: Number(form.type),
-      description: form.description === "" ? undefined : form.description,
+      money: Number(form.money),
+      description:
+        form.description === ""
+          ? state.transitionForm?.description
+            ? ""
+            : undefined
+          : form.description,
       who:
-        form.who === "" ? (props.dafaultValue?.who ? "" : undefined) : form.who,
+        form.who === ""
+          ? state.transitionForm?.who
+            ? ""
+            : undefined
+          : form.who,
+    };
+    console.log(state.transitionForm);
+    if (state.transitionForm) {
+      // Edit
+      accessWithRetry_f
+        .put(authContext, data)
+        .then(() => {
+          setState({
+            ...state,
+            open: accessDialog_e.none,
+            transitionForm: undefined,
+            fieldContact: undefined,
+            refaceTrans: state.refaceTrans + 1,
+          });
+        })
+        .catch((err) => {
+          alert("ไม่สามารถแก้ไขรายการได้");
+          console.log(err);
+        });
+    } else {
+      // Add
+      accessWithRetry_f
+        .post(authContext, data)
+        .then(() => {
+          setState({
+            ...state,
+            open: accessDialog_e.none,
+            transitionForm: undefined,
+            fieldContact: undefined,
+            refaceTrans: state.refaceTrans + 1,
+          });
+        })
+        .catch((err) => {
+          alert("ไม่สามารถแก้ไขรายการได้");
+          console.log(err);
+        });
+    }
+  };
+  const onDel = () => {
+    if (state.transitionForm?.id) {
+      accessWithRetry_f
+        .del(authContext, state.transitionForm.id)
+        .then(() => {
+          setState({
+            ...state,
+            open: accessDialog_e.none,
+            transitionForm: undefined,
+            fieldContact: undefined,
+            refaceTrans: state.refaceTrans + 1,
+          });
+        })
+        .catch((err) => {
+          alert("ไม่สามารถลบรายการได้");
+          console.log(err);
+        });
+    }
+  };
+  const onClose = () => {
+    setState({
+      ...state,
+      open: accessDialog_e.none,
+      transitionForm: undefined,
     });
   };
-  const addContactHandler = (data: ContactForm_t) => {
-    props.onSubmitContact?.(data);
-    setOpenAddContact(false);
-  };
-  const editContactHandler = (data: ContactForm_t) => {
-    props.onEditContact?.(data);
-    setOpenEditContact(false);
-  };
-
   return (
-    <Dialog
-      fullScreen
-      open={props.open}
-      onClose={props.onClose}
-      slots={{
-        transition: Transition,
-      }}
-    >
-      <HeaderDialog
-        label={props.title || "เพิ่มรายการ"}
-        onClick={props.onClose}
-      >
-        {props.onDelTransaction && props.dafaultValue && (
-          <Box
-            sx={{ display: "flex", justifyContent: "flex-end", flexGrow: 1 }}
-          >
-            <IconButton
-              color="inherit"
-              onClick={() => props.onDelTransaction?.(props.dafaultValue)}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        )}
-      </HeaderDialog>
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          width: "100%",
-          alignItems: "center",
-          my: "8px",
-          gap: "8px",
+    <>
+      <Dialog
+        fullScreen
+        open={state.open === accessDialog_e.transactionForm}
+        onClose={onClose}
+        slots={{
+          transition: Transition,
         }}
       >
-        <FieldText
-          icon={<PaidIcon />}
-          required
-          defauleValue={props.dafaultValue?.money.toString()}
-          label="Amount"
-          name="money"
-          type="number"
-        />
-        <FieldSelector
-          icon={<SyncAltIcon />}
-          required
-          defauleValue={props.dafaultValue?.type.toString()}
-          name="type"
-          label="Transaction"
-          list={listSelect}
-        />
-        <FieldText
-          icon={<PaidIcon />}
-          required
-          defauleValue={props.dafaultValue?.topic}
-          name="topic"
-          label="Topic"
-        />
-        <FieldText
-          icon={<SubjectIcon />}
-          defauleValue={props.dafaultValue?.description}
-          name="description"
-          label="Description"
-          multiline
-        />
-        <FieldContact
-          icon={<AccountBoxIcon />}
-          list={props.contactList}
-          onDel={props.onDelContact}
-          defaultValue={props.dafaultValue?.who}
-          placeholder="Contact"
-          name="who"
-        />
-        <FieldDate
-          icon={<CalendarMonthIcon />}
-          defaultValue={props.dafaultValue?.date || new Date()}
-          name="date"
-        />
+        <HeaderDialog
+          label={state.transitionForm ? "แก้ไขรายการ" : "เพิ่มรายการ"}
+          onClick={onClose}
+        >
+          {state.transitionForm && (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                flexGrow: 1,
+              }}
+            >
+              <IconButton color="inherit" onClick={onDel}>
+                <DeleteIcon />
+              </IconButton>
+            </Box>
+          )}
+        </HeaderDialog>
         <Box
+          component="form"
+          onSubmit={handleSubmit}
           sx={{
             display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: "16px",
-            my: "32px",
+            flexDirection: "column",
+            width: "100%",
+            alignItems: "center",
+            my: "8px",
+            gap: "8px",
           }}
         >
-          <Button variant="contained" type="submit" sx={{ width: "150px" }}>
-            save
-          </Button>
-          <Button
-            variant="outlined"
-            sx={{ width: "150px" }}
-            onClick={props.onClose}
+          <FieldText
+            icon={<PaidIcon />}
+            required
+            defauleValue={state.transitionForm?.money.toString()}
+            label="Amount"
+            name="money"
+            type="number"
+          />
+          <FieldSelector
+            icon={<SyncAltIcon />}
+            required
+            defauleValue={state.transitionForm?.type.toString()}
+            name="type"
+            label="Transaction"
+            list={TypeSelect}
+          />
+          <FieldText
+            icon={<PaidIcon />}
+            required
+            defauleValue={state.transitionForm?.topic}
+            name="topic"
+            label="Topic"
+          />
+          <FieldText
+            icon={<SubjectIcon />}
+            defauleValue={state.transitionForm?.description}
+            name="description"
+            label="Description"
+            multiline
+          />
+          <FieldContactAccess
+            icon={<AccountBoxIcon />}
+            placeholder="Contact"
+            name="who"
+          />
+          <FieldDate
+            icon={<CalendarMonthIcon />}
+            defaultValue={state.transitionForm?.date || new Date()}
+            name="date"
+          />
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: "16px",
+              my: "32px",
+            }}
           >
-            cancle
-          </Button>
+            <Button variant="contained" type="submit" sx={{ width: "150px" }}>
+              save
+            </Button>
+            <Button
+              variant="outlined"
+              sx={{ width: "150px" }}
+              onClick={() =>
+                setState({
+                  ...state,
+                  open: accessDialog_e.none,
+                  transitionForm: undefined,
+                })
+              }
+            >
+              cancle
+            </Button>
+          </Box>
         </Box>
-      </Box>
-      <DialogAddContact
-        open={openAddContact}
-        onSubmit={addContactHandler}
-        onClose={() => setOpenAddContact(false)}
-      />
-      <DialogAddContact
-        title="แก้ไขรายการ"
-        open={openEditContact}
-        onSubmit={editContactHandler}
-        defaultValue={contactInfo}
-        onClose={() => setOpenEditContact(false)}
-      />
-    </Dialog>
+      </Dialog>
+
+      <DialogContactList />
+    </>
   );
 };
-export default DialogAddTransaction;
+export default DialogFormTransaction;

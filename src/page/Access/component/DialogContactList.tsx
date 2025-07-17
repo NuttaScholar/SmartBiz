@@ -6,14 +6,13 @@ import ListContact from "../../../component/Molecules/ListContact";
 import { TransitionProps } from "@mui/material/transitions";
 import { contactInfo_t } from "../../../component/Molecules/ContactInfo";
 import { useAuth } from "../../../hooks/useAuth";
-import { useAccess } from "../../../hooks/useAccess";
+import { useAccess } from "../hooks/useAccess";
 import { useNavigate } from "react-router-dom";
-import contactWithRetry_f from "../../../lib/contactWithRetry";
-import DialogFormContact, {
-  ContactForm_t,
-} from "../../../component/Molecules/DialogFormContact";
+import contactWithRetry_f from "../lib/contactWithRetry";
+import DialogFormContact from "./DialogFormContact";
 import { ErrorString } from "../../../function/Enum";
 import { errorCode_e } from "../../../enum";
+import { accessDialog_e } from "../context/AccessContext";
 //*********************************************
 // Type
 //*********************************************
@@ -38,15 +37,11 @@ const Transition = React.forwardRef(function Transition(
 //*********************************************
 // Interface
 //*********************************************
-interface myProps {
-  open: boolean;
-  onClose?: () => void;
-  onSelect?: (codeName: string) => void;
-}
+
 //*********************************************
 // Component
 //*********************************************
-const DialogContactList: React.FC<myProps> = (props) => {
+const DialogContactList: React.FC = () => {
   // Hook *********************
   const navigate = useNavigate();
   const authContext = useAuth();
@@ -60,6 +55,7 @@ const DialogContactList: React.FC<myProps> = (props) => {
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setMyState({ ...myState, key: event.target.value });
   };
+
   const onSearch = async (keyword: string) => {
     console.log(keyword);
     contactWithRetry_f
@@ -73,44 +69,6 @@ const DialogContactList: React.FC<myProps> = (props) => {
             navigate("/");
           }
         }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-  const onAddContact = async (data: ContactForm_t) => {
-    contactWithRetry_f
-      .post(authContext, data)
-      .then((res) => {
-        if (res.result) {
-          const val = res.result;
-          setTimeout(() => setState({ ...state, contactList: val }), 500);
-        } else if (res.errCode) {
-          alert(ErrorString(res.errCode));
-          if (res.errCode === errorCode_e.TokenExpiredError) {
-            navigate("/");
-          }
-        }
-        setMyState({ ...myState, openAdd: false });
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-  const onEditContact = async (data: ContactForm_t) => {
-    contactWithRetry_f
-      .put(authContext, data)
-      .then((res) => {
-        if (res.result) {
-          const val = res.result;
-          setTimeout(() => setState({ ...state, contactList: val }), 500);
-        } else if (res.errCode) {
-          alert(ErrorString(res.errCode));
-          if (res.errCode === errorCode_e.TokenExpiredError) {
-            navigate("/");
-          }
-        }
-        setMyState({ ...myState, openEdit: false });
       })
       .catch((err) => {
         console.log(err);
@@ -133,54 +91,62 @@ const DialogContactList: React.FC<myProps> = (props) => {
   };
   return (
     <>
-      {(!myState.openEdit && !myState.openAdd) && (
-        <Dialog
-          fullScreen
-          open={props.open}
-          onClose={props.onClose}
-          slots={{
-            transition: Transition,
-          }}
-        >
-          <HeaderDialog_Search
-            label="รายชื่อผู้ติดต่อ"
-            onBack={props.onClose}
-            onChange={onChangeHandler}
-            onAdd={() => setMyState({ ...myState, openAdd: true })}
+      <Dialog
+        fullScreen
+        open={state.open === accessDialog_e.contactList}
+        onClose={() =>
+          setState({
+            ...state,
+            open: accessDialog_e.transactionForm,
+          })
+        }
+        slots={{
+          transition: Transition,
+        }}
+      >
+        <HeaderDialog_Search
+          label="รายชื่อผู้ติดต่อ"
+          onBack={() =>
+            setState({
+              ...state,
+              open: accessDialog_e.transactionForm,
+            })
+          }
+          onChange={onChangeHandler}
+          onAdd={() => setState({ ...state, open: accessDialog_e.contactFrom, contactInfo: undefined })}
+          value={myState.key}
+          onSearch={onSearch}
+        />
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <FieldSearch
+            label="Search"
+            display={{ xs: "flex", sm: "none" }}
             value={myState.key}
-            onSearch={onSearch}
+            onChange={onChangeHandler}
+            onSubmit={onSearch}
           />
-          <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <FieldSearch
-              label="Search"
-              display={{ xs: "flex", sm: "none" }}
-              value={myState.key}
-              onChange={onChangeHandler}
-              onSubmit={onSearch}
-            />
-          </Box>
-          <ListContact
-            list={state.contactList}
-            onClick={props.onSelect}
-            onDel={onDelContacat}
-            onEdit={(val) =>
-              setMyState({ ...myState, openEdit: true, contactInfo: val })
-            }
-          />
-        </Dialog>
-      )}
-      <DialogFormContact
-        open={myState.openAdd}
-        onSubmit={onAddContact}
-        onClose={() => setMyState({ ...myState, openAdd: false })}
-      />
-      <DialogFormContact
-        title="แก้ไขรายการ"
-        open={myState.openEdit}
-        onSubmit={onEditContact}
-        defaultValue={myState.contactInfo}
-        onClose={() => setMyState({ ...myState, openEdit: false })}
-      />
+        </Box>
+        <ListContact
+          list={state.contactList}
+          onClick={(codeName) => {
+            setState({
+              ...state,
+              fieldContact: codeName,
+              open: accessDialog_e.transactionForm,
+            });
+          }}
+          onDel={onDelContacat}
+          onEdit={(val) => {
+            setState({
+              ...state,
+              open: accessDialog_e.contactFrom,
+              contactInfo: val,
+            });
+          }}
+        />
+      </Dialog>
+
+      <DialogFormContact />
     </>
   );
 };
