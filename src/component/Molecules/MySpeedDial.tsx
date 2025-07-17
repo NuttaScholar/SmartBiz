@@ -8,6 +8,7 @@ import {
 
 import { menuList_t } from "./AppBar_Mobile";
 import { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 //*********************************************
 // Style
 //*********************************************
@@ -29,7 +30,17 @@ interface myProps {
 // Component
 //*********************************************
 const MySpeedDial: React.FC<myProps> = (props) => {
-
+  // Hook **************
+  const navigate = useNavigate();
+  // Local Function **************
+  const handleClick = (index: number) => {
+    if (props.onClick) {
+      props.onClick(index);
+    }
+    if(props.menuList[index].path) {
+      navigate(props.menuList[index].path);
+    }
+  }
   return (
     <SpeedDial
       ariaLabel="SpeedDial basic example"
@@ -41,7 +52,7 @@ const MySpeedDial: React.FC<myProps> = (props) => {
           key={action.text}
           icon={action.icon}
           tooltipTitle={action.text}
-          onClick={()=>props.onClick?.(index)}
+          onClick={()=>handleClick(index)}
         />
       ))}
     </SpeedDial>
