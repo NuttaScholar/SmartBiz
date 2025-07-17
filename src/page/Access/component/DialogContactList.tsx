@@ -32,11 +32,15 @@ const Transition = React.forwardRef(function Transition(
 //*********************************************
 // Interface
 //*********************************************
-
+interface myProps {
+  open: boolean;
+  onSelect?: (codeName: string) => void;
+  onClose?: () => void;
+}
 //*********************************************
 // Component
 //*********************************************
-const DialogContactList: React.FC = () => {
+const DialogContactList: React.FC<myProps> = (props) => {
   // Hook *********************
   const navigate = useNavigate();
   const authContext = useAuth();
@@ -84,25 +88,15 @@ const DialogContactList: React.FC = () => {
     <>
       <Dialog
         fullScreen
-        open={state.open === accessDialog_e.contactList}
-        onClose={() =>
-          setState({
-            ...state,
-            open: accessDialog_e.transactionForm,
-          })
-        }
+        open={props.open}
+        onClose={props.onClose}
         slots={{
           transition: Transition,
         }}
       >
         <HeaderDialog_Search
           label="รายชื่อผู้ติดต่อ"
-          onBack={() =>
-            setState({
-              ...state,
-              open: accessDialog_e.transactionForm,
-            })
-          }
+          onBack={props.onClose}
           onChange={onChangeHandler}
           onAdd={() =>
             setState({
@@ -125,13 +119,7 @@ const DialogContactList: React.FC = () => {
         </Box>
         <ListContact
           list={state.contactList}
-          onClick={(codeName) => {
-            setState({
-              ...state,
-              fieldContact: codeName,
-              open: accessDialog_e.transactionForm,
-            });
-          }}
+          onClick={props.onSelect}
           onDel={onDelContacat}
           onEdit={(val) => {
             setState({
