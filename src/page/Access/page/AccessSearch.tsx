@@ -20,30 +20,45 @@ import { TypeSelect } from "../constants/typeSelect";
 import FieldSelector from "../../../component/Molecules/FieldSelector";
 import FieldText from "../../../component/Molecules/FieldText";
 import FieldDuration from "../../../component/Molecules/FieldDuration";
-import FieldContact from "../../../component/Molecules/FieldContact";
 import { SearchTransForm_t } from "../component/DialogSearchTransaction";
 import accessWithRetry_f from "../lib/accessWithRetry";
 import { errorCode_e } from "../../../enum";
 import { ErrorString } from "../../../function/Enum";
-import DialogFormTransaction, { TransitionForm_t } from "../component/DialogFormTransaction";
+import DialogFormTransaction, {
+  TransitionForm_t,
+} from "../component/DialogFormTransaction";
 import DialogContactList from "../component/DialogContactList";
 import FieldContactAccess from "../component/FieldContactAccess";
+import { GoToTop } from "../../../function/Window";
 
 const Page_AccessSearch: React.FC = () => {
   // Hook **************
   const navigate = useNavigate();
   const authContext = useAuth();
-  const contentRef = React.useRef<HTMLDivElement>(null);
   const [state, setState] = React.useState<access_t>(AccessDefaultState);
+  const [contact, SetContact] = React.useState<string>("");
+  const [form, setForm] = React.useState<SearchTransForm_t>();
   // Local Function ***********
-  const scrollToTop = () => {
-    if (contentRef.current) {
-      contentRef.current.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+  const searchHandler = () => {
+    if (form !== undefined) {
+      accessWithRetry_f
+        .get(authContext, form)
+        .then((res) => {
+          if (res.result) {
+            setState({ ...state, transaction: res.result });
+          } else if (res.errCode) {
+            alert(ErrorString(res.errCode));
+            if (res.errCode === errorCode_e.TokenExpiredError) {
+              navigate("/");
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching transactions:", err);
+          alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
+        });
     }
-  };
+  }
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -52,27 +67,12 @@ const Page_AccessSearch: React.FC = () => {
     const { duration_From, duration_To, ...rest } = formJson;
     const [fday, fmonth, fyear] = duration_From.split("/").map(Number);
     const [tday, tmonth, tyear] = duration_To.split("/").map(Number);
-    const form: SearchTransForm_t = {
+    setForm({
       from: new Date(fyear, fmonth - 1, fday),
       to: new Date(tyear, tmonth - 1, tday),
       ...rest,
-    };
-    accessWithRetry_f
-      .get(authContext, form)
-      .then((res) => {
-        if (res.result) {
-          setState({ ...state, transaction: res.result });
-        } else if (res.errCode) {
-          alert(ErrorString(res.errCode));
-          if (res.errCode === errorCode_e.TokenExpiredError) {
-            navigate("/");
-          }
-        }
-      })
-      .catch((err) => {
-        console.error("Error fetching transactions:", err);
-        alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
-      });
+    });
+    searchHandler();
   };
   const onClickTransHandler = (value: TransitionForm_t) => {
     console.log(value);
@@ -84,12 +84,13 @@ const Page_AccessSearch: React.FC = () => {
     });
   };
   // Use Effect **************
-  React.useEffect(() => {}, []);
+  React.useEffect(() => {
+    form && searchHandler();
+  }, [state.refaceTrans]);
   return (
     <AccessContext.Provider value={{ state, setState }}>
       <HeaderDialog label="ค้นหา" onClick={() => navigate("/access")} />
       <DialogContent
-        ref={contentRef}
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -128,6 +129,16 @@ const Page_AccessSearch: React.FC = () => {
             name="who"
             icon={<AccountBoxIcon />}
             placeholder="Contact"
+            value={contact}
+            onClear={() => SetContact("")}
+            onOpenList={(list) => {
+              SetContact("");
+              setState({
+                ...state,
+                open: accessDialog_e.contactListSearch,
+                contactList: list,
+              });
+            }}
           />
           <Box
             sx={{ width: "100%", display: "flex", justifyContent: "center" }}
@@ -154,12 +165,21 @@ const Page_AccessSearch: React.FC = () => {
         size="medium"
         color="primary"
         sx={{ position: "fixed", bottom: 16, right: 32 }}
-        onClick={scrollToTop}
+        onClick={GoToTop}
       >
         <KeyboardArrowUpIcon />
       </Fab>
-      <DialogFormTransaction/>
-      <DialogContactList/>
+      <DialogFormTransaction />
+      <DialogContactList
+        open={state.open === accessDialog_e.contactListSearch}
+        onClose={() => {
+          setState({ ...state, open: accessDialog_e.none });
+        }}
+        onSelect={(codeName) => {
+          SetContact(codeName);
+          setState({ ...state, open: accessDialog_e.none });
+        }}
+      />
     </AccessContext.Provider>
   );
 };

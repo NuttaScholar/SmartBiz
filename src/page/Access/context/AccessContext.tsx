@@ -6,6 +6,7 @@ import { ContactInfo_t, statement_t } from "../../../API/AccountService/type";
 export enum accessDialog_e {
   none,
   contactList,
+  contactListSearch,
   transactionForm,
   searchTransaction,
   contactFrom,
