@@ -1,7 +1,7 @@
 import { Box, SxProps, Theme, Typography } from "@mui/material";
 import Text_Money from "../../../component/Atoms/Text_Money";
 import React from "react";
-import { useAccess } from "../../../hooks/useAccess";
+import { useAccess } from "../hooks/useAccess";
 
 //*********************************************
 // Style
