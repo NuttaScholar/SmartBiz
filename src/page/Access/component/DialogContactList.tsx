@@ -16,12 +16,7 @@ import { accessDialog_e } from "../context/AccessContext";
 //*********************************************
 // Type
 //*********************************************
-type myState_t = {
-  key?: string;
-  openAdd: boolean;
-  openEdit: boolean;
-  contactInfo?: contactInfo_t;
-};
+
 //*********************************************
 // Transition
 //*********************************************
@@ -46,14 +41,10 @@ const DialogContactList: React.FC = () => {
   const navigate = useNavigate();
   const authContext = useAuth();
   const { state, setState } = useAccess();
-  const [myState, setMyState] = React.useState<myState_t>({
-    openAdd: false,
-    openEdit: false,
-  });
 
   // Local Function ***********
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setMyState({ ...myState, key: event.target.value });
+    setState({ ...state, contactKey: event.target.value });
   };
 
   const onSearch = async (keyword: string) => {
@@ -113,15 +104,21 @@ const DialogContactList: React.FC = () => {
             })
           }
           onChange={onChangeHandler}
-          onAdd={() => setState({ ...state, open: accessDialog_e.contactFrom, contactInfo: undefined })}
-          value={myState.key}
+          onAdd={() =>
+            setState({
+              ...state,
+              open: accessDialog_e.contactFrom,
+              contactInfo: undefined,
+            })
+          }
+          value={state.contactKey}
           onSearch={onSearch}
         />
         <Box sx={{ display: "flex", justifyContent: "center" }}>
           <FieldSearch
             label="Search"
             display={{ xs: "flex", sm: "none" }}
-            value={myState.key}
+            value={state.contactKey}
             onChange={onChangeHandler}
             onSubmit={onSearch}
           />

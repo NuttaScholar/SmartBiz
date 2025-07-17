@@ -31,7 +31,7 @@ const FieldContactAccess: React.FC<MyProps> = (props) => {
       .get(AuthContext)
       .then((val) => {
         if (val.result) {
-          setState({ ...state, contactList: val.result, open: accessDialog_e.contactList });
+          setState({ ...state, contactList: val.result, open: accessDialog_e.contactList, contactKey: undefined });
         } else if (val.errCode) {
           alert(ErrorString(val.errCode));
         }

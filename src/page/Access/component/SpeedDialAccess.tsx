@@ -6,8 +6,6 @@ import MySpeedDial from "../../../component/Molecules/MySpeedDial";
 import { useAccess } from "../hooks/useAccess";
 import { menuList_t } from "../../../component/Molecules/ButtonOption";
 import { GoToTop } from "../../../function/Window";
-import { TransitionForm_t } from "./DialogFormTransaction";
-import DialogSearchTransaction from "./DialogSearchTransaction";
 import React from "react";
 import { accessDialog_e } from "../context/AccessContext";
 //*********************************************
