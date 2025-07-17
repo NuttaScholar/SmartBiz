@@ -19,6 +19,7 @@ export type access_t = {
   hasMore: boolean;
   contactList: ContactInfo_t[];
   contactInfo?: ContactInfo_t;
+  contactKey?: string;
   fieldContact?: string;
   totalMoney: number;
   refaceTrans: number;
