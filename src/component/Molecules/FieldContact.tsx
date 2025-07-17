@@ -16,6 +16,7 @@ interface MyProps {
   value?: string;
   name?: string;
   icon?: React.ReactNode;
+  defaultValue?: string;
   onClear?: () => void;
   onOpenList?: () => void;
 }
@@ -34,6 +35,7 @@ const FieldContact: React.FC<MyProps> = (props) => {
           size="small"
           placeholder={props.placeholder}
           name={props.name}
+          defaultValue={props.defaultValue}
           readOnly
           value={props.value}
           endAdornment={
