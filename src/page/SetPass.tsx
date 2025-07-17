@@ -23,7 +23,7 @@ const Page_SetPass: React.FC = () => {
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
     const { confirmPass, newPass, oldPass } = formJson as form_t;
-    if (newPass === confirmPass) {
+    if (newPass === confirmPass&&auth?.token) {
       const data: EditPassFrom_t = { newPass: newPass, oldPass: oldPass };
       User_f.putPass(auth.token, data).then((data)=>{
         if(data.status==="success"){
