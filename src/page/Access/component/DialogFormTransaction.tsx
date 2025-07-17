@@ -14,11 +14,11 @@ import FieldDate from "../../../component/Molecules/FieldDate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useAccess } from "../hooks/useAccess";
 import DialogContactList from "./DialogContactList";
-import FieldContactAccess from "./FieldContactAccess";
 import accessWithRetry_f from "../lib/accessWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 import { TypeSelect } from "../constants/typeSelect";
 import { accessDialog_e } from "../context/AccessContext";
+import FieldContactAccess from "./FieldContactAccess";
 
 //*********************************************
 // Type
@@ -93,7 +93,7 @@ const DialogFormTransaction: React.FC = () => {
             : undefined
           : form.who,
     };
-    console.log(state.transitionForm);
+    console.log(data);
     if (state.transitionForm) {
       // Edit
       accessWithRetry_f
@@ -230,6 +230,18 @@ const DialogFormTransaction: React.FC = () => {
             icon={<AccountBoxIcon />}
             placeholder="Contact"
             name="who"
+            onClear={() => {
+              setState({ ...state, fieldContact: "" });
+            }}
+            value={state.fieldContact}
+            onOpenList={(list) => {
+              setState({
+                ...state,
+                open: accessDialog_e.contactList,
+                contactList: list,
+                contactKey: undefined,
+              });
+            }}
           />
           <FieldDate
             icon={<CalendarMonthIcon />}
@@ -265,7 +277,23 @@ const DialogFormTransaction: React.FC = () => {
         </Box>
       </Dialog>
 
-      <DialogContactList />
+      <DialogContactList
+        open={state.open === accessDialog_e.contactList}
+        onClose={() => {
+          setState({
+            ...state,
+            open: accessDialog_e.transactionForm,
+            contactKey: undefined,
+          });
+        }}
+        onSelect={(codeName) => {
+          setState({
+            ...state,
+            open: accessDialog_e.transactionForm,
+            fieldContact: codeName,
+          });
+        }}
+      />
     </>
   );
 };
