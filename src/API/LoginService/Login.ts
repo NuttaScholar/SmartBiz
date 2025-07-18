@@ -1,6 +1,4 @@
-import axios, { AxiosRequestConfig } from "axios";
-import { EditPassFrom_t, LoginForm_t, responstLogin_t } from "./type";
-import { errorCode_e, service_e } from "../../enum";
+import {  LoginForm_t, responstLogin_t } from "./type";
 import { axios_login } from "../../lib/axios";
 
 export async function postLogin(

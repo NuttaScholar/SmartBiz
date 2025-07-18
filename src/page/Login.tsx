@@ -6,20 +6,15 @@ import {
 } from "@toolpad/core/SignInPage";
 import { LoginForm_t } from "../API/LoginService/type";
 import * as login_F from "../API/LoginService/Login";
-import { useContext } from "react";
-import { AuthContext } from "../context";
 import { useAuth } from "../hooks/useAuth";
 
 const providers = [{ id: "credentials", name: "Email and password" }];
 
 const Page_Login: React.FC = () => {
   const navigate = useNavigate();
-  const {setAuth} = useAuth();
+  const { setAuth } = useAuth();
 
-  const signIn: (
-    provider: AuthProvider,
-    formData?: FormData
-  ) => Promise<AuthResponse> | void = async (provider, formData) => {
+  const signIn: ( provider: AuthProvider, formData?: FormData ) => Promise<AuthResponse> | void = async (__, formData) => {
     const promise = new Promise<AuthResponse>((resolve) => {
       if (formData) {
         const data: LoginForm_t = {
@@ -30,10 +25,10 @@ const Page_Login: React.FC = () => {
           .postLogin(data)
           .then((data) => {
             console.log("success", data);
-            if (data.status === "success"&&data.result) {      
-              setAuth(data.result)
-              navigate("/access");              
-            }else{
+            if (data.status === "success" && data.result) {
+              setAuth(data.result);
+              navigate("/access");
+            } else {
               resolve({
                 type: "CredentialsSignin",
                 error: "Invalid credentials.",

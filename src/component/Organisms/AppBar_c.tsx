@@ -64,17 +64,14 @@ const option_staff: menuList_t[] = [
 //*********************************************
 // Interface
 //*********************************************
-interface myProps {
-  onClick?: (page: menuList_t) => void;
-}
 
 //************************************************
 // Component
 //************************************************
-const AppBar_c: React.FC<myProps> = (props) => {
+const AppBar_c: React.FC = () => {
   // Hook ********************
   const location = useLocation();
-  const { auth, setAuth } = useAuth();
+  const { auth } = useAuth();
   // Local Function **********
   const handleOption = async(menuList: menuList_t) => {
     try {

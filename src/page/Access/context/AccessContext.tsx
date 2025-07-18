@@ -1,5 +1,5 @@
 // src/context/AuthContext.tsx
-import { createContext, ReactNode, useState } from "react";
+import { createContext } from "react";
 import { TransitionForm_t } from "../component/DialogFormTransaction";
 import { ContactInfo_t, statement_t } from "../../../API/AccountService/type";
 
@@ -43,4 +43,3 @@ export const AccessContext = createContext<AccessContext_t | undefined>(
   undefined
 );
 AccessContext.displayName = "AccessContext";
-

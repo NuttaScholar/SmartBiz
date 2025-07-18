@@ -1,8 +1,7 @@
 import { Box, Divider, List } from "@mui/material";
 import React from "react";
-import ContactInfo, { contactInfo_t } from "./ContactInfo";
 import ButtonOption, { menuList_t } from "./ButtonOption";
-import UserInfo, { userInfo_t } from "./UserInfo";
+import UserInfo from "./UserInfo";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import { UserProfile_t } from "../../API/LoginService/type";
 

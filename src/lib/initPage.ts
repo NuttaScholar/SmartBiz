@@ -1,5 +1,5 @@
 import Login_f from "../API/LoginService/Login";
-import { Auth_t, responstLogin_t } from "../API/LoginService/type";
+import { Auth_t } from "../API/LoginService/type";
 import { AuthContext_t } from "../context/AuthContext";
 import { errorCode_e } from "../enum";
 import { ErrorString } from "../function/Enum";

@@ -1,9 +1,9 @@
-import AppBar_c, { pageApp_e } from "../component/Organisms/AppBar_c";
+import AppBar_c from "../component/Organisms/AppBar_c";
 
 const Page_NotFound: React.FC = () => {
   return (
     <>
-      <AppBar_c role="admin" />
+      <AppBar_c />
       <h1>Error 404: Page Not Found</h1>
     </>
   );

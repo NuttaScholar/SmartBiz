@@ -5,7 +5,7 @@ import FieldText from "../component/Molecules/FieldText";
 import { EditPassFrom_t } from "../API/LoginService/type";
 import React from "react";
 import { useAuth } from "../hooks/useAuth";
-import * as User_f from "../API/LoginService/User"
+import * as User_f from "../API/LoginService/User";
 import { ErrorString } from "../function/Enum";
 import { errorCode_e } from "../enum";
 
@@ -15,7 +15,7 @@ type form_t = {
   confirmPass: string;
 };
 const Page_SetPass: React.FC = () => {
-  const {auth ,setAuth} = useAuth();
+  const { auth } = useAuth();
   const navigate = useNavigate();
   const [showPass, setShowPass] = React.useState(false);
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -23,19 +23,21 @@ const Page_SetPass: React.FC = () => {
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
     const { confirmPass, newPass, oldPass } = formJson as form_t;
-    if (newPass === confirmPass&&auth?.token) {
+    if (newPass === confirmPass && auth?.token) {
       const data: EditPassFrom_t = { newPass: newPass, oldPass: oldPass };
-      User_f.putPass(auth.token, data).then((data)=>{
-        if(data.status==="success"){
-          alert("แก้ไข Password สำเร็จ");
-        }else{
+      User_f.putPass(auth.token, data)
+        .then((data) => {
+          if (data.status === "success") {
+            alert("แก้ไข Password สำเร็จ");
+          } else {
+            alert("แก้ไข Password ไม่สำเร็จ");
+            console.log(ErrorString(data.errCode || errorCode_e.UnknownError));
+          }
+        })
+        .catch((err) => {
           alert("แก้ไข Password ไม่สำเร็จ");
-          console.log(ErrorString(data.errCode||errorCode_e.UnknownError))
-        }
-      }).catch((err)=>{
-        alert("แก้ไข Password ไม่สำเร็จ");
           console.log(err);
-      })
+        });
     } else {
       alert("New Password ไม่ตรงกับ Confirm Password");
     }

@@ -1,4 +1,4 @@
-import AppBar_c, { pageApp_e } from "../component/Organisms/AppBar_c";
+import AppBar_c from "../component/Organisms/AppBar_c";
 
 const Page_Bill: React.FC = () => {
   return (

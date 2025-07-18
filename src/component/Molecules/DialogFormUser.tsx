@@ -5,10 +5,7 @@ import HeaderDialog from "./HeaderDialog";
 import FieldText from "./FieldText";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import ContactPageIcon from "@mui/icons-material/ContactPage";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
-import RecentActorsIcon from "@mui/icons-material/RecentActors";
-import NotesIcon from "@mui/icons-material/Notes";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import {
   EditUserFrom_t,

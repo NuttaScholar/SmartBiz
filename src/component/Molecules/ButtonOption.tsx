@@ -73,7 +73,7 @@ const ButtonOption: React.FC<MyProps> = (props) => {
         open={Boolean(anchorElUser)}
         onClose={handleCloseUserMenu}
       >
-        {props.menuList.map((value, index) => (
+        {props.menuList.map((value) => (
           <MenuItem
             key={value.text}
             onClick={() => {
