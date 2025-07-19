@@ -2,13 +2,9 @@ import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import { LoginForm_t, responstLogin_t, tokenPackage_t, TokenForm_t, RegistFrom_t, UserProfile_t, EditUserFrom_t, EditPassFrom_t } from "./type";
-import moment from 'moment-timezone';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import https from "https";
-import fs from "fs";
-import path from "path";
 import cookieParser from "cookie-parser";
 import { errorCode_e, role_e } from "./enum";
 
@@ -35,24 +31,19 @@ const saltRounds = 10;
 // Middleware Setup
 /*********************************************** */
 // อนุญาตให้ React frontend สามารถส่งคำขอมาได้
+console.log("origin:", process.env.WEB_HOST);
 app.use(cors({
-    origin: "http://localhost:3030", // URL ของ React (Web)
+    origin: process.env.WEB_HOST as string, // URL ของ React (Web)
     credentials: true, // อนุญาตให้ส่ง cookie ไปกลับ
 }));
 app.use(express.json());
 app.use(cookieParser());
-
-/*********************************************** */
-// Load SSL Certificate
-/*********************************************** */
-const key = fs.readFileSync(path.join(__dirname, process.env.SSL_KEY || ""));
-const cert = fs.readFileSync(path.join(__dirname, process.env.SSL_CERT || ""));
-
 /*********************************************** */
 // Mongoose Setup
 /*********************************************** */
 // เชื่อมต่อ MongoDB
-mongoose.connect("mongodb://root:example@localhost:27017/User?authSource=admin");
+console.log(process.env.DB_URL);
+mongoose.connect(process.env.DB_URL as string);
 
 // กำหนด Schema
 const profileSchema = new mongoose.Schema({
@@ -186,7 +177,7 @@ app.post('/login', async (req: Request, res: Response) => {
                 const result: responstLogin_t<"postLogin"> = { status: "success", result: { role: resultDB.role, token: accessToken } }
                 res.cookie("refreshToken", refreshToken, {
                     httpOnly: true,
-                    secure: true,       // ตั้ง true เมื่อใช้ HTTPS
+                    secure: false,       // ตั้ง true เมื่อใช้ HTTPS
                     sameSite: "strict", // ป้องกัน CSRF
                     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 วัน
                 });
@@ -210,7 +201,7 @@ app.post('/logout', async (req: Request, res: Response) => {
     const result: responstLogin_t<"none"> = { status: "success" }
     res.clearCookie("refreshToken", {
         httpOnly: true,
-        secure: true,
+        secure: false,     // ตั้ง true เมื่อใช้ HTTPS
         sameSite: "strict",
         path: "/",
     });
@@ -354,10 +345,6 @@ app.put('/pass', AuthMiddleware, async (req: AuthRequest, res: Response) => {
 /*********************************************** */
 // Start Server
 /*********************************************** */
-/*const server = https.createServer({ key, cert }, app);
-server.listen(PORT, "0.0.0.0", () => {
-    console.log(`HTTPS Server is running at https://localhost:${PORT}`);
-});*/
 app.listen(PORT, async () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
     const isEmpty = (await User.countDocuments()) === 0;

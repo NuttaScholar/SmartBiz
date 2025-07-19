@@ -5,9 +5,6 @@ import { TransitionForm_t, ContactForm_t, responst_t, tokenPackage_t, statement_
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
-import https from "https";
-import fs from "fs";
-import path from "path";
 import { errorCode_e, role_e, transactionType_e } from "./enum";
 
 dotenv.config();
@@ -26,32 +23,31 @@ const secret = process.env.SECRET as jwt.Secret;
 // Middleware Setup
 /*********************************************** */
 // อนุญาตให้ React frontend สามารถส่งคำขอมาได้
+console.log("origin:", process.env.WEB_HOST);
 app.use(cors({
-    origin: "http://localhost:3030", // URL ของ React (Web)
+    origin: process.env.WEB_HOST as string, // URL ของ React (Web)
     credentials: true, // อนุญาตให้ส่ง cookie ไปกลับ
 }));
 app.use(express.json());
 app.use(cookieParser());
 
 /*********************************************** */
-// Load SSL Certificate
-/*********************************************** */
-const key = fs.readFileSync(path.join(__dirname, process.env.SSL_KEY || ""));
-const cert = fs.readFileSync(path.join(__dirname, process.env.SSL_CERT || ""));
-
-/*********************************************** */
 // Mongoose Setup
 /*********************************************** */
 // เชื่อมต่อ MongoDB
-mongoose.connect("mongodb://root:example@localhost:27017/Account?authSource=admin");
+mongoose.connect(process.env.DB_URL as string);
 
-interface transatcion_t {
+type transatcion_t = {
     topic: string;
     type: number;
     money: number;
     description?: string;
     who?: string;
     date: Date;
+}
+type wallet_t = {
+    name: string;
+    amount: number;
 }
 // กำหนด Schema
 const contactSchema = new mongoose.Schema({
@@ -74,7 +70,7 @@ const transatcionSchema = new mongoose.Schema<transatcion_t>({
     who: { type: mongoose.Schema.Types.String, ref: "contact" },
     date: { type: Date, required: true },
 });
-const walletSchema = new mongoose.Schema({
+const walletSchema = new mongoose.Schema<wallet_t>({
     name: { type: String, required: true },
     amount: { type: Number, required: true },
 });
@@ -133,6 +129,7 @@ const calWallet = (type: transactionType_e, wallet: number, val: number, invert?
 
     return total;
 }
+
 function decoder(token: string): tokenPackage_t | null {
     try {
         var decoded = jwt.verify(token, secret) as tokenPackage_t;
@@ -201,14 +198,12 @@ app.post('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response)
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
-            console.log(req.body);
             const { money, type, ...rest } = req.body as TransitionForm_t;
             const newTransatcion = new Transatcion(req.body);
             await newTransatcion.save();
             const val = await Wallet.findOne({ name: "main" });
             const resWallet = await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(type, val?.amount || 0, money) })
 
-            console.log(resWallet);
             if (resWallet.acknowledged) {
                 const result: responst_t<"none"> = { status: "success" };
                 return res.send(result);
@@ -291,7 +286,6 @@ app.get('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) 
     try {
         if (data?.role === role_e.admin) {
             const { from, to, who, topic, type } = req.query;
-            console.log(req.query);
             let filter: any = {
                 date: {
                     $gte: new Date(from as string || Date.now()),
@@ -441,7 +435,6 @@ app.put('/contact', AuthMiddleware, async (req: AuthRequest, res: Response) => {
         if (data?.role === role_e.admin) {
             const { codeName, ...rest } = req.body;
             const newData = { ...rest };
-            console.log("put", newData);
 
             await User.updateOne({ codeName: codeName }, newData)
             const result: responst_t<"none"> = { status: "success" };
@@ -461,11 +454,22 @@ app.put('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) 
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
+            const { type, money } = req.body as TransitionForm_t;
+            const dataTran = await Transatcion.findOne({ _id: req.query.id });
             const updateRes = await Transatcion.updateOne({ _id: req.query.id }, req.body)
-            console.log(updateRes);
             if (updateRes.matchedCount) {
-                const result: responst_t<"none"> = { status: "success" };
-                return res.send(result);
+                const val = await Wallet.findOne({ name: "main" });
+                const delWallet = calWallet(dataTran?.type === undefined ? 255 : dataTran?.type, val?.amount || 0, dataTran?.money || 0, true)
+
+                const resWallet = await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(type, delWallet, money) })
+
+                if (resWallet.acknowledged) {
+                    const result: responst_t<"none"> = { status: "success" };
+                    return res.send(result);
+                } else {
+                    const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.TimeoutError };
+                    return res.send(result);
+                }
             } else {
                 const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.NotFoundError };
                 return res.send(result);
@@ -484,10 +488,6 @@ app.put('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) 
 /*********************************************** */
 // Start Server
 /*********************************************** */
-/*const server = https.createServer({ key, cert }, app);
-server.listen(PORT, "0.0.0.0", () => {
-    console.log(`HTTPS Server is running at https://localhost:${PORT}`);
-});*/
 app.listen(PORT, () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
