@@ -9,6 +9,7 @@ import { useAccess } from "../hooks/useAccess";
 import accessWithRetry_f from "../lib/accessWithRetry";
 import { SearchTransForm_t } from "./DialogSearchTransaction";
 import { accessDialog_e } from "../context/AccessContext";
+import { initTrans } from "../lib/initTrans";
 
 /**************************************************** */
 //  Interface
@@ -21,56 +22,7 @@ const YearyTransaction: React.FC = () => {
   // Hook *********************
   const authContext = useAuth();
   const { state, setState } = useAccess();
-  // Local Function ***********
-  const initTrans = async () => {
-    let finish = false;
-    let _month = 12;
-    let cnt = 0;
-    let trans: statement_t[] = [];
-    while (!finish) {
-      const condition: SearchTransForm_t = {
-        from: new Date(state.yearSelect, _month - 1, 1),
-        to: new Date(state.yearSelect, _month, 0),
-      };
-      try {
-        const res = await accessWithRetry_f.get(authContext, condition);
-        if (res.result?.length) {
-          console.log(res);
-          trans.push(...res.result);
-
-          cnt++;
-          if (_month > 1) {
-            _month--;
-          }
-          if (cnt > 1) {
-            console.log(cnt);
-            setState({
-              ...state,
-              transaction: trans,
-              hasMore: _month > 1,
-              month: _month,
-            });
-            finish = true;
-          }
-        } else {
-          if (_month > 1) {
-            _month--;
-          } else {
-            setState({
-              ...state,
-              transaction: trans,
-              hasMore: _month > 1,
-              month: _month,
-            });
-            finish = true;
-          }
-        }
-      } catch (err) {
-        console.log(err);
-        return;
-      }
-    }
-  };
+  // Local Function ***********  
   const fetchTrans = async () => {
     let finish = false;
     let _month = state.month;
@@ -124,7 +76,8 @@ const YearyTransaction: React.FC = () => {
   };  
 
   React.useEffect(() => {
-    initTrans();
+    console.log("YearyTransaction useEffect");
+    initTrans(authContext, { state, setState });
   }, [state.yearSelect, state.refaceTrans]);
   return (
     <>
