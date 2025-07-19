@@ -40,9 +40,10 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
       throw err;
     }
   }
+  console.log("Wallet:");
   try {
     const wallet = await accessWithRetry_f.getWallet(authContext);
-    if (wallet.result) {
+    if (wallet.result!== undefined) {      
       setState({
         ...state,
         transaction: trans,
