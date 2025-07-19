@@ -106,6 +106,7 @@ const DialogFormTransaction: React.FC = () => {
             fieldContact: undefined,
             refaceTrans: state.refaceTrans + 1,
           });
+          console.log(state.refaceTrans);
         })
         .catch((err) => {
           alert("ไม่สามารถแก้ไขรายการได้");

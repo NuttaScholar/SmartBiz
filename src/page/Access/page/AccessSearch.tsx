@@ -39,7 +39,7 @@ const Page_AccessSearch: React.FC = () => {
   const [contact, SetContact] = React.useState<string>("");
   const [form, setForm] = React.useState<SearchTransForm_t>();
   // Local Function ***********
-  const searchHandler = () => {
+  const searchHandler = (form: SearchTransForm_t) => {
     if (form !== undefined) {
       accessWithRetry_f
         .get(authContext, form)
@@ -58,8 +58,9 @@ const Page_AccessSearch: React.FC = () => {
           alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
         });
     }
-  }
+  };
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    console.log("handleSubmit");
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
@@ -67,12 +68,13 @@ const Page_AccessSearch: React.FC = () => {
     const { duration_From, duration_To, ...rest } = formJson;
     const [fday, fmonth, fyear] = duration_From.split("/").map(Number);
     const [tday, tmonth, tyear] = duration_To.split("/").map(Number);
-    setForm({
+    const data: SearchTransForm_t = {
       from: new Date(fyear, fmonth - 1, fday),
       to: new Date(tyear, tmonth - 1, tday),
       ...rest,
-    });
-    searchHandler();
+    };
+    setForm(data);
+    searchHandler(data);
   };
   const onClickTransHandler = (value: TransitionForm_t) => {
     console.log(value);
@@ -85,7 +87,7 @@ const Page_AccessSearch: React.FC = () => {
   };
   // Use Effect **************
   React.useEffect(() => {
-    form && searchHandler();
+    form && searchHandler(form);
   }, [state.refaceTrans]);
   return (
     <AccessContext.Provider value={{ state, setState }}>
