@@ -105,7 +105,7 @@ export async function post(context: AuthContext_t, data: ContactForm_t): Promise
         const res: resContactWithRetry_t = await contactWithRetry(context, Contact_f.post, data);
         return res;
     } catch (err) {
-        throw new Error(`${err}`);
+        throw err;
     }
 }
 
@@ -114,7 +114,7 @@ export async function put(context: AuthContext_t, data: ContactForm_t): Promise<
         const res: resContactWithRetry_t = await contactWithRetry(context, Contact_f.put, data);
         return res;
     } catch (err) {
-        throw new Error(`${err}`);
+        throw err;
     }
 }
 
@@ -123,7 +123,7 @@ export async function del(context: AuthContext_t, data: contactInfo_t): Promise<
         const res: resContactWithRetry_t = await contactWithRetry(context, Contact_f.del, data);
         return res;
     } catch (err) {
-        throw new Error(`${err}`);
+        throw err;
     }
 }
 

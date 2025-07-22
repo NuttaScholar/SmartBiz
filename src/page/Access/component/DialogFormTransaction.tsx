@@ -294,6 +294,21 @@ const DialogFormTransaction: React.FC = () => {
             fieldContact: codeName,
           });
         }}
+        onCloseForm={(val) => {
+          if (val) {
+            setState({
+              ...state,
+              contactList: val,
+              open: accessDialog_e.contactList,
+            });
+          } else {
+            setState({
+              ...state,
+              open: accessDialog_e.contactList,
+              contactInfo: undefined,
+            });
+          }
+        }}
       />
     </>
   );

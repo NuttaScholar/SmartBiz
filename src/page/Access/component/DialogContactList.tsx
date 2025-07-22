@@ -13,6 +13,7 @@ import DialogFormContact from "./DialogFormContact";
 import { ErrorString } from "../../../function/Enum";
 import { errorCode_e } from "../../../enum";
 import { accessDialog_e } from "../context/AccessContext";
+import { ContactInfo_t } from "../../../API/AccountService/type";
 //*********************************************
 // Type
 //*********************************************
@@ -36,6 +37,7 @@ interface myProps {
   open: boolean;
   onSelect?: (codeName: string) => void;
   onClose?: () => void;
+  onCloseForm: (val?:ContactInfo_t[]) =>void;
 }
 //*********************************************
 // Component
@@ -131,7 +133,9 @@ const DialogContactList: React.FC<myProps> = (props) => {
         />
       </Dialog>
 
-      <DialogFormContact />
+      <DialogFormContact 
+        onClose={props.onCloseForm}
+      />
     </>
   );
 };

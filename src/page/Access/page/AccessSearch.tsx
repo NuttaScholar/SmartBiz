@@ -30,6 +30,7 @@ import DialogFormTransaction, {
 import DialogContactList from "../component/DialogContactList";
 import FieldContactAccess from "../component/FieldContactAccess";
 import { GoToTop } from "../../../function/Window";
+import { initPage } from "../../../lib/initPage";
 
 const Page_AccessSearch: React.FC = () => {
   // Hook **************
@@ -87,6 +88,7 @@ const Page_AccessSearch: React.FC = () => {
   };
   // Use Effect **************
   React.useEffect(() => {
+    initPage(authContext);
     form && searchHandler(form);
   }, [state.refaceTrans]);
   return (
@@ -180,6 +182,21 @@ const Page_AccessSearch: React.FC = () => {
         onSelect={(codeName) => {
           SetContact(codeName);
           setState({ ...state, open: accessDialog_e.none });
+        }}
+        onCloseForm={(val) => {
+          if (val) {
+            setState({
+              ...state,
+              contactList: val,
+              open: accessDialog_e.contactListSearch,
+            });
+          } else {
+            setState({
+              ...state,
+              open: accessDialog_e.contactListSearch,
+              contactInfo: undefined,
+            });
+          }
         }}
       />
     </AccessContext.Provider>

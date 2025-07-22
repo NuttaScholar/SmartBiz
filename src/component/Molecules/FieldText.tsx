@@ -13,6 +13,7 @@ interface myProps {
   required?: boolean;
   type?: React.HTMLInputTypeAttribute;
   multiline?: boolean;
+  value?: string;
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   name?: string;
   icon?: React.ReactNode;
@@ -28,6 +29,7 @@ const FieldText: React.FC<myProps> = (props) => {
         label={props.label}
         placeholder={props.placeholder}
         defaultValue={props.defauleValue}
+        value={props.value}
         multiline={props.multiline}
         required={props.required}
         type={props.type}
