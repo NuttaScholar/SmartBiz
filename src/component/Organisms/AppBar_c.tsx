@@ -73,7 +73,7 @@ const AppBar_c: React.FC = () => {
   const location = useLocation();
   const { auth } = useAuth();
   // Local Function **********
-  const handleOption = async(menuList: menuList_t) => {
+  const handleOption = async (menuList: menuList_t) => {
     try {
       if (menuList.path === "/") {
         const res = await Login_f.postLogout();
@@ -100,20 +100,23 @@ const AppBar_c: React.FC = () => {
   );
   // XML Code *****************
   return (
-    <AppBar color="secondary" position="static">
-      <Toolbar variant="dense" disableGutters>
-        <Box_Mobile sx={{ flexGrow: 1 }}>
-          <AppBar_Mobile menuList={menuList_AppBar} value={index} />
-        </Box_Mobile>
-        <Box_PC sx={{ flexGrow: 1 }}>
-          <AppBar_PC menuList={menuList_AppBar} value={index} />
-        </Box_PC>
+    <>
+      <AppBar color="secondary" position="fixed">
+        <Toolbar variant="dense" disableGutters>
+          <Box_Mobile sx={{ flexGrow: 1 }}>
+            <AppBar_Mobile menuList={menuList_AppBar} value={index} />
+          </Box_Mobile>
+          <Box_PC sx={{ flexGrow: 1 }}>
+            <AppBar_PC menuList={menuList_AppBar} value={index} />
+          </Box_PC>
 
-        <Box sx={{ flexGrow: 0 }}>
-          <ButtonOption menuList={menuList_Option} onClick={handleOption} />
-        </Box>
-      </Toolbar>
-    </AppBar>
+          <Box sx={{ flexGrow: 0 }}>
+            <ButtonOption menuList={menuList_Option} onClick={handleOption} />
+          </Box>
+        </Toolbar>
+      </AppBar>
+      <Box sx={{height: "50px"}}/>
+    </>
   );
 };
 export default AppBar_c;
