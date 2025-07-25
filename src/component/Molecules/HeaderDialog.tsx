@@ -40,7 +40,7 @@ const HeaderDialog: React.FC<myProps> = (props) => {
           {props.children}
         </Toolbar>
       </AppBar>
-      <Box sx={{height: "50px"}}/>
+      <Box sx={{height: "64px"}}/>
     </>
   );
 };
