@@ -37,6 +37,8 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
         }
       }
     } catch (err) {
+      console.log(err);
+      finish = true;
       throw err;
     }
   }

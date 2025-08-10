@@ -20,12 +20,15 @@ const Page_Access: React.FC = () => {
   const [state, setState] = React.useState<access_t>(AccessDefaultState);
   // Use Effect **************
   React.useEffect(() => {
-    try {
-      initTrans(authContext, { state, setState });
-    } catch (err) {
-      alert(`${err}`);
-      navigate("/");
-    }
+    initTrans(authContext, { state, setState })
+      .then(() => {
+        console.log("initTrans");
+      })
+      .catch((err) => {
+        console.log("Err:initTrans");
+        alert(`${err}`);
+        navigate("/");
+      });
   }, []);
   return (
     <AccessContext.Provider value={{ state, setState }}>
