@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, Button, Dialog, IconButton, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
@@ -19,27 +19,23 @@ import { useAuth } from "../../../hooks/useAuth";
 import { TypeSelect } from "../constants/typeSelect";
 import { accessDialog_e } from "../context/AccessContext";
 import FieldContactAccess from "./FieldContactAccess";
+import { TransitionForm_t } from "../../../API/AccountService/type";
 
 //*********************************************
 // Type
 //*********************************************
-export type TransitionForm_t = {
-  id?: string;
-  date: Date;
-  topic: string;
-  type: transactionType_e;
-  money: number;
-  who?: string;
-  description?: string;
-};
 type form_t = {
-  date: string;
-  topic: string;
-  type: string;
-  money: string;
-  who: string;
-  description: string;
+  date: Date;
+  money?: number;
+  topic?: string;
+  type?: transactionType_e;
+  description?: string;
+  who?: string;
 };
+//*********************************************
+// Constante
+//*********************************************
+
 //*********************************************
 // Style
 //*********************************************
@@ -66,69 +62,60 @@ const Transition = React.forwardRef(function Transition(
 const DialogFormTransaction: React.FC = () => {
   // Hook *********************
   const { state, setState } = useAccess();
+  const [form, setForm] = useState<form_t>({date:new Date()})
   const authContext = useAuth();
   // Local Function ***********
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    let formJson = Object.fromEntries((formData as any).entries());
-    const form = formJson as form_t;
-    const [day, month, year] = form.date.split("/").map(Number);
-    const data: TransitionForm_t = {
-      id: state.transitionForm?.id,
-      date: new Date(year, month - 1, day),
-      topic: form.topic,
-      type: Number(form.type),
-      money: Number(form.money),
-      description:
-        form.description === ""
-          ? state.transitionForm?.description
-            ? ""
-            : undefined
-          : form.description,
-      who:
-        form.who === ""
-          ? state.transitionForm?.who
-            ? ""
-            : undefined
-          : form.who,
-    };
-    console.log(data);
-    if (state.transitionForm) {
-      // Edit
-      accessWithRetry_f
-        .put(authContext, data)
-        .then(() => {
-          setState({
-            ...state,
-            open: accessDialog_e.none,
-            transitionForm: undefined,
-            fieldContact: undefined,
-            refaceTrans: state.refaceTrans + 1,
+  const handleSubmit = () => {
+    if (form.money !== undefined && form.topic && form.type !== undefined) {
+      const { date, description, money, topic, type, who } = form;
+      const data: TransitionForm_t = {
+        id: state.transitionForm?.id,
+        date: date,
+        money: money,
+        topic: topic,
+        type: type,
+        description: description || "",
+        who: who || ""
+      }
+      console.log(data);
+      if (state.transitionForm) {
+        // Edit
+        accessWithRetry_f
+          .put(authContext, data)
+          .then(() => {
+            setState({
+              ...state,
+              open: accessDialog_e.none,
+              transitionForm: undefined,
+              fieldContact: undefined,
+              refaceTrans: state.refaceTrans + 1,
+            });
+            console.log(state.refaceTrans);
+          })
+          .catch((err) => {
+            alert("ไม่สามารถแก้ไขรายการได้");
+            console.log(err);
           });
-          console.log(state.refaceTrans);
-        })
-        .catch((err) => {
-          alert("ไม่สามารถแก้ไขรายการได้");
-          console.log(err);
-        });
-    } else {
-      // Add
-      accessWithRetry_f
-        .post(authContext, data)
-        .then(() => {
-          setState({
-            ...state,
-            open: accessDialog_e.none,
-            transitionForm: undefined,
-            fieldContact: undefined,
-            refaceTrans: state.refaceTrans + 1,
+      } else {
+        // Add
+        accessWithRetry_f
+          .post(authContext, data)
+          .then(() => {
+            setState({
+              ...state,
+              open: accessDialog_e.none,
+              transitionForm: undefined,
+              fieldContact: undefined,
+              refaceTrans: state.refaceTrans + 1,
+            });
+          })
+          .catch((err) => {
+            alert("ไม่สามารถแก้ไขรายการได้");
+            console.log(err);
           });
-        })
-        .catch((err) => {
-          alert("ไม่สามารถแก้ไขรายการได้");
-          console.log(err);
-        });
+      }
+    }else{
+      alert("ใส่ข้อมูลไม่ครบ")
     }
   };
   const onDel = () => {
@@ -157,6 +144,14 @@ const DialogFormTransaction: React.FC = () => {
       transitionForm: undefined,
     });
   };
+  const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+      setState({ ...state, transitionForm:{...state.transitionForm, [event.target.name]: event.target.value }});
+    };
+  useMemo(()=>{
+    if(state.transitionForm){
+
+    }
+  },[state.transitionForm])
   return (
     <>
       <Dialog
@@ -186,29 +181,28 @@ const DialogFormTransaction: React.FC = () => {
           )}
         </HeaderDialog>
         <Box
-          component="form"
-          onSubmit={handleSubmit}
           sx={{
             display: "flex",
             flexDirection: "column",
             width: "100%",
             alignItems: "center",
-            my: "8px",
+            my: "72px",
             gap: "8px",
           }}
         >
           <FieldText
             icon={<PaidIcon />}
             required
-            defauleValue={state.transitionForm?.money.toString()}
+            value={state.transitionForm?.money?.toString()||""}
             label="Amount"
             name="money"
             type="number"
+            onChange={onChangeHandler}
           />
           <FieldSelector
             icon={<SyncAltIcon />}
             required
-            defauleValue={state.transitionForm?.type.toString()}
+            value={state.transitionForm?.type?.toString()||""}
             name="type"
             label="Transaction"
             list={TypeSelect}
@@ -216,16 +210,18 @@ const DialogFormTransaction: React.FC = () => {
           <FieldText
             icon={<PaidIcon />}
             required
-            defauleValue={state.transitionForm?.topic}
+            value={state.transitionForm?.topic||""}
             name="topic"
             label="Topic"
+            onChange={onChangeHandler}
           />
           <FieldText
             icon={<SubjectIcon />}
-            defauleValue={state.transitionForm?.description}
+            value={state.transitionForm?.description||""}
             name="description"
             label="Description"
             multiline
+            onChange={onChangeHandler}
           />
           <FieldContactAccess
             icon={<AccountBoxIcon />}
@@ -246,8 +242,9 @@ const DialogFormTransaction: React.FC = () => {
           />
           <FieldDate
             icon={<CalendarMonthIcon />}
-            defaultValue={state.transitionForm?.date || new Date()}
+            defaultValue={state.transitionForm?.date||new Date()}
             name="date"
+            onChange={(val)=>val&&setForm({...form, date:val.toDate()})}
           />
           <Box
             sx={{
@@ -258,7 +255,7 @@ const DialogFormTransaction: React.FC = () => {
               my: "32px",
             }}
           >
-            <Button variant="contained" type="submit" sx={{ width: "150px" }}>
+            <Button variant="contained" type="submit" sx={{ width: "150px" }} onClick={handleSubmit}>
               save
             </Button>
             <Button

@@ -1,7 +1,6 @@
 // src/context/AuthContext.tsx
 import { createContext } from "react";
-import { TransitionForm_t } from "../component/DialogFormTransaction";
-import { ContactInfo_t, statement_t } from "../../../API/AccountService/type";
+import { ContactInfo_t, statement_t, TransitionForm_t } from "../../../API/AccountService/type";
 
 export enum accessDialog_e {
   none,

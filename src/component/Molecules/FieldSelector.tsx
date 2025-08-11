@@ -17,6 +17,7 @@ interface myProps {
   label?: string;
   list?: listSelect_t[];
   defauleValue?: string;
+  value?: string;
   required?: boolean;
   onChange?: (value: number | null) => void;
   name?: string;
@@ -49,7 +50,7 @@ const FieldSelector: React.FC<myProps> = (props) => {
           //id="demo-select-small"
           required={props.required}
           name={props.name}
-          value={value}
+          value={props.value||value}
           label={props.label}
           onChange={handleChange}
         >

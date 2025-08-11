@@ -18,10 +18,10 @@ export type statement_t = {
 };
 export type TransitionForm_t = {
   id?: string;
-  date: Date;
-  topic: string;
-  type: transactionType_e;
-  money: number;
+  date?: Date;
+  topic?: string;
+  type?: transactionType_e;
+  money?: number;
   who?: string;
   description?: string;
 };
