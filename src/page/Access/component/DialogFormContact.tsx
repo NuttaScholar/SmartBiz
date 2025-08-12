@@ -57,13 +57,12 @@ const DialogFormContact: React.FC<myProps> = (props) => {
   const { state } = useAccess();
   const authContext = useAuth();
   const [form, setForm] = React.useState<ContactForm_t>(defaultValue);
-  console.log(form);
-  console.log(state.contactInfo);
   // Local Function ***********
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [event.target.name]: event.target.value });
   };
-  const handleSubmit = () => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (state.contactInfo) {
       // Edit
       contactWithRetry_f
@@ -125,6 +124,8 @@ const DialogFormContact: React.FC<myProps> = (props) => {
         onClick={onClose}
       />
       <Box
+        component= "form"
+        onSubmit={handleSubmit}
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -192,9 +193,7 @@ const DialogFormContact: React.FC<myProps> = (props) => {
           <Button
             variant="contained"
             type="submit"
-            form="formAddContact"
-            sx={{ width: "150px" }}
-            onClick={handleSubmit}
+            sx={{ width: "150px" }}            
           >
             save
           </Button>

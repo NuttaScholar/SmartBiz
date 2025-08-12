@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
 import { Box, Button, Dialog, IconButton, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
@@ -24,14 +24,7 @@ import { TransitionForm_t } from "../../../API/AccountService/type";
 //*********************************************
 // Type
 //*********************************************
-type form_t = {
-  date: Date;
-  money?: number;
-  topic?: string;
-  type?: transactionType_e;
-  description?: string;
-  who?: string;
-};
+
 //*********************************************
 // Constante
 //*********************************************
@@ -64,7 +57,8 @@ const DialogFormTransaction: React.FC = () => {
   const { state, setState } = useAccess();
   const authContext = useAuth();
   // Local Function ***********
-  const handleSubmit = () => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     const newData: TransitionForm_t = {
       date: state.transitionForm?.date || new Date(),
       money: state.transitionForm?.money,
