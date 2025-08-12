@@ -24,13 +24,12 @@ import { SearchTransForm_t } from "../component/DialogSearchTransaction";
 import accessWithRetry_f from "../lib/accessWithRetry";
 import { errorCode_e } from "../../../enum";
 import { ErrorString } from "../../../function/Enum";
-import DialogFormTransaction, {
-  TransitionForm_t,
-} from "../component/DialogFormTransaction";
+import DialogFormTransaction from "../component/DialogFormTransaction";
 import DialogContactList from "../component/DialogContactList";
 import FieldContactAccess from "../component/FieldContactAccess";
 import { GoToTop } from "../../../function/Window";
 import { initPage } from "../../../lib/initPage";
+import { TransitionForm_t } from "../../../API/AccountService/type";
 
 const Page_AccessSearch: React.FC = () => {
   // Hook **************

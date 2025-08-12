@@ -19,7 +19,6 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
     try {
       const res = await accessWithRetry_f.get(authContext, condition);
       if (res.result?.length) {
-        console.log(res);
         trans.push(...res.result);
         cnt++;
         if (_month > 1) {
@@ -42,7 +41,6 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
       throw err;
     }
   }
-  console.log("Wallet:");
   try {
     const wallet = await accessWithRetry_f.getWallet(authContext);
     if (wallet.result!== undefined) {      

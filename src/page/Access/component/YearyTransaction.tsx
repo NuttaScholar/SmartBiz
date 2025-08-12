@@ -2,9 +2,8 @@ import YearSelector from "../../../component/Molecules/YearSelector";
 import InfiniteScroll from "react-infinite-scroll-component";
 import MonthlyTotalList from "../../../component/Molecules/MonthlyTotalList";
 import React from "react";
-import { statement_t } from "../../../API/AccountService/type";
+import { statement_t, TransitionForm_t } from "../../../API/AccountService/type";
 import { useAuth } from "../../../hooks/useAuth";
-import { TransitionForm_t } from "./DialogFormTransaction";
 import { useAccess } from "../hooks/useAccess";
 import accessWithRetry_f from "../lib/accessWithRetry";
 import { SearchTransForm_t } from "./DialogSearchTransaction";
@@ -75,8 +74,7 @@ const YearyTransaction: React.FC = () => {
     });
   };  
 
-  React.useEffect(() => {
-    console.log("YearyTransaction useEffect");
+  React.useEffect(() => {    
     initTrans(authContext, { state, setState });
   }, [state.yearSelect, state.refaceTrans]);
   return (

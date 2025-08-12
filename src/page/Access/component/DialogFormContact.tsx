@@ -100,7 +100,6 @@ const DialogFormContact: React.FC<myProps> = (props) => {
     props.onClose();
   };
   useEffect(() => {
-    console.log("update");
     setForm({
       codeName: state.contactInfo?.codeName || "",
       billName: state.contactInfo?.billName || "",
