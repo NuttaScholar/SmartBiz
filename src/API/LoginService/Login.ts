@@ -27,6 +27,7 @@ export async function getToken(
 }
 export async function postLogout(
 ): Promise<responstLogin_t<"none">> {
+    console.log("logout");
     try {
         const res = await axios_login.post(
             "/logout", null

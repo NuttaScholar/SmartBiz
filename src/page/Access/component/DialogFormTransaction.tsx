@@ -62,26 +62,41 @@ const Transition = React.forwardRef(function Transition(
 const DialogFormTransaction: React.FC = () => {
   // Hook *********************
   const { state, setState } = useAccess();
-  const [form, setForm] = useState<form_t>({date:new Date()})
   const authContext = useAuth();
   // Local Function ***********
   const handleSubmit = () => {
-    if (form.money !== undefined && form.topic && form.type !== undefined) {
-      const { date, description, money, topic, type, who } = form;
-      const data: TransitionForm_t = {
-        id: state.transitionForm?.id,
-        date: date,
-        money: money,
-        topic: topic,
-        type: type,
-        description: description || "",
-        who: who || ""
-      }
-      console.log(data);
-      if (state.transitionForm) {
-        // Edit
+    const newData: TransitionForm_t = {
+      date: state.transitionForm?.date || new Date(),
+      money: state.transitionForm?.money,
+      topic: state.transitionForm?.topic,
+      type: state.transitionForm?.type,
+      description: state.transitionForm?.description||"",
+      who: state.fieldContact,
+      id: state.transitionForm?.id,
+    }
+    console.log(newData);
+    if (state.transitionForm?.id !== undefined) {
+      // Edit
+      accessWithRetry_f
+        .put(authContext, newData)
+        .then(() => {
+          setState({
+            ...state,
+            open: accessDialog_e.none,
+            transitionForm: undefined,
+            fieldContact: undefined,
+            refaceTrans: state.refaceTrans + 1,
+          });
+          console.log(state.refaceTrans);
+        })
+        .catch((err) => {
+          alert("ไม่สามารถแก้ไขรายการได้");
+          console.log(err);
+        });
+    } else {
+      // Add
         accessWithRetry_f
-          .put(authContext, data)
+          .post(authContext, newData)
           .then(() => {
             setState({
               ...state,
@@ -90,32 +105,11 @@ const DialogFormTransaction: React.FC = () => {
               fieldContact: undefined,
               refaceTrans: state.refaceTrans + 1,
             });
-            console.log(state.refaceTrans);
           })
           .catch((err) => {
-            alert("ไม่สามารถแก้ไขรายการได้");
+            alert("ไม่สามารถเพิ่มรายการได้");
             console.log(err);
           });
-      } else {
-        // Add
-        accessWithRetry_f
-          .post(authContext, data)
-          .then(() => {
-            setState({
-              ...state,
-              open: accessDialog_e.none,
-              transitionForm: undefined,
-              fieldContact: undefined,
-              refaceTrans: state.refaceTrans + 1,
-            });
-          })
-          .catch((err) => {
-            alert("ไม่สามารถแก้ไขรายการได้");
-            console.log(err);
-          });
-      }
-    }else{
-      alert("ใส่ข้อมูลไม่ครบ")
     }
   };
   const onDel = () => {
@@ -145,13 +139,15 @@ const DialogFormTransaction: React.FC = () => {
     });
   };
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setState({ ...state, transitionForm:{...state.transitionForm, [event.target.name]: event.target.value }});
-    };
-  useMemo(()=>{
-    if(state.transitionForm){
-
-    }
-  },[state.transitionForm])
+    setState({
+      ...state,
+      transitionForm: {
+        ...state.transitionForm,
+        [event.target.name]: event.target.value,
+      },
+    });
+  };
+  // Use Effect **************
   return (
     <>
       <Dialog
@@ -181,19 +177,21 @@ const DialogFormTransaction: React.FC = () => {
           )}
         </HeaderDialog>
         <Box
+          component="form"
+          onSubmit={handleSubmit}
           sx={{
             display: "flex",
             flexDirection: "column",
             width: "100%",
             alignItems: "center",
-            my: "72px",
+            my: "8px",
             gap: "8px",
           }}
         >
           <FieldText
             icon={<PaidIcon />}
             required
-            value={state.transitionForm?.money?.toString()||""}
+            value={state.transitionForm?.money?.toString() || ""}
             label="Amount"
             name="money"
             type="number"
@@ -202,22 +200,31 @@ const DialogFormTransaction: React.FC = () => {
           <FieldSelector
             icon={<SyncAltIcon />}
             required
-            value={state.transitionForm?.type?.toString()||""}
+            value={state.transitionForm?.type?.toString() || ""}
             name="type"
             label="Transaction"
             list={TypeSelect}
+            onChange={(val) => {
+              setState({
+                ...state,
+                transitionForm: {
+                  ...state.transitionForm,
+                  type: val as transactionType_e,
+                },
+              });
+            }}
           />
           <FieldText
             icon={<PaidIcon />}
             required
-            value={state.transitionForm?.topic||""}
+            value={state.transitionForm?.topic || ""}
             name="topic"
             label="Topic"
             onChange={onChangeHandler}
           />
           <FieldText
             icon={<SubjectIcon />}
-            value={state.transitionForm?.description||""}
+            value={state.transitionForm?.description || ""}
             name="description"
             label="Description"
             multiline
@@ -242,9 +249,15 @@ const DialogFormTransaction: React.FC = () => {
           />
           <FieldDate
             icon={<CalendarMonthIcon />}
-            defaultValue={state.transitionForm?.date||new Date()}
+            defaultValue={state.transitionForm?.date || new Date()}
             name="date"
-            onChange={(val)=>val&&setForm({...form, date:val.toDate()})}
+            onChange={(val) =>
+              val &&
+              setState({
+                ...state,
+                transitionForm: { ...state.transitionForm, date: val.toDate() },
+              })
+            }
           />
           <Box
             sx={{
@@ -255,7 +268,7 @@ const DialogFormTransaction: React.FC = () => {
               my: "32px",
             }}
           >
-            <Button variant="contained" type="submit" sx={{ width: "150px" }} onClick={handleSubmit}>
+            <Button variant="contained" type="submit" sx={{ width: "150px" }}>
               save
             </Button>
             <Button
