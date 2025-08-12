@@ -13,7 +13,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import FieldDuration from "../../../component/Molecules/FieldDuration";
 import FieldContact from "../../../component/Molecules/FieldContact";
-import MonthlyTotalList from "../../../component/Molecules/MonthlyTotalList";
+import MonthlyTotalList from "../../../component/Organisms/MonthlyTotalList";
 import { contactInfo_t } from "../../../component/Molecules/ContactInfo";
 import { statement_t, TransitionForm_t } from "../../../API/AccountService/type";
 import { TypeSelect } from "../constants/typeSelect";

@@ -1,6 +1,6 @@
 import YearSelector from "../../../component/Molecules/YearSelector";
 import InfiniteScroll from "react-infinite-scroll-component";
-import MonthlyTotalList from "../../../component/Molecules/MonthlyTotalList";
+import MonthlyTotalList from "../../../component/Organisms/MonthlyTotalList";
 import React from "react";
 import { statement_t, TransitionForm_t } from "../../../API/AccountService/type";
 import { useAuth } from "../../../hooks/useAuth";

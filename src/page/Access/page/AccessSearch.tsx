@@ -6,7 +6,7 @@ import SyncAltIcon from "@mui/icons-material/SyncAlt";
 import PaidIcon from "@mui/icons-material/Paid";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import MonthlyTotalList from "../../../component/Molecules/MonthlyTotalList";
+import MonthlyTotalList from "../../../component/Organisms/MonthlyTotalList";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import {

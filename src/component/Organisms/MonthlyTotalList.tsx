@@ -5,9 +5,9 @@ import Text_Money from "../Atoms/Text_Money";
 import DailyTotalList, {
   DailyTotal_t,
   sumDailyTotal,
-} from "./DailyTotalList";
+} from "../Molecules/DailyTotalList";
 import Label_parameter from "../Atoms/Label_parameter";
-import { TransitionForm_t } from "../../page/Access/component/DialogFormTransaction";
+import { TransitionForm_t } from "../../API/AccountService/type";
 
 /**************************************************** */
 //  Style
