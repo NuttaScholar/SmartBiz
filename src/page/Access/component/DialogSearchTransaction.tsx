@@ -114,7 +114,7 @@ const DialogSearchTransaction: React.FC<myProps> = (props) => {
             width: "100%",
             maxWidth: "1000px",
             justifyContent: "center",
-            my: "8px",
+            my: "72px",
             gap: "8px",
           }}
         >

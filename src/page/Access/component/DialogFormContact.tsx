@@ -130,7 +130,7 @@ const DialogFormContact: React.FC<myProps> = (props) => {
           flexDirection: "column",
           width: "100%",
           alignItems: "center",
-          my: "8px",
+          my: "72px",
           gap: "8px",
         }}
       >

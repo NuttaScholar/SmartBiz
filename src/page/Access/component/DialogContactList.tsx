@@ -37,7 +37,7 @@ interface myProps {
   open: boolean;
   onSelect?: (codeName: string) => void;
   onClose?: () => void;
-  onCloseForm: (val?:ContactInfo_t[]) =>void;
+  onCloseForm: (val?: ContactInfo_t[]) => void;
 }
 //*********************************************
 // Component
@@ -99,7 +99,7 @@ const DialogContactList: React.FC<myProps> = (props) => {
         <HeaderDialog_Search
           label="รายชื่อผู้ติดต่อ"
           onBack={props.onClose}
-          onChange={onChangeHandler}
+          onChange={onChangeHandler}          
           onAdd={() =>
             setState({
               ...state,
@@ -110,32 +110,32 @@ const DialogContactList: React.FC<myProps> = (props) => {
           value={state.contactKey}
           onSearch={onSearch}
         />
-        <Box sx={{ display: "flex", justifyContent: "center" }}>
-          <FieldSearch
-            label="Search"
-            display={{ xs: "flex", sm: "none" }}
-            value={state.contactKey}
-            onChange={onChangeHandler}
-            onSubmit={onSearch}
+        <Box sx={{ my: "64px" }}>
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <FieldSearch
+              label="Search"
+              display={{ xs: "flex", sm: "none" }}
+              value={state.contactKey}
+              onChange={onChangeHandler}
+              onSubmit={onSearch}
+            />
+          </Box>
+          <ListContact
+            list={state.contactList}
+            onClick={props.onSelect}
+            onDel={onDelContacat}
+            onEdit={(val) => {
+              setState({
+                ...state,
+                open: accessDialog_e.contactFrom,
+                contactInfo: val,
+              });
+            }}
           />
         </Box>
-        <ListContact
-          list={state.contactList}
-          onClick={props.onSelect}
-          onDel={onDelContacat}
-          onEdit={(val) => {
-            setState({
-              ...state,
-              open: accessDialog_e.contactFrom,
-              contactInfo: val,
-            });
-          }}
-        />
       </Dialog>
 
-      <DialogFormContact 
-        onClose={props.onCloseForm}
-      />
+      <DialogFormContact onClose={props.onCloseForm} />
     </>
   );
 };

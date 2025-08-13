@@ -23,7 +23,7 @@ const title: React.CSSProperties = {
 };
 
 const titlep: React.CSSProperties = {
-  fontSize: "24px",
+  fontSize: "20px",
   fontWeight: 400,
   margin: 0,
 }
@@ -35,6 +35,7 @@ const detail: React.CSSProperties = {
 
 const detailp: React.CSSProperties = {
   margin: 0,
+  fontSize: "14px",
 }
 
 /**************************************************** */

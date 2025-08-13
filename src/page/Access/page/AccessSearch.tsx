@@ -45,6 +45,7 @@ const Page_AccessSearch: React.FC = () => {
         .get(authContext, form)
         .then((res) => {
           if (res.result) {
+            console.log("Search Result:", res.result);
             setState({ ...state, transaction: res.result });
           } else if (res.errCode) {
             alert(ErrorString(res.errCode));
@@ -73,6 +74,7 @@ const Page_AccessSearch: React.FC = () => {
       to: new Date(tyear, tmonth - 1, tday),
       ...rest,
     };
+    console.log("Search Data:", data);
     setForm(data);
     searchHandler(data);
   };
@@ -98,7 +100,7 @@ const Page_AccessSearch: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          my: "8px",
+          my: "64px",
           gap: "8px",
         }}
       >
@@ -112,7 +114,6 @@ const Page_AccessSearch: React.FC = () => {
             width: "100%",
             maxWidth: "1000px",
             justifyContent: "center",
-            my: "8px",
             gap: "8px",
           }}
         >

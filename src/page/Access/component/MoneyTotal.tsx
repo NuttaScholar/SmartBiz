@@ -6,7 +6,9 @@ import { useAccess } from "../hooks/useAccess";
 //*********************************************
 // Style
 //*********************************************
-
+const titlep: React.CSSProperties = {
+    fontSize: "36px"
+}
 
 
 //*********************************************
@@ -24,12 +26,16 @@ interface myProps{
 //*********************************************
 const MoneyTotal: React.FC<myProps> = (props) => {
     const { state } = useAccess();
+    const titleStyle: React.CSSProperties = {
+        ...titlep,
+        color: state.totalMoney>0 ? "#4caf50" : state.totalMoney<0?"red": "black",
+      };
     return (
         <Box sx={props.sx}>
             <Typography variant="h5">
                 ยอดเงินคงเหลือ
             </Typography>
-            <Text_Money sx={{fontSize: "36px"}} value={state.totalMoney}/>
+            <Text_Money sx={titleStyle} value={state.totalMoney}/>
         </Box>
     )
 }

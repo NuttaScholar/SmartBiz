@@ -169,29 +169,31 @@ const Page_SetUser: React.FC = () => {
         onAdd={() => setOpenAdd(true)}
         value={key}
       />
-      <Box sx={{ display: "flex", justifyContent: "center" }}>
-        <FieldSearch
-          label="Search"
-          display={{ xs: "flex", sm: "none" }}
-          value={key}
-          onChange={onChangeHandler}
-          onSubmit={onSearch}
+      <Box sx={{ my: "72px" }}>
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <FieldSearch
+            label="Search"
+            display={{ xs: "flex", sm: "none" }}
+            value={key}
+            onChange={onChangeHandler}
+            onSubmit={onSearch}
+          />
+        </Box>
+        <ListUser
+          list={list}
+          onDel={(val) => {
+            setTimeout(() => {
+              setOpenDel(true);
+            }, 500);
+
+            setTargetID(val._id || "");
+          }}
+          onEdit={(val) => {
+            setEditValue(val);
+            setOpenEdit(true);
+          }}
         />
       </Box>
-      <ListUser
-        list={list}
-        onDel={(val) => {
-          setTimeout(() => {
-            setOpenDel(true);
-          }, 500);
-
-          setTargetID(val._id || "");
-        }}
-        onEdit={(val) => {
-          setEditValue(val);
-          setOpenEdit(true);
-        }}
-      />
 
       <DialogFormUser
         open={openAdd}

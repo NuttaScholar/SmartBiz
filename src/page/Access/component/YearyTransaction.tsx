@@ -9,6 +9,7 @@ import accessWithRetry_f from "../lib/accessWithRetry";
 import { SearchTransForm_t } from "./DialogSearchTransaction";
 import { accessDialog_e } from "../context/AccessContext";
 import { initTrans } from "../lib/initTrans";
+import { Box } from "@mui/material";
 
 /**************************************************** */
 //  Interface
@@ -105,6 +106,11 @@ const YearyTransaction: React.FC = () => {
           />
         ))}
       </InfiniteScroll>
+      {state.transaction?.length === 0 && (
+        <Box style={{ margin: "16px 0", textAlign: 'center' }}>
+          <h4>ไม่มีข้อมูลการทำรายการ</h4>
+        </Box>
+      )}
     </>
   );
 };

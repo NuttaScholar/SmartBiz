@@ -55,7 +55,7 @@ const Page_SetPass: React.FC = () => {
           flexDirection: "column",
           width: "100%",
           alignItems: "center",
-          my: "32px",
+          my: "128px",
           gap: "16px",
         }}
       >

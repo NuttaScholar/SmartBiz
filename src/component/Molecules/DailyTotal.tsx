@@ -18,7 +18,7 @@ const AccordionSummaryBox: SxProps<Theme> = {
   display: "flex",
 };
 const textp: React.CSSProperties = {
-  fontSize: "24px",
+  fontSize: "20px",
   fontWeight: 500,
   margin: 0,
   padding: 0,

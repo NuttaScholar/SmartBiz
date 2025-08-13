@@ -1,4 +1,4 @@
-import { AppBar, Box, IconButton, Toolbar, Typography } from "@mui/material";
+import { AppBar, IconButton, Toolbar, Typography } from "@mui/material";
 import React from "react";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 
@@ -17,6 +17,7 @@ interface myProps {
   label: string;
   children?: React.ReactNode;
   onClick?: () => void;
+  position?: "fixed" | "absolute" | "sticky" | "static" | "relative";
 }
 //*********************************************
 // Component
@@ -24,7 +25,7 @@ interface myProps {
 const HeaderDialog: React.FC<myProps> = (props) => {
   return (
     <>
-      <AppBar sx={{ position: "fixed" }}>
+      <AppBar sx={{ position: props.position || "fixed" }}>
         <Toolbar>
           <IconButton
             edge="start"
@@ -40,7 +41,6 @@ const HeaderDialog: React.FC<myProps> = (props) => {
           {props.children}
         </Toolbar>
       </AppBar>
-      <Box sx={{height: "64px"}}/>
     </>
   );
 };
