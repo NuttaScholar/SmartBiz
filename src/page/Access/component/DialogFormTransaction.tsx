@@ -59,15 +59,16 @@ const DialogFormTransaction: React.FC = () => {
   // Local Function ***********
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const date = state.transitionForm?.date || new Date();
     const newData: TransitionForm_t = {
-      date: state.transitionForm?.date || new Date(),
+      date: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
       money: state.transitionForm?.money,
       topic: state.transitionForm?.topic,
       type: state.transitionForm?.type,
-      description: state.transitionForm?.description||"",
+      description: state.transitionForm?.description || "",
       who: state.fieldContact,
       id: state.transitionForm?.id,
-    }
+    };
     console.log(newData);
     if (state.transitionForm?.id !== undefined) {
       // Edit
@@ -89,21 +90,21 @@ const DialogFormTransaction: React.FC = () => {
         });
     } else {
       // Add
-        accessWithRetry_f
-          .post(authContext, newData)
-          .then(() => {
-            setState({
-              ...state,
-              open: accessDialog_e.none,
-              transitionForm: undefined,
-              fieldContact: undefined,
-              refaceTrans: state.refaceTrans + 1,
-            });
-          })
-          .catch((err) => {
-            alert("ไม่สามารถเพิ่มรายการได้");
-            console.log(err);
+      accessWithRetry_f
+        .post(authContext, newData)
+        .then(() => {
+          setState({
+            ...state,
+            open: accessDialog_e.none,
+            transitionForm: undefined,
+            fieldContact: undefined,
+            refaceTrans: state.refaceTrans + 1,
           });
+        })
+        .catch((err) => {
+          alert("ไม่สามารถเพิ่มรายการได้");
+          console.log(err);
+        });
     }
   };
   const onDel = () => {
@@ -155,6 +156,7 @@ const DialogFormTransaction: React.FC = () => {
         <HeaderDialog
           label={state.transitionForm ? "แก้ไขรายการ" : "เพิ่มรายการ"}
           onClick={onClose}
+          position="fixed"
         >
           {state.transitionForm && (
             <Box
@@ -178,7 +180,7 @@ const DialogFormTransaction: React.FC = () => {
             flexDirection: "column",
             width: "100%",
             alignItems: "center",
-            my: "8px",
+            my: "72px",
             gap: "8px",
           }}
         >
@@ -189,7 +191,15 @@ const DialogFormTransaction: React.FC = () => {
             label="Amount"
             name="money"
             type="number"
-            onChange={onChangeHandler}
+            onChange={(event) =>
+              setState({
+                ...state,
+                transitionForm: {
+                  ...state.transitionForm,
+                  money: Number(event.target.value),
+                },
+              })
+            }
           />
           <FieldSelector
             icon={<SyncAltIcon />}
