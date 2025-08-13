@@ -302,7 +302,7 @@ app.get('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) 
                 {
                     $addFields: {
                         newDate: {
-                            $add: [ "$startAt", { $multiply: [7, 60, 60, 1000] } ]  // +7Hr 
+                            $add: [ "$date", { $multiply: [7, 60, 60, 1000] } ]  // +7Hr 
                         }
                     }
                 },
