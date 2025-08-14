@@ -1,4 +1,4 @@
-import { Box, Button, DialogContent, Fab } from "@mui/material";
+import { Box, Button, Fab } from "@mui/material";
 import * as React from "react";
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import SearchIcon from "@mui/icons-material/Search";
@@ -95,7 +95,7 @@ const Page_AccessSearch: React.FC = () => {
   return (
     <AccessContext.Provider value={{ state, setState }}>
       <HeaderDialog label="ค้นหา" onClick={() => navigate("/access")} />
-      <DialogContent
+      <Box
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -164,7 +164,7 @@ const Page_AccessSearch: React.FC = () => {
             onClick={onClickTransHandler}
           />
         ))}
-      </DialogContent>
+      </Box>
       <Fab
         size="medium"
         color="primary"

@@ -79,7 +79,7 @@ const YearyTransaction: React.FC = () => {
     initTrans(authContext, { state, setState });
   }, [state.yearSelect, state.refaceTrans]);
   return (
-    <>
+    <Box sx={{ width: "100%", marginBottom: "64px" }}>
       <YearSelector
         year={state.yearSelect}
         onChange={(year) => setState({ ...state, yearSelect: year })}
@@ -111,7 +111,7 @@ const YearyTransaction: React.FC = () => {
           <h4>ไม่มีข้อมูลการทำรายการ</h4>
         </Box>
       )}
-    </>
+    </Box>
   );
 };
 export default YearyTransaction;
