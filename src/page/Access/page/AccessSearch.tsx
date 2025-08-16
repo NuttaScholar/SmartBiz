@@ -99,7 +99,7 @@ const Page_AccessSearch: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          my: "64px",
+          my: {xs:"64px", md: "72px"},
           gap: "8px",
         }}
       >
