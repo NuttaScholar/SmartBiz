@@ -1,7 +1,6 @@
 import Access_f from "../../../API/AccountService/Account";
-import { statement_t, TransitionForm_t } from "../../../API/AccountService/type";
+import { SearchTransForm_t, statement_t, TransitionForm_t } from "../../../API/AccountService/type";
 import Login_f from "../../../API/LoginService/Login";
-import { SearchTransForm_t } from "../component/DialogSearchTransaction";
 import { AuthContext_t } from "../../../context/AuthContext";
 import { errorCode_e } from "../../../enum";
 import { initPage } from "../../../lib/initPage";

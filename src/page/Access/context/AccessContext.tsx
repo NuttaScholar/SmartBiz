@@ -23,6 +23,7 @@ export type access_t = {
   fieldContact?: string;
   totalMoney: number;
   refaceTrans: number;
+  expanded: boolean;
 };
 export type AccessContext_t = {
   state: access_t;
@@ -37,6 +38,7 @@ export const AccessDefaultState: access_t = {
   transaction: [],
   yearSelect: new Date().getFullYear(),
   refaceTrans: 0,
+  expanded: true
 };
 export const AccessContext = createContext<AccessContext_t | undefined>(
   undefined
