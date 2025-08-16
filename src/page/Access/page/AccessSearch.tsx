@@ -20,7 +20,6 @@ import { TypeSelect } from "../constants/typeSelect";
 import FieldSelector from "../../../component/Molecules/FieldSelector";
 import FieldText from "../../../component/Molecules/FieldText";
 import FieldDuration from "../../../component/Molecules/FieldDuration";
-import { SearchTransForm_t } from "../component/DialogSearchTransaction";
 import accessWithRetry_f from "../lib/accessWithRetry";
 import { errorCode_e } from "../../../enum";
 import { ErrorString } from "../../../function/Enum";
@@ -29,7 +28,7 @@ import DialogContactList from "../component/DialogContactList";
 import FieldContactAccess from "../component/FieldContactAccess";
 import { GoToTop } from "../../../function/Window";
 import { initPage } from "../../../lib/initPage";
-import { TransitionForm_t } from "../../../API/AccountService/type";
+import { SearchTransForm_t, TransitionForm_t } from "../../../API/AccountService/type";
 
 const Page_AccessSearch: React.FC = () => {
   // Hook **************
@@ -100,7 +99,7 @@ const Page_AccessSearch: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          my: "64px",
+          my: {xs:"64px", md: "72px"},
           gap: "8px",
         }}
       >

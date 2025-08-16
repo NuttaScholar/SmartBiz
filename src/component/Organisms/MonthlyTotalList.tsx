@@ -43,6 +43,7 @@ export type monthlyTotal_t = {
 interface myProps {
   value: DailyTotal_t[];
   onClick?: (value: TransitionForm_t) => void;
+  expanded?: boolean;
 }
 /**************************************************** */
 //  Component
@@ -95,7 +96,7 @@ const MonthlyTotalList: React.FC<myProps> = (props) => {
           />
         </Box>
         {props.value.map((val, index) => (
-        <DailyTotalList value={val} key={index} onClick={(date,value)=>props.onClick?.({...value, date})} />
+        <DailyTotalList expanded={props.expanded} value={val} key={index} onClick={(date,value)=>props.onClick?.({...value, date})} />
         ))}
       </Box>
   );

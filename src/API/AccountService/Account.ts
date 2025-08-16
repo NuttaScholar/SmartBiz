@@ -1,8 +1,8 @@
 import {
   responst_t,
+  SearchTransForm_t,
   TransitionForm_t,
 } from "./type";
-import { SearchTransForm_t } from "../../page/Access/component/DialogSearchTransaction";
 import { axios_account } from "../../lib/axios";
 
 export async function getDetail(

@@ -6,8 +6,11 @@ import MySpeedDial from "../../../component/Molecules/MySpeedDial";
 import { useAccess } from "../hooks/useAccess";
 import { menuList_t } from "../../../component/Molecules/ButtonOption";
 import { GoToTop } from "../../../function/Window";
-import React from "react";
+import React, { useMemo } from "react";
 import { accessDialog_e } from "../context/AccessContext";
+import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
+
 //*********************************************
 // Style
 //*********************************************
@@ -34,6 +37,9 @@ const SpeedDial_Access: React.FC = () => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
+        setState({ ...state, expanded: !state.expanded });
+        break;
+      case 1:
         setState({
           ...state,
           open: accessDialog_e.transactionForm,
@@ -41,18 +47,27 @@ const SpeedDial_Access: React.FC = () => {
           fieldContact: undefined,
         });
         break;
-      case 1:
+      case 2:
         setState({ ...state,open: accessDialog_e.searchTransaction });
         break;
-      case 2:
+      case 3:
         GoToTop();
+        break;      
     }
   };
+
+  const list:menuList_t[]  = useMemo(() => {
+    if(state.expanded) {
+      return [{ text: "Unfold Less", icon: <UnfoldLessIcon /> }, ...MenuList];
+    }else{
+      return [{ text: "Unfold More", icon: <UnfoldMoreIcon /> }, ...MenuList];
+    }
+  },[state.expanded]);
   return (
     <>
       {state.open===accessDialog_e.none && (
         <MySpeedDial          
-          menuList={MenuList}
+          menuList={list}
           icon={<MoreVertIcon />}
           onClick={speedDialHandler}
         />

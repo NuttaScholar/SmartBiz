@@ -38,6 +38,7 @@ export function sumDailyTotal(val: DailyTotal_t): number {
 interface DailyTotalListProps {
   value: DailyTotal_t;
   onClick?: (date: Date,value: transactionDetail_t) => void;
+  expanded?: boolean;
 }
 
 /**************************************************** */
@@ -60,6 +61,7 @@ const DailyTotalList: React.FC<DailyTotalListProps> = (Props) => {
     <Accordion
       sx={AccordionBox}
       defaultExpanded
+      expanded={Props.expanded}
     >
       <DailyTotal day={dateNumber} money = {totalMoney || 0}  />
 

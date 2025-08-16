@@ -2,11 +2,10 @@ import YearSelector from "../../../component/Molecules/YearSelector";
 import InfiniteScroll from "react-infinite-scroll-component";
 import MonthlyTotalList from "../../../component/Organisms/MonthlyTotalList";
 import React from "react";
-import { statement_t, TransitionForm_t } from "../../../API/AccountService/type";
+import { SearchTransForm_t, statement_t, TransitionForm_t } from "../../../API/AccountService/type";
 import { useAuth } from "../../../hooks/useAuth";
 import { useAccess } from "../hooks/useAccess";
 import accessWithRetry_f from "../lib/accessWithRetry";
-import { SearchTransForm_t } from "./DialogSearchTransaction";
 import { accessDialog_e } from "../context/AccessContext";
 import { initTrans } from "../lib/initTrans";
 import { Box } from "@mui/material";
@@ -100,6 +99,7 @@ const YearyTransaction: React.FC = () => {
       >
         {state.transaction?.map((val, index) => (
           <MonthlyTotalList
+            expanded={state.expanded}
             key={index}
             value={val.detail}
             onClick={onClickTransHandler}

@@ -25,6 +25,13 @@ export type TransitionForm_t = {
   who?: string;
   description?: string;
 };
+export type SearchTransForm_t = {
+  to: Date;
+  from: Date;
+  topic?: string;
+  type?: transactionType_e;
+  who?: string;
+};
 export type ContactForm_t = {
   codeName: string;
   billName: string;
