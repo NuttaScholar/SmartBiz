@@ -64,11 +64,13 @@ const option_staff: menuList_t[] = [
 //*********************************************
 // Interface
 //*********************************************
-
+interface myProps {
+  children?: React.ReactNode;
+}
 //************************************************
 // Component
 //************************************************
-const AppBar_c: React.FC = () => {
+const AppBar_c: React.FC<myProps> = (props) => {
   // Hook ********************
   const location = useLocation();
   const { auth } = useAuth();
@@ -115,7 +117,7 @@ const AppBar_c: React.FC = () => {
           </Box>
         </Toolbar>
       </AppBar>
-      <Box sx={{height: "50px"}}/>
+      <Box sx={{ display: "flex", my: "50px", flexDirection: "column", alignItems: "center" }}>{props.children}</Box>
     </>
   );
 };
