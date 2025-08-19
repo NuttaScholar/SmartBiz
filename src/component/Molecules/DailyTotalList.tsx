@@ -39,6 +39,7 @@ interface DailyTotalListProps {
   value: DailyTotal_t;
   onClick?: (date: Date,value: transactionDetail_t) => void;
   expanded?: boolean;
+  onExpanded?: (event: React.SyntheticEvent<Element, Event>, expanded: boolean) => void;
 }
 
 /**************************************************** */
@@ -62,6 +63,7 @@ const DailyTotalList: React.FC<DailyTotalListProps> = (Props) => {
       sx={AccordionBox}
       defaultExpanded
       expanded={Props.expanded}
+      onChange={Props.onExpanded}
     >
       <DailyTotal day={dateNumber} money = {totalMoney || 0}  />
 
