@@ -5,7 +5,6 @@ import Page_Login from "./page/Login";
 import Page_Bill from "./page/Bill";
 import Page_Cadit from "./page/Cadit";
 import Page_CheckIn from "./page/CheckIn";
-import Page_Stock from "./page/Stork";
 import Page_NotFound from "./page/NotFound";
 import Page_SetUser from "./page/SetUser";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -18,6 +17,7 @@ import "@fontsource/kanit/700.css";
 import { AuthProvider } from "./context/AuthContext";
 import Page_SetPass from "./page/SetPass";
 import Page_AccessSearch from "./page/Access/page/AccessSearch";
+import Page_Stock from "./page/Stork/Stork";
 //*********************************************
 // Set Theme
 //*********************************************

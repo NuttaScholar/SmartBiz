@@ -8,7 +8,7 @@ services:
         private:
           ipv4_address: 192.168.110.80
     volumes:
-      - /mongo-data:/data/db
+      - mongo-data:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
@@ -30,7 +30,7 @@ services:
 
   service_account:
     container_name: service_account
-    image: smartbiz/account_service:1.0
+    image: nuttascholar/smartbiz_account:1.1
     environment:
       SECRET: NuttaScholar
       WEB_HOST: http://192.168.1.47:3030
@@ -46,7 +46,7 @@ services:
 
   service_login:
     container_name: service_login
-    image: smartbiz/login_service:1.0
+    image: nuttascholar/smartbiz_login:1.0
     environment:
       SECRET: NuttaScholar
       WEB_HOST: http://192.168.1.47:3030
@@ -79,3 +79,6 @@ networks:
         driver: default
         config:
         - subnet: 192.168.110.0/24
+
+volumes:
+  mongo-data: {}

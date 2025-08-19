@@ -1,4 +1,4 @@
-import AppBar_c from "../component/Organisms/AppBar_c";
+import AppBar_c from "../../component/Organisms/AppBar_c";
 
 const Page_Stock: React.FC = () => {
   return (
