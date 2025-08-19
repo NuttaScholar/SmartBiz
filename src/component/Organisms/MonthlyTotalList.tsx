@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Box, Divider, SxProps, Theme } from "@mui/material";
 import Text_ThaiMonth from "../Atoms/Text_ThaiMonth";
 import Text_Money from "../Atoms/Text_Money";
@@ -49,6 +49,9 @@ interface myProps {
 //  Component
 /**************************************************** */
 const MonthlyTotalList: React.FC<myProps> = (props) => {
+  const [expanded, setExpanded] = React.useState<boolean[]>(
+    props.value.map(() => true)
+  );
   const buff = props.value.reduce(
     (sum, item) => {
       const val = sumDailyTotal(item);
@@ -62,43 +65,56 @@ const MonthlyTotalList: React.FC<myProps> = (props) => {
     { income: 0, expenses: 0 }
   );
   const total = buff.expenses + buff.income;
+  useEffect(() => {
+    setExpanded(props.value.map(() => props.expanded===undefined?true: props.expanded));
+  }, [props.expanded]);
   return (
-      <Box sx={field}>
-        <Box sx={{ px: "8px" }}>
-          <Box sx={{ display: "flex" }}>
-            <Text_ThaiMonth
-              sx={{ flexGrow: 1, ...date_st }}
-              value={props.value[0].date}
-              showYear
-            />
-            <Text_Money
-              sx={{
-                ...date_st,
-                color: total < 0 ? "error.light" : "success.light",
-              }}
-              value={total}
-            />
-          </Box>
-          <Divider color="black" />
-          <Label_parameter
-            size="18px"
-            label="รายรับ"
-            value={`+${buff.income}`}
-            color_Value="success.main"
-            unit="฿"
+    <Box sx={field}>
+      <Box sx={{ px: "8px" }}>
+        <Box sx={{ display: "flex" }}>
+          <Text_ThaiMonth
+            sx={{ flexGrow: 1, ...date_st }}
+            value={props.value[0].date}
+            showYear
           />
-          <Label_parameter
-            size="18px"
-            label="รายจ่าย"
-            value={buff.expenses}
-            color_Value="error.main"
-            unit="฿"
+          <Text_Money
+            sx={{
+              ...date_st,
+              color: total < 0 ? "error.light" : "success.light",
+            }}
+            value={total}
           />
         </Box>
-        {props.value.map((val, index) => (
-        <DailyTotalList expanded={props.expanded} value={val} key={index} onClick={(date,value)=>props.onClick?.({...value, date})} />
-        ))}
+        <Divider color="black" />
+        <Label_parameter
+          size="18px"
+          label="รายรับ"
+          value={`+${buff.income}`}
+          color_Value="success.main"
+          unit="฿"
+        />
+        <Label_parameter
+          size="18px"
+          label="รายจ่าย"
+          value={buff.expenses}
+          color_Value="error.main"
+          unit="฿"
+        />
       </Box>
+      {props.value.map((val, index) => (
+        <DailyTotalList
+          expanded={expanded[index]}
+          value={val}
+          key={index}
+          onClick={(date, value) => props.onClick?.({ ...value, date })}
+          onExpanded={(_, isExpanded) => {
+            const newExpanded = [...expanded];
+            newExpanded[index] = isExpanded;
+            setExpanded(newExpanded);
+          }}
+        />
+      ))}
+    </Box>
   );
 };
 
