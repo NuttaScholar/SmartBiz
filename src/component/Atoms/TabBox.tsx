@@ -13,7 +13,8 @@ interface myProps {
   value: number;
   height?: string;
   overflow?: css_overflow;
-  alignItems?: css_alignItem_t
+  alignItems?: css_alignItem_t;
+  maxWidth?: string;
 }
 //*************************************************
 // Function
@@ -27,7 +28,7 @@ const TabBox: React.FC<myProps> = (props) => {
       sx={{
         display: "flex",
         flexDirection: "column",
-        maxWidth: "790px",
+        maxWidth: props.maxWidth,
         width: "100%", 
         overflow: props.overflow || "hidden",
       }}
