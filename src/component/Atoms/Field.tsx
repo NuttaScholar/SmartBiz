@@ -1,6 +1,7 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import { SxProps, Theme } from "@mui/material";
+import { css_alignItem_t, css_display_t } from "../../type";
 //*********************************************
 // Style
 //*********************************************
@@ -18,10 +19,10 @@ const field: SxProps<Theme> = {
 //*************************************************
 interface myProps {
   children?: React.ReactNode;
-  alignItem?: "center" | "flex-start" | "flex-end" | "stretch" | "baseline";
+  alignItem?: css_alignItem_t;
   color?: string;
   hide?: boolean;
-  display?: any;
+  display?: css_display_t;
 }
 //*************************************************
 // Function

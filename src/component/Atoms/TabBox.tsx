@@ -1,6 +1,7 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import { Tab, Tabs } from "@mui/material";
+import { css_alignItem_t, css_overflow } from "../../type";
 
 //*************************************************
 // Interface
@@ -11,6 +12,8 @@ interface myProps {
   onChange: (index: number) => void;
   value: number;
   height?: string;
+  overflow?: css_overflow;
+  alignItems?: css_alignItem_t
 }
 //*************************************************
 // Function
@@ -25,19 +28,12 @@ const TabBox: React.FC<myProps> = (props) => {
         display: "flex",
         flexDirection: "column",
         maxWidth: "790px",
-        width: "100%",
-        border: "1px solid #e0e0e0",
-        boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
-        bgcolor: "background.paper",
-        px: "16px",
-        my: "16px",
-        height: "100%",
-        borderRadius: "8px",
-        overflow: "hidden",
+        width: "100%", 
+        overflow: props.overflow || "hidden",
       }}
     >
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-        <Tabs value={props.value} onChange={handleChange}>
+        <Tabs value={props.value} variant="scrollable" onChange={handleChange}>
           {props.list.map((item, index) => (
             <Tab key={index} label={item} />
           ))}
@@ -45,10 +41,13 @@ const TabBox: React.FC<myProps> = (props) => {
       </Box>
       <Box
         sx={{
+          display: "flex",
+          flexDirection: "column",
           width: "100%",
           height: props.height || "calc(100vh - 200px)",
           overflowY: "auto",
           padding: "8px",
+          alignItems: props.alignItems,
         }}
       >
         {props.children}
