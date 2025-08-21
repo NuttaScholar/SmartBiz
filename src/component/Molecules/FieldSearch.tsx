@@ -20,7 +20,7 @@ interface myProps {
   placeholder?: string;
   value?: string;
   fieldHide?: boolean;
-  display?: css_display_t;
+  display?: css_display_t | any;
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit?: (resault: string) => void;
 }
