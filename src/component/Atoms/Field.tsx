@@ -6,7 +6,6 @@ import { css_alignItem_t, css_display_t } from "../../type";
 // Style
 //*********************************************
 const field: SxProps<Theme> = {
-  maxWidth: "480px",
   minWidth: "300px",
   width: "100%",
   padding: "8px 16px",
@@ -23,6 +22,7 @@ interface myProps {
   color?: string;
   hide?: boolean;
   display?: css_display_t;
+  maxWidth?: string;
 }
 //*************************************************
 // Function
@@ -36,6 +36,7 @@ const Field: React.FC<myProps> = (props) => {
         padding: props.hide ? "0" : "8px 16px",
         bgcolor: props.color || "secondary.main",
         alignItems: props.alignItem,
+        maxWidth: props.maxWidth || "480px",
       }}
     >
       {props.children}

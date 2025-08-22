@@ -23,13 +23,14 @@ interface myProps {
   display?: css_display_t | any;
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit?: (resault: string) => void;
+  maxWidth?: string;
 }
 //*********************************************
 // Component
 //*********************************************
 const FieldSearch: React.FC<myProps> = (props) => {
   return (
-    <Field hide={props.fieldHide} display={props.display}>
+    <Field hide={props.fieldHide} display={props.display} maxWidth={props.maxWidth}>
       <TextField
         label={props.label}
         placeholder={props.placeholder}
