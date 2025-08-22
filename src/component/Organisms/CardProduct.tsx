@@ -4,21 +4,14 @@ import {
   CardActionArea,
   CardContent,
   CardMedia,
-  FormControl,
-  IconButton,
-  InputAdornment,
-  OutlinedInput,
   Typography,
 } from "@mui/material";
-import Field from "../Atoms/Field";
 import React from "react";
-import ClearIcon from "@mui/icons-material/Clear";
-import AssignmentIndOutlinedIcon from "@mui/icons-material/AssignmentIndOutlined";
 import errImg from "../../assets/NoImage.jpg";
 /**************************************************** */
 //  Type
 /**************************************************** */
-type productInfo_t = {
+export type productInfo_t = {
   id: string;
   name: string;
   price: number;

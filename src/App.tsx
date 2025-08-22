@@ -17,7 +17,7 @@ import "@fontsource/kanit/700.css";
 import { AuthProvider } from "./context/AuthContext";
 import Page_SetPass from "./page/SetPass";
 import Page_AccessSearch from "./page/Access/page/AccessSearch";
-import Page_Stock from "./page/Stork/Stork";
+import Page_Stock from "./page/Stock/Stock";
 //*********************************************
 // Set Theme
 //*********************************************
