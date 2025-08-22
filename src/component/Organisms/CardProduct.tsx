@@ -61,7 +61,7 @@ const CardProduct: React.FC<MyProps> = (props) => {
           component="img"
           sx={{ width: 151 }}
           image={image}
-          onError={() => {}}
+          onError={() => {setImage(errImg);}}
         />
         <Box sx={{ display: "flex", flexDirection: "column" }}>
           <CardContent sx={{ flex: "1 0 auto" }}>

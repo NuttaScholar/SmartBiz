@@ -1,10 +1,5 @@
 import * as React from "react";
-import {
-  Card,
-  CardActionArea,
-  CardContent,
-  Typography,
-} from "@mui/material";
+import { Card, CardActionArea, CardContent, Typography } from "@mui/material";
 //*************************************************
 // Interface
 //*************************************************
@@ -21,7 +16,7 @@ interface myProps {
 //*************************************************
 const CardValue: React.FC<myProps> = (props) => {
   return (
-    <Card sx={{ maxWidth: props.maxWidth, width: "100%" }} >
+    <Card sx={{ maxWidth: props.maxWidth, width: "100%" }}>
       <CardActionArea
         onClick={props.onClick}
         data-active={props.selected ? "" : undefined}
