@@ -11,9 +11,17 @@ export enum stockFilter_e {
   materialOut,
   another,
 }
+export enum stockDialog_e {
+  none,
+  createForm,
+  logs,
+  stockInForm,
+  stockOutForm,
+}
 export type stock_t = {
   filter: stockFilter_e;
-  list?: productInfo_t[];
+  productList?: productInfo_t[];
+  dialogOpen: stockDialog_e;
 };
 export type StockContext_t = {
   state: stock_t;
@@ -21,6 +29,7 @@ export type StockContext_t = {
 };
 export const StockDefaultState: stock_t = {
   filter: stockFilter_e.stock,
+  dialogOpen: stockDialog_e.none,
 };
 export const StockContext = createContext<StockContext_t | undefined>(
   undefined

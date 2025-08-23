@@ -81,7 +81,7 @@ const StockList: React.FC = () => {
     }
   };
   const reloadList = () =>{
-    setState({ ...state, list: sampleProducts });
+    setState({ ...state, productList: sampleProducts });
   }
   // Effect **********************************
   React.useEffect(() => {
@@ -132,7 +132,7 @@ const StockList: React.FC = () => {
             p: 2,
           }}
         >
-          {state.list?.map((product, index) => (
+          {state.productList?.map((product, index) => (
             <CardProduct key={index} value={product} maxWidth="400px" />
           ))}
         </Box>
