@@ -47,7 +47,6 @@ const TabBox: React.FC<myProps> = (props) => {
           width: "100%",
           height: props.height || "calc(100vh - 200px)",
           overflowY: "auto",
-          padding: "8px",
           alignItems: props.alignItems,
         }}
       >

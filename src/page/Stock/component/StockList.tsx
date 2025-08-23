@@ -13,7 +13,7 @@ import FieldSearch from "../../../component/Molecules/FieldSearch";
 const sampleProducts: productInfo_t[] = [
   {
     id: "1",
-    name: "Sample Product",
+    name: "อังกฤษ",
     price: 0,
     img: "",
     stock: 0,
@@ -21,7 +21,7 @@ const sampleProducts: productInfo_t[] = [
   },
   {
     id: "1",
-    name: "Sample Product",
+    name: "เหลี่ยมเล็ก",
     price: 0,
     img: "",
     stock: 0,
@@ -29,7 +29,7 @@ const sampleProducts: productInfo_t[] = [
   },
   {
     id: "1",
-    name: "Sample Product",
+    name: "เหลี่ยมใหญ่",
     price: 0,
     img: "",
     stock: 0,
@@ -117,7 +117,7 @@ const StockList: React.FC = () => {
       <FieldSearch maxWidth="650px" onSubmit={onSearch} />
       <TabBox
         list={["สินค้า", "วัตถุดิบ", "สินค้าขายพ่วง"]}
-        height="calc(100vh - 160px)"
+        height="calc(100vh - 150px)"
         alignItems="center"
         onChange={handleTabChange}
         value={tab}
@@ -128,8 +128,7 @@ const StockList: React.FC = () => {
             display: "flex",
             justifyContent: "center",
             flexWrap: "wrap",
-            gap: 2,
-            p: 2,
+            width: "100%",
           }}
         >
           {state.productList?.map((product, index) => (

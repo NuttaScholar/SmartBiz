@@ -4,10 +4,12 @@ import {
   CardActionArea,
   CardContent,
   CardMedia,
+  IconButton,
   Typography,
 } from "@mui/material";
 import React from "react";
 import errImg from "../../assets/NoImage.jpg";
+import EditIcon from "@mui/icons-material/Edit";
 /**************************************************** */
 //  Type
 /**************************************************** */
@@ -24,9 +26,10 @@ export type productInfo_t = {
 /**************************************************** */
 interface MyProps {
   value: productInfo_t;
-  onClick?: (value: productInfo_t) => void;
+  onClick?: (edit: boolean, value: productInfo_t) => void;
   disabled?: boolean;
   maxWidth?: string;
+  editable?: boolean;
 }
 /**************************************************** */
 //  Function
@@ -34,27 +37,41 @@ interface MyProps {
 const CardProduct: React.FC<MyProps> = (props) => {
   const [image, setImage] = React.useState<string>(props.value.img || errImg);
   return (
-    <Card sx={{ maxWidth: props.maxWidth, width: "100%" }}>
+    <Card
+      data-active={props.disabled ? "" : undefined}
+      sx={{
+        display: "flex",
+        maxWidth: props.maxWidth,
+        width: "100%",
+        m: "8px",
+        "&[data-active]": {
+          backgroundColor: "action.selected",
+          "&:hover": {
+            backgroundColor: "action.selectedHover",
+          },
+        },
+      }}
+    >
       <CardActionArea
-        data-active={props.disabled ? "" : undefined}
+        onClick={() => {
+          if (!props.disabled) {
+            props.onClick?.(false, props.value);
+          }
+        }}
         sx={{
           flexDirection: "row",
           justifyContent: "flex-start",
           display: "flex",
           height: "100%",
-          "&[data-active]": {
-            backgroundColor: "action.selected",
-            "&:hover": {
-              backgroundColor: "action.selectedHover",
-            },
-          },
         }}
       >
         <CardMedia
           component="img"
-          sx={{ width: 151 }}
+          sx={{ width: 120 }}
           image={image}
-          onError={() => {setImage(errImg);}}
+          onError={() => {
+            setImage(errImg);
+          }}
         />
         <Box sx={{ display: "flex", flexDirection: "column" }}>
           <CardContent sx={{ flex: "1 0 auto" }}>
@@ -81,6 +98,13 @@ const CardProduct: React.FC<MyProps> = (props) => {
           </CardContent>
         </Box>
       </CardActionArea>
+      {props.editable && (
+        <Box sx={{ py: "4px" }}>
+          <IconButton onClick={() => props.onClick?.(true, props.value)}>
+            <EditIcon />
+          </IconButton>
+        </Box>
+      )}
     </Card>
   );
 };
