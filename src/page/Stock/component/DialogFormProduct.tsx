@@ -12,6 +12,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
 import { productInfo_t } from "../../../component/Organisms/CardProduct";
+import FieldImage from "../../../component/Molecules/FieldImage";
 
 //*********************************************
 // Type
@@ -90,6 +91,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           gap: "8px",
         }}
       >
+        <FieldImage/>
         <FieldText
           icon={<AccountCircleIcon />}
           required
