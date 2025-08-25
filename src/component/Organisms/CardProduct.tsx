@@ -18,7 +18,7 @@ export type productInfo_t = {
   name: string;
   price: number;
   img: string;
-  description: string;
+  description?: string;
   stock: number;
 };
 /**************************************************** */

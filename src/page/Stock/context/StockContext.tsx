@@ -22,6 +22,7 @@ export type stock_t = {
   filter: stockFilter_e;
   productList?: productInfo_t[];
   dialogOpen: stockDialog_e;
+  productForm?: productInfo_t;
 };
 export type StockContext_t = {
   state: stock_t;
