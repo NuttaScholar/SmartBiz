@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Box, Button, Dialog, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
@@ -8,11 +8,10 @@ import ContactPageIcon from "@mui/icons-material/ContactPage";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
 import RecentActorsIcon from "@mui/icons-material/RecentActors";
-import { useAuth } from "../../../hooks/useAuth";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
 import { productInfo_t } from "../../../component/Organisms/CardProduct";
-import FieldImage from "../../../component/Molecules/FieldImage";
+import FieldImage from "../../../component/Organisms/FieldImage";
 
 //*********************************************
 // Type
@@ -46,7 +45,7 @@ interface myProps {
 const DialogFormProduct: React.FC<myProps> = (props) => {
   // Hook *********************
   const { state } = useStockContext();
-  const authContext = useAuth();
+  //const authContext = useAuth();
   // Local Function ***********
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
