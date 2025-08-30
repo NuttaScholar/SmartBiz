@@ -33,7 +33,7 @@ services:
     image: nuttascholar/smartbiz_account:1.1
     environment:
       SECRET: NuttaScholar
-      WEB_HOST: http://${VITE_HOST}3030
+      WEB_HOST: http://${VITE_HOST}:3030
       PORT: 3000
       DB_URL: mongodb://root:example@mongo:27017/Account?authSource=admin
     networks:
@@ -79,8 +79,8 @@ services:
       - "9000:9000"   # API
       - "9001:9001"   # Console
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}   
     volumes:
       - minio-data:/data
     command: server /data --console-address ":9001"

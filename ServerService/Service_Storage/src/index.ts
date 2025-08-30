@@ -1,10 +1,11 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
-import { TransitionForm_t, ContactForm_t, responst_t, tokenPackage_t, statement_t, ContactInfo_t, transactionDetail_t } from "./type";
+import { responst_t, tokenPackage_t } from "./type";
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
 import { errorCode_e, role_e, transactionType_e } from "./enum";
+import * as minio from "minio";
 
 dotenv.config();
 /*********************************************** */
@@ -31,15 +32,20 @@ app.use(express.json());
 app.use(cookieParser());
 
 /*********************************************** */
-// Mongoose Setup
+// Minio Setup
 /*********************************************** */
-// เชื่อมต่อ MongoDB
+// เชื่อมต่อ Minio
+const minioClient = new minio.Client({
+    endPoint: process.env.MINIO_ENDPOINT || "localhost",
+    port: Number(process.env.MINIO_PORT || 9000),
+    useSSL: (process.env.MINIO_USE_SSL || "false") === "true",
+    accessKey: process.env.MINIO_USER || "",
+    secretKey: process.env.MINIO_PASSWORD || "",
+});
 
 /*********************************************** */
 // Function
 /*********************************************** */
-
-
 function decoder(token: string): tokenPackage_t | null {
     try {
         var decoded = jwt.verify(token, secret) as tokenPackage_t;
@@ -79,8 +85,33 @@ function AuthMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
 /*********************************************** */
 // Routes Setup
 /*********************************************** */
-
-
+app.get("/presignedPut", AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const { Bucket, Key } = req.query as { Bucket?: string; Key?: string };
+    if (!Bucket || !Key) {
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
+        res.send(result);
+        return;
+    }
+    const policy = {
+        Version: "2012-10-17",
+        Statement: [
+            {
+                Effect: "Allow",
+                Principal: { AWS: ["*"] },
+                Action: ["s3:GetObject"],
+                Resource: [`arn:aws:s3:::${Bucket}/*`],
+            },
+        ],
+    };
+    const exists = await minioClient.bucketExists(Bucket);
+    if (!exists) {
+        await minioClient.makeBucket(Bucket, "us-east-1");
+        await minioClient.setBucketPolicy(Bucket, JSON.stringify(policy));
+    }
+    const url = await minioClient.presignedPutObject(Bucket, Key as string, 24 * 60 * 60);
+    const result:responst_t<"getPresigned"> = {status:"success", result: {url}}
+    res.send(result);
+});
 
 /*********************************************** */
 // Start Server
