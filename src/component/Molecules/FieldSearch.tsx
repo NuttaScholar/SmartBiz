@@ -2,6 +2,7 @@ import { IconButton, TextField } from "@mui/material";
 import React from "react";
 import SearchIcon from "@mui/icons-material/Search";
 import Field from "../Atoms/Field";
+import { css_display_t } from "../../type";
 
 //*********************************************
 // Style
@@ -19,16 +20,17 @@ interface myProps {
   placeholder?: string;
   value?: string;
   fieldHide?: boolean;
-  display?: any;
+  display?: css_display_t | any;
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit?: (resault: string) => void;
+  maxWidth?: string;
 }
 //*********************************************
 // Component
 //*********************************************
 const FieldSearch: React.FC<myProps> = (props) => {
   return (
-    <Field hide={props.fieldHide} display={props.display}>
+    <Field hide={props.fieldHide} display={props.display} maxWidth={props.maxWidth}>
       <TextField
         label={props.label}
         placeholder={props.placeholder}

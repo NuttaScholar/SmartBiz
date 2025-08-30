@@ -32,11 +32,12 @@ const Page_Access: React.FC = () => {
   }, []);
   return (
     <AccessContext.Provider value={{ state, setState }}>
-      <AppBar_c />
+      <AppBar_c>
       <MoneyTotal sx={{ textAlign: "center", mt: "16px" }} />
       <YearyTransaction />
       <SpeedDial_Access />
       <DialogFormTransaction />
+      </AppBar_c>
     </AccessContext.Provider>
   );
 };
