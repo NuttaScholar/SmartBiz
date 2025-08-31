@@ -1,13 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Box, Divider, SxProps, Theme } from "@mui/material";
 import Text_ThaiMonth from "../Atoms/Text_ThaiMonth";
 import Text_Money from "../Atoms/Text_Money";
-import DailyTotalList, {
-  DailyTotal_t,
-  sumDailyTotal,
-} from "../Molecules/DailyTotalList";
+import DailyTotalList, { DailyTotal_t } from "../Molecules/DailyTotalList";
 import Label_parameter from "../Atoms/Label_parameter";
 import { TransitionForm_t } from "../../API/AccountService/type";
+import { sumDailyTotal, sumTrans_t } from "../../lib/calculate";
 
 /**************************************************** */
 //  Style
@@ -52,21 +50,28 @@ const MonthlyTotalList: React.FC<myProps> = (props) => {
   const [expanded, setExpanded] = React.useState<boolean[]>(
     props.value.map(() => true)
   );
-  const buff = props.value.reduce(
-    (sum, item) => {
-      const val = sumDailyTotal(item);
-      if (val < 0) {
-        sum.expenses += val;
-      } else {
-        sum.income += val;
-      }
-      return sum;
-    },
-    { income: 0, expenses: 0 }
-  );
-  const total = buff.expenses + buff.income;
+  const buff = useMemo(() => {
+    return props.value.reduce(
+      (sum, item) => {
+        const val = sumDailyTotal(item);
+
+        return {
+          expenses: sum.expenses + val.expenses,
+          income: sum.income + val.income,
+          total: sum.total + val.total,
+        } as sumTrans_t;
+      },
+      { total: 0, income: 0, expenses: 0 } as sumTrans_t
+    );
+  }, [props.value]);
+
+  const total = buff.income - buff.expenses;
   useEffect(() => {
-    setExpanded(props.value.map(() => props.expanded===undefined?true: props.expanded));
+    setExpanded(
+      props.value.map(() =>
+        props.expanded === undefined ? true : props.expanded
+      )
+    );
   }, [props.expanded]);
   return (
     <Box sx={field}>
