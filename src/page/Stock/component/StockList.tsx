@@ -64,6 +64,7 @@ const StockList: React.FC = () => {
     }
   };
   const onSearch = (value: string) => {
+    console.log(value);
     switch (state.filter) {
       case stockFilter_e.stock:
       case stockFilter_e.stockLow:

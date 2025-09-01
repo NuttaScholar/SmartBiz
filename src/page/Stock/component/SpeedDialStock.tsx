@@ -4,7 +4,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import MySpeedDial from "../../../component/Molecules/MySpeedDial";
 import { menuList_t } from "../../../component/Molecules/ButtonOption";
 import { GoToTop } from "../../../function/Window";
-import React, { useMemo } from "react";
+import React from "react";
 import UploadIcon from '@mui/icons-material/Upload';
 import DownloadIcon from '@mui/icons-material/Download';
 import { useStockContext } from "../hooks/useStockContex";
