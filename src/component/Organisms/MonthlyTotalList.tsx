@@ -67,12 +67,8 @@ const MonthlyTotalList: React.FC<myProps> = (props) => {
 
   const total = buff.income - buff.expenses;
   useEffect(() => {
-    setExpanded(
-      props.value.map(() =>
-        props.expanded === undefined ? true : props.expanded
-      )
-    );
-  }, [props.expanded]);
+    setExpanded(props.value.map(() => props.expanded===undefined?true: props.expanded));
+  }, [props.expanded, props.value]);
   return (
     <Box sx={field}>
       <Box sx={{ px: "8px" }}>
@@ -108,7 +104,7 @@ const MonthlyTotalList: React.FC<myProps> = (props) => {
       </Box>
       {props.value.map((val, index) => (
         <DailyTotalList
-          expanded={expanded[index]}
+          expanded={expanded[index]===undefined?true:expanded[index]}
           value={val}
           key={index}
           onClick={(date, value) => props.onClick?.({ ...value, date })}

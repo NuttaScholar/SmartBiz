@@ -15,5 +15,5 @@
   <li>ดาวน์โหลด <a href="https://github.com/NuttaScholar/SmartBiz/releases">Releases File</a> ชื่อ SmartBiz.zip
  </li>
   <li>ทำตามขั้นตอนในคลิปได้เลย</li>   
-  <a href="https://youtube.com/live/oFeXonaEx4k" target="_blank"><img src="https://i9.ytimg.com/vi/oFeXonaEx4k/mqdefault.jpg?v=6882d923&sqp=CLiAocQG&rs=AOn4CLB9VCszKwzGXEFYnspSTGkKG_INag" alt="สาธิตการติดตั้ง" > </a>
+  <a href="https://youtu.be/rmlUetNstrI" target="_blank"><img src="https://i9.ytimg.com/vi/rmlUetNstrI/mqdefault.jpg?v=68b258a0&sqp=CPi6ycUG&rs=AOn4CLA8YHQKWLdEdYNgwZK7HETiJvNE0g" alt="สาธิตการติดตั้ง" > </a>
 </ol>

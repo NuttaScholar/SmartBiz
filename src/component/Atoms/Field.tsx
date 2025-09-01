@@ -1,11 +1,11 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import { SxProps, Theme } from "@mui/material";
+import { css_alignItem_t, css_display_t } from "../../type";
 //*********************************************
 // Style
 //*********************************************
 const field: SxProps<Theme> = {
-  maxWidth: "480px",
   minWidth: "300px",
   width: "100%",
   padding: "8px 16px",
@@ -18,10 +18,11 @@ const field: SxProps<Theme> = {
 //*************************************************
 interface myProps {
   children?: React.ReactNode;
-  alignItem?: "center" | "flex-start" | "flex-end" | "stretch" | "baseline";
+  alignItem?: css_alignItem_t;
   color?: string;
   hide?: boolean;
-  display?: any;
+  display?: css_display_t;
+  maxWidth?: string;
 }
 //*************************************************
 // Function
@@ -35,6 +36,7 @@ const Field: React.FC<myProps> = (props) => {
         padding: props.hide ? "0" : "8px 16px",
         bgcolor: props.color || "secondary.main",
         alignItems: props.alignItem,
+        maxWidth: props.maxWidth || "480px",
       }}
     >
       {props.children}
