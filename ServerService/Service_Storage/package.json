@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/multer": "^2.0.0",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
@@ -29,13 +30,15 @@
     "webpack": "^5.98.0",
     "webpack-dev-server": "^5.2.1"
   },
-  "dependencies": {
+  "dependencies": {    
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "minio": "^8.0.5",
-    "moment-timezone": "^0.5.48"
+    "moment-timezone": "^0.5.48",
+    "multer": "^2.0.2",
+    "sharp": "^0.34.3"
   }
 }

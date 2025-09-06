@@ -1,11 +1,14 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
-import { responst_t, tokenPackage_t } from "./type";
+import { endPoint_t, responst_t, setBucket_t, setImg_t, tokenPackage_t } from "./type";
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
 import { errorCode_e, role_e, transactionType_e } from "./enum";
 import * as minio from "minio";
+import multer from "multer";
+import sharp from "sharp";
+import crypto from "crypto";
 
 dotenv.config();
 /*********************************************** */
@@ -32,7 +35,7 @@ const app = express();
 /*********************************************** */
 const PORT = Number(process.env.PORT);
 const secret = process.env.SECRET as jwt.Secret;
-
+const DefaultBucket = "images";
 /*********************************************** */
 // Middleware Setup
 /*********************************************** */
@@ -56,7 +59,10 @@ const minioClient = new minio.Client({
     accessKey: process.env.MINIO_USER || "",
     secretKey: process.env.MINIO_PASSWORD || "",
 });
-
+(async () => {
+    const exists = await minioClient.bucketExists(DefaultBucket).catch(() => false);
+    if (!exists) await minioClient.makeBucket(DefaultBucket, "");
+})();
 /*********************************************** */
 // Function
 /*********************************************** */
@@ -71,45 +77,47 @@ function decoder(token: string): tokenPackage_t | null {
 function createPolicy(Bucket: string, Private: boolean): policy_t {
     const policy: policy_t = {
         Version: "2012-10-17",
-        Statement: Private === true?[]:[ 
-        {
-            Effect: "Allow",
-            Principal: { AWS: ["*"] },
-            Action: ["s3:GetObject"],
-            Resource: [`arn:aws:s3:::${Bucket}/*`],
-        },
+        Statement: Private === true ? [] : [
+            {
+                Effect: "Allow",
+                Principal: { AWS: ["*"] },
+                Action: ["s3:GetObject"],
+                Resource: [`arn:aws:s3:::${Bucket}/*`],
+            },
         ],
     };
     console.log(policy);
     return policy;
 }
 async function emptyBucket(bucket: string, prefix = ""): Promise<void> {
-  const stream = minioClient.listObjectsV2(bucket, prefix, true); // recursive = true
-  const BATCH_SIZE = 1000;
-  let batch: string[] = [];
+    const stream = minioClient.listObjectsV2(bucket, prefix, true); // recursive = true
+    const BATCH_SIZE = 1000;
+    let batch: string[] = [];
 
-  await new Promise<void>((resolve, reject) => {
-    stream.on("data", (obj: { name: string }) => {
-      if (obj?.name) {
-        batch.push(obj.name);
-        if (batch.length >= BATCH_SIZE) {
-          stream.pause();
-          // ลบชุดใหญ่ครั้งละ BATCH_SIZE
-          minioClient.removeObjects(bucket, batch.splice(0))
-            .then(() => stream.resume())
-            .catch(reject);
-        }
-      }
+    await new Promise<void>((resolve, reject) => {
+        stream.on("data", (obj: { name: string }) => {
+            if (obj?.name) {
+                batch.push(obj.name);
+                if (batch.length >= BATCH_SIZE) {
+                    stream.pause();
+                    // ลบชุดใหญ่ครั้งละ BATCH_SIZE
+                    minioClient.removeObjects(bucket, batch.splice(0))
+                        .then(() => stream.resume())
+                        .catch(reject);
+                }
+            }
+        });
+        stream.on("error", reject);
+        stream.on("end", async () => {
+            if (batch.length) {
+                await minioClient.removeObjects(bucket, batch);
+            }
+            resolve();
+        });
     });
-    stream.on("error", reject);
-    stream.on("end", async () => {
-      if (batch.length) {
-        await minioClient.removeObjects(bucket, batch);
-      }
-      resolve();
-    });
-  });
 }
+const randomKey = (ext: string) =>
+    `${new Date().toISOString().slice(0, 10)}/${crypto.randomBytes(8).toString("hex")}.${ext}`;
 /*********************************************** */
 // Middleware
 /*********************************************** */
@@ -147,7 +155,7 @@ app.get("/presignedPut", AuthMiddleware, async (req: AuthRequest, res: Response)
         res.send(result);
         return;
     }
-    const { Bucket, Key } = req.query as { Bucket?: string; Key?: string };
+    const { Bucket, Key } = req.query as endPoint_t;
     if (!Bucket || !Key) {
         const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
         res.send(result);
@@ -170,7 +178,7 @@ app.get("/presignedGet", AuthMiddleware, async (req: AuthRequest, res: Response)
         res.send(result);
         return;
     }
-    const { Bucket, Key } = req.query as { Bucket?: string; Key?: string };
+    const { Bucket, Key } = req.query as endPoint_t;
     if (!Bucket || !Key) {
         const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
         res.send(result);
@@ -193,7 +201,7 @@ app.post("/bucket", AuthMiddleware, async (req: AuthRequest, res: Response) => {
         res.send(result);
         return;
     }
-    const { Bucket, Private } = req.body as { Bucket?: string; Private?: boolean };
+    const { Bucket, Private } = req.body as setBucket_t;
     if (!Bucket) {
         const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
         res.send(result);
@@ -257,7 +265,7 @@ app.delete("/bucket", AuthMiddleware, async (req: AuthRequest, res: Response) =>
         res.send(result);
         return;
     }
-    const { Bucket } = req.body as { Bucket?: string };
+    const { Bucket } = req.body as endPoint_t;
     if (!Bucket) {
         const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
         res.send(result);
@@ -272,10 +280,47 @@ app.delete("/bucket", AuthMiddleware, async (req: AuthRequest, res: Response) =>
         }
         else {
             const result: responst_t<"none"> = { status: "success" }
-            await emptyBucket(Bucket);            
+            await emptyBucket(Bucket);
             await minioClient.removeBucket(Bucket);
             res.send(result);
         }
+    } catch (err) {
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError }
+        console.log(err);
+        res.send(result);
+    }
+});
+app.post("/uploadImg", AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        if (req.authData?.role !== role_e.admin) {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            res.send(result);
+            return;
+        }
+        const { Bucket, Key, height, width } = req.body as setImg_t;
+        if (!req.file||!Bucket||!Key) {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
+            res.send(result);
+            return;
+        }
+        const MAX_W = 720;
+        const MAX_H = 720;
+        const webpBuf = await sharp(req.file.buffer)
+            .rotate()                           // แก้ orientation
+            .resize({ width: width||MAX_W, height: height||MAX_H, fit: "inside", withoutEnlargement: true })
+            .webp({ quality: 80 })
+            .toBuffer();
+
+        const webpKey = randomKey("webp");
+        await minioClient.putObject(DefaultBucket, webpKey, webpBuf, webpBuf.length, {
+            "Content-Type": "image/webp",
+            "Cache-Control": "public, max-age=31536000, immutable",
+        });
+        const base = process.env.MINIO_ENDPOINT ?? "http://localhost:9000";
+        const webpUrl = `${base}/${DefaultBucket}/${webpKey}`;
+        const result: responst_t<"postImg"> = { status: "success", result: { url: webpUrl } }
+        res.send(result);
+        return;
     } catch (err) {
         const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError }
         console.log(err);
