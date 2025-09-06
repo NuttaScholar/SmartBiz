@@ -40,10 +40,10 @@ const SpeedDial_Stock: React.FC = () => {
         setState({ ...state, dialogOpen: stockDialog_e.createForm });
         break;
       case 1:
-        console.log("Stock In Form");
+        setState({ ...state, dialogOpen: stockDialog_e.stockInForm });
         break;
       case 2:
-        console.log("Stock Out Form");
+        setState({ ...state, dialogOpen: stockDialog_e.stockOutForm });
         break;
       case 3:
         GoToTop();

@@ -11,7 +11,7 @@ import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
 import { productInfo_t } from "../../../component/Organisms/CardProduct";
-import FieldImage from "../../../component/Organisms/FieldImage";
+import FieldImage from "../../../component/Molecules/FieldImage";
 
 //*********************************************
 // Type
@@ -62,7 +62,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
       console.log("Add Product", data);
     }
   };
-  const onClose = () => {
+  const onClose = () => {    
     props.onClose();
   };
   return (
@@ -90,29 +90,25 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           gap: "8px",
         }}
       >
-        <FieldImage/>
+        <FieldImage defauleValue={state.productForm?.img} buttonSize={100}/>
         <FieldText
-          icon={<AccountCircleIcon />}
           required
           label="Product ID"
           name="id"
           defauleValue={state.productForm?.id}
         />
         <FieldText
-          icon={<ContactPageIcon />}
           required
           label="Name"
           name="name"
           defauleValue={state.productForm?.name}
         />
         <FieldText
-          icon={<LocationOnIcon />}
           name="Description"
           label="description"
           defauleValue={state.productForm?.description}
         />
         <FieldText
-          icon={<LocalPhoneIcon />}
           required
           type="number"
           label="Price"
@@ -120,7 +116,6 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           defauleValue={state.productForm?.price.toString()}
         />
         <FieldText
-          icon={<RecentActorsIcon />}
           required
           type="number"
           label="Stock"
