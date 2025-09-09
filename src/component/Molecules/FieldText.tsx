@@ -2,7 +2,6 @@ import * as React from "react";
 import Field from "../Atoms/Field";
 import TextField from "@mui/material/TextField";
 
-
 //*********************************************
 // Interface
 //*********************************************
@@ -17,13 +16,22 @@ interface myProps {
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   name?: string;
   icon?: React.ReactNode;
+  maxWidth?: string;
+  minWidth?: string;
+  readonly?: boolean;
+  hideField?: boolean
 }
 //*********************************************
 // Component
 //*********************************************
 const FieldText: React.FC<myProps> = (props) => {
   return (
-    <Field alignItem={props.multiline?"baseline":"center"}>
+    <Field
+      hide={props.hideField}
+      maxWidth={props.maxWidth}
+      minWidth={props.minWidth}
+      alignItem={props.multiline ? "baseline" : "center"}
+    >
       {props.icon}
       <TextField
         label={props.label}
@@ -36,8 +44,13 @@ const FieldText: React.FC<myProps> = (props) => {
         onChange={props.onChange}
         name={props.name}
         size="small"
-        sx={{backgroundColor: "white", width: "100%"}}
+        sx={{ backgroundColor: "white", width: "100%" }}
         rows={4}
+        slotProps={{
+          input: {
+            readOnly: props.readonly,
+          },
+        }}
       />
     </Field>
   );
