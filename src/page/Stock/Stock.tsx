@@ -10,6 +10,7 @@ import StockStatus from "./component/StockStatus";
 import StockList from "./component/StockList";
 import SpeedDial_Stock from "./component/SpeedDialStock";
 import DialogFormProduct from "./component/DialogFormProduct";
+import StockListHeader from "./component/StockListHeader";
 
 const Page_Stock: React.FC = () => {
   const [state, setState] = React.useState<stock_t>(StockDefaultState);
@@ -17,10 +18,15 @@ const Page_Stock: React.FC = () => {
     <StockContext.Provider value={{ state, setState }}>
       <AppBar_c>
         <StockStatus />
-        <StockList />
+        <StockListHeader>
+          <StockList />
+        </StockListHeader>
+
         <SpeedDial_Stock />
       </AppBar_c>
-      <DialogFormProduct onClose={()=>setState({...state, dialogOpen: stockDialog_e.none})}/>
+      <DialogFormProduct
+        onClose={() => setState({ ...state, dialogOpen: stockDialog_e.none })}
+      />
     </StockContext.Provider>
   );
 };
