@@ -15,8 +15,6 @@ export enum stockDialog_e {
   none,
   createForm,
   logs,
-  stockInForm,
-  stockOutForm,
 }
 export type stock_t = {
   filter: stockFilter_e;

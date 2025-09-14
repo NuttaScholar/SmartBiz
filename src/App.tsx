@@ -18,6 +18,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Page_SetPass from "./page/SetPass";
 import Page_AccessSearch from "./page/Access/page/AccessSearch";
 import Page_Stock from "./page/Stock/Stock";
+import Page_StockIn from "./page/Stock/page/StockIn";
 //*********************************************
 // Set Theme
 //*********************************************
@@ -53,13 +54,16 @@ function App() {
               <Route path="/" element={<Page_Login />} />
               <Route path="/access">
                 <Route index element={<Page_Access />} />
-                <Route path="search" element={<Page_AccessSearch/>} />
+                <Route path="search" element={<Page_AccessSearch />} />
               </Route>
               <Route path="/login" element={<Page_Login />} />
               <Route path="/bill" element={<Page_Bill />} />
               <Route path="/cadit" element={<Page_Cadit />} />
               <Route path="/checkIn" element={<Page_CheckIn />} />
-              <Route path="/stock" element={<Page_Stock />} />
+              <Route path="/stock">
+                <Route index element={<Page_Stock />} />
+                <Route path="in" element={<Page_StockIn />} />
+              </Route>
               <Route path="/setuser" element={<Page_SetUser />} />
               <Route path="/setpass" element={<Page_SetPass />} />
               <Route path="*" element={<Page_NotFound />} />

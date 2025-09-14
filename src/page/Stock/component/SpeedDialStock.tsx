@@ -19,7 +19,7 @@ import { stockDialog_e } from "../context/StockContext";
 //*********************************************
 const MenuList: menuList_t[] = [
   { text: "Create", icon: <AddIcon /> },
-  { text: "Stock In", icon: <DownloadIcon /> },
+  { text: "Stock In", icon: <DownloadIcon />, path:"/stock/in" },
   { text: "Stock Out", icon: <UploadIcon /> },
   { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
 ];
@@ -32,18 +32,11 @@ const MenuList: menuList_t[] = [
 //*********************************************
 const SpeedDial_Stock: React.FC = () => {
   const { state, setState } = useStockContext();
-
   const speedDialHandler = (index: number) => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
         setState({ ...state, dialogOpen: stockDialog_e.createForm });
-        break;
-      case 1:
-        setState({ ...state, dialogOpen: stockDialog_e.stockInForm });
-        break;
-      case 2:
-        setState({ ...state, dialogOpen: stockDialog_e.stockOutForm });
         break;
       case 3:
         GoToTop();
