@@ -12,15 +12,18 @@ interface MyProps {
   onChange?: (value: dayjs.Dayjs | null) => void;
   name?: string;
   icon?: React.ReactNode;
+  hideField?: boolean;
+  readonly?: boolean;
 }
 /**************************************************** */
 //  Function
 /**************************************************** */
 const FieldDate: React.FC<MyProps> = (props) => {
   return (
-    <Field alignItem="center">
+    <Field hide={props.hideField} alignItem="center">
       {props.icon}
       <DatePicker
+        readOnly = {props.readonly}
         sx={{ backgroundColor: "white", borderRadius: "5px", flex: "1 0 0" }}
         format="DD/MM/YYYY"
         name={props.name}
