@@ -13,8 +13,15 @@ import EditIcon from "@mui/icons-material/Edit";
 /**************************************************** */
 //  Type
 /**************************************************** */
+export enum productType_e {
+  merchandise,
+  material,
+  another,
+}
+
 export type productInfo_t = {
   id: string;
+  type: productType_e;
   name: string;
   price: number;
   img: string;
@@ -26,6 +33,7 @@ export type productInfo_t = {
 /**************************************************** */
 interface MyProps {
   value: productInfo_t;
+  type: productType_e;
   onClick?: (edit: boolean, value: productInfo_t) => void;
   disabled?: boolean;
   maxWidth?: string;
@@ -83,18 +91,29 @@ const CardProduct: React.FC<MyProps> = (props) => {
               component="div"
               sx={{ color: "text.secondary" }}
             >
+              {`ID: ${props.value.id}`}
+            </Typography>
+            <Typography
+              variant="subtitle1"
+              component="div"
+              sx={{ color: "text.secondary" }}
+            >
               {props.value.description}
             </Typography>
-            <Typography variant="subtitle1" component="div">
-              ราคา:{" "}
-              {props.value.price.toLocaleString("th-TH", {
-                style: "currency",
-                currency: "THB",
-              })}
-            </Typography>
-            <Typography variant="subtitle1" component="div">
-              สต็อก: {props.value.stock}
-            </Typography>
+            {props.type !== productType_e.material && (
+              <Typography variant="subtitle1" component="div">
+                ราคา:{" "}
+                {props.value.price.toLocaleString("th-TH", {
+                  style: "currency",
+                  currency: "THB",
+                })}
+              </Typography>
+            )}
+            {props.type !== productType_e.another && (
+              <Typography variant="subtitle1" component="div">
+                จำนวน: {props.value.stock}
+              </Typography>
+            )}
           </CardContent>
         </Box>
       </CardActionArea>
