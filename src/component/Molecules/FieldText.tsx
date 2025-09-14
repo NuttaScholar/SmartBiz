@@ -18,6 +18,7 @@ interface myProps {
   icon?: React.ReactNode;
   maxWidth?: string;
   minWidth?: string;
+  width?: string;
   readonly?: boolean;
   hideField?: boolean
 }
@@ -27,6 +28,7 @@ interface myProps {
 const FieldText: React.FC<myProps> = (props) => {
   return (
     <Field
+      width={props.width}
       hide={props.hideField}
       maxWidth={props.maxWidth}
       minWidth={props.minWidth}
