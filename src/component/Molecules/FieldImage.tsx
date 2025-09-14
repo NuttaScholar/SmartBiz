@@ -1,11 +1,23 @@
 import * as React from "react";
-import { Box, Button, Card, CardActionArea, CardActions, CardMedia, Fab } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  CardActionArea,
+  CardActions,
+  CardMedia,
+  Fab,
+  Typography,
+} from "@mui/material";
 import errImg from "../../assets/NoImage.jpg";
 import AddIcon from "@mui/icons-material/Add";
+import Field from "../Atoms/Field";
 //*********************************************
 // Interface
 //*********************************************
 interface myProps {
+  label?: string;
+  hideField?: boolean;
   defauleValue?: string;
   onChange?: (file: File) => void;
   previewSize?: number;
@@ -35,56 +47,74 @@ const FieldImage: React.FC<myProps> = (props) => {
   };
   // XML **************************************
   return (
-    <Card sx={{ flexDirection: "column-reverse", display: "flex" }}>
-      {image&&<CardActions sx={{justifyContent:"end"}}>
-        <Button variant="text" onClick={()=>{
-          setImage("")
-          if(inputRef.current)inputRef.current.value=""}}>Clear</Button>
-      </CardActions>}
-      <CardActionArea
-        sx={{
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          display: "flex",
-          height: "100%",
-        }}
-        onClick={() => {
-          inputRef.current?.click();
-        }}
+    <Field hide={props.hideField} direction="column" alignItem="flex-start">
+      {props.label && (
+        <Typography variant="body1" sx={{ mr: 1 }} color="textSecondary">
+          {props.label}:
+        </Typography>
+      )}
+
+      <Card
+        sx={{ flexDirection: "column-reverse", display: "flex", width: "100%" }}
       >
-        {image ? (
+        {image && (
+          <CardActions sx={{ justifyContent: "end" }}>
+            <Button
+              variant="text"
+              onClick={() => {
+                setImage("");
+                if (inputRef.current) inputRef.current.value = "";
+              }}
+            >
+              Clear
+            </Button>
+          </CardActions>
+        )}
+        <CardActionArea
+          sx={{
+            flexDirection: "column",
+            justifyContent: "flex-start",
+            display: "flex",
+            height: "100%",
+          }}
+          onClick={() => {
+            inputRef.current?.click();
+          }}
+        >
+          {image ? (
             <CardMedia
               component="img"
-              sx={{ height: props.previewSize || 300 }}
+              sx={{ width: props.previewSize || 300 }}
               image={image}
               onError={() => {
                 setImage(errImg);
               }}
-            />  
-        ) : (
-          <Box
-            sx={{
-              width: props.buttonSize || 300,
-              height: props.buttonSize || 300,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: "action.selectedHover",
-              flexDirection: "column",
-            }}
-          >
-            <AddIcon sx={{ fontSize: 40 }} />
-          </Box>
-        )}
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={handleFileChange}
-        />
-      </CardActionArea>
-    </Card>
+            />
+          ) : (
+            <Box
+              sx={{
+                width: props.buttonSize || 300,
+                height: props.buttonSize || 300,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "action.selectedHover",
+                flexDirection: "column",
+              }}
+            >
+              <AddIcon sx={{ fontSize: 40 }} />
+            </Box>
+          )}
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={handleFileChange}
+          />
+        </CardActionArea>
+      </Card>
+    </Field>
   );
 };
 
