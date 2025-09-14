@@ -90,7 +90,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           gap: "8px",
         }}
       >
-        <FieldImage defauleValue={state.productForm?.img} buttonSize={100}/>
+        <FieldImage label="Product Image" defauleValue={state.productForm?.img} buttonSize={100}/>
         <FieldText
           required
           label="Product ID"
