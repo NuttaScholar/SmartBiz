@@ -10,6 +10,7 @@ import {
 import React from "react";
 import errImg from "../../assets/NoImage.jpg";
 import EditIcon from "@mui/icons-material/Edit";
+import ClearIcon from "@mui/icons-material/Clear";
 /**************************************************** */
 //  Type
 /**************************************************** */
@@ -26,7 +27,7 @@ export type productInfo_t = {
   price: number;
   img: string;
   description?: string;
-  stock: number;
+  amount: number;
 };
 /**************************************************** */
 //  Interface
@@ -37,7 +38,7 @@ interface MyProps {
   onClick?: (edit: boolean, value: productInfo_t) => void;
   disabled?: boolean;
   maxWidth?: string;
-  editable?: boolean;
+  variant?: "readonly" | "editable" | "deleteable";
 }
 /**************************************************** */
 //  Function
@@ -111,16 +112,16 @@ const CardProduct: React.FC<MyProps> = (props) => {
             )}
             {props.type !== productType_e.another && (
               <Typography variant="subtitle1" component="div">
-                จำนวน: {props.value.stock}
+                จำนวน: {props.value.amount}
               </Typography>
             )}
           </CardContent>
         </Box>
       </CardActionArea>
-      {props.editable && (
+      {props.variant !== "readonly" && props.variant !== undefined && (
         <Box sx={{ py: "4px" }}>
           <IconButton onClick={() => props.onClick?.(true, props.value)}>
-            <EditIcon />
+            {props.variant === "editable" ? <EditIcon /> : <ClearIcon />}
           </IconButton>
         </Box>
       )}
