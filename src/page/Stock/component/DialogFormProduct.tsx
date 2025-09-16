@@ -3,11 +3,6 @@ import { Box, Button, Dialog, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import FieldText from "../../../component/Molecules/FieldText";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import ContactPageIcon from "@mui/icons-material/ContactPage";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
-import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
 import { productInfo_t } from "../../../component/Organisms/CardProduct";
@@ -120,7 +115,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           type="number"
           label="Stock"
           name="stock"
-          defauleValue={state.productForm?.stock.toString()}
+          defauleValue={state.productForm?.amount.toString()}
         />
         
         <Box

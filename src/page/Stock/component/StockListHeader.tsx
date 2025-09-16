@@ -18,7 +18,7 @@ const sampleProducts: productInfo_t[] = [
     name: "Merchandise",
     price: 0,
     img: "",
-    stock: 0,
+    amount: 0,
     description: "ถ้วยน้ำพลาสติกใส",
   },
   {
@@ -27,7 +27,7 @@ const sampleProducts: productInfo_t[] = [
     name: "Material",
     price: 0,
     img: "",
-    stock: 0,
+    amount: 0,
     description: "ถ้วยน้ำพลาสติกใส",
   },
   {
@@ -36,7 +36,7 @@ const sampleProducts: productInfo_t[] = [
     name: "Another",
     price: 0,
     img: "",
-    stock: 0,
+    amount: 0,
     description: "ถ้วยน้ำพลาสติกใส",
   },
 ];

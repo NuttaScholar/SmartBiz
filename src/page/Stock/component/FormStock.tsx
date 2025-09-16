@@ -1,13 +1,11 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  Slide,
-} from "@mui/material";
-import { TransitionProps } from "@mui/material/transitions";
+import { Box, Button } from "@mui/material";
 import FieldText from "../../../component/Molecules/FieldText";
 import { useStockContext } from "../hooks/useStockContex";
-import { productInfo_t } from "../../../component/Organisms/CardProduct";
+import {
+  productInfo_t,
+  productType_e,
+} from "../../../component/Organisms/CardProduct";
 import Field from "../../../component/Atoms/Field";
 import FieldAutoComplete, {
   Option_t,
@@ -17,8 +15,7 @@ import FieldAutoComplete, {
 // Type
 //*********************************************
 type Form_t = {
-  id: string;
-  name: string;
+  product: Option_t | null;
   amount: number;
   price?: number;
 };
@@ -29,7 +26,6 @@ type Form_t = {
 //*********************************************
 // Transition
 //*********************************************
-
 
 //*********************************************
 // Interface
@@ -42,7 +38,9 @@ interface myProps {
 //*********************************************
 const FormStock: React.FC<myProps> = (props) => {
   // Hook *********************
-  const { state } = useStockContext();
+  const { state, setState } = useStockContext();
+  const [form, setForm] = useState<Form_t>();
+  const [clear, setClear] = useState(0);
   //const authContext = useAuth();
   // Local Variable *****************
   const list: Option_t[] = [
@@ -53,14 +51,27 @@ const FormStock: React.FC<myProps> = (props) => {
   // Local Function *****************
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const formJson = Object.fromEntries((formData as any).entries());
 
-    const data = formJson as {id: string, id_value: string, amount: string, price?: string};
-
-    console.log("Add Product", data);
+    if (!form) return;
+    const newList: productInfo_t = {
+      id: form.product?.code || "",
+      name: form.product?.value || "",
+      amount: form.amount ? Number(form.amount) : 0,
+      price: form.price ? Number(form.price) : 0,
+      type: productType_e.merchandise,
+      img: `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_MINIO}/product/${form.product?.code}.webp`,
+    };
+    setState({
+      ...state,
+      productList: [...(state.productList || []), newList],
+    });
+    setForm(undefined);
+    setClear(clear + 1);
+    console.log("Add Product", form);
   };
-
+  const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [event.target.name]: event.target.value } as Form_t);
+  };
   return (
     <Field maxWidth="1280px">
       <Box
@@ -79,15 +90,35 @@ const FormStock: React.FC<myProps> = (props) => {
           labelCode="ProductID"
           required
           labelValue="Name"
-          name="id"
           option={list}
           hideField
           duble
-          onChange={(val) => console.log(val)}
+          clear={clear}
+          onChange={(val) => setForm({ ...form, product: val } as Form_t)}
         />
-        <Field hide >
-          <FieldText label="Amount" required name="amount" type="number" minWidth="100px" hideField />
-          {props.type==="in"&&<FieldText label="Price" required name="price" type="number" minWidth="100px" hideField />}
+        <Field hide>
+          <FieldText
+            label="Amount"
+            required
+            name="amount"
+            type="number"
+            minWidth="100px"
+            hideField
+            value={form?.amount?.toString() || ""}
+            onChange={onChangeHandler}
+          />
+          {props.type === "in" && (
+            <FieldText
+              label="Price"
+              required
+              name="price"
+              type="number"
+              minWidth="100px"
+              hideField
+              value={form?.price?.toString() || ""}
+              onChange={onChangeHandler}
+            />
+          )}
           <Button variant="contained" type="submit" sx={{ width: "150px" }}>
             add
           </Button>
