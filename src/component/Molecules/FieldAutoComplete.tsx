@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Field from "../Atoms/Field";
 import MyAutocomplete from "../Atoms/MyAutocomplete";
 
@@ -27,13 +27,13 @@ interface myProps {
   labelValue?: string;
   hideField?: boolean;
   onChange?: (value: Option_t | null) => void;
-  value?: Option_t;
   defauleValue?: Option_t;
   maxWidth?: string;
   minWidth?: string;
   required?: boolean;
   name?: string;
   duble?: boolean;
+  clear?: number;
 }
 //*********************************************
 // Component
@@ -48,7 +48,10 @@ const FieldAutoComplete: React.FC<myProps> = (props) => {
     setValue(value);
     props.onChange?.(value);
   };
-
+  // Effect *******************
+  useEffect(() => {
+    setValue(null);
+  }, [props.clear]);
   return (
     <Field
       alignItem="center"
