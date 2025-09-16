@@ -1,15 +1,18 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import CardProduct from "../../../component/Organisms/CardProduct";
+import CardProduct, { productInfo_t } from "../../../component/Organisms/CardProduct";
 import { useStockContext } from "../hooks/useStockContex"; 
 //*************************************************
 // Interface
 //*************************************************
-
+interface myProps {
+  variant?: "readonly" | "editable" | "deleteable";
+  onClick?: (edit: boolean, value: productInfo_t) => void;
+}
 //*************************************************
 // Function
 //*************************************************
-const StockList: React.FC = () => {
+const StockList: React.FC<myProps> = (props) => {
   // Hook ************************************
   const { state } = useStockContext();
   // Local function ************************** 
@@ -30,6 +33,8 @@ const StockList: React.FC = () => {
           key={index}
           value={product}
           maxWidth="400px"
+          variant={props.variant}
+          onClick={props.onClick}
         />
       ))}
     </Box>
