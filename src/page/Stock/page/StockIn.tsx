@@ -8,10 +8,12 @@ import {
   stock_t,
   StockContext,
   StockDefaultState,
+  stockDialog_e,
 } from "../context/StockContext";
 import React from "react";
 import StockList from "../component/StockList";
 import { productInfo_t } from "../../../component/Organisms/CardProduct";
+import DialogStockEdit from "../component/DialogStockEdit";
 
 export default function Page_StockIn() {
   const [state, setState] = React.useState<stock_t>(StockDefaultState);
@@ -29,15 +31,21 @@ export default function Page_StockIn() {
         ];
         setState({ ...state, productList: newList });
       } else {
-
+        setState({...state, dialogOpen: stockDialog_e.editForm, indexList: index});
       }
     }
+  };
+  const onSave = () => {    
+    console.log("img",state.fileUpload);
+    console.log("list",state.productList);
+    navigate("/stock");
   };
   return (
     <StockContext.Provider value={{ state, setState }}>
       <HeaderDialog label={"เติมสต็อก"} onClick={() => navigate("/stock")}>
         <Box sx={{ display: "flex", flexGrow: 1, justifyContent: "flex-end" }}>
           <IconButton
+            onClick={onSave}
             size="large"
             sx={{
               color: "white",
@@ -61,6 +69,7 @@ export default function Page_StockIn() {
         <FormStock type="in" />
         <StockList variant="deleteable" onClick={onEdit} />
       </Box>
+      <DialogStockEdit type="in"/>
     </StockContext.Provider>
   );
 }
