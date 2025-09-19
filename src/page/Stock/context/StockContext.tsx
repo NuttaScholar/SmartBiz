@@ -14,13 +14,16 @@ export enum stockFilter_e {
 export enum stockDialog_e {
   none,
   createForm,
+  editForm,
   logs,
 }
 export type stock_t = {
   filter: stockFilter_e;
   productList?: productInfo_t[];
+  indexList?: number;
   dialogOpen: stockDialog_e;
   productForm?: productInfo_t;
+  fileUpload?: File;
 };
 export type StockContext_t = {
   state: stock_t;
