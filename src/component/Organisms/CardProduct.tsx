@@ -27,7 +27,7 @@ export type productInfo_t = {
   price: number;
   img: string;
   description?: string;
-  amount: number;
+  amount?: number;
 };
 /**************************************************** */
 //  Interface
