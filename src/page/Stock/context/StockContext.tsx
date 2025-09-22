@@ -17,13 +17,17 @@ export enum stockDialog_e {
   editForm,
   logs,
 }
+export type billForm_t = {
+  img?: File;
+  description?: string;
+};
 export type stock_t = {
   filter: stockFilter_e;
   productList?: productInfo_t[];
   indexList?: number;
   dialogOpen: stockDialog_e;
   productForm?: productInfo_t;
-  fileUpload?: File;
+  billForm?: billForm_t;
 };
 export type StockContext_t = {
   state: stock_t;
