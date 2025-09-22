@@ -20,7 +20,7 @@ import { stockDialog_e } from "../context/StockContext";
 const MenuList: menuList_t[] = [
   { text: "Create", icon: <AddIcon /> },
   { text: "Stock In", icon: <DownloadIcon />, path:"/stock/in" },
-  { text: "Stock Out", icon: <UploadIcon /> },
+  { text: "Stock Out", icon: <UploadIcon />, path:"/stock/out" },
   { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
 ];
 //*********************************************

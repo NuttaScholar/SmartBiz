@@ -19,6 +19,7 @@ import Page_SetPass from "./page/SetPass";
 import Page_AccessSearch from "./page/Access/page/AccessSearch";
 import Page_Stock from "./page/Stock/Stock";
 import Page_StockIn from "./page/Stock/page/StockIn";
+import Page_StockOut from "./page/Stock/page/StockOut";
 //*********************************************
 // Set Theme
 //*********************************************
@@ -63,6 +64,7 @@ function App() {
               <Route path="/stock">
                 <Route index element={<Page_Stock />} />
                 <Route path="in" element={<Page_StockIn />} />
+                <Route path="out" element={<Page_StockOut />} />
               </Route>
               <Route path="/setuser" element={<Page_SetUser />} />
               <Route path="/setpass" element={<Page_SetPass />} />
