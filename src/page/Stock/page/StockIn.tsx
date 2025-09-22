@@ -36,7 +36,7 @@ export default function Page_StockIn() {
     }
   };
   const onSave = () => {    
-    console.log("img",state.fileUpload);
+    console.log("img",state.billForm);
     console.log("list",state.productList);
     navigate("/stock");
   };
@@ -65,7 +65,7 @@ export default function Page_StockIn() {
           gap: "8px",
         }}
       >
-        <FormStockHeader />
+        <FormStockHeader type="in"/>
         <FormStock type="in" />
         <StockList variant="deleteable" onClick={onEdit} />
       </Box>
