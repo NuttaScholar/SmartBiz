@@ -1,7 +1,9 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import CardProduct, { productInfo_t } from "../../../component/Organisms/CardProduct";
-import { useStockContext } from "../hooks/useStockContex"; 
+import CardProduct from "../../../component/Organisms/CardProduct";
+import { useStockContext } from "../hooks/useStockContex";
+import urlbase_c from "../../../constants/urlbase";
+import { productInfo_t } from "../../../API/StockService/type";
 //*************************************************
 // Interface
 //*************************************************
@@ -15,9 +17,7 @@ interface myProps {
 const StockList: React.FC<myProps> = (props) => {
   // Hook ************************************
   const { state } = useStockContext();
-  // Local function ************************** 
 
-  // Effect **********************************  
   return (
     <Box
       sx={{
@@ -31,7 +31,7 @@ const StockList: React.FC<myProps> = (props) => {
         <CardProduct
           type={product.type}
           key={index}
-          value={product}
+          value={{ ...product, img: `${urlbase_c.minio}/${product.img}` }}
           maxWidth="400px"
           variant={props.variant}
           onClick={props.onClick}
