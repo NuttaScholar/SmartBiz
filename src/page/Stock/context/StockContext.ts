@@ -1,6 +1,6 @@
 // src/context/AuthContext.tsx
 import { createContext } from "react";
-import { productInfo_t } from "../../../component/Organisms/CardProduct";
+import { productInfo_t } from "../../../API/StockService/type";
 
 export enum stockFilter_e {
   stock,
