@@ -1,12 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { Box, Button, Dialog, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import FieldText from "../../../component/Molecules/FieldText";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
-import { productInfo_t } from "../../../component/Organisms/CardProduct";
 import FieldImage from "../../../component/Molecules/FieldImage";
+import FieldSelector, {
+  listSelect_t,
+} from "../../../component/Molecules/FieldSelector";
+import { useAuth } from "../../../hooks/useAuth";
+import stockWithRetry_f from "../lib/stockWithRetry";
+import { errorCode_e, productType_e } from "../../../enum";
+import { productInfo_t } from "../../../API/StockService/type";
+import { ErrorString } from "../../../function/Enum";
+import storegeWithRetry_f from "../../../lib/storageWithRetry";
 
 //*********************************************
 // Type
@@ -15,7 +23,11 @@ import FieldImage from "../../../component/Molecules/FieldImage";
 //*********************************************
 // Constante
 //*********************************************
-
+const typeList: listSelect_t[] = [
+  { label: "สินค้า", value: productType_e.merchandise },
+  { label: "วัสถุดิบ", value: productType_e.material },
+  { label: "สินค้าขายพ่วง", value: productType_e.another },
+];
 //*********************************************
 // Transition
 //*********************************************
@@ -39,27 +51,53 @@ interface myProps {
 //*********************************************
 const DialogFormProduct: React.FC<myProps> = (props) => {
   // Hook *********************
-  const { state } = useStockContext();
-  //const authContext = useAuth();
+  const authContext = useAuth();
+  const { state, setState } = useStockContext();
+  const [type, setType] = useState<number | null>(productType_e.merchandise);
+  const [file, setFile] = useState<File | null>(null);
   // Local Function ***********
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const  formJson = Object.fromEntries((formData as any).entries());
-
+    const formJson = Object.fromEntries((formData as any).entries());
     const data = formJson as productInfo_t;
 
-    if (state.productForm) {
-      // Edit
-      console.log("Edit Product", data);
-    } else {
-      // Add
-      console.log("Add Product", data);
+    try {
+      if (state.productForm) {
+        // Edit
+        console.log("Edit Product", data);
+      } else {
+        // Add
+        console.log("Add Product", data);
+        const newData:productInfo_t = {...data, img: `product/${data.id}`}
+        if (file) {
+          const result = await stockWithRetry_f.postProduct(authContext, newData);
+          if(result.status==="success"){
+            const formData = new FormData();
+            formData.append("file", file);  
+            formData.append("Bucket", "product");  
+            formData.append("Key", data.id);  
+            const resImg = await storegeWithRetry_f.postImg(authContext, formData);
+            if(resImg.status==="success"){
+              setState({...state, dialogOpen: stockDialog_e.none, productForm: undefined})
+            }else{
+              console.log("postProductError", ErrorString(resImg.errCode||errorCode_e.UnknownError));
+            }
+          }else{
+            console.log("postProductError", ErrorString(result.errCode||errorCode_e.UnknownError));
+          }
+        } else {
+          alert("โปรดอัพโหลดรูปสินค้า");
+        }
+      }
+    } catch (err) {
+      console.log("postProductError", err);
     }
   };
-  const onClose = () => {    
+  const onClose = () => {
     props.onClose();
   };
+
   return (
     <Dialog
       fullScreen
@@ -85,7 +123,12 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           gap: "8px",
         }}
       >
-        <FieldImage label="Product Image" defauleValue={state.productForm?.img} buttonSize={100}/>
+        <FieldImage
+          label="Product Image"
+          defauleValue={state.productForm?.img}
+          buttonSize={100}
+          onChange={setFile}
+        />
         <FieldText
           required
           label="Product ID"
@@ -98,26 +141,49 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           name="name"
           defauleValue={state.productForm?.name}
         />
+        <FieldSelector
+          name="type"
+          label="Type"
+          required
+          list={typeList}
+          onChange={setType}
+        />
         <FieldText
-          name="Description"
-          label="description"
+          name="description"
+          label="Description"
           defauleValue={state.productForm?.description}
         />
-        <FieldText
-          required
-          type="number"
-          label="Price"
-          name="price"
-          defauleValue={state.productForm?.price.toString()}
-        />
-        <FieldText
-          required
-          type="number"
-          label="Stock"
-          name="stock"
-          defauleValue={state.productForm?.amount.toString()}
-        />
-        
+        {(type === productType_e.merchandise ||
+          type === productType_e.another) && (
+          <FieldText
+            required
+            type="number"
+            label="Price"
+            name="price"
+            defauleValue={state.productForm?.price?.toString()}
+          />
+        )}
+        {(type === productType_e.material ||
+          type === productType_e.merchandise) && (
+          <>
+            <FieldText
+              required
+              type="number"
+              label="Stock"
+              name="stock"
+              defauleValue={state.productForm?.amount?.toString()}
+            />
+            <FieldText
+              required
+              type="number"
+              label="Condition"
+              name="condition"
+              placeholder="เตือนเมื่อสินค้าเหลือน้อยกว่าที่ระบุ"
+              defauleValue={state.productForm?.amount?.toString()}
+            />
+          </>
+        )}
+
         <Box
           sx={{
             display: "flex",
