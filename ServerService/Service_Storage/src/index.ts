@@ -49,6 +49,22 @@ app.use(express.json());
 app.use(cookieParser());
 
 /*********************************************** */
+// Multer Setup
+/*********************************************** */
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB (ปรับตามต้องการ)
+    },
+    fileFilter: (req, file, cb) => {
+        // อนุญาตเฉพาะไฟล์ภาพที่คาดหวัง
+        if (!/^image\/(jpeg|png|webp|gif)$/i.test(file.mimetype)) {
+            return cb(new Error("Unsupported file type"));
+        }
+        cb(null, true);
+    },
+});
+/*********************************************** */
 // Minio Setup
 /*********************************************** */
 // เชื่อมต่อ Minio
@@ -86,7 +102,6 @@ function createPolicy(Bucket: string, Private: boolean): policy_t {
             },
         ],
     };
-    console.log(policy);
     return policy;
 }
 async function emptyBucket(bucket: string, prefix = ""): Promise<void> {
@@ -208,7 +223,7 @@ app.post("/bucket", AuthMiddleware, async (req: AuthRequest, res: Response) => {
         return;
     }
     try {
-        const policy = createPolicy(Bucket, Private || false);
+        
         const exists = await minioClient.bucketExists(Bucket);
         if (exists) {
             const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.AlreadyExistsError }
@@ -216,6 +231,7 @@ app.post("/bucket", AuthMiddleware, async (req: AuthRequest, res: Response) => {
             return;
         }
         else {
+            const policy = createPolicy(Bucket, Private || false);
             const result: responst_t<"none"> = { status: "success" }
             await minioClient.makeBucket(Bucket, "us-east-1");
             await minioClient.setBucketPolicy(Bucket, JSON.stringify(policy));
@@ -290,7 +306,7 @@ app.delete("/bucket", AuthMiddleware, async (req: AuthRequest, res: Response) =>
         res.send(result);
     }
 });
-app.post("/uploadImg", AuthMiddleware, async (req: AuthRequest, res: Response) => {
+app.post("/uploadImg", AuthMiddleware, upload.single("file"), async (req: AuthRequest, res: Response) => {
     try {
         if (req.authData?.role !== role_e.admin) {
             const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
@@ -298,7 +314,7 @@ app.post("/uploadImg", AuthMiddleware, async (req: AuthRequest, res: Response) =
             return;
         }
         const { Bucket, Key, height, width } = req.body as setImg_t;
-        if (!req.file||!Bucket||!Key) {
+        if (!req.file || !Bucket || !Key) {
             const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
             res.send(result);
             return;
@@ -307,17 +323,17 @@ app.post("/uploadImg", AuthMiddleware, async (req: AuthRequest, res: Response) =
         const MAX_H = 720;
         const webpBuf = await sharp(req.file.buffer)
             .rotate()                           // แก้ orientation
-            .resize({ width: width||MAX_W, height: height||MAX_H, fit: "inside", withoutEnlargement: true })
+            .resize({ width: width || MAX_W, height: height || MAX_H, fit: "inside", withoutEnlargement: true })
             .webp({ quality: 80 })
             .toBuffer();
 
-        const webpKey = randomKey("webp");
-        await minioClient.putObject(DefaultBucket, webpKey, webpBuf, webpBuf.length, {
+        await minioClient.putObject(Bucket, Key, webpBuf, webpBuf.length, {
             "Content-Type": "image/webp",
             "Cache-Control": "public, max-age=31536000, immutable",
         });
-        const base = process.env.MINIO_ENDPOINT ?? "http://localhost:9000";
-        const webpUrl = `${base}/${DefaultBucket}/${webpKey}`;
+        const host = process.env.MINIO_ENDPOINT ?? "localhost";
+        const post = process.env.MINIO_PORT ?? "9000";
+        const webpUrl = `http://${host}:${post}/${Bucket}/${Key}`;
         const result: responst_t<"postImg"> = { status: "success", result: { url: webpUrl } }
         res.send(result);
         return;
@@ -330,6 +346,14 @@ app.post("/uploadImg", AuthMiddleware, async (req: AuthRequest, res: Response) =
 /*********************************************** */
 // Start Server
 /*********************************************** */
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+    const exists = await minioClient.bucketExists("product");
+    if (!exists) {
+        const policy = createPolicy("product", false);
+        await minioClient.makeBucket("product", "us-east-1");
+        await minioClient.setBucketPolicy("product", JSON.stringify(policy));
+    }
+
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
+
 });

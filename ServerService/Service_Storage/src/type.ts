@@ -1,4 +1,4 @@
-import { errorCode_e, role_e, transactionType_e } from "./enum";
+import { errorCode_e, role_e } from "./enum";
 
 export type tokenPackage_t = {
   username: string;
