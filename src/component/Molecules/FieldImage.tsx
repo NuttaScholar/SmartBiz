@@ -6,7 +6,6 @@ import {
   CardActionArea,
   CardActions,
   CardMedia,
-  Fab,
   Typography,
 } from "@mui/material";
 import errImg from "../../assets/NoImage.jpg";
@@ -19,7 +18,7 @@ interface myProps {
   label?: string;
   hideField?: boolean;
   defauleValue?: string;
-  onChange?: (file: File) => void;
+  onChange?: (file: File|null) => void;
   previewSize?: number;
   buttonSize?: number;
 }
@@ -36,7 +35,7 @@ const FieldImage: React.FC<myProps> = (props) => {
   const [image, setImage] = React.useState<string>(props.defauleValue ?? "");
 
   // Local Function ***************************
-  const handleFileChange = async (
+  const handleFileChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (event.target.files?.length) {
@@ -63,6 +62,7 @@ const FieldImage: React.FC<myProps> = (props) => {
               variant="text"
               onClick={() => {
                 setImage("");
+                props.onChange?.(null);
                 if (inputRef.current) inputRef.current.value = "";
               }}
             >
