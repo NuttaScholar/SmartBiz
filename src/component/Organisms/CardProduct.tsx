@@ -11,6 +11,7 @@ import React from "react";
 import errImg from "../../assets/NoImage.jpg";
 import EditIcon from "@mui/icons-material/Edit";
 import ClearIcon from "@mui/icons-material/Clear";
+import { productInfo_t } from "../../API/StockService/type";
 /**************************************************** */
 //  Type
 /**************************************************** */
@@ -20,15 +21,7 @@ export enum productType_e {
   another,
 }
 
-export type productInfo_t = {
-  id: string;
-  type: productType_e;
-  name: string;
-  price: number;
-  img: string;
-  description?: string;
-  amount?: number;
-};
+
 /**************************************************** */
 //  Interface
 /**************************************************** */
@@ -104,7 +97,7 @@ const CardProduct: React.FC<MyProps> = (props) => {
             {props.type !== productType_e.material && (
               <Typography variant="subtitle1" component="div">
                 ราคา:{" "}
-                {props.value.price.toLocaleString("th-TH", {
+                {props.value.price?.toLocaleString("th-TH", {
                   style: "currency",
                   currency: "THB",
                 })}
