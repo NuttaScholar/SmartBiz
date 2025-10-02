@@ -44,14 +44,14 @@ const FieldSelector: React.FC<myProps> = (props) => {
         sx={{ backgroundColor: "white", flexGrow: "1" }}
         size="small"
       >
-        <InputLabel id={props.label}>{props.label}</InputLabel>
+        <InputLabel id={props.label}>{`${props.label}${(props.required===true)?" *":""}`}</InputLabel>
         <Select
           labelId={props.label}
           //id="demo-select-small"
           required={props.required}
           name={props.name}
           value={props.value||value}
-          label={props.label}
+          label={`${props.label}${(props.required)?" *":""}`}
           onChange={handleChange}
         >
           {!props.required && (
