@@ -10,9 +10,6 @@ export interface resApiWithRetry_t {
 }
 
 export default async function ApiWithRetry(context: AuthContext_t, func: (token: string, data: any) => Promise<resApiWithRetry_t>, data?: any) {
-    if (!context.auth) {
-        throw new Error("apiWithRetry_f must be used within an AuthProvider");
-    }
     try {
         const auth = await initPage(context);
         const firstRes = await func(auth.token, data);
