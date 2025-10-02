@@ -1,45 +1,19 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import TabBox from "../../../component/Atoms/TabBox";
-import {
-  productInfo_t,
-  productType_e,
-} from "../../../component/Organisms/CardProduct";
+import { productType_e } from "../../../component/Organisms/CardProduct";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockFilter_e } from "../context/StockContext";
 import FieldSearch from "../../../component/Molecules/FieldSearch";
+import { queryProduct_t } from "../../../API/StockService/type";
+import stockWithRetry_f from "../lib/stockWithRetry";
+import { stockStatus_e } from "../../../enum";
+import { ErrorString } from "../../../function/Enum";
+import { useAuth } from "../../../hooks/useAuth";
 //*********************************************
 // Data Set
 //*********************************************
-const sampleProducts: productInfo_t[] = [
-  {
-    id: "1",
-    type: productType_e.merchandise,
-    name: "Merchandise",
-    price: 0,
-    img: "",
-    amount: 0,
-    description: "ถ้วยน้ำพลาสติกใส",
-  },
-  {
-    id: "1",
-    type: productType_e.material,
-    name: "Material",
-    price: 0,
-    img: "",
-    amount: 0,
-    description: "ถ้วยน้ำพลาสติกใส",
-  },
-  {
-    id: "1",
-    type: productType_e.another,
-    name: "Another",
-    price: 0,
-    img: "",
-    amount: 0,
-    description: "ถ้วยน้ำพลาสติกใส",
-  },
-];
+
 //*************************************************
 // Interface
 //*************************************************
@@ -51,6 +25,7 @@ interface myProps {
 //*************************************************
 const StockListHeader: React.FC<myProps> = (props) => {
   // Hook ************************************
+  const authContext = useAuth();
   const { state, setState } = useStockContext();
   const [tab, setTab] = React.useState(0);
   // Local function **************************
@@ -88,7 +63,45 @@ const StockListHeader: React.FC<myProps> = (props) => {
     }
   };
   const reloadList = () => {
-    setState({ ...state, productList: sampleProducts });
+    let query: queryProduct_t = { type: productType_e.material };
+    switch (state.filter) {
+      case stockFilter_e.another:
+        query = { type: productType_e.another };
+        break;
+      case stockFilter_e.materialLow:
+        query.status = stockStatus_e.stockLow;
+        break;
+      case stockFilter_e.materialOut:
+        query.status = stockStatus_e.stockOut;
+        break;
+      case stockFilter_e.stock:
+        query.type = productType_e.merchandise;
+        break;
+      case stockFilter_e.stockLow:
+        query = {
+          type: productType_e.merchandise,
+          status: stockStatus_e.stockLow,
+        };
+        break;
+      case stockFilter_e.stockOut:
+        query = {
+          type: productType_e.merchandise,
+          status: stockStatus_e.stockOut,
+        };
+    }
+    console.log("query", query)
+    stockWithRetry_f
+      .getProduct(authContext, query)
+      .then((res) => {
+        if (res.status === "success" && res.result !== undefined) {
+          res.result && setState({ ...state, productList: res.result });
+        } else {
+          res.errCode && alert(ErrorString(res.errCode));
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
   // Effect **********************************
   React.useEffect(() => {
