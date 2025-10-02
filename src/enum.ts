@@ -4,6 +4,16 @@ export enum transactionType_e {
   loan,
   lend,
 }
+export enum productType_e {
+  merchandise,
+  material,
+  another,
+}
+export enum stockStatus_e {
+  normal,
+  stockLow,
+  stockOut,
+}
 export enum role_e{
   admin,
   cashier,
