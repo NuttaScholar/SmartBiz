@@ -81,9 +81,11 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
             if(resImg.status==="success"){
               setState({...state, dialogOpen: stockDialog_e.none, productForm: undefined})
             }else{
+              alert(`เกิดข้อผิดพลาด ${ErrorString(resImg.errCode||errorCode_e.UnknownError)}`);
               console.log("postProductError", ErrorString(resImg.errCode||errorCode_e.UnknownError));
             }
           }else{
+            alert(`เกิดข้อผิดพลาด ${ErrorString(result.errCode||errorCode_e.UnknownError)}`);
             console.log("postProductError", ErrorString(result.errCode||errorCode_e.UnknownError));
           }
         } else {
@@ -91,6 +93,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
         }
       }
     } catch (err) {
+      alert(`เกิดข้อผิดพลาด`);
       console.log("postProductError", err);
     }
   };
