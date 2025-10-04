@@ -132,6 +132,7 @@ app.get('/product', AuthMiddleware, async (req: AuthRequest, res: Response) => {
             if (type) filter.type = Number(type);
             console.log(filter);
             const data: productInfo_t[] = await Product_m.aggregate([
+                { $match: filter },
                 ...(matchStage ? [matchStage] : []),
                 {
                     $project: {
