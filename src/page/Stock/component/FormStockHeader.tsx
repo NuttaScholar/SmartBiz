@@ -33,7 +33,7 @@ const FormStockHeader: React.FC<myProps> = (props) => {
   // Local Variable *****************
   const nowDate = new Date();
   // Local Function *****************
-  const onChangeImage = (file: File) => {
+  const onChangeImage = (file: File|null) => {
     setState({ ...state, billForm: { img: file } });
   };
   const onChangeDecs = (event:React.ChangeEvent<HTMLInputElement>) => {

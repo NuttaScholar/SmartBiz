@@ -18,7 +18,7 @@ export enum stockDialog_e {
   logs,
 }
 export type billForm_t = {
-  img?: File;
+  img?: File|null;
   description?: string;
 };
 export type stock_t = {
