@@ -37,7 +37,6 @@ interface MyProps {
 //  Function
 /**************************************************** */
 const CardProduct: React.FC<MyProps> = (props) => {
-  const [image, setImage] = React.useState<string>(props.value.img || errImg);
   return (
     <Card
       data-active={props.disabled ? "" : undefined}
@@ -70,9 +69,9 @@ const CardProduct: React.FC<MyProps> = (props) => {
         <CardMedia
           component="img"
           sx={{ width: 120 }}
-          image={image}
-          onError={() => {
-            setImage(errImg);
+          image={props.value.img}
+          onError={(event) => {
+            (event.target as HTMLImageElement).src = errImg;
           }}
         />
         <Box sx={{ display: "flex", flexDirection: "column" }}>
