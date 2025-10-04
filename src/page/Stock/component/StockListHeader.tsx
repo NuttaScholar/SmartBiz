@@ -10,6 +10,7 @@ import stockWithRetry_f from "../lib/stockWithRetry";
 import { stockStatus_e } from "../../../enum";
 import { ErrorString } from "../../../function/Enum";
 import { useAuth } from "../../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 //*********************************************
 // Data Set
 //*********************************************
@@ -26,6 +27,7 @@ interface myProps {
 const StockListHeader: React.FC<myProps> = (props) => {
   // Hook ************************************
   const authContext = useAuth();
+  const nevigate = useNavigate();
   const { state, setState } = useStockContext();
   const [tab, setTab] = React.useState(0);
   // Local function **************************
@@ -100,6 +102,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
         }
       })
       .catch((err) => {
+        nevigate("/")
         console.log(err);
       });
   };
