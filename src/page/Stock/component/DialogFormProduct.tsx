@@ -136,12 +136,14 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           required
           label="Product ID"
           name="id"
+          placeholder="รหัสสินค้า"
           defauleValue={state.productForm?.id}
         />
         <FieldText
           required
           label="Name"
           name="name"
+          placeholder="ชื่อสินค้า"
           defauleValue={state.productForm?.name}
         />
         <FieldSelector
@@ -154,6 +156,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
         <FieldText
           name="description"
           label="Description"
+          placeholder="คำอธิบาย"
           defauleValue={state.productForm?.description}
         />
         {(type === productType_e.merchandise ||
@@ -163,6 +166,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
             type="number"
             label="Price"
             name="price"
+            placeholder="ราคา"
             defauleValue={state.productForm?.price?.toString()}
           />
         )}
@@ -172,8 +176,9 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
             <FieldText
               required
               type="number"
-              label="Stock"
-              name="stock"
+              label="Amount"
+              name="amount"
+              placeholder="จำนวน"
               defauleValue={state.productForm?.amount?.toString()}
             />
             <FieldText
