@@ -47,6 +47,7 @@ const productSchema = new mongoose.Schema<productInfo_t>({
     description: { type: String, },
     img: { type: String },
     price: { type: Number },
+    condition: { type: Number },
 });
 
 
@@ -106,7 +107,24 @@ app.post('/product', AuthMiddleware, async (req: AuthRequest, res: Response) => 
                 const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.AlreadyExistsError };
                 return res.send(result);
             } else {
-                const newUser = new Product_m({ ...data, status: stockStatus_e.normal });
+                let status = stockStatus_e.normal;
+
+                if (data.amount !== undefined && data.condition !== undefined) {
+                    const amount = Number(data.amount);
+                    const condition = Number(data.condition);
+                    if (amount === 0) {
+                        console.log("stockOut")
+                        status = stockStatus_e.stockOut;
+                    } else if (amount < condition) {
+                        console.log("stockLow")
+                        status = stockStatus_e.stockLow;
+                    } else {
+                        console.log("normal")
+                        status = stockStatus_e.normal
+                    }
+                }
+                console.log(status);
+                const newUser = new Product_m({ ...data, status: status });
                 await newUser.save();
                 const result: responst_t<"none"> = { status: "success" };
                 return res.send(result);
@@ -153,6 +171,24 @@ app.get('/product', AuthMiddleware, async (req: AuthRequest, res: Response) => {
                 },
             ]);
             const result: responst_t<"getProduct"> = { status: "success", result: data }
+            return res.send(result);
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
+})
+app.delete('/product', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const { id } = req.query;
+            await Product_m.deleteOne({ id: id });
+            const result: responst_t<"none"> = { status: "success" };
             return res.send(result);
         } else {
             const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
