@@ -137,7 +137,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
         alignItems: "center",
       }}
     >
-      <FieldSearch maxWidth="650px" onSubmit={onSearch} />
+      <FieldSearch placeholder="ชื่อสินค้า" maxWidth="650px" onSubmit={onSearch} />
       <TabBox
         list={["สินค้า", "วัตถุดิบ", "สินค้าขายพ่วง"]}
         height="calc(100vh - 150px)"
