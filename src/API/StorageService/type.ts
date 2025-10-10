@@ -5,8 +5,8 @@ export type tokenPackage_t = {
   role: role_e;
   type: "accessToken" | "refreshToken";
 }
-export type endPoint_t = { Bucket?: string; Key?: string }
-export type setBucket_t = { Bucket?: string; Private?: boolean }
+export type endPoint_t = { Bucket: string; Key: string }
+export type setBucket_t = { Bucket: string; Private: boolean }
 export type setImg_t = endPoint_t & {
   width?: number;
   height?: number;
