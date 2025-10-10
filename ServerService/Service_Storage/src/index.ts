@@ -223,7 +223,7 @@ app.post("/bucket", AuthMiddleware, async (req: AuthRequest, res: Response) => {
         return;
     }
     try {
-        
+
         const exists = await minioClient.bucketExists(Bucket);
         if (exists) {
             const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.AlreadyExistsError }
@@ -306,7 +306,7 @@ app.delete("/bucket", AuthMiddleware, async (req: AuthRequest, res: Response) =>
         res.send(result);
     }
 });
-app.post("/uploadImg", AuthMiddleware, upload.single("file"), async (req: AuthRequest, res: Response) => {
+app.post("/image", AuthMiddleware, upload.single("file"), async (req: AuthRequest, res: Response) => {
     try {
         if (req.authData?.role !== role_e.admin) {
             const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
@@ -326,10 +326,9 @@ app.post("/uploadImg", AuthMiddleware, upload.single("file"), async (req: AuthRe
             .resize({ width: width || MAX_W, height: height || MAX_H, fit: "inside", withoutEnlargement: true })
             .webp({ quality: 80 })
             .toBuffer();
-
         await minioClient.putObject(Bucket, Key, webpBuf, webpBuf.length, {
             "Content-Type": "image/webp",
-            "Cache-Control": "public, max-age=31536000, immutable",
+            "Cache-Control": "public, max-age=36000, immutable",
         });
         const host = process.env.MINIO_ENDPOINT ?? "localhost";
         const post = process.env.MINIO_PORT ?? "9000";
@@ -343,6 +342,29 @@ app.post("/uploadImg", AuthMiddleware, upload.single("file"), async (req: AuthRe
         res.send(result);
     }
 });
+app.delete("/image", AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        if (req.authData?.role !== role_e.admin) {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            res.send(result);
+            return;
+        }
+        const { Bucket, Key } = req.query as endPoint_t;
+        if (!Bucket || !Key) {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
+            res.send(result);
+            return;
+        }
+        await minioClient.removeObject(Bucket, Key);
+        const result: responst_t<"none"> = { status: "success" }
+        res.send(result);
+        return;
+    } catch (err) {
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError }
+        console.log(err);
+        res.send(result);
+    }
+})
 /*********************************************** */
 // Start Server
 /*********************************************** */
