@@ -19,6 +19,7 @@ interface myProps {
   defauleValue?: string;
   value?: string;
   required?: boolean;
+  readonly?: boolean;
   onChange?: (value: number | null) => void;
   name?: string;
   icon?: React.ReactNode;
@@ -41,7 +42,7 @@ const FieldSelector: React.FC<myProps> = (props) => {
     <Field alignItem="center">
       {props.icon}
       <FormControl
-        sx={{ backgroundColor: "white", flexGrow: "1" }}
+        sx={{ backgroundColor: props.readonly?"grey.300":"white", flexGrow: "1" }}
         size="small"
       >
         <InputLabel id={props.label}>{`${props.label}${(props.required===true)?" *":""}`}</InputLabel>
@@ -49,6 +50,7 @@ const FieldSelector: React.FC<myProps> = (props) => {
           labelId={props.label}
           //id="demo-select-small"
           required={props.required}
+          readOnly={props.readonly}
           name={props.name}
           value={props.value||value}
           label={`${props.label}${(props.required)?" *":""}`}
