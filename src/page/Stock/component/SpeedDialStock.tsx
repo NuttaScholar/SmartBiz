@@ -5,8 +5,8 @@ import MySpeedDial from "../../../component/Molecules/MySpeedDial";
 import { menuList_t } from "../../../component/Molecules/ButtonOption";
 import { GoToTop } from "../../../function/Window";
 import React from "react";
-import UploadIcon from '@mui/icons-material/Upload';
-import DownloadIcon from '@mui/icons-material/Download';
+import UploadIcon from "@mui/icons-material/Upload";
+import DownloadIcon from "@mui/icons-material/Download";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
 
@@ -19,8 +19,8 @@ import { stockDialog_e } from "../context/StockContext";
 //*********************************************
 const MenuList: menuList_t[] = [
   { text: "Create", icon: <AddIcon /> },
-  { text: "Stock In", icon: <DownloadIcon />, path:"/stock/in" },
-  { text: "Stock Out", icon: <UploadIcon />, path:"/stock/out" },
+  { text: "Stock In", icon: <DownloadIcon />, path: "/stock/in" },
+  { text: "Stock Out", icon: <UploadIcon />, path: "/stock/out" },
   { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
 ];
 //*********************************************
@@ -36,23 +36,23 @@ const SpeedDial_Stock: React.FC = () => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
-        setState({ ...state, dialogOpen: stockDialog_e.createForm });
+        setState({ ...state, dialogOpen: stockDialog_e.productForm });
         break;
       case 3:
         GoToTop();
-        break;      
+        break;
     }
   };
-  
+
   return (
     <>
-      {state.dialogOpen===stockDialog_e.none && (
-        <MySpeedDial          
+      {state.dialogOpen === stockDialog_e.none && (
+        <MySpeedDial
           menuList={MenuList}
           icon={<MoreVertIcon />}
           onClick={speedDialHandler}
         />
-      )}      
+      )}
     </>
   );
 };

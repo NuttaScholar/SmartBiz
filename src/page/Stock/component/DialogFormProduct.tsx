@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Button, Dialog, Slide } from "@mui/material";
+import { Box, Button, Dialog, IconButton, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import FieldText from "../../../component/Molecules/FieldText";
@@ -14,7 +14,8 @@ import stockWithRetry_f from "../lib/stockWithRetry";
 import { errorCode_e, productType_e } from "../../../enum";
 import { productInfo_t } from "../../../API/StockService/type";
 import { ErrorString } from "../../../function/Enum";
-import storegeWithRetry_f from "../../../lib/storageWithRetry";
+import storageWithRetry_f from "../../../lib/storageWithRetry";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 //*********************************************
 // Type
@@ -69,24 +70,36 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
       } else {
         // Add
         console.log("Add Product", data);
-        const newData:productInfo_t = {...data, img: `product/${data.id}`}
+        const newData: productInfo_t = { ...data, img: `product/${data.id}` };
         if (file) {
-          const result = await stockWithRetry_f.postProduct(authContext, newData);
-          if(result.status==="success"){
+          const result = await stockWithRetry_f.postProduct(
+            authContext,
+            newData
+          );
+          if (result.status === "success") {
             const formData = new FormData();
-            formData.append("file", file);  
-            formData.append("Bucket", "product");  
-            formData.append("Key", data.id);  
-            const resImg = await storegeWithRetry_f.postImg(authContext, formData);
-            if(resImg.status==="success"){
-              setState({...state, dialogOpen: stockDialog_e.none, productForm: undefined})
-            }else{
-              alert(`เกิดข้อผิดพลาด ${ErrorString(resImg.errCode||errorCode_e.UnknownError)}`);
-              console.log("postProductError", ErrorString(resImg.errCode||errorCode_e.UnknownError));
+            formData.append("file", file);
+            formData.append("Bucket", "product");
+            formData.append("Key", data.id);
+            const resImg = await storageWithRetry_f.postImg(
+              authContext,
+              formData
+            );
+            if (resImg.status === "success") {
+              setState({
+                ...state,
+                dialogOpen: stockDialog_e.none,
+                productForm: undefined,
+              });
+            } else {
+              alert(
+                `เกิดข้อผิดพลาด ${ErrorString(resImg.errCode || errorCode_e.UnknownError)}`
+              );
             }
-          }else{
-            alert(`เกิดข้อผิดพลาด ${ErrorString(result.errCode||errorCode_e.UnknownError)}`);
-            console.log("postProductError", ErrorString(result.errCode||errorCode_e.UnknownError));
+          } else {
+            alert(
+              `เกิดข้อผิดพลาด ${ErrorString(result.errCode || errorCode_e.UnknownError)}`
+            );
           }
         } else {
           alert("โปรดอัพโหลดรูปสินค้า");
@@ -100,11 +113,47 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
   const onClose = () => {
     props.onClose();
   };
-
+  const onDel = async () => {
+    try {
+      if (state.productForm) {
+        const resProduct = await stockWithRetry_f.delProduct(
+          authContext,
+          state.productForm.id
+        );
+        if (resProduct.status === "success") {
+          const resImg = await storageWithRetry_f.delImg(authContext, {
+            Bucket: "product",
+            Key: state.productForm.id,
+          });
+          console.log(resImg);
+          if (resImg.status === "success") {
+            setState({
+              ...state,
+              dialogOpen: stockDialog_e.none,
+              productForm: undefined,
+            });
+          } else {
+            alert(
+              `เกิดข้อผิดพลาด ${ErrorString(resImg.errCode || errorCode_e.UnknownError)}`
+            );
+            console.log("StorageError");
+          }
+        } else {
+          alert(
+            `เกิดข้อผิดพลาด ${ErrorString(resProduct.errCode || errorCode_e.UnknownError)}`
+          );
+          console.log("StockError");
+        }
+      }
+    } catch (err) {
+      alert(`เกิดข้อผิดพลาด`);
+      console.log("postProductError", err);
+    }
+  };
   return (
     <Dialog
       fullScreen
-      open={state.dialogOpen === stockDialog_e.createForm}
+      open={state.dialogOpen === stockDialog_e.productForm}
       onClose={onClose}
       slots={{
         transition: Transition,
@@ -113,7 +162,21 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
       <HeaderDialog
         label={state.productForm ? "แก้ไขรายการ" : "เพิ่มรายการ"}
         onClick={onClose}
-      />
+      >
+        {state.productForm && (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              flexGrow: 1,
+            }}
+          >
+            <IconButton color="inherit" onClick={onDel}>
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        )}
+      </HeaderDialog>
       <Box
         component="form"
         onSubmit={handleSubmit}
@@ -138,6 +201,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           name="id"
           placeholder="รหัสสินค้า"
           defauleValue={state.productForm?.id}
+          readonly={state.productForm !== undefined}
         />
         <FieldText
           required
@@ -151,6 +215,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           label="Type"
           required
           list={typeList}
+          defauleValue={state.productForm?.type.toString()}
           onChange={setType}
         />
         <FieldText
@@ -179,7 +244,10 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
               label="Amount"
               name="amount"
               placeholder="จำนวน"
-              defauleValue={state.productForm?.amount?.toString()}
+              readonly={state.productForm !== undefined}
+              defauleValue={
+                state.productForm && state.productForm.amount?.toString()
+              }
             />
             <FieldText
               required
@@ -187,7 +255,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
               label="Condition"
               name="condition"
               placeholder="เตือนเมื่อสินค้าเหลือน้อยกว่าที่ระบุ"
-              defauleValue={state.productForm?.amount?.toString()}
+              defauleValue={state.productForm?.condition?.toString()}
             />
           </>
         )}

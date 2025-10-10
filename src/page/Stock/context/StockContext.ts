@@ -13,7 +13,7 @@ export enum stockFilter_e {
 }
 export enum stockDialog_e {
   none,
-  createForm,
+  productForm,
   editForm,
   logs,
 }
