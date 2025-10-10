@@ -12,6 +12,7 @@ import errImg from "../../assets/NoImage.jpg";
 import EditIcon from "@mui/icons-material/Edit";
 import ClearIcon from "@mui/icons-material/Clear";
 import { productInfo_t } from "../../API/StockService/type";
+import { stockStatus_e } from "../../enum";
 /**************************************************** */
 //  Type
 /**************************************************** */
@@ -20,7 +21,6 @@ export enum productType_e {
   material,
   another,
 }
-
 
 /**************************************************** */
 //  Interface
@@ -103,9 +103,22 @@ const CardProduct: React.FC<MyProps> = (props) => {
               </Typography>
             )}
             {props.type !== productType_e.another && (
-              <Typography variant="subtitle1" component="div">
-                จำนวน: {props.value.amount}
-              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "row", gap: 1 }}>
+                <Typography variant="subtitle1">จำนวน:</Typography>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    color:
+                      props.value.status === stockStatus_e.stockLow
+                        ? "warning.light"
+                        : props.value.status === stockStatus_e.stockOut
+                          ? "error.light"
+                          : "common",
+                  }}
+                >
+                  {props.value.amount}
+                </Typography>
+              </Box>
             )}
           </CardContent>
         </Box>
