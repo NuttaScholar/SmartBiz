@@ -42,10 +42,29 @@ export async function getProduct(
         throw err;
     }
 }
+export async function delProduct(
+    token: string,
+    id: string
+): Promise<responst_t<"none">> {
+    try {
+        const res = await axios_stock.delete(
+            `/product?id=${id}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+        return res.data as responst_t<"none">;
+    } catch (err) {
+        throw err;
+    }
+}
 
 const Stock_f = {
     getProduct,
     postProduct,
+    delProduct,
 }
 
 export default Stock_f;
