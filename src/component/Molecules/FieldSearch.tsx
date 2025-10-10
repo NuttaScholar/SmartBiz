@@ -30,6 +30,11 @@ interface myProps {
 // Component
 //*********************************************
 const FieldSearch: React.FC<myProps> = (props) => {
+  const onSubmit = (event:React.FormEvent<HTMLFormElement>) =>{
+    event.preventDefault();
+    console.log(event.target);
+    props.onSubmit?.(props.value || "");
+  }
   return (
     <Field
       hide={props.fieldHide}
@@ -37,6 +42,9 @@ const FieldSearch: React.FC<myProps> = (props) => {
       maxWidth={props.maxWidth}
     >
       <Box
+        id={`search_${props.label}`}
+        component={"form"}
+        onSubmit={onSubmit}
         sx={{
           display: "flex",
           borderRadius: "8px",
@@ -60,11 +68,10 @@ const FieldSearch: React.FC<myProps> = (props) => {
             },
           }}
         />
-        <IconButton
+        <IconButton          
           aria-label="Search"
-          onClick={() => {
-            props.onSubmit?.(props.value || "");
-          }}
+          type="submit" 
+          form={`search_${props.label}`}         
         >
           <SearchIcon />
         </IconButton>
