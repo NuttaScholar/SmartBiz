@@ -12,9 +12,8 @@ import FieldSelector, {
 import { useAuth } from "../../../hooks/useAuth";
 import stockWithRetry_f from "../lib/stockWithRetry";
 import { errorCode_e, productType_e } from "../../../enum";
-import { productInfo_t } from "../../../API/StockService/type";
+import { formProduct_t, productInfo_t } from "../../../API/StockService/type";
 import { ErrorString } from "../../../function/Enum";
-import storageWithRetry_f from "../../../lib/storageWithRetry";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 //*********************************************
@@ -61,7 +60,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const formJson = Object.fromEntries((formData as any).entries());
-    const data = formJson as productInfo_t;
+    const data = formJson as formProduct_t;
 
     try {
       if (state.productForm) {
@@ -70,32 +69,19 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
       } else {
         // Add
         console.log("Add Product", data);
-        const newData: productInfo_t = { ...data, img: `product/${data.id}` };
+
         if (file) {
+          const newData: formProduct_t = { ...data, img: file };
           const result = await stockWithRetry_f.postProduct(
             authContext,
             newData
           );
           if (result.status === "success") {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("Bucket", "product");
-            formData.append("Key", data.id);
-            const resImg = await storageWithRetry_f.postImg(
-              authContext,
-              formData
-            );
-            if (resImg.status === "success") {
-              setState({
-                ...state,
-                dialogOpen: stockDialog_e.none,
-                productForm: undefined,
-              });
-            } else {
-              alert(
-                `เกิดข้อผิดพลาด ${ErrorString(resImg.errCode || errorCode_e.UnknownError)}`
-              );
-            }
+            setState({
+              ...state,
+              dialogOpen: stockDialog_e.none,
+              productForm: undefined,
+            });
           } else {
             alert(
               `เกิดข้อผิดพลาด ${ErrorString(result.errCode || errorCode_e.UnknownError)}`
@@ -121,23 +107,11 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           state.productForm.id
         );
         if (resProduct.status === "success") {
-          const resImg = await storageWithRetry_f.delImg(authContext, {
-            Bucket: "product",
-            Key: state.productForm.id,
+          setState({
+            ...state,
+            dialogOpen: stockDialog_e.none,
+            productForm: undefined,
           });
-          console.log(resImg);
-          if (resImg.status === "success") {
-            setState({
-              ...state,
-              dialogOpen: stockDialog_e.none,
-              productForm: undefined,
-            });
-          } else {
-            alert(
-              `เกิดข้อผิดพลาด ${ErrorString(resImg.errCode || errorCode_e.UnknownError)}`
-            );
-            console.log("StorageError");
-          }
         } else {
           alert(
             `เกิดข้อผิดพลาด ${ErrorString(resProduct.errCode || errorCode_e.UnknownError)}`
