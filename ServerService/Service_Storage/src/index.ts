@@ -36,6 +36,8 @@ const app = express();
 const PORT = Number(process.env.PORT);
 const secret = process.env.SECRET as jwt.Secret;
 const DefaultBucket = "images";
+const MAX_W = 720;
+const MAX_H = 720;
 /*********************************************** */
 // Middleware Setup
 /*********************************************** */
@@ -131,8 +133,29 @@ async function emptyBucket(bucket: string, prefix = ""): Promise<void> {
         });
     });
 }
+async function postImg(img: Buffer<ArrayBufferLike>, Bucket: string, Key: string, width?: number, height?: number): Promise<{url:string}> {
+    try {
+        const webpBuf = await sharp(img)
+            .rotate()                           // แก้ orientation
+            .resize({ width: width || MAX_W, height: height || MAX_H, fit: "inside", withoutEnlargement: true })
+            .webp({ quality: 80 })
+            .toBuffer();
+        const newKey = `${Key}_${crypto.randomBytes(8).toString("hex")}`
+        await minioClient.putObject(Bucket, newKey, webpBuf, webpBuf.length, {
+            "Content-Type": "image/webp",
+            "Cache-Control": "public, max-age=2592000, immutable",
+        });
+        const host = process.env.MINIO_ENDPOINT ?? "localhost";
+        const post = process.env.MINIO_PORT ?? "9000";
+        const webpUrl = `http://${host}:${post}/${Bucket}/${newKey}`;
+        return {url:webpUrl}
+    } catch (err) {
+        throw(err);
+    }
+}
 const randomKey = (ext: string) =>
     `${new Date().toISOString().slice(0, 10)}/${crypto.randomBytes(8).toString("hex")}.${ext}`;
+
 /*********************************************** */
 // Middleware
 /*********************************************** */
@@ -319,21 +342,9 @@ app.post("/image", AuthMiddleware, upload.single("file"), async (req: AuthReques
             res.send(result);
             return;
         }
-        const MAX_W = 720;
-        const MAX_H = 720;
-        const webpBuf = await sharp(req.file.buffer)
-            .rotate()                           // แก้ orientation
-            .resize({ width: width || MAX_W, height: height || MAX_H, fit: "inside", withoutEnlargement: true })
-            .webp({ quality: 80 })
-            .toBuffer();
-        await minioClient.putObject(Bucket, Key, webpBuf, webpBuf.length, {
-            "Content-Type": "image/webp",
-            "Cache-Control": "public, max-age=36000, immutable",
-        });
-        const host = process.env.MINIO_ENDPOINT ?? "localhost";
-        const post = process.env.MINIO_PORT ?? "9000";
-        const webpUrl = `http://${host}:${post}/${Bucket}/${Key}`;
-        const result: responst_t<"postImg"> = { status: "success", result: { url: webpUrl } }
+        const resImg = await postImg(req.file.buffer,Bucket,Key,width,height);  
+        console.log(resImg.url);       
+        const result: responst_t<"postImg"> = { status: "success", result: { url: resImg.url } }
         res.send(result);
         return;
     } catch (err) {

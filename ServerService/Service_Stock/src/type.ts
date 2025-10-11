@@ -3,9 +3,9 @@ import { errorCode_e, productType_e, role_e, stockStatus_e } from "./enum";
 export type productInfo_t = {
     id: string;
     type: productType_e;
-    name: string;
-    img: string;
+    name: string;    
     condition: number;
+    img?: string;
     status?: stockStatus_e;
     price?: number;    
     description?: string;
