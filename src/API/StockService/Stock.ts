@@ -1,14 +1,20 @@
 import { axios_stock } from "../../lib/axios";
-import { productInfo_t, queryProduct_t, responst_t } from "./type";
+import { formProduct_t, queryProduct_t, responst_t } from "./type";
 
 export async function postProduct(
     token: string,
-    data: productInfo_t
+    data: formProduct_t
 ): Promise<responst_t<"none">> {
     try {
+        const formData = new FormData();
+        const { img, ...rest } = data;
+        Object.entries(rest).forEach(([key, val]) => {
+            if (val !== undefined && val !== null) formData.append(key, String(val));
+        });
+        formData.append("file", img);
         const res = await axios_stock.post(
             `/product`,
-            data, {
+            formData, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

@@ -1,15 +1,25 @@
 import { errorCode_e, productType_e, role_e, stockStatus_e, } from "../../enum";
 
 export type productInfo_t = {
-    id: string;
-    type: productType_e;
-    name: string;
-    img: string;
-    condition: number;
-    status: stockStatus_e;
-    price?: number;    
-    description?: string;
-    amount?: number;
+  id: string;
+  type: productType_e;
+  name: string;
+  img: string;
+  condition: number;
+  status: stockStatus_e;
+  price?: number;
+  description?: string;
+  amount?: number;
+}
+export type formProduct_t = {
+  id: string;
+  type: productType_e;
+  name: string;
+  img: File;  
+  condition?: number;
+  price?: number;
+  description?: string;
+  amount?: number;
 }
 export type queryProduct_t = {
   type: productType_e;
@@ -34,7 +44,7 @@ export type billInfo_t = {
 export type stockLog_t = {
   productID: string;
   billID: string;
-  amount: number;  
+  amount: number;
 }
 
 export type tokenPackage_t = {
@@ -53,7 +63,7 @@ export type responst_t<
     result?: productInfo_t[];
     errCode?: errorCode_e;
   }
-  :T extends "getStatus"
+  : T extends "getStatus"
   ? {
     status: "success" | "error";
     result?: stockStatus_t;

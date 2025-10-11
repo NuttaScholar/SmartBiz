@@ -1,5 +1,5 @@
 import Stock_f from "../../../API/StockService/Stock";
-import { productInfo_t, queryProduct_t } from "../../../API/StockService/type";
+import { formProduct_t, productInfo_t, queryProduct_t } from "../../../API/StockService/type";
 import { AuthContext_t } from "../../../context/AuthContext";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
@@ -16,7 +16,7 @@ export async function getProduct(context: AuthContext_t, condition: queryProduct
         throw new Error(`${err}`);
     }
 }
-export async function postProduct(context: AuthContext_t, data: productInfo_t): Promise<resApiWithRetry_t> {
+export async function postProduct(context: AuthContext_t, data: formProduct_t): Promise<resApiWithRetry_t> {
     try {
         const res: resApiWithRetry_t = await ApiWithRetry(context, Stock_f.postProduct, data);
         return res;
