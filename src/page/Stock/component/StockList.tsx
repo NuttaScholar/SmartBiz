@@ -2,7 +2,6 @@ import * as React from "react";
 import Box from "@mui/material/Box";
 import CardProduct from "../../../component/Organisms/CardProduct";
 import { useStockContext } from "../hooks/useStockContex";
-import urlbase_c from "../../../constants/urlbase";
 import { productInfo_t } from "../../../API/StockService/type";
 //*************************************************
 // Interface
@@ -31,7 +30,7 @@ const StockList: React.FC<myProps> = (props) => {
         <CardProduct
           type={product.type}
           key={index}
-          value={{ ...product, img: `${urlbase_c.minio}/${product.img}` }}
+          value={{ ...product, img: product.img }}
           maxWidth="400px"
           variant={props.variant}
           onClick={props.onClick}
