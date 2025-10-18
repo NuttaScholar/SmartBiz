@@ -54,7 +54,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
   const authContext = useAuth();
   const { state, setState } = useStockContext();
   const [type, setType] = useState<number | null>(productType_e.merchandise);
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>();
   // Local Function ***********
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,32 +65,41 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
     try {
       if (state.productForm) {
         // Edit
-        console.log("Edit Product", data);
+        console.log("Edit Product", file);
+        const newData: formProduct_t = { ...data, img: file };
+        const result = await stockWithRetry_f.putProduct(authContext, newData);
+        if (result.status === "success") {
+          setState({
+            ...state,
+            dialogOpen: stockDialog_e.none,
+            productForm: undefined,
+            reface: state.reface + 1,
+          });
+          setFile(undefined);
+        } else {
+          alert(
+            `เกิดข้อผิดพลาด ${ErrorString(result.errCode || errorCode_e.UnknownError)}`
+          );
+        }
       } else {
         // Add
-        console.log("Add Product", data);
-
-        if (file) {
-          const newData: formProduct_t = { ...data, img: file };
-          const result = await stockWithRetry_f.postProduct(
-            authContext,
-            newData
-          );
-          if (result.status === "success") {
-            setState({
-              ...state,
-              dialogOpen: stockDialog_e.none,
-              productForm: undefined,
-            });
-          } else {
-            alert(
-              `เกิดข้อผิดพลาด ${ErrorString(result.errCode || errorCode_e.UnknownError)}`
-            );
-          }
+        const newData: formProduct_t = { ...data, img: file };
+        const result = await stockWithRetry_f.postProduct(authContext, newData);
+        if (result.status === "success") {
+          setState({
+            ...state,
+            dialogOpen: stockDialog_e.none,
+            productForm: undefined,
+            reface: state.reface + 1,
+          });
+          setFile(undefined);
         } else {
-          alert("โปรดอัพโหลดรูปสินค้า");
+          alert(
+            `เกิดข้อผิดพลาด ${ErrorString(result.errCode || errorCode_e.UnknownError)}`
+          );
         }
       }
+
     } catch (err) {
       alert(`เกิดข้อผิดพลาด`);
       console.log("postProductError", err);
@@ -107,10 +116,12 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           state.productForm.id
         );
         if (resProduct.status === "success") {
+          console.log("ลบรายการสำเร็จ");
           setState({
             ...state,
             dialogOpen: stockDialog_e.none,
             productForm: undefined,
+            reface: state.reface + 1,
           });
         } else {
           alert(
@@ -167,7 +178,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
           label="Product Image"
           defauleValue={state.productForm?.img}
           buttonSize={100}
-          onChange={setFile}
+          onChange={(file)=>{file?setFile(file):setFile(null)}}
         />
         <FieldText
           required
