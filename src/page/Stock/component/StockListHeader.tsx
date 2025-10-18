@@ -127,7 +127,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
         break;
     }
     reloadList();
-  }, [state.filter]);
+  }, [state.filter, state.reface]);
   return (
     <Box
       sx={{

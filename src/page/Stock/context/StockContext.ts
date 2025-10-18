@@ -28,6 +28,7 @@ export type stock_t = {
   dialogOpen: stockDialog_e;
   productForm?: productInfo_t;
   billForm?: billForm_t;
+  reface: number; 
 };
 export type StockContext_t = {
   state: stock_t;
@@ -36,6 +37,7 @@ export type StockContext_t = {
 export const StockDefaultState: stock_t = {
   filter: stockFilter_e.stock,
   dialogOpen: stockDialog_e.none,
+  reface: 0,
 };
 export const StockContext = createContext<StockContext_t | undefined>(
   undefined
