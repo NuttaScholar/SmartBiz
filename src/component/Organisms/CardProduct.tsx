@@ -69,7 +69,7 @@ const CardProduct: React.FC<MyProps> = (props) => {
         <CardMedia
           component="img"
           sx={{ width: 120 }}
-          image={props.value.img}
+          image={props.value.img || errImg}
           onError={(event) => {
             (event.target as HTMLImageElement).src = errImg;
           }}
