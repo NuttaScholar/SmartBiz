@@ -203,12 +203,14 @@ app.post('/product', AuthMiddleware, upload.single("file"), async (req: AuthRequ
                         status = stockStatus_e.normal
                     }
                 }
-                console.log(status);
 
                 if (req.file) {
                     const resImg = await postImg(req.file.buffer, DefaultBucket, data.id);
-                    const newUser = new Product_m({ ...data, status: status, img: resImg.url });
-                    await newUser.save();
+                    const newProduct = new Product_m({ ...data, status: status, img: resImg.url });
+                    await newProduct.save();
+                } else {
+                    const newProduct = new Product_m({ ...data, status: status });
+                    await newProduct.save();
                 }
 
                 const result: responst_t<"none"> = { status: "success" };
@@ -224,6 +226,63 @@ app.post('/product', AuthMiddleware, upload.single("file"), async (req: AuthRequ
         return res.send(result);
     }
 })
+app.put('/product', AuthMiddleware, upload.single("file"), async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const data = req.body as productInfo_t;
+            const resProduct = await Product_m.findOne({ id: data.id })
+            if (!resProduct) {
+                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.NotFoundError };
+                return res.send(result);
+            } else {
+                let status = stockStatus_e.normal;
+
+                if (data.amount !== undefined && data.condition !== undefined) {
+                    const amount = Number(resProduct.amount);
+                    const condition = Number(data.condition);
+                    if (amount === 0) {
+                        console.log("stockOut")
+                        status = stockStatus_e.stockOut;
+                    } else if (amount < condition) {
+                        console.log("stockLow")
+                        status = stockStatus_e.stockLow;
+                    } else {
+                        console.log("normal")
+                        status = stockStatus_e.normal
+                    }
+                }
+                if (req.file) {
+                    if (resProduct.img) {
+                        const Bucket = DefaultBucket;
+                        const Key = resProduct.img?.split("/").pop() as string;
+                        await minioClient.removeObject(Bucket, Key);
+                    }
+                    const resImg = await postImg(req.file.buffer, DefaultBucket, data.id);
+                    await Product_m.updateOne({ id: data.id }, { ...data, status: status, img: resImg.url });
+                } else if (data.img === "") {
+                    if (resProduct.img) {
+                        const Bucket = DefaultBucket;
+                        const Key = resProduct.img?.split("/").pop() as string;
+                        await minioClient.removeObject(Bucket, Key);
+                    }
+                    await Product_m.updateOne({ id: data.id }, { ...data, status: status, img: "" });
+                } else {
+                    await Product_m.updateOne({ id: data.id }, { ...data, status: status });
+                }
+                const result: responst_t<"none"> = { status: "success" };
+                return res.send(result);
+            }
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
+});
 app.get('/product', AuthMiddleware, async (req: AuthRequest, res: Response) => {
     const data = req.authData;
     try {
@@ -272,10 +331,10 @@ app.delete('/product', AuthMiddleware, async (req: AuthRequest, res: Response) =
         if (data?.role === role_e.admin) {
             const { id } = req.query;
             const data = await Product_m.findOne({ id: id });
-            if(data?.img){
+            if (data?.img) {
                 const Key = data.img.split("/").pop() as string;
                 await minioClient.removeObject(DefaultBucket, Key);
-            } 
+            }
             await Product_m.deleteOne({ id: id });
             const result: responst_t<"none"> = { status: "success" };
             return res.send(result);
