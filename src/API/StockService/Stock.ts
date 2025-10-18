@@ -11,8 +11,37 @@ export async function postProduct(
         Object.entries(rest).forEach(([key, val]) => {
             if (val !== undefined && val !== null) formData.append(key, String(val));
         });
-        formData.append("file", img);
+        img&&formData.append("file", img);
         const res = await axios_stock.post(
+            `/product`,
+            formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+        );
+        return res.data as responst_t<"none">;
+    } catch (err) {
+        throw err;
+    }
+}
+export async function putProduct(
+    token: string,
+    data: formProduct_t
+): Promise<responst_t<"none">> {
+    try {
+        const formData = new FormData();
+        const { img, ...rest } = data;
+        Object.entries(rest).forEach(([key, val]) => {
+            if (val !== undefined && val !== null) formData.append(key, String(val));
+        });
+        console.log("img", img);
+        if(img){
+            formData.append("file", img);
+        } else if (img === null) {
+            formData.append("img", "");
+        }
+        const res = await axios_stock.put(
             `/product`,
             formData, {
             headers: {
@@ -71,6 +100,7 @@ const Stock_f = {
     getProduct,
     postProduct,
     delProduct,
+    putProduct,
 }
 
 export default Stock_f;

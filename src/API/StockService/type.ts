@@ -15,7 +15,7 @@ export type formProduct_t = {
   id: string;
   type: productType_e;
   name: string;
-  img: File;  
+  img?: File | null;  
   condition?: number;
   price?: number;
   description?: string;

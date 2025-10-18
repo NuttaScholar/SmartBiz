@@ -24,6 +24,14 @@ export async function postProduct(context: AuthContext_t, data: formProduct_t): 
         throw new Error(`${err}`);
     }
 }
+export async function putProduct(context: AuthContext_t, data: formProduct_t): Promise<resApiWithRetry_t> {
+    try {
+        const res: resApiWithRetry_t = await ApiWithRetry(context, Stock_f.putProduct, data);
+        return res;
+    } catch (err) {
+        throw new Error(`${err}`);
+    }
+}
 export async function delProduct(context: AuthContext_t, id: string): Promise<resApiWithRetry_t> {
     try {
         const res: resApiWithRetry_t = await ApiWithRetry(context, Stock_f.delProduct, id);
@@ -37,7 +45,8 @@ export async function delProduct(context: AuthContext_t, id: string): Promise<re
 const stockWithRetry_f = {
     getProduct,
     postProduct,
-    delProduct
+    delProduct,
+    putProduct,
 }
 
 export default stockWithRetry_f; 
