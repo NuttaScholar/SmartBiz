@@ -32,8 +32,11 @@ interface myProps {
 const FieldSearch: React.FC<myProps> = (props) => {
   const onSubmit = (event:React.FormEvent<HTMLFormElement>) =>{
     event.preventDefault();
-    console.log(event.target);
-    props.onSubmit?.(props.value || "");
+    const formData = new FormData(event.currentTarget);
+    const formJson = Object.fromEntries((formData as any).entries());
+    const {value} = formJson as {value:string};
+    console.log(formJson);
+    props.onSubmit?.(props.value || value);
   }
   return (
     <Field
@@ -60,6 +63,7 @@ const FieldSearch: React.FC<myProps> = (props) => {
           type="text"
           size="small"
           value={props.value}
+          name="value"
           onChange={props.onChange}
           sx={{ width: "100%" }}
           slotProps={{
