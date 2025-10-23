@@ -5,7 +5,7 @@ export type productInfo_t = {
   type: productType_e;
   name: string;
   img: string;
-  condition: number;
+  condition?: number;
   status: stockStatus_e;
   price?: number;
   description?: string;
