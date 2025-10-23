@@ -2,14 +2,13 @@ import React, { useState } from "react";
 import { Box, Button } from "@mui/material";
 import FieldText from "../../../component/Molecules/FieldText";
 import { useStockContext } from "../hooks/useStockContex";
-import {
-  productInfo_t,
-  productType_e,
-} from "../../../component/Organisms/CardProduct";
+import { productType_e } from "../../../component/Organisms/CardProduct";
 import Field from "../../../component/Atoms/Field";
 import FieldAutoComplete, {
   Option_t,
 } from "../../../component/Molecules/FieldAutoComplete";
+import { productInfo_t } from "../../../API/StockService/type";
+import { stockStatus_e } from "../../../enum";
 
 //*********************************************
 // Type
@@ -58,7 +57,8 @@ const FormStock: React.FC<myProps> = (props) => {
       name: form.product?.value || "",
       amount: form.amount ? Number(form.amount) : 0,
       price: form.price ? Number(form.price) : 0,
-      type: productType_e.merchandise,
+      type: productType_e.merchandise, 
+      status: stockStatus_e.normal,           
       img: `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_MINIO}/product/${form.product?.code}.webp`,
     };
     setState({
