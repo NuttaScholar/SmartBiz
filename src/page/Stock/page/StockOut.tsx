@@ -12,8 +12,8 @@ import {
 } from "../context/StockContext";
 import React from "react";
 import StockList from "../component/StockList";
-import { productInfo_t } from "../../../component/Organisms/CardProduct";
 import DialogStockEdit from "../component/DialogStockEdit";
+import { productInfo_t } from "../../../API/StockService/type";
 
 export default function Page_StockOut() {
   const [state, setState] = React.useState<stock_t>(StockDefaultState);
@@ -66,7 +66,7 @@ export default function Page_StockOut() {
         }}
       >
         <FormStockHeader type="out"/>
-        <FormStock type="in" />
+        <FormStock type="out" />
         <StockList variant="deleteable" onClick={onEdit} />
       </Box>
       <DialogStockEdit type="in"/>
