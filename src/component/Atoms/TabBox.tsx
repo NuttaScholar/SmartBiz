@@ -9,7 +9,8 @@ import { css_alignItem_t, css_overflow } from "../../type";
 interface myProps {
   children?: React.ReactNode;
   list: string[];
-  onChange: (index: number) => void;
+  onChange?: (index: number) => void;
+  onClick?: (index: number) => void;
   value: number;
   height?: string;
   overflow?: css_overflow;
@@ -21,7 +22,7 @@ interface myProps {
 //*************************************************
 const TabBox: React.FC<myProps> = (props) => {
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
-    props.onChange(newValue);
+    props.onChange?.(newValue);
   };
   return (
     <Box
@@ -36,7 +37,7 @@ const TabBox: React.FC<myProps> = (props) => {
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs value={props.value} variant="scrollable" onChange={handleChange}>
           {props.list.map((item, index) => (
-            <Tab key={index} label={item} />
+            <Tab key={index} label={item} onClick={()=>props.onClick?.(index)}/>
           ))}
         </Tabs>
       </Box>
