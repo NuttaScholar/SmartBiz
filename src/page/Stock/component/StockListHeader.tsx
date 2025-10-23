@@ -30,6 +30,8 @@ const StockListHeader: React.FC<myProps> = (props) => {
   const nevigate = useNavigate();
   const { state, setState } = useStockContext();
   const [tab, setTab] = React.useState(0);
+  const [name, setName] = React.useState("");
+
   // Local function **************************
   const handleTabChange = (newTab: number) => {
     switch (newTab) {
@@ -48,24 +50,37 @@ const StockListHeader: React.FC<myProps> = (props) => {
   };
   const onSearch = (value: string) => {
     console.log(value);
+    setName(value);
     switch (state.filter) {
       case stockFilter_e.stock:
       case stockFilter_e.stockLow:
       case stockFilter_e.stockOut:
-        setState({ ...state, filter: stockFilter_e.stock });
+        setState({
+          ...state,
+          filter: stockFilter_e.stock,
+          reface: state.reface + 1,
+        });
         break;
       case stockFilter_e.material:
       case stockFilter_e.materialLow:
       case stockFilter_e.materialOut:
-        setState({ ...state, filter: stockFilter_e.material });
+        setState({
+          ...state,
+          filter: stockFilter_e.material,
+          reface: state.reface + 1,
+        });
         break;
       default:
-        setState({ ...state, filter: stockFilter_e.another });
+        setState({
+          ...state,
+          filter: stockFilter_e.another,
+          reface: state.reface + 1,
+        });
         break;
     }
   };
   const reloadList = () => {
-    let query: queryProduct_t = { type: productType_e.material };
+    let query: queryProduct_t = { type: productType_e.material, name: name };
     switch (state.filter) {
       case stockFilter_e.another:
         query = { type: productType_e.another };
@@ -91,7 +106,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
           status: stockStatus_e.stockOut,
         };
     }
-    console.log("query", query)
+    console.log("query", query);
     stockWithRetry_f
       .getProduct(authContext, query)
       .then((res) => {
@@ -102,7 +117,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
         }
       })
       .catch((err) => {
-        nevigate("/")
+        nevigate("/");
         console.log(err);
       });
   };
@@ -137,12 +152,16 @@ const StockListHeader: React.FC<myProps> = (props) => {
         alignItems: "center",
       }}
     >
-      <FieldSearch placeholder="ชื่อสินค้า" maxWidth="650px" onSubmit={onSearch} />
+      <FieldSearch
+        placeholder="ชื่อสินค้า"
+        maxWidth="650px"
+        onSubmit={onSearch}
+      />
       <TabBox
         list={["สินค้า", "วัตถุดิบ", "สินค้าขายพ่วง"]}
         height="calc(100vh - 150px)"
         alignItems="center"
-        onChange={handleTabChange}
+        onClick={handleTabChange}
         value={tab}
         maxWidth="1280px"
       >
