@@ -12,9 +12,9 @@ import FieldText from "../../../component/Molecules/FieldText";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
 import {
-  productInfo_t,
   productType_e,
 } from "../../../component/Organisms/CardProduct";
+import { productInfo_t } from "../../../API/StockService/type";
 
 //*********************************************
 // Type
