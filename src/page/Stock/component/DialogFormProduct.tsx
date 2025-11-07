@@ -44,7 +44,6 @@ const Transition = React.forwardRef(function Transition(
 // Interface
 //*********************************************
 interface myProps {
-  onClose: (val?: productInfo_t[]) => void;
 }
 //*********************************************
 // Component
@@ -106,7 +105,7 @@ const DialogFormProduct: React.FC<myProps> = (props) => {
     }
   };
   const onClose = () => {
-    props.onClose();
+    setState({ ...state, dialogOpen: stockDialog_e.none, productForm: undefined });
   };
   const onDel = async () => {
     try {
