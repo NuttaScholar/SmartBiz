@@ -42,9 +42,10 @@ export type billInfo_t = {
   description?: string;
 }
 export type stockLog_t = {
-  productID: string;
-  billID: string;
+  date: Date;
   amount: number;
+  price?: number;
+  description: string;
 }
 
 export type tokenPackage_t = {
