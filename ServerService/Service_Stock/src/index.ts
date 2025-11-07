@@ -1,15 +1,15 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { productInfo_t, responst_t, tokenPackage_t } from "./type";
+import { logInfo_t, productInfo_t, responst_t, stockForm_t, stockOutForm_t, stockStatus_t, tokenPackage_t } from "./type";
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
-import { errorCode_e, role_e, stockStatus_e } from "./enum";
+import { errorCode_e, productType_e, role_e, stockLogType_e, stockStatus_e } from "./enum";
 import multer from "multer";
 import * as minio from "minio";
 import sharp from "sharp";
-import crypto from "crypto";
+import crypto from "crypto"
 
 dotenv.config();
 /*********************************************** */
@@ -37,9 +37,10 @@ const app = express();
 const PORT = Number(process.env.PORT);
 const secret = process.env.SECRET as jwt.Secret;
 const DefaultBucket = "product";
+const BillBucket = "bill";
 const MAX_W = 720;
 const MAX_H = 720;
-
+const minioHost = process.env.MINIO_HOST ?? "http://localhost:9000";
 /*********************************************** */
 // Middleware Setup
 /*********************************************** */
@@ -98,9 +99,17 @@ const productSchema = new mongoose.Schema<productInfo_t>({
     price: { type: Number },
     condition: { type: Number },
 });
+const logSchema = new mongoose.Schema<logInfo_t>({
+    productID: { type: String, required: true },
+    amount: { type: Number, required: true },
+    type: { type: Number, required: true },
+    date: { type: Date, default: Date.now },
+    price: { type: Number },
+});
 
 // สร้าง Model
 const Product_m = mongoose.model("product", productSchema);
+const Log_m = mongoose.model("log", logSchema);
 
 /*********************************************** */
 // Function
@@ -139,11 +148,24 @@ async function postImg(img: Buffer<ArrayBufferLike>, Bucket: string, Key: string
             "Content-Type": "image/webp",
             "Cache-Control": "public, max-age=36000, immutable",
         });
-        const minioHost = process.env.MINIO_HOST ?? "http://localhost:9000";
-        const webpUrl = `${minioHost}/${Bucket}/${newKey}`;
+
+        const webpUrl = `${Bucket}/${newKey}`;
         return { url: webpUrl }
     } catch (err) {
         throw new Error("Upload image failed");
+    }
+}
+async function initBucket(Bucket: string, Private: boolean) {
+    try {
+        const exists = await minioClient.bucketExists(Bucket);
+        if (!exists) {
+            const policy = createPolicy(Bucket, Private);
+            await minioClient.makeBucket(Bucket, "us-east-1");
+            await minioClient.setBucketPolicy(Bucket, JSON.stringify(policy));
+        }
+    }
+    catch (err) {
+        throw (err);
     }
 }
 /*********************************************** */
@@ -206,7 +228,8 @@ app.post('/product', AuthMiddleware, upload.single("file"), async (req: AuthRequ
 
                 if (req.file) {
                     const resImg = await postImg(req.file.buffer, DefaultBucket, data.id);
-                    const newProduct = new Product_m({ ...data, status: status, img: resImg.url });
+                    const imgUrl = `${minioHost}/${resImg.url}`;
+                    const newProduct = new Product_m({ ...data, status: status, img: imgUrl/*  */ });
                     await newProduct.save();
                 } else {
                     const newProduct = new Product_m({ ...data, status: status });
@@ -348,17 +371,136 @@ app.delete('/product', AuthMiddleware, async (req: AuthRequest, res: Response) =
         return res.send(result);
     }
 })
+app.post('/stock_in', AuthMiddleware, upload.single("file"), async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            if (req.file) {
+                const data = JSON.parse(req.body) as stockForm_t[];
+                const date = new Date();
+                const imgKey = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+                const resImg = await postImg(req.file.buffer, BillBucket, imgKey);
+                let log: logInfo_t[] = [];
+                let errLog: stockForm_t[] = [];
+                for (const item of data) {
+                    try {
+                        const resProduct = await Product_m.findOne({ id: item.productID });
+                        if (!resProduct || resProduct.amount === undefined) {
+                            errLog.push(item);
+                            continue;
+                        }
+                        const newAmount = resProduct.amount + item.amount;
+                        let newStatus = newAmount === 0 ? stockStatus_e.stockOut : newAmount < resProduct.condition ? stockStatus_e.stockLow : stockStatus_e.normal;
+                        await Product_m.updateOne({ id: item.productID }, { $set: { amount: newAmount, status: newStatus } });
+                        log.push({ productID: item.productID, amount: item.amount, type: stockLogType_e.in, date: date, price: item.price, bill: resImg.url });
+                    } catch (err) {
+                        errLog.push(item);
+                    }
+                }
+                await Log_m.insertMany(log);
+                if (errLog.length) {
+                    const result: responst_t<"postStock"> = { status: "warning", errList: errLog };
+                    return res.send(result);
+                } else {
+                    const result: responst_t<"postStock"> = { status: "success" };
+                    return res.send(result);
+                }
+            } else {
+                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
+                return res.send(result);
+            }
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
+});
+app.post('/stock_out', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const data = JSON.parse(req.body) as stockOutForm_t;
+            const date = new Date();
+            let log: logInfo_t[] = [];
+            let errLog: stockForm_t[] = [];
+            for (const item of data.products) {
+                try {
+                    const resProduct = await Product_m.findOne({ id: item.productID });
+                    if (!resProduct || resProduct.amount === undefined || resProduct.amount < item.amount) {
+                        errLog.push(item);
+                        continue;
+                    }
+                    const newAmount = resProduct.amount - item.amount;
+                    let newStatus = newAmount === 0 ? stockStatus_e.stockOut : newAmount < resProduct.condition ? stockStatus_e.stockLow : stockStatus_e.normal;
+                    await Product_m.updateOne({ id: item.productID }, { $set: { amount: newAmount, status: newStatus } });
+                    log.push({ productID: item.productID, amount: item.amount, type: stockLogType_e.in, date: date, price: item.price, note: data.note });
+                } catch (err) {
+                    errLog.push(item);
+                }
+            }
+            await Log_m.insertMany(log);
+            if (errLog.length) {
+                const result: responst_t<"postStock"> = { status: "warning", errList: errLog };
+                return res.send(result);
+            } else {
+                const result: responst_t<"postStock"> = { status: "success" };
+                return res.send(result);
+            }
 
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
+});
+app.get('/log', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+
+});
+app.get('/status', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const stockOutCount = await Product_m.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.stockOut });
+            const stockLowCount = await Product_m.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.stockLow });
+            const stockCount = await Product_m.countDocuments({ type: productType_e.merchandise });
+            const materialOutCount = await Product_m.countDocuments({ type: productType_e.material, status: stockStatus_e.stockOut });
+            const materialLowCount = await Product_m.countDocuments({ type: productType_e.material, status: stockStatus_e.stockLow });
+            const materialCount = await Product_m.countDocuments({ type: productType_e.material });
+            const status: stockStatus_t = {
+                stockTotal: stockCount,
+                stockLow: stockLowCount,
+                stockOut: stockOutCount,
+                materialTotal: materialCount,
+                materialLow: materialLowCount,
+                materialOut: materialOutCount,
+            };
+            const result: responst_t<"getStatus"> = { status: "success", result: status };
+            return res.send(result);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
+});
 
 /*********************************************** */
 // Start Server
 /*********************************************** */
 app.listen(PORT, async () => {
-    const exists = await minioClient.bucketExists(DefaultBucket);
-    if (!exists) {
-        const policy = createPolicy(DefaultBucket, false);
-        await minioClient.makeBucket(DefaultBucket, "us-east-1");
-        await minioClient.setBucketPolicy(DefaultBucket, JSON.stringify(policy));
+    try {
+        await initBucket(DefaultBucket, false);
+        await initBucket(BillBucket, true);
+        console.log(`🚀 Server is running on http://localhost:${PORT}`);
+    } catch (err) {
+        console.error("Failed to initialize buckets:", err);
     }
-    console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });

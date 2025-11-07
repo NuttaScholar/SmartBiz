@@ -8,6 +8,10 @@ export enum stockStatus_e {
   stockLow,
   stockOut,
 }
+export enum stockLogType_e {
+  in,
+  out,
+}
 export enum role_e{
   admin,
   cashier,
