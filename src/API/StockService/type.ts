@@ -47,6 +47,10 @@ export type stockLog_t = {
   price?: number;
   description: string;
 }
+export type productRes_t = {
+  status: stockStatus_t;
+  products: productInfo_t[];
+}
 
 export type tokenPackage_t = {
   username: string;
@@ -61,7 +65,7 @@ export type responst_t<
 > = T extends "getProduct"
   ? {
     status: "success" | "error";
-    result?: productInfo_t[];
+    result?: productRes_t;
     errCode?: errorCode_e;
   }
   : T extends "getStatus"

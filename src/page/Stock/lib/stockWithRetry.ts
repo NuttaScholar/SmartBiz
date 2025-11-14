@@ -1,11 +1,14 @@
 import Stock_f from "../../../API/StockService/Stock";
-import { formProduct_t, productInfo_t, queryProduct_t } from "../../../API/StockService/type";
+import { formProduct_t, productRes_t, queryProduct_t, stockStatus_t } from "../../../API/StockService/type";
 import { AuthContext_t } from "../../../context/AuthContext";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
 
 interface resProductWithRetry_t extends resApiWithRetry_t {
-    result?: productInfo_t[];
+    result?: productRes_t;
+}
+interface resStatusWithRetry_t extends resApiWithRetry_t {
+    result?: stockStatus_t;
 }
 
 export async function getProduct(context: AuthContext_t, condition: queryProduct_t): Promise<resProductWithRetry_t> {
@@ -40,13 +43,21 @@ export async function delProduct(context: AuthContext_t, id: string): Promise<re
         throw new Error(`${err}`);
     }
 }
-
+export async function getStatus(context: AuthContext_t): Promise<resStatusWithRetry_t> {
+    try {
+        const res: resStatusWithRetry_t = await ApiWithRetry(context, Stock_f.getStatus);
+        return res;
+    } catch (err) {
+        throw new Error(`${err}`);
+    }
+}
 
 const stockWithRetry_f = {
     getProduct,
     postProduct,
     delProduct,
     putProduct,
+    getStatus,
 }
 
 export default stockWithRetry_f; 
