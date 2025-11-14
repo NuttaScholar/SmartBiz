@@ -183,7 +183,6 @@ const TebleLog: React.FC = () => {
       >
         <TableContainer
           component={Paper}
-          sx={{ maxHeight: "400px" }}
           elevation={4}
         >
           <Table
@@ -254,6 +253,7 @@ const TebleLog: React.FC = () => {
         </TableContainer>
         <TablePagination
           rowsPerPageOptions={[10, 25, 50]}
+          sx={{height:"100px"}}
           component="div"
           count={rows.length}
           rowsPerPage={rowsPerPage}
