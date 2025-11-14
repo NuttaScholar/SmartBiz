@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 //*************************************************
 interface myProps {
   children?: React.ReactNode;
+
 }
 //*************************************************
 // Function
@@ -111,7 +112,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
       .getProduct(authContext, query)
       .then((res) => {
         if (res.status === "success" && res.result !== undefined) {
-          res.result && setState({ ...state, productList: res.result });
+          res.result && setState({ ...state, productList: res.result.products, status: res.result.status });
         } else {
           res.errCode && alert(ErrorString(res.errCode));
         }
