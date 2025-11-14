@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import AppBar_c from "../../component/Organisms/AppBar_c";
 import {
   stock_t,

@@ -20,7 +20,7 @@ const StockStatus: React.FC = () => {
   // Local function **************************
   const onClickCard = (filter: stockFilter_e) => {
     setState({ ...state, filter: filter });
-  }
+  };
   const maxWidth = "150px";
   return (
     <Box
@@ -37,7 +37,7 @@ const StockStatus: React.FC = () => {
       <CardValue
         label="สินค้าหมด"
         selected={state.filter === stockFilter_e.stockOut}
-        value={2}
+        value={state.status ? state.status.stockOut : undefined}
         color_value="error"
         maxWidth={maxWidth}
         onClick={() => onClickCard(stockFilter_e.stockOut)}
@@ -45,7 +45,7 @@ const StockStatus: React.FC = () => {
       <CardValue
         label="วัตถุดิบหมด"
         selected={state.filter === stockFilter_e.materialOut}
-        value={2}
+        value={state.status ? state.status.materialOut : undefined}
         color_value="error"
         maxWidth={maxWidth}
         onClick={() => onClickCard(stockFilter_e.materialOut)}
@@ -53,15 +53,15 @@ const StockStatus: React.FC = () => {
       <CardValue
         label="สินค้าใกล้หมด"
         selected={state.filter === stockFilter_e.stockLow}
-        value={2}
+        value={state.status ? state.status.stockLow : undefined}
         color_value="info"
         maxWidth={maxWidth}
         onClick={() => onClickCard(stockFilter_e.stockLow)}
-      />      
+      />
       <CardValue
         label="วัตถุดิบใกล้หมด"
         selected={state.filter === stockFilter_e.materialLow}
-        value={2}
+        value={state.status ? state.status.materialLow : undefined}
         color_value="info"
         maxWidth={maxWidth}
         onClick={() => onClickCard(stockFilter_e.materialLow)}
