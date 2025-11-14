@@ -5,7 +5,7 @@ import { Card, CardActionArea, CardContent, Typography } from "@mui/material";
 //*************************************************
 interface myProps {
   label: string;
-  value: number;
+  value?: number;
   onClick?: () => void;
   selected?: boolean;
   color_value?: string;
@@ -38,7 +38,7 @@ const CardValue: React.FC<myProps> = (props) => {
             variant="h5"
             color={props.color_value || "text.secondary"}
           >
-            {props.value}
+            {props.value !== undefined ? props.value : "-"}
           </Typography>
         </CardContent>
       </CardActionArea>
