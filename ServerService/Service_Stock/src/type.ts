@@ -31,8 +31,8 @@ export type logInfo_t = {
 }
 export type logReq_t = {
   id: string;
-  index: number;
-  size: number;
+  index?: number;
+  size?: number;
 }
 export type logRes_t = {
   total: number;
@@ -47,6 +47,10 @@ export type stockStatus_t = {
   materialTotal: number;
   materialLow: number;
   materialOut: number;
+}
+export type productRes_t = {
+  status: stockStatus_t;
+  products: productInfo_t[];
 }
 export type billInfo_t = {
   id: string;
@@ -76,7 +80,7 @@ export type responst_t<
 > = T extends "getProduct"
   ? {
     status: "success" | "error";
-    result?: productInfo_t[];
+    result?: productRes_t;
     errCode?: errorCode_e;
   }
   : T extends "getStatus"

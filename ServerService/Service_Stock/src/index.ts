@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { logInfo_t, productInfo_t, responst_t, stockForm_t, stockOutForm_t, stockStatus_t, tokenPackage_t } from "./type";
+import { logInfo_t, logReq_t, logRes_t, productInfo_t, productRes_t, responst_t, stockForm_t, stockOutForm_t, stockStatus_t, tokenPackage_t } from "./type";
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
@@ -315,7 +315,7 @@ app.get('/product', AuthMiddleware, async (req: AuthRequest, res: Response) => {
             const matchStage = name ? { $match: { name: { $regex: name, $options: "i" } } } : null;
             if (status) filter.status = Number(status);
             if (type) filter.type = Number(type);
-            const data: productInfo_t[] = await Product_m.aggregate([
+            const productList: productInfo_t[] = await Product_m.aggregate([
                 { $match: filter },
                 ...(matchStage ? [matchStage] : []),
                 {
@@ -336,6 +336,24 @@ app.get('/product', AuthMiddleware, async (req: AuthRequest, res: Response) => {
                     $sort: { "name": 1 }
                 },
             ]);
+            const stockOutCount = await Product_m.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.stockOut });
+            const stockLowCount = await Product_m.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.stockLow });
+            const stockCount = await Product_m.countDocuments({ type: productType_e.merchandise });
+            const materialOutCount = await Product_m.countDocuments({ type: productType_e.material, status: stockStatus_e.stockOut });
+            const materialLowCount = await Product_m.countDocuments({ type: productType_e.material, status: stockStatus_e.stockLow });
+            const materialCount = await Product_m.countDocuments({ type: productType_e.material });
+            const stockStatus: stockStatus_t = {
+                stockTotal: stockCount,
+                stockLow: stockLowCount,
+                stockOut: stockOutCount,
+                materialTotal: materialCount,
+                materialLow: materialLowCount,
+                materialOut: materialOutCount,
+            };
+            const data: productRes_t = {
+                status: stockStatus,
+                products: productList,
+            }
             const result: responst_t<"getProduct"> = { status: "success", result: data }
             return res.send(result);
         } else {
@@ -423,7 +441,8 @@ app.post('/stock_out', AuthMiddleware, async (req: AuthRequest, res: Response) =
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
-            const data = JSON.parse(req.body) as stockOutForm_t;
+            const data = req.body as stockOutForm_t;
+            console.log(data);
             const date = new Date();
             let log: logInfo_t[] = [];
             let errLog: stockForm_t[] = [];
@@ -462,7 +481,49 @@ app.post('/stock_out', AuthMiddleware, async (req: AuthRequest, res: Response) =
     }
 });
 app.get('/log', AuthMiddleware, async (req: AuthRequest, res: Response) => {
-
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const { id, index, size } = req.query;
+            const index_n = Number(index || "0");
+            const size_n = Number(size || "50");
+            if (id) {
+                const log_size = await Log_m.countDocuments({ productID: id });
+                const data_log: logInfo_t[] = await Log_m.aggregate([
+                    { $match: { productID: id } },
+                    { $sort: { createdAt: -1 } },
+                    { $skip: index_n },
+                    { $limit: size_n },
+                    {
+                        $project: {
+                            _id: 0,
+                            productID: "$productID",
+                            amount: "$amount",
+                            type: "$type",
+                            date: "$date",
+                            price: "$price",
+                            bill: "$bill",
+                            note: "$note"
+                        }
+                    },
+                ])
+                const data_size = data_log.length;
+                const logResult: logRes_t = { index: index_n, size: data_size, total: log_size, logs: data_log };
+                const result: responst_t<"getLog"> = { status: "success", result: logResult };
+                return res.send(result);
+            } else {
+                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.InvalidInputError }
+                return res.send(result);
+            }
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
 });
 app.get('/status', AuthMiddleware, async (req: AuthRequest, res: Response) => {
     const data = req.authData;
