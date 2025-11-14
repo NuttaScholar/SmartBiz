@@ -1,6 +1,6 @@
 // src/context/AuthContext.tsx
 import { createContext } from "react";
-import { productInfo_t } from "../../../API/StockService/type";
+import { productInfo_t, stockStatus_t } from "../../../API/StockService/type";
 
 export enum stockFilter_e {
   stock,
@@ -18,17 +18,18 @@ export enum stockDialog_e {
   logs,
 }
 export type billForm_t = {
-  img?: File|null;
+  img?: File | null;
   description?: string;
 };
 export type stock_t = {
   filter: stockFilter_e;
+  dialogOpen: stockDialog_e;
+  reface: number;
+  status?: stockStatus_t;
   productList?: productInfo_t[];
   indexList?: number;
-  dialogOpen: stockDialog_e;
   productForm?: productInfo_t;
   billForm?: billForm_t;
-  reface: number; 
 };
 export type StockContext_t = {
   state: stock_t;
