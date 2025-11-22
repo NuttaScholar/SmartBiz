@@ -13,25 +13,25 @@ export function RoleString(data: role_e): string {
 export function ErrorString(data: errorCode_e): string {
     switch (data) {
         case errorCode_e.AlreadyExistsError:
-            return "Already Exists Error"
+            return "ข้อมูลนี้มีอยู่แล้ว";
         case errorCode_e.ForbiddenError:
-            return "Forbidden Error"
+            return "ไม่ได้รับอนุญาต";
         case errorCode_e.InUseError:
-            return "InUse Error"
+            return "ข้อมูลยังถูกใช้งานอยู่";
         case errorCode_e.InvalidInputError:
-            return "Invalid Input Error"
+            return "ข้อมูลนำเข้าไม่ถูกต้อง";
         case errorCode_e.InvalidStateError:
-            return "Invalid State Error"
+            return "สถานะไม่ถูกต้องสำหรับการดำเนินการ";
         case errorCode_e.NotFoundError:
-            return "Not Found Error"
+            return "ไม่พบข้อมูลที่ร้องขอ";
         case errorCode_e.PermissionDeniedError:
-            return "Permission Denied Error"
+            return "สิทธิ์การเข้าถึงถูกปฏิเสธ";
         case errorCode_e.TimeoutError:
-            return "Timeout Error"
+            return "คำขอหมดเวลา"
         case errorCode_e.TokenExpiredError:
-            return "Token Expired Error"
+            return "Token หมดอายุ";
         case errorCode_e.UnauthorizedError:
-            return "Unauthorized Error"
+            return "ยไม่ได้รับการยืนยันตัวตน";
         case errorCode_e.UnknownError:
             return "UnknownError"
     }
