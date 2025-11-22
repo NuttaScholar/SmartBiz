@@ -64,7 +64,7 @@ export type stockLog_t = {
   billID: string;
   amount: number;
 }
-
+export type errList_t = stockForm_t[];
 export type tokenPackage_t = {
   username: string;
   role: role_e;
@@ -98,7 +98,7 @@ export type responst_t<
   : T extends "postStock"
   ? {
     status: "success" | "error" | "warning";
-    errList?: stockForm_t[];
+    result?: errList_t; 
     errCode?: errorCode_e;
   }
   : {
