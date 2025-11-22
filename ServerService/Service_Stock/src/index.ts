@@ -90,7 +90,7 @@ mongoose.connect(process.env.DB_URL as string);
 // กำหนด Schema
 const productSchema = new mongoose.Schema<productInfo_t>({
     id: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
+    name: { type: String, required: true, unique: true },
     type: { type: Number, required: true },
     status: { type: Number, required: true },
     amount: { type: Number, },
@@ -208,37 +208,41 @@ app.post('/product', AuthMiddleware, upload.single("file"), async (req: AuthRequ
             if (await Product_m.findOne({ id: data.id })) {
                 const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.AlreadyExistsError };
                 return res.send(result);
-            } else {
-                let status = stockStatus_e.normal;
-
-                if (data.amount !== undefined && data.condition !== undefined) {
-                    const amount = Number(data.amount);
-                    const condition = Number(data.condition);
-                    if (amount === 0) {
-                        console.log("stockOut")
-                        status = stockStatus_e.stockOut;
-                    } else if (amount < condition) {
-                        console.log("stockLow")
-                        status = stockStatus_e.stockLow;
-                    } else {
-                        console.log("normal")
-                        status = stockStatus_e.normal
-                    }
-                }
-
-                if (req.file) {
-                    const resImg = await postImg(req.file.buffer, DefaultBucket, data.id);
-                    const imgUrl = `${minioHost}/${resImg.url}`;
-                    const newProduct = new Product_m({ ...data, status: status, img: imgUrl/*  */ });
-                    await newProduct.save();
-                } else {
-                    const newProduct = new Product_m({ ...data, status: status });
-                    await newProduct.save();
-                }
-
-                const result: responst_t<"none"> = { status: "success" };
+            }
+            if (await Product_m.findOne({ name: data.name })) {
+                const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.AlreadyExistsError };
                 return res.send(result);
             }
+            let status = stockStatus_e.normal;
+
+            if (data.amount !== undefined && data.condition !== undefined) {
+                const amount = Number(data.amount);
+                const condition = Number(data.condition);
+                if (amount === 0) {
+                    console.log("stockOut")
+                    status = stockStatus_e.stockOut;
+                } else if (amount < condition) {
+                    console.log("stockLow")
+                    status = stockStatus_e.stockLow;
+                } else {
+                    console.log("normal")
+                    status = stockStatus_e.normal
+                }
+            }
+
+            if (req.file) {
+                const resImg = await postImg(req.file.buffer, DefaultBucket, data.id);
+                const imgUrl = `${minioHost}/${resImg.url}`;
+                const newProduct = new Product_m({ ...data, status: status, img: imgUrl/*  */ });
+                await newProduct.save();
+            } else {
+                const newProduct = new Product_m({ ...data, status: status });
+                await newProduct.save();
+            }
+
+            const result: responst_t<"none"> = { status: "success" };
+            return res.send(result);
+
         } else {
             const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             return res.send(result);
@@ -258,44 +262,49 @@ app.put('/product', AuthMiddleware, upload.single("file"), async (req: AuthReque
             if (!resProduct) {
                 const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.NotFoundError };
                 return res.send(result);
-            } else {
-                let status = stockStatus_e.normal;
-
-                if (data.amount !== undefined && data.condition !== undefined) {
-                    const amount = Number(resProduct.amount);
-                    const condition = Number(data.condition);
-                    if (amount === 0) {
-                        console.log("stockOut")
-                        status = stockStatus_e.stockOut;
-                    } else if (amount < condition) {
-                        console.log("stockLow")
-                        status = stockStatus_e.stockLow;
-                    } else {
-                        console.log("normal")
-                        status = stockStatus_e.normal
-                    }
-                }
-                if (req.file) {
-                    if (resProduct.img) {
-                        const Bucket = DefaultBucket;
-                        const Key = resProduct.img?.split("/").pop() as string;
-                        await minioClient.removeObject(Bucket, Key);
-                    }
-                    const resImg = await postImg(req.file.buffer, DefaultBucket, data.id);
-                    await Product_m.updateOne({ id: data.id }, { ...data, status: status, img: resImg.url });
-                } else if (data.img === "") {
-                    if (resProduct.img) {
-                        const Bucket = DefaultBucket;
-                        const Key = resProduct.img?.split("/").pop() as string;
-                        await minioClient.removeObject(Bucket, Key);
-                    }
-                    await Product_m.updateOne({ id: data.id }, { ...data, status: status, img: "" });
-                } else {
-                    await Product_m.updateOne({ id: data.id }, { ...data, status: status });
-                }
-                const result: responst_t<"none"> = { status: "success" };
-                return res.send(result);
             }
+            if (resProduct.name !== data.name) {
+                if (await Product_m.findOne({ name: data.name })) {
+                    const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.AlreadyExistsError };
+                    return res.send(result);
+                }
+            }
+            let status = stockStatus_e.normal;
+            if (data.amount !== undefined && data.condition !== undefined) {
+                const amount = Number(resProduct.amount);
+                const condition = Number(data.condition);
+                if (amount === 0) {
+                    console.log("stockOut")
+                    status = stockStatus_e.stockOut;
+                } else if (amount < condition) {
+                    console.log("stockLow")
+                    status = stockStatus_e.stockLow;
+                } else {
+                    console.log("normal")
+                    status = stockStatus_e.normal
+                }
+            }
+            if (req.file) {
+                if (resProduct.img) {
+                    const Bucket = DefaultBucket;
+                    const Key = resProduct.img?.split("/").pop() as string;
+                    await minioClient.removeObject(Bucket, Key);
+                }
+                const resImg = await postImg(req.file.buffer, DefaultBucket, data.id);
+                await Product_m.updateOne({ id: data.id }, { ...data, status: status, img: resImg.url });
+            } else if (data.img === "") {
+                if (resProduct.img) {
+                    const Bucket = DefaultBucket;
+                    const Key = resProduct.img?.split("/").pop() as string;
+                    await minioClient.removeObject(Bucket, Key);
+                }
+                await Product_m.updateOne({ id: data.id }, { ...data, status: status, img: "" });
+            } else {
+                await Product_m.updateOne({ id: data.id }, { ...data, status: status });
+            }
+            const result: responst_t<"none"> = { status: "success" };
+            return res.send(result);
+
         } else {
             const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
             return res.send(result);
@@ -417,7 +426,7 @@ app.post('/stock_in', AuthMiddleware, upload.single("file"), async (req: AuthReq
                 }
                 await Log_m.insertMany(log);
                 if (errLog.length) {
-                    const result: responst_t<"postStock"> = { status: "warning", errList: errLog };
+                    const result: responst_t<"postStock"> = { status: "warning", result: errLog };
                     return res.send(result);
                 } else {
                     const result: responst_t<"postStock"> = { status: "success" };
@@ -463,7 +472,7 @@ app.post('/stock_out', AuthMiddleware, async (req: AuthRequest, res: Response) =
             }
             await Log_m.insertMany(log);
             if (errLog.length) {
-                const result: responst_t<"postStock"> = { status: "warning", errList: errLog };
+                const result: responst_t<"postStock"> = { status: "warning", result: errLog };
                 return res.send(result);
             } else {
                 const result: responst_t<"postStock"> = { status: "success" };
