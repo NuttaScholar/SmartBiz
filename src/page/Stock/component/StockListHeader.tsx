@@ -107,7 +107,6 @@ const StockListHeader: React.FC<myProps> = (props) => {
           status: stockStatus_e.stockOut,
         };
     }
-    console.log("query", query);
     stockWithRetry_f
       .getProduct(authContext, query)
       .then((res) => {
