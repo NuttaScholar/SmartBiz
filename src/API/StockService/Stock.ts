@@ -1,5 +1,5 @@
 import { axios_stock } from "../../lib/axios";
-import { formProduct_t, queryProduct_t, responst_t } from "./type";
+import { formProduct_t, queryProduct_t, responst_t, stockOutForm_t } from "./type";
 
 export async function postProduct(
     token: string,
@@ -56,23 +56,35 @@ export async function putProduct(
 }
 export async function getProduct(
     token: string,
-    condition: queryProduct_t
+    condition?: queryProduct_t
 ): Promise<responst_t<"none">> {
     try {
-        const { name, status, type } = condition;
-        let query: string = `type=${type}`;
-        name && (query += `&name=${name}`);
-        status && (query += `&status=${status}`);
+        if (condition) {
+            const { name, status, type } = condition;
+            let query: string = `type=${type}`;
+            name && (query += `&name=${name}`);
+            status && (query += `&status=${status}`);
 
-        const res = await axios_stock.get(
-            `/product?${query}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-        return res.data as responst_t<"getProduct">;
+            const res = await axios_stock.get(
+                `/product?${query}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            return res.data as responst_t<"getProduct">;
+        } else {
+            const res = await axios_stock.get(
+                `/product`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            return res.data as responst_t<"getProduct">;
+        }
     } catch (err) {
         throw err;
     }
@@ -109,6 +121,22 @@ export async function getStatus(
         throw err;
     }
 }
+export async function postStockOut(token: string,
+    data: stockOutForm_t): Promise<responst_t<"postStock">> {
+    try {
+        const res = await axios_stock.post(
+            `/stock_out`,
+            data, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+        );
+        return res.data as responst_t<"postStock">;
+    } catch (err) {
+        throw err;
+    }
+}
 
 const Stock_f = {
     getProduct,
@@ -116,6 +144,7 @@ const Stock_f = {
     delProduct,
     putProduct,
     getStatus,
+    postStockOut,
 }
 
 export default Stock_f;

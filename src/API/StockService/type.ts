@@ -15,7 +15,7 @@ export type formProduct_t = {
   id: string;
   type: productType_e;
   name: string;
-  img?: File | null;  
+  img?: File | null;
   condition?: number;
   price?: number;
   description?: string;
@@ -51,7 +51,16 @@ export type productRes_t = {
   status: stockStatus_t;
   products: productInfo_t[];
 }
-
+export type stockForm_t = {
+  productID: string;
+  amount: number;
+  price?: number;
+}
+export type stockOutForm_t = {
+  note?: string;
+  products: stockForm_t[];
+}
+export type errList_t = stockForm_t[];
 export type tokenPackage_t = {
   username: string;
   role: role_e;
@@ -61,6 +70,7 @@ export type responst_t<
   T extends
   | "getProduct"
   | "getStatus"
+  | "postStock"
   | "none"
 > = T extends "getProduct"
   ? {
@@ -72,6 +82,12 @@ export type responst_t<
   ? {
     status: "success" | "error";
     result?: stockStatus_t;
+    errCode?: errorCode_e;
+  }
+  :T extends "postStock"
+  ? {
+    status: "success" | "error" | "warning";
+    errList?: errList_t; 
     errCode?: errorCode_e;
   }
   : {
