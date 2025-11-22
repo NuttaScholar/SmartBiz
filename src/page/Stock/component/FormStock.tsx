@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Box, Button } from "@mui/material";
 import FieldText from "../../../component/Molecules/FieldText";
 import { useStockContext } from "../hooks/useStockContex";
@@ -31,6 +31,7 @@ type Form_t = {
 //*********************************************
 interface myProps {
   type: "in" | "out";
+  listOption?: productInfo_t[];
 }
 //*********************************************
 // Component
@@ -42,11 +43,14 @@ const FormStock: React.FC<myProps> = (props) => {
   const [clear, setClear] = useState(0);
   //const authContext = useAuth();
   // Local Variable *****************
-  const list: Option_t[] = [
-    { code: "001B01", value: "อังกฤษ" },
-    { code: "002CH02", value: "ไก่กลาง" },
-    { code: "003P01", value: "เม็ดพลาสติก" },
-  ];
+  const options: Option_t[] = useMemo(() => {
+    return (
+      props.listOption?.map((item: productInfo_t) => ({
+        code: item.id,
+        value: item.name,
+      })) ?? []
+    );
+  }, [props.listOption]);
   // Local Function *****************
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,9 +61,11 @@ const FormStock: React.FC<myProps> = (props) => {
       name: form.product?.value || "",
       amount: form.amount ? Number(form.amount) : 0,
       price: form.price ? Number(form.price) : 0,
-      type: productType_e.merchandise, 
-      status: stockStatus_e.normal,           
-      img: `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_MINIO}/product/${form.product?.code}.webp`,
+      type: props.type==="in"?productType_e.merchandise:productType_e.material,
+      status: stockStatus_e.normal,
+      img: props.listOption?.find(
+        (item) => item.id === form.product?.code
+      )?.img|| "",
     };
     setState({
       ...state,
@@ -72,6 +78,7 @@ const FormStock: React.FC<myProps> = (props) => {
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [event.target.name]: event.target.value } as Form_t);
   };
+  // UI *****************************
   return (
     <Field maxWidth="1280px">
       <Box
@@ -90,7 +97,7 @@ const FormStock: React.FC<myProps> = (props) => {
           labelCode="ProductID"
           required
           labelValue="Name"
-          option={list}
+          option={options || []}
           hideField
           duble
           clear={clear}
