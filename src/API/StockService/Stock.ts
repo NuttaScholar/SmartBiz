@@ -1,5 +1,5 @@
 import { axios_stock } from "../../lib/axios";
-import { formProduct_t, queryProduct_t, responst_t, stockOutForm_t } from "./type";
+import { formProduct_t, logReq_t, queryProduct_t, responst_t, stockInForm_t, stockOutForm_t } from "./type";
 
 export async function postProduct(
     token: string,
@@ -57,7 +57,7 @@ export async function putProduct(
 export async function getProduct(
     token: string,
     condition?: queryProduct_t
-): Promise<responst_t<"none">> {
+): Promise<responst_t<"getProduct">> {
     try {
         if (condition) {
             const { name, status, type } = condition;
@@ -121,6 +121,30 @@ export async function getStatus(
         throw err;
     }
 }
+export async function getLog(
+    token: string,
+    req: logReq_t
+): Promise<responst_t<"getLog">> {
+    try {
+        const { id, type, index, size } = req;
+        let query: string = `id=${id}&type=${type}`;
+        (index!==undefined) && (query += `&index=${index}`);
+        (size!==undefined) && (query += `&size=${size}`);
+
+        const res = await axios_stock.get(
+            `/log?${query}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+        return res.data as responst_t<"getLog">;
+
+    } catch (err) {
+        throw err;
+    }
+}
 export async function postStockOut(token: string,
     data: stockOutForm_t): Promise<responst_t<"postStock">> {
     try {
@@ -137,6 +161,27 @@ export async function postStockOut(token: string,
         throw err;
     }
 }
+export async function postStockIn(token: string,
+    data: stockInForm_t): Promise<responst_t<"postStock">> {
+    try {
+        const formData = new FormData();
+        const { bill_Img, ...rest } = data;
+        formData.append("products", JSON.stringify(rest.products));
+        bill_Img && formData.append("file", bill_Img);
+        const res = await axios_stock.post(
+            `/stock_in`,
+            formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+        );
+        return res.data as responst_t<"postStock">;
+    } catch (err) {
+        throw err;
+    }
+}
+
 
 const Stock_f = {
     getProduct,
@@ -144,7 +189,9 @@ const Stock_f = {
     delProduct,
     putProduct,
     getStatus,
+    getLog,
     postStockOut,
+    postStockIn,
 }
 
 export default Stock_f;

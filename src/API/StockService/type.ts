@@ -1,4 +1,4 @@
-import { errorCode_e, productType_e, role_e, stockStatus_e, } from "../../enum";
+import { errorCode_e, productType_e, role_e, stockLogType_e, stockStatus_e, } from "../../enum";
 
 export type productInfo_t = {
   id: string;
@@ -25,6 +25,27 @@ export type queryProduct_t = {
   type: productType_e;
   name?: string;
   status?: stockStatus_e;
+}
+export type logInfo_t = {
+  productID:  string;
+  amount: number;
+  type: stockLogType_e,
+  date: Date;
+  price?: number;
+  bill?: string;
+  note?: string;
+}
+export type logReq_t = {
+  id: string;
+  type: stockLogType_e;
+  index?: number;
+  size?: number;
+}
+export type logRes_t = {
+  total: number;
+  index: number;
+  size: number;
+  logs: logInfo_t[];
 }
 export type stockStatus_t = {
   stockTotal: number;
@@ -60,6 +81,10 @@ export type stockOutForm_t = {
   note?: string;
   products: stockForm_t[];
 }
+export type stockInForm_t = {
+  bill_Img?: File | null;
+  products: stockForm_t[];
+}
 export type errList_t = stockForm_t[];
 export type tokenPackage_t = {
   username: string;
@@ -70,6 +95,7 @@ export type responst_t<
   T extends
   | "getProduct"
   | "getStatus"
+  | "getLog"
   | "postStock"
   | "none"
 > = T extends "getProduct"
@@ -82,6 +108,12 @@ export type responst_t<
   ? {
     status: "success" | "error";
     result?: stockStatus_t;
+    errCode?: errorCode_e;
+  }
+  : T extends "getLog"
+  ? {
+    status: "success" | "error";
+    result?: logRes_t;
     errCode?: errorCode_e;
   }
   :T extends "postStock"

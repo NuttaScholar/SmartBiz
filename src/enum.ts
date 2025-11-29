@@ -19,6 +19,10 @@ export enum role_e{
   cashier,
   laber,
 }
+export enum stockLogType_e {
+  in,
+  out,
+}
 export enum service_e{
   login,
   account,

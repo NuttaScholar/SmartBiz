@@ -1,5 +1,5 @@
 import Stock_f from "../../../API/StockService/Stock";
-import { formProduct_t, productRes_t, queryProduct_t, stockForm_t, stockOutForm_t, stockStatus_t } from "../../../API/StockService/type";
+import { formProduct_t, logReq_t, logRes_t, productRes_t, queryProduct_t, stockForm_t, stockInForm_t, stockOutForm_t, stockStatus_t } from "../../../API/StockService/type";
 import { AuthContext_t } from "../../../context/AuthContext";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
@@ -12,6 +12,9 @@ interface resStatusWithRetry_t extends resApiWithRetry_t {
 }
 interface resStockOutWithRetry_t extends resApiWithRetry_t {
     result?: stockForm_t[];
+}
+interface resLogWithRetry_t extends resApiWithRetry_t {
+    result?: logRes_t;
 }
 
 export async function getProduct(context: AuthContext_t, condition?: queryProduct_t): Promise<resProductWithRetry_t> {
@@ -54,16 +57,31 @@ export async function getStatus(context: AuthContext_t): Promise<resStatusWithRe
         throw err;
     }
 }
-export async function postStockOut(context: AuthContext_t, data: stockOutForm_t): Promise<resStockOutWithRetry_t> {
+export async function getLog(context: AuthContext_t, req:logReq_t): Promise<resLogWithRetry_t> {
     try {
-        console.log("postStockOut data", data);
-        const res: resStockOutWithRetry_t = await ApiWithRetry(context, Stock_f.postStockOut, data);
+        const res: resLogWithRetry_t = await ApiWithRetry(context, Stock_f.getLog, req);
         return res;
     } catch (err) {
-        console.log("postStockOut err", err);
         throw err;
     }
 }
+export async function postStockOut(context: AuthContext_t, data: stockOutForm_t): Promise<resStockOutWithRetry_t> {
+    try {
+        const res: resStockOutWithRetry_t = await ApiWithRetry(context, Stock_f.postStockOut, data);
+        return res;
+    } catch (err) {
+        throw err;
+    }
+}
+export async function postStockIn(context: AuthContext_t, data: stockInForm_t): Promise<resStockOutWithRetry_t> {
+    try {
+        const res: resStockOutWithRetry_t = await ApiWithRetry(context, Stock_f.postStockIn, data);
+        return res;
+    } catch (err) {
+        throw err;
+    }
+}
+
 
 const stockWithRetry_f = {
     getProduct,
@@ -71,7 +89,9 @@ const stockWithRetry_f = {
     delProduct,
     putProduct,
     getStatus,
+    getLog,
     postStockOut,
+    postStockIn,
 }
 
 export default stockWithRetry_f; 
