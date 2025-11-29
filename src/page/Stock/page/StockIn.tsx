@@ -13,12 +13,20 @@ import {
 import React from "react";
 import StockList from "../component/StockList";
 import DialogStockEdit from "../component/DialogStockEdit";
-import { productInfo_t } from "../../../API/StockService/type";
+import { productInfo_t, stockForm_t, stockInForm_t } from "../../../API/StockService/type";
+import { useAuth } from "../../../hooks/useAuth";
+import stockWithRetry_f from "../lib/stockWithRetry";
+import { ErrorString } from "../../../function/Enum";
+import { errorCode_e } from "../../../enum";
 
 export default function Page_StockIn() {
+  // Hook ************************************
+  const authContext = useAuth();
+  const nevigate = useNavigate();
   const [state, setState] = React.useState<stock_t>(StockDefaultState);
+  const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
   const navigate = useNavigate();
-
+  // Local function **************************
   const onEdit = (del: boolean, value: productInfo_t) => {
     if (state.productList !== undefined) {
       const index = state.productList.findIndex((item) => item.id === value.id);
@@ -31,15 +39,74 @@ export default function Page_StockIn() {
         ];
         setState({ ...state, productList: newList });
       } else {
-        setState({...state, dialogOpen: stockDialog_e.editForm, indexList: index});
+        setState({
+          ...state,
+          dialogOpen: stockDialog_e.editForm,
+          indexList: index,
+        });
       }
     }
   };
-  const onSave = () => {    
-    console.log("img",state.billForm);
-    console.log("list",state.productList);
-    navigate("/stock");
+  const onSave = () => {
+    console.log("img", state.billForm);
+    console.log("list", state.productList);
+    if (
+      state.billForm?.img === undefined ||
+      state.billForm.img === null
+    ){
+      alert("กรุณาแนบรูปใบเสร็จรับเงิน");
+      return;
+    }
+    if (state.productList === undefined || state.productList.length <= 0) {
+      alert("กรุณาเพิ่มสินค้าที่ต้องการตัดสต็อก");
+      return;
+    }
+    const list: stockForm_t[] = state.productList.map((item) => ({
+          productID: item.id,
+          amount: item.amount || 0,
+          price: item.price,
+        }));
+        const data: stockInForm_t = {
+          bill_Img: state.billForm.img,
+          products: list,
+        };
+    stockWithRetry_f
+      .postStockIn(authContext, data)
+      .then((res) => {
+        if (res.status === "success") {
+          nevigate("/stock");
+        } else if (res.status === "warning") {
+          alert(`พบปัญหา! ไม่สามารถตัดสต็อกรายการต่อไปนี้ได้\n${res.result?.map((item) => `ID: ${item.productID}, Amount: ${item.amount}`).join("\n")}
+          `);
+        } else {
+          alert(
+            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`
+          );
+        }
+      })
+      .catch((err) => {
+        alert(`เกิดข้อผิดพลาด`);
+        console.log("postStockOutError", err);
+      });
   };
+  // Use Effect ******************************
+  React.useEffect(() => {
+    stockWithRetry_f
+      .getProduct(authContext)
+      .then((res) => {
+        if (res.status === "success" && res.result !== undefined) {
+          res.result && setListOption(res.result.products);
+        } else {
+          alert(
+            `เกินข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`
+          );
+        }
+      })
+      .catch((err) => {
+        nevigate("/");
+        console.log(err);
+      });
+  }, []);
   return (
     <StockContext.Provider value={{ state, setState }}>
       <HeaderDialog label={"เติมสต็อก"} onClick={() => navigate("/stock")}>
@@ -65,11 +132,13 @@ export default function Page_StockIn() {
           gap: "8px",
         }}
       >
-        <FormStockHeader type="in"/>
-        <FormStock type="in" />
+        <FormStockHeader type="in" />
+        <FormStock type="in" listOption={listOption} />
         <StockList variant="deleteable" onClick={onEdit} />
       </Box>
-      <DialogStockEdit type="in"/>
+      <DialogStockEdit type="in" />
     </StockContext.Provider>
   );
 }
+
+
