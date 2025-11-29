@@ -29,7 +29,6 @@ export default function Page_StockOut() {
   const nevigate = useNavigate();
   const [state, setState] = React.useState<stock_t>(StockDefaultState);
   const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
-  const navigate = useNavigate();
   // Local function **************************
   const onEdit = (del: boolean, value: productInfo_t) => {
     if (state.productList !== undefined) {
@@ -78,7 +77,7 @@ export default function Page_StockOut() {
       .postStockOut(authContext, data)
       .then((res) => {
         if (res.status === "success") {
-          navigate("/stock");
+          nevigate("/stock");
         } else if (res.status === "warning") {
           alert(`พบปัญหา! ไม่สามารถตัดสต็อกรายการต่อไปนี้ได้\n${res.result?.map((item) => `ID: ${item.productID}, Amount: ${item.amount}`).join("\n")}
           `);
@@ -93,6 +92,7 @@ export default function Page_StockOut() {
         console.log("postStockOutError", err);
       });
   };
+  // Use Effect ******************************
   React.useEffect(() => {
     stockWithRetry_f
       .getProduct(authContext)
@@ -112,7 +112,7 @@ export default function Page_StockOut() {
   }, []);
   return (
     <StockContext.Provider value={{ state, setState }}>
-      <HeaderDialog label={"ตัดสต็อก"} onClick={() => navigate("/stock")}>
+      <HeaderDialog label={"ตัดสต็อก"} onClick={() => nevigate("/stock")}>
         <Box sx={{ display: "flex", flexGrow: 1, justifyContent: "flex-end" }}>
           <IconButton
             onClick={onSave}
