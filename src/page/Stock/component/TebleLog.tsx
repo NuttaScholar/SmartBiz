@@ -8,114 +8,16 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  useTheme,
 } from "@mui/material";
 import TabBox from "../../../component/Atoms/TabBox";
-import { stockLog_t } from "../../../API/StockService/type";
-import React from "react";
+import { logInfo_t, logReq_t } from "../../../API/StockService/type";
+import React, { useEffect } from "react";
 import TopicIcon from "@mui/icons-material/Topic";
 import DialogShowImg from "../../../component/Organisms/DialogShowImg";
-//*********************************************
-// Deta set
-//*********************************************
-const rows: stockLog_t[] = [
-  {
-    date: new Date("2024-06-01"),
-    amount: 50,
-    price: 5000,
-    description: "http://localhost:9000/product/01B004_3d5e5b77e2fae639",
-  },
-  {
-    date: new Date("2024-06-05"),
-    amount: -20,
-    price: 2000,
-    description: "http://localhost:9000/product/01B002_c78d5154ef68904c",
-  },
-  {
-    date: new Date("2024-06-10"),
-    amount: 30,
-    price: 3000,
-    description: "http://localhost:9000/product/01B004_49eb0c32886baaf7",
-  },
-  {
-    date: new Date("2024-06-15"),
-    amount: -10,
-    price: 1000,
-    description: "ตัดสต็อกสินค้า A",
-  },
-  {
-    date: new Date("2024-06-01"),
-    amount: 50,
-    price: 5000,
-    description: "http://localhost:9000/product/01B004_3d5e5b77e2fae639",
-  },
-  {
-    date: new Date("2024-06-05"),
-    amount: -20,
-    price: 2000,
-    description: "http://localhost:9000/product/01B002_c78d5154ef68904c",
-  },
-  {
-    date: new Date("2024-06-10"),
-    amount: 30,
-    price: 3000,
-    description: "http://localhost:9000/product/01B004_49eb0c32886baaf7",
-  },
-  {
-    date: new Date("2024-06-15"),
-    amount: -10,
-    price: 1000,
-    description: "ตัดสต็อกสินค้า A",
-  },
-  {
-    date: new Date("2024-06-01"),
-    amount: 50,
-    price: 5000,
-    description: "http://localhost:9000/product/01B004_3d5e5b77e2fae639",
-  },
-  {
-    date: new Date("2024-06-05"),
-    amount: -20,
-    price: 2000,
-    description: "http://localhost:9000/product/01B002_c78d5154ef68904c",
-  },
-  {
-    date: new Date("2024-06-10"),
-    amount: 30,
-    price: 3000,
-    description: "http://localhost:9000/product/01B004_49eb0c32886baaf7",
-  },
-  {
-    date: new Date("2024-06-15"),
-    amount: -10,
-    price: 1000,
-    description: "ตัดสต็อกสินค้า A",
-  },
-  {
-    date: new Date("2024-06-01"),
-    amount: 50,
-    price: 5000,
-    description: "http://localhost:9000/product/01B004_3d5e5b77e2fae639",
-  },
-  {
-    date: new Date("2024-06-05"),
-    amount: -20,
-    price: 2000,
-    description: "http://localhost:9000/product/01B002_c78d5154ef68904c",
-  },
-  {
-    date: new Date("2024-06-10"),
-    amount: 30,
-    price: 3000,
-    description: "http://localhost:9000/product/01B004_49eb0c32886baaf7",
-  },
-  {
-    date: new Date("2024-06-15"),
-    amount: -10,
-    price: 1000,
-    description: "ตัดสต็อกสินค้า A",
-  },
-];
+import stockWithRetry_f from "../lib/stockWithRetry";
+import { useAuth } from "../../../hooks/useAuth";
+import { stockLogType_e } from "../../../enum";
+
 //*********************************************
 // Type
 //*********************************************
@@ -124,6 +26,12 @@ type headerTable_t = {
   lable: string;
   align: "left" | "right" | "center";
 };
+//*********************************************
+// Interface
+//*********************************************
+interface myProps {
+  productID: string;
+}
 //*********************************************
 // Header Table
 //*********************************************
@@ -149,7 +57,9 @@ const headerStockOut: headerTable_t[] = [
 //*********************************************
 // Component
 //*********************************************
-const TebleLog: React.FC = () => {
+const TebleLog: React.FC<myProps> = (props) => {
+  const auth = useAuth();
+  const [rows, setRow] = React.useState<logInfo_t[]>([]);
   const [tab, setTab] = React.useState(0);
   const [open, setOpen] = React.useState(false);
   const [img, setImg] = React.useState("");
@@ -170,9 +80,26 @@ const TebleLog: React.FC = () => {
     setImg(imgUrl);
     setOpen(true);
   };
+  useEffect(() => {
+    const data:logReq_t = {
+      id: props.productID,
+      type: tab===0?stockLogType_e.in:stockLogType_e.out,
+    };
+    stockWithRetry_f.getLog(auth, data).then((res) => {
+      console.log("Get log:", res);
+      if(res.status==="success"&&res.result!==undefined){
+        setRow(res.result.logs);
+      }else{
+        alert("ไม่สามารถดึงข้อมูลประวัติการเปลี่ยนแปลงสต็อกได้");
+      }
+      
+    }).catch((err) => {
+      console.error("Get log error:", err);
+    });
+  }, [tab, props.productID]);
 
   return (
-    <>
+    <>    
       <TabBox
         list={["เติมสต็อก", "ตัดสต็อก"]}
         height="calc(100vh - 120px)"
@@ -227,7 +154,7 @@ const TebleLog: React.FC = () => {
                       component="th"
                       scope="row"
                     >
-                      {row.date.toLocaleDateString()}
+                      {new Date(row.date).toLocaleDateString()}
                     </TableCell>
                     <TableCell sx={{ py: 0, height: "50px" }} align="center">
                       {row.amount}
@@ -239,11 +166,11 @@ const TebleLog: React.FC = () => {
                     )}
                     <TableCell sx={{ py: 0, height: "50px" }} align="right">
                       {tab === 0 ? (
-                        <IconButton onClick={() => onOpenImg(row.description)}>
+                        <IconButton onClick={() => onOpenImg(row.bill || "")}>
                           <TopicIcon />
                         </IconButton>
                       ) : (
-                        row.description
+                        row.note
                       )}
                     </TableCell>
                   </TableRow>
@@ -257,7 +184,7 @@ const TebleLog: React.FC = () => {
           component="div"
           count={rows.length}
           rowsPerPage={rowsPerPage}
-          page={page}
+          page={page}          
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />

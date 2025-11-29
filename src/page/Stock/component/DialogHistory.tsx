@@ -77,7 +77,7 @@ const DialogHistory: React.FC<myProps> = (props) => {
             variant={"readonly"}
           />
         )}
-        <TebleLog/>
+        <TebleLog productID={state.productForm?.id||""}/>
       </Box>
     </Dialog>
   );
