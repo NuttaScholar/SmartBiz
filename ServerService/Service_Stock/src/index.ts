@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { logInfo_t, logReq_t, logRes_t, productInfo_t, productRes_t, responst_t, stockForm_t, stockOutForm_t, stockStatus_t, tokenPackage_t } from "./type";
+import { logInfo_t, logReq_t, logRes_t, productInfo_t, productRes_t, responst_t, stockForm_t, stockInForm_t, stockOutForm_t, stockStatus_t, tokenPackage_t } from "./type";
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
@@ -403,7 +403,8 @@ app.post('/stock_in', AuthMiddleware, upload.single("file"), async (req: AuthReq
     try {
         if (data?.role === role_e.admin) {
             if (req.file) {
-                const data = JSON.parse(req.body) as stockForm_t[];
+                const { products } = req.body as { products: string };
+                const data = JSON.parse(products) as stockForm_t[];
                 const date = new Date();
                 const imgKey = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
                 const resImg = await postImg(req.file.buffer, BillBucket, imgKey);
@@ -465,7 +466,7 @@ app.post('/stock_out', AuthMiddleware, async (req: AuthRequest, res: Response) =
                     const newAmount = resProduct.amount - item.amount;
                     let newStatus = newAmount === 0 ? stockStatus_e.stockOut : newAmount < resProduct.condition ? stockStatus_e.stockLow : stockStatus_e.normal;
                     await Product_m.updateOne({ id: item.productID }, { $set: { amount: newAmount, status: newStatus } });
-                    log.push({ productID: item.productID, amount: item.amount, type: stockLogType_e.in, date: date, price: item.price, note: data.note });
+                    log.push({ productID: item.productID, amount: item.amount, type: stockLogType_e.out, date: date, price: item.price, note: data.note });
                 } catch (err) {
                     errLog.push(item);
                 }
@@ -493,13 +494,14 @@ app.get('/log', AuthMiddleware, async (req: AuthRequest, res: Response) => {
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
-            const { id, index, size } = req.query;
+            const { id, type, index, size } = req.query; // logReq_t
+            const type_n = Number(type || "0");
             const index_n = Number(index || "0");
             const size_n = Number(size || "50");
             if (id) {
-                const log_size = await Log_m.countDocuments({ productID: id });
+                const log_size = await Log_m.countDocuments({ productID: id, type: type_n });
                 const data_log: logInfo_t[] = await Log_m.aggregate([
-                    { $match: { productID: id } },
+                    { $match: { productID: id, type: type_n } },
                     { $sort: { createdAt: -1 } },
                     { $skip: index_n },
                     { $limit: size_n },

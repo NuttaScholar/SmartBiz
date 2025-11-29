@@ -16,6 +16,10 @@ export type stockForm_t = {
   amount: number;
   price?: number;
 }
+export type stockInForm_t = {
+  bill_Img?: File | null;
+  products: stockForm_t[];
+}
 export type stockOutForm_t = {
   note?: string;
   products: stockForm_t[];
@@ -31,6 +35,7 @@ export type logInfo_t = {
 }
 export type logReq_t = {
   id: string;
+  type: stockLogType_e;
   index?: number;
   size?: number;
 }
