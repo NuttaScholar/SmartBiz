@@ -23,10 +23,19 @@ export async function delImg(context: AuthContext_t, data: endPoint_t): Promise<
         throw new Error(`${err}`);
     }
 }
+export async function getImg(context: AuthContext_t, data: endPoint_t): Promise<resPostImgWithRetry_t> {
+    try {
+        const res: resPostImgWithRetry_t = await ApiWithRetry(context, Storage_f.getImg, data);
+        return res;
+    } catch (err) {
+        throw new Error(`${err}`);
+    }
+}
 
 const storageWithRetry_f = {
     postImg,
-    delImg
+    delImg,
+    getImg
 }
 
 export default storageWithRetry_f; 
