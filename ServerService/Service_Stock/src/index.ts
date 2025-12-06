@@ -105,6 +105,8 @@ const logSchema = new mongoose.Schema<logInfo_t>({
     type: { type: Number, required: true },
     date: { type: Date, default: Date.now },
     price: { type: Number },
+    bill: { type: String },
+    note: { type: String },
 });
 
 // สร้าง Model
@@ -494,6 +496,7 @@ app.get('/log', AuthMiddleware, async (req: AuthRequest, res: Response) => {
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
+            console.log("Get log request:", req.query);
             const { id, type, index, size } = req.query; // logReq_t
             const type_n = Number(type || "0");
             const index_n = Number(index || "0");
