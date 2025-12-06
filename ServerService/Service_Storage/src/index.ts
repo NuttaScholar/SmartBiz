@@ -229,7 +229,7 @@ app.get("/presignedGet", AuthMiddleware, async (req: AuthRequest, res: Response)
         res.send(result);
         return;
     }
-    const url = await minioClient.presignedGetObject(Bucket, Key as string, 24 * 60 * 60);
+    const url = await minioClient.presignedGetObject(Bucket, Key as string, 60);
     const result: responst_t<"getPresigned"> = { status: "success", result: { url } }
     res.send(result);
 });
