@@ -17,6 +17,7 @@ import DialogShowImg from "../../../component/Organisms/DialogShowImg";
 import stockWithRetry_f from "../lib/stockWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 import { stockLogType_e } from "../../../enum";
+import storageWithRetry_f from "../../../lib/storageWithRetry";
 
 //*********************************************
 // Type
@@ -58,6 +59,7 @@ const headerStockOut: headerTable_t[] = [
 // Component
 //*********************************************
 const TebleLog: React.FC<myProps> = (props) => {
+  // Hook ************************************
   const auth = useAuth();
   const [rows, setRow] = React.useState<logInfo_t[]>([]);
   const [tab, setTab] = React.useState(0);
@@ -65,6 +67,8 @@ const TebleLog: React.FC<myProps> = (props) => {
   const [img, setImg] = React.useState("");
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [page, setPage] = React.useState(0);
+  const [totalRows, setTotalRows] = React.useState(0);
+  // Local function **************************
   const handleChangePage = (event: unknown, newPage: number) => {
     console.log("New Page:", newPage);
     setPage(newPage);
@@ -77,29 +81,48 @@ const TebleLog: React.FC<myProps> = (props) => {
     setPage(0);
   };
   const onOpenImg = (imgUrl: string) => {
-    setImg(imgUrl);
-    setOpen(true);
+    const spitUrl = imgUrl.split("/");
+    storageWithRetry_f
+      .getImg(auth, { Bucket: spitUrl[0], Key: spitUrl[1] })
+      .then((res) => {
+        if(res.status !== "success" || res.result === undefined){
+          alert("ไม่สามารถโหลดรูปภาพได้");
+          return;
+        }
+        setImg(res.result.url);
+        setOpen(true);
+      })
+      .catch((err) => {
+        console.error("Get image error:", err);
+        alert("ไม่สามารถโหลดรูปภาพได้");
+      });
   };
+  // Effect **********************************
   useEffect(() => {
-    const data:logReq_t = {
+    const data: logReq_t = {
       id: props.productID,
-      type: tab===0?stockLogType_e.in:stockLogType_e.out,
+      type: tab === 0 ? stockLogType_e.in : stockLogType_e.out,
+      index: page * rowsPerPage,
+      size: rowsPerPage
     };
-    stockWithRetry_f.getLog(auth, data).then((res) => {
-      console.log("Get log:", res);
-      if(res.status==="success"&&res.result!==undefined){
-        setRow(res.result.logs);
-      }else{
-        alert("ไม่สามารถดึงข้อมูลประวัติการเปลี่ยนแปลงสต็อกได้");
-      }
-      
-    }).catch((err) => {
-      console.error("Get log error:", err);
-    });
-  }, [tab, props.productID]);
-
+    stockWithRetry_f
+      .getLog(auth, data)
+      .then((res) => {
+        console.log("Get log:", res);
+        if (res.status === "success" && res.result !== undefined) {
+          setRow(res.result.logs);
+          setTotalRows(res.result.total);
+        } else {
+          alert("ไม่สามารถดึงข้อมูลประวัติการเปลี่ยนแปลงสต็อกได้");
+        }
+      })
+      .catch((err) => {
+        console.error("Get log error:", err);
+      });
+  }, [tab, props.productID, page, rowsPerPage]);
+  // UI  ************************************
   return (
-    <>    
+    <>
       <TabBox
         list={["เติมสต็อก", "ตัดสต็อก"]}
         height="calc(100vh - 120px)"
@@ -108,10 +131,7 @@ const TebleLog: React.FC<myProps> = (props) => {
         value={tab}
         maxWidth="1280px"
       >
-        <TableContainer
-          component={Paper}
-          elevation={4}
-        >
+        <TableContainer component={Paper} elevation={4}>
           <Table
             sx={{ maxWidth: "1280px" }}
             stickyHeader
@@ -142,7 +162,6 @@ const TebleLog: React.FC<myProps> = (props) => {
             </TableHead>
             <TableBody>
               {rows
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, index) => (
                   <TableRow
                     hover
@@ -180,11 +199,11 @@ const TebleLog: React.FC<myProps> = (props) => {
         </TableContainer>
         <TablePagination
           rowsPerPageOptions={[10, 25, 50]}
-          sx={{height:"100px"}}
+          sx={{ height: "100px" }}
           component="div"
-          count={rows.length}
+          count={totalRows}
           rowsPerPage={rowsPerPage}
-          page={page}          
+          page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
