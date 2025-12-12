@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
 import { errorCode_e, role_e, transactionType_e } from "./enum";
+import { read } from "fs";
 
 dotenv.config();
 /*********************************************** */
@@ -44,6 +45,8 @@ type transatcion_t = {
     description?: string;
     who?: string;
     date: Date;
+    bill?: string;
+    readonly: boolean
 }
 type wallet_t = {
     name: string;
@@ -69,6 +72,8 @@ const transatcionSchema = new mongoose.Schema<transatcion_t>({
     description: String,
     who: { type: mongoose.Schema.Types.String, ref: "contact" },
     date: { type: Date, required: true },
+    bill: String,
+    readonly: { type: Boolean, default: false },
 });
 const walletSchema = new mongoose.Schema<wallet_t>({
     name: { type: String, required: true },
@@ -263,8 +268,8 @@ app.get('/trandetail', AuthMiddleware, async (req: AuthRequest, res: Response) =
             const id = req.query.id;
             const trans: transatcion_t | null = await Transatcion.findOne({ _id: id });
             if (trans !== null) {
-                const { date, money, topic, type, description, who }: transatcion_t = trans;
-                const result: TransitionForm_t = { date: date, money: money, topic: topic, type: type, description: description, who: who };
+                const { date, money, topic, type, description, who, readonly, bill }: transatcion_t = trans;
+                const result: TransitionForm_t = { date: date, money: money, topic: topic, type: type, description: description, who: who, readonly: readonly, bill: bill };
                 const response: responst_t<"getTransDetail"> = { status: "success", result: result };
                 return res.send(response);
             } else {
@@ -302,7 +307,7 @@ app.get('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) 
                 {
                     $addFields: {
                         newDate: {
-                            $add: [ "$date", { $multiply: [7, 60, 60, 1000] } ]  // +7Hr 
+                            $add: ["$date", { $multiply: [7, 60, 60, 1000] }]  // +7Hr 
                         }
                     }
                 },
@@ -319,7 +324,8 @@ app.get('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) 
                                 type: "$type",
                                 money: "$money",
                                 who: "$who",
-                                description: "$description"
+                                description: "$description",
+                                readonly: "$readonly",
                             }
                         }
                     }
