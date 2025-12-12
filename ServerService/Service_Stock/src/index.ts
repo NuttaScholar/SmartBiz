@@ -1,15 +1,16 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import { logInfo_t, logReq_t, logRes_t, productInfo_t, productRes_t, responst_t, stockForm_t, stockInForm_t, stockOutForm_t, stockStatus_t, tokenPackage_t } from "./type";
+import { logInfo_t, logReq_t, logRes_t, productInfo_t, productRes_t, responst_t, stockForm_t, stockInForm_t, stockOutForm_t, stockStatus_t, tokenPackage_t, TransitionForm_t } from "./type";
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
-import { errorCode_e, productType_e, role_e, stockLogType_e, stockStatus_e } from "./enum";
+import { errorCode_e, productType_e, role_e, stockLogType_e, stockStatus_e, transactionType_e } from "./enum";
 import multer from "multer";
 import * as minio from "minio";
 import sharp from "sharp";
 import crypto from "crypto"
+import axios from "axios";
 
 dotenv.config();
 /*********************************************** */
@@ -168,6 +169,20 @@ async function initBucket(Bucket: string, Private: boolean) {
     }
     catch (err) {
         throw (err);
+    }
+}
+async function postTransactionLog(token: string, amount: number, bill: string, who?: string): Promise<responst_t<"none">> {
+    try {
+        const data: TransitionForm_t = { date: new Date(), topic: "Stock In", type: transactionType_e.expenses, money: amount, bill: bill, who: who };
+        const response:responst_t<"none"> = await axios.post(`${process.env.SERVICE_ACCOUNT_URL}/transaction`, data , {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response;
+    } catch (err) {
+        console.error("postTransactionLog error:", err);
+        return { status: "error", errCode: errorCode_e.UnknownError };
     }
 }
 /*********************************************** */
@@ -405,13 +420,14 @@ app.post('/stock_in', AuthMiddleware, upload.single("file"), async (req: AuthReq
     try {
         if (data?.role === role_e.admin) {
             if (req.file) {
-                const { products } = req.body as { products: string };
+                const { products, who } = req.body as { products: string, who?: string };
                 const data = JSON.parse(products) as stockForm_t[];
                 const date = new Date();
                 const imgKey = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
                 const resImg = await postImg(req.file.buffer, BillBucket, imgKey);
                 let log: logInfo_t[] = [];
                 let errLog: stockForm_t[] = [];
+                let price = 0;
                 for (const item of data) {
                     try {
                         const resProduct = await Product_m.findOne({ id: item.productID });
@@ -423,9 +439,14 @@ app.post('/stock_in', AuthMiddleware, upload.single("file"), async (req: AuthReq
                         let newStatus = newAmount === 0 ? stockStatus_e.stockOut : newAmount < resProduct.condition ? stockStatus_e.stockLow : stockStatus_e.normal;
                         await Product_m.updateOne({ id: item.productID }, { $set: { amount: newAmount, status: newStatus } });
                         log.push({ productID: item.productID, amount: item.amount, type: stockLogType_e.in, date: date, price: item.price, bill: resImg.url });
+                        price += item.price || 0;
                     } catch (err) {
-                        errLog.push(item);
+                        errLog.push(item); 
                     }
+                }
+                const transactionRes = await postTransactionLog(req.headers.authorization!.split(" ")[1], price, resImg.url, who);
+                if(transactionRes.status==="error"){
+                    console.error("postTransactionLog failed:", transactionRes.errCode);
                 }
                 await Log_m.insertMany(log);
                 if (errLog.length) {
@@ -505,7 +526,7 @@ app.get('/log', AuthMiddleware, async (req: AuthRequest, res: Response) => {
                 const log_size = await Log_m.countDocuments({ productID: id, type: type_n });
                 const data_log: logInfo_t[] = await Log_m.aggregate([
                     { $match: { productID: id, type: type_n } },
-                    { $sort: { createdAt: -1 } },
+                    { $sort: { date: -1 } },
                     { $skip: index_n },
                     { $limit: size_n },
                     {

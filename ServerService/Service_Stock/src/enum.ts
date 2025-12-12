@@ -12,6 +12,12 @@ export enum stockLogType_e {
   in,
   out,
 }
+export enum transactionType_e {
+  income,
+  expenses,
+  loan,
+  lend,
+}
 export enum role_e{
   admin,
   cashier,

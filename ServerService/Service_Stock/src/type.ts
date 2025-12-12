@@ -1,4 +1,4 @@
-import { errorCode_e, productType_e, role_e, stockLogType_e, stockStatus_e } from "./enum";
+import { errorCode_e, productType_e, role_e, stockLogType_e, stockStatus_e, transactionType_e } from "./enum";
 
 export type productInfo_t = {
   id: string;
@@ -25,7 +25,7 @@ export type stockOutForm_t = {
   products: stockForm_t[];
 }
 export type logInfo_t = {
-  productID:  string;
+  productID: string;
   amount: number;
   type: stockLogType_e,
   date: Date;
@@ -69,6 +69,17 @@ export type stockLog_t = {
   billID: string;
   amount: number;
 }
+export type TransitionForm_t = {
+  id?: string;
+  date: Date;
+  topic: string;
+  type: transactionType_e;
+  money: number;
+  who?: string;
+  description?: string;
+  bill?: string;
+  readonly?: boolean;
+};
 export type errList_t = stockForm_t[];
 export type tokenPackage_t = {
   username: string;
@@ -103,7 +114,7 @@ export type responst_t<
   : T extends "postStock"
   ? {
     status: "success" | "error" | "warning";
-    result?: errList_t; 
+    result?: errList_t;
     errCode?: errorCode_e;
   }
   : {
