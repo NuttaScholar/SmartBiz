@@ -171,10 +171,29 @@ async function initBucket(Bucket: string, Private: boolean) {
         throw (err);
     }
 }
-async function postTransactionLog(token: string, amount: number, bill: string, who?: string): Promise<responst_t<"none">> {
+async function postTransactionLog(token: string, list: stockForm_t[], bill: string, who?: string): Promise<responst_t<"none">> {
     try {
-        const data: TransitionForm_t = { date: new Date(), topic: "Stock In", type: transactionType_e.expenses, money: amount, bill: bill, who: who };
-        const response:responst_t<"none"> = await axios.post(`${process.env.SERVICE_ACCOUNT_URL}/transaction`, data , {
+        let amount = 0;
+        let description = "";
+        for (let item of list) {
+            const resProduct = await Product_m.findOne({ id: item.productID });
+            if (!resProduct) {
+                continue;
+            }
+            description += `${resProduct.name} x${item.amount} |\r\n`;
+            amount += item.price || 0;
+        }
+        const data: TransitionForm_t = {
+            date: new Date(),
+            topic: "Stock In",
+            type: transactionType_e.expenses,
+            money: amount,
+            description: description,
+            bill: bill,
+            who: who,
+            readonly: true
+        };
+        const response: responst_t<"none"> = await axios.post(`${process.env.SERVICE_ACCOUNT_URL}/transaction`, data, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -427,7 +446,12 @@ app.post('/stock_in', AuthMiddleware, upload.single("file"), async (req: AuthReq
                 const resImg = await postImg(req.file.buffer, BillBucket, imgKey);
                 let log: logInfo_t[] = [];
                 let errLog: stockForm_t[] = [];
-                let price = 0;
+
+                const transactionRes = await postTransactionLog(req.headers.authorization!.split(" ")[1], data, resImg.url, who);
+                if (transactionRes.status === "error") {
+                    const result: responst_t<"postStock"> = { status: "error", errCode: transactionRes.errCode };
+                    return res.send(result);
+                }
                 for (const item of data) {
                     try {
                         const resProduct = await Product_m.findOne({ id: item.productID });
@@ -439,15 +463,11 @@ app.post('/stock_in', AuthMiddleware, upload.single("file"), async (req: AuthReq
                         let newStatus = newAmount === 0 ? stockStatus_e.stockOut : newAmount < resProduct.condition ? stockStatus_e.stockLow : stockStatus_e.normal;
                         await Product_m.updateOne({ id: item.productID }, { $set: { amount: newAmount, status: newStatus } });
                         log.push({ productID: item.productID, amount: item.amount, type: stockLogType_e.in, date: date, price: item.price, bill: resImg.url });
-                        price += item.price || 0;
                     } catch (err) {
-                        errLog.push(item); 
+                        errLog.push(item);
                     }
                 }
-                const transactionRes = await postTransactionLog(req.headers.authorization!.split(" ")[1], price, resImg.url, who);
-                if(transactionRes.status==="error"){
-                    console.error("postTransactionLog failed:", transactionRes.errCode);
-                }
+
                 await Log_m.insertMany(log);
                 if (errLog.length) {
                     const result: responst_t<"postStock"> = { status: "warning", result: errLog };
