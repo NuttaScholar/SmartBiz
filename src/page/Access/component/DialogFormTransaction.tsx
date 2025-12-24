@@ -20,6 +20,7 @@ import { TypeSelect } from "../constants/typeSelect";
 import { accessDialog_e } from "../context/AccessContext";
 import FieldContactAccess from "./FieldContactAccess";
 import { TransitionForm_t } from "../../../API/AccountService/type";
+import FieldImage from "../../../component/Molecules/FieldImage";
 
 //*********************************************
 // Type
@@ -134,6 +135,7 @@ const DialogFormTransaction: React.FC = () => {
     });
   };
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (state.transitionForm?.readonly) return;
     setState({
       ...state,
       transitionForm: {
@@ -158,7 +160,7 @@ const DialogFormTransaction: React.FC = () => {
           onClick={onClose}
           position="fixed"
         >
-          {state.transitionForm && (
+          {state.transitionForm && !state.transitionForm.readonly && (
             <Box
               sx={{
                 display: "flex",
@@ -191,15 +193,16 @@ const DialogFormTransaction: React.FC = () => {
             label="Amount"
             name="money"
             type="number"
-            onChange={(event) =>
+            onChange={(event) => {
+              if (state.transitionForm?.readonly) return;
               setState({
                 ...state,
                 transitionForm: {
                   ...state.transitionForm,
                   money: Number(event.target.value),
                 },
-              })
-            }
+              });
+            }}
           />
           <FieldSelector
             icon={<SyncAltIcon />}
@@ -209,6 +212,7 @@ const DialogFormTransaction: React.FC = () => {
             label="Transaction"
             list={TypeSelect}
             onChange={(val) => {
+              if (state.transitionForm?.readonly) return;
               setState({
                 ...state,
                 transitionForm: {
@@ -253,6 +257,7 @@ const DialogFormTransaction: React.FC = () => {
           />
           <FieldDate
             icon={<CalendarMonthIcon />}
+            readonly={state.transitionForm?.readonly}
             defaultValue={state.transitionForm?.date || new Date()}
             name="date"
             onChange={(val) =>
@@ -263,32 +268,42 @@ const DialogFormTransaction: React.FC = () => {
               })
             }
           />
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              gap: "16px",
-              my: "32px",
+          <FieldImage
+            label="Bill Image"
+            buttonSize={100}
+            defauleValue={state.transitionForm?.bill}
+            onChange={(file) => {
+              console.log(file);
             }}
-          >
-            <Button variant="contained" type="submit" sx={{ width: "150px" }}>
-              save
-            </Button>
-            <Button
-              variant="outlined"
-              sx={{ width: "150px" }}
-              onClick={() =>
-                setState({
-                  ...state,
-                  open: accessDialog_e.none,
-                  transitionForm: undefined,
-                })
-              }
+          />
+          {!state.transitionForm?.readonly && (
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                gap: "16px",
+                my: "32px",
+              }}
             >
-              cancle
-            </Button>
-          </Box>
+              <Button variant="contained" type="submit" sx={{ width: "150px" }}>
+                save
+              </Button>
+              <Button
+                variant="outlined"
+                sx={{ width: "150px" }}
+                onClick={() =>
+                  setState({
+                    ...state,
+                    open: accessDialog_e.none,
+                    transitionForm: undefined,
+                  })
+                }
+              >
+                cancle
+              </Button>
+            </Box>
+          )}
         </Box>
       </Dialog>
 
