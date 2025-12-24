@@ -11,6 +11,7 @@ import {
 import errImg from "../../assets/NoImage.jpg";
 import AddIcon from "@mui/icons-material/Add";
 import Field from "../Atoms/Field";
+import DialogShowImg from "../Organisms/DialogShowImg";
 //*********************************************
 // Interface
 //*********************************************
@@ -33,7 +34,7 @@ const FieldImage: React.FC<myProps> = (props) => {
   // Hook *************************************
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const [image, setImage] = React.useState<string>(props.defauleValue ?? "");
-
+  const [open, setOpen] = React.useState<boolean>(false);
   // Local Function ***************************
   const handleFileChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -46,6 +47,7 @@ const FieldImage: React.FC<myProps> = (props) => {
   };
   // XML **************************************
   return (
+    <>
     <Field hide={props.hideField} direction="column" alignItem="flex-start">
       {props.label && (
         <Typography variant="body1" sx={{ mr: 1 }} color="textSecondary">
@@ -58,6 +60,14 @@ const FieldImage: React.FC<myProps> = (props) => {
       >
         {image && (
           <CardActions sx={{ justifyContent: "end" }}>
+            <Button
+              variant="text"
+              onClick={() => {
+                setOpen(true);
+              }}
+            >
+              View
+            </Button>
             <Button
               variant="text"
               onClick={() => {
@@ -115,6 +125,8 @@ const FieldImage: React.FC<myProps> = (props) => {
         </CardActionArea>
       </Card>
     </Field>
+    <DialogShowImg open={open} img={image} onClose={() => setOpen(false)} />
+    </>
   );
 };
 
