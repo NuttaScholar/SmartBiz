@@ -24,6 +24,8 @@ export type TransitionForm_t = {
   money?: number;
   who?: string;
   description?: string;
+  bill?: string;
+  readonly?: boolean;
 };
 export type SearchTransForm_t = {
   to: Date;
