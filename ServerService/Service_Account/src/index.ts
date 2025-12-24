@@ -326,6 +326,7 @@ app.get('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) 
                                 who: "$who",
                                 description: "$description",
                                 readonly: "$readonly",
+                                bill: "$bill"
                             }
                         }
                     }
