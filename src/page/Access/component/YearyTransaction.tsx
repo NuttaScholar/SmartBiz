@@ -2,13 +2,18 @@ import YearSelector from "../../../component/Molecules/YearSelector";
 import InfiniteScroll from "react-infinite-scroll-component";
 import MonthlyTotalList from "../../../component/Organisms/MonthlyTotalList";
 import React from "react";
-import { SearchTransForm_t, statement_t, TransitionForm_t } from "../../../API/AccountService/type";
+import {
+  SearchTransForm_t,
+  statement_t,
+  TransitionForm_t,
+} from "../../../API/AccountService/type";
 import { useAuth } from "../../../hooks/useAuth";
 import { useAccess } from "../hooks/useAccess";
 import accessWithRetry_f from "../lib/accessWithRetry";
 import { accessDialog_e } from "../context/AccessContext";
 import { initTrans } from "../lib/initTrans";
 import { Box } from "@mui/material";
+import storageWithRetry_f from "../../../lib/storageWithRetry";
 
 /**************************************************** */
 //  Interface
@@ -21,7 +26,7 @@ const YearyTransaction: React.FC = () => {
   // Hook *********************
   const authContext = useAuth();
   const { state, setState } = useAccess();
-  // Local Function ***********  
+  // Local Function ***********
   const fetchTrans = async () => {
     let finish = false;
     let _month = state.month;
@@ -64,17 +69,35 @@ const YearyTransaction: React.FC = () => {
       }
     }
   };
-  const onClickTransHandler = (value: TransitionForm_t) => {
-    console.log(value);
+  const onClickTransHandler = async (value: TransitionForm_t) => {
+    let data = value;
+    if (value.bill) {
+      try {
+        const spitUrl = value.bill.split("/");
+        const res = await storageWithRetry_f.getImg(authContext, {
+          Bucket: spitUrl[0],
+          Key: spitUrl[1],
+        });
+        if (res.status !== "success" || res.result === undefined) {
+          alert("ไม่สามารถโหลดรูปภาพได้");
+        } else {
+          data = { ...value, bill: res.result.url };
+        }
+      } catch (err) {
+        console.error("Get image error:", err);
+        alert("ไม่สามารถโหลดรูปภาพได้");
+      }
+    }
+    console.log(data);
     setState({
       ...state,
-      transitionForm: value,
+      transitionForm: data,
       fieldContact: value.who,
       open: accessDialog_e.transactionForm,
     });
-  };  
+  };
 
-  React.useEffect(() => {    
+  React.useEffect(() => {
     initTrans(authContext, { state, setState });
   }, [state.yearSelect, state.refaceTrans]);
   return (
@@ -107,7 +130,7 @@ const YearyTransaction: React.FC = () => {
         ))}
       </InfiniteScroll>
       {state.transaction?.length === 0 && (
-        <Box style={{ margin: "16px 0", textAlign: 'center' }}>
+        <Box style={{ margin: "16px 0", textAlign: "center" }}>
           <h4>ไม่มีข้อมูลการทำรายการ</h4>
         </Box>
       )}
