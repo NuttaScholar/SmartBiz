@@ -9,12 +9,14 @@ import { ContactInfo_t } from "../../../API/AccountService/type";
 //  Interface
 /**************************************************** */
 interface MyProps {
+  label?: string;
   placeholder?: string;
   name?: string;
   icon?: React.ReactNode;
   value?: string;
   onClear?: () => void;
   onOpenList?: (contactList: ContactInfo_t[]) => void;
+  readonly?: boolean;
 }
 /**************************************************** */
 //  Function
@@ -40,7 +42,7 @@ const FieldContactAccess: React.FC<MyProps> = (props) => {
   };
   return (
     <React.Fragment>
-      <FieldContact icon={props.icon} name={props.name} value={props.value} onClear={props.onClear} onOpenList={onOpenList}/>  
+      <FieldContact label={props.label} readonly={props.readonly} icon={props.icon} name={props.name} value={props.value} onClear={props.onClear} onOpenList={onOpenList}/>  
     </React.Fragment>
   );
 };

@@ -2,6 +2,7 @@ import {
   FormControl,
   IconButton,
   InputAdornment,
+  InputLabel,
   OutlinedInput,
 } from "@mui/material";
 import Field from "../Atoms/Field";
@@ -19,19 +20,23 @@ interface MyProps {
   defaultValue?: string;
   onClear?: () => void;
   onOpenList?: () => void;
+  readonly?: boolean;
+  hideField?: boolean;
+  label?: string;
 }
 /**************************************************** */
 //  Function
 /**************************************************** */
 const FieldContact: React.FC<MyProps> = (props) => {
   return (
-    <Field alignItem="center">
+    <Field hide={props.hideField} alignItem="center">
       {props.icon}
       <FormControl sx={{ width: "100%" }} variant="outlined">
+        <InputLabel >{props.label}</InputLabel>
         <OutlinedInput
-          id="outlined-adornment-password"
+          label={props.label}
           type={"text"}
-          sx={{ bgcolor: "white" }}
+          sx={{ bgcolor: props.readonly?"grey.50":"white" }}
           size="small"
           placeholder={props.placeholder}
           name={props.name}
@@ -39,7 +44,7 @@ const FieldContact: React.FC<MyProps> = (props) => {
           readOnly
           value={props.value}
           endAdornment={
-            <InputAdornment position="end">
+            !props.readonly&&<InputAdornment position="end">
               <IconButton onClick={props.onClear} edge="end" sx={{ mx: "0" }}>
                 <ClearIcon />
               </IconButton>
