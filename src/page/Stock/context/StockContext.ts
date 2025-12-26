@@ -20,6 +20,7 @@ export enum stockDialog_e {
 export type billForm_t = {
   img?: File | null;
   description?: string;
+  who?: string;
 };
 export type stock_t = {
   filter: stockFilter_e;

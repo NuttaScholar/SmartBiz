@@ -5,6 +5,7 @@ import Field from "../../../component/Atoms/Field";
 import FieldImage from "../../../component/Molecules/FieldImage";
 import FieldDate from "../../../component/Molecules/FieldDate";
 import FieldText from "../../../component/Molecules/FieldText";
+import FieldContactAccess from "../../../component/Organisms/FieldContactAccess";
 
 //*********************************************
 // Type
@@ -33,23 +34,33 @@ const FormStockHeader: React.FC<myProps> = (props) => {
   // Local Variable *****************
   const nowDate = new Date();
   // Local Function *****************
-  const onChangeImage = (file: File|null) => {
+  const onChangeImage = (file: File | null) => {
     setState({ ...state, billForm: { img: file } });
   };
-  const onChangeDecs = (event:React.ChangeEvent<HTMLInputElement>) => {
+  const onChangeDecs = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setState({ ...state, billForm: { description: value } });
-  }
+  };
   return (
     <Field direction="column">
       <FieldDate defaultValue={nowDate} label="Date" hideField readonly />
       {props.type === "in" ? (
-        <Box>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <FieldImage
             label="Bill Image"
             hideField
             buttonSize={100}
             onChange={onChangeImage}
+          />
+          <FieldContactAccess
+            hideField
+            value={state.billForm?.who}
+            onChange={(val) =>
+              setState({ ...state, billForm: { ...state.billForm, who: val } })
+            }
+            onClear={() => {
+              setState({ ...state, billForm: { ...state.billForm, who: "" } });
+            }}
           />
         </Box>
       ) : (
