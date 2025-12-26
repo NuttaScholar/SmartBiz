@@ -42,7 +42,7 @@ const FieldSelector: React.FC<myProps> = (props) => {
     <Field alignItem="center">
       {props.icon}
       <FormControl
-        sx={{ backgroundColor: props.readonly?"grey.300":"white", flexGrow: "1" }}
+        sx={{ backgroundColor: props.readonly?"grey.50":"white", color: "black", flexGrow: "1" }}
         size="small"
       >
         <InputLabel id={props.label}>{`${props.label}${(props.required===true)?" *":""}`}</InputLabel>

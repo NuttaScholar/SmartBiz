@@ -46,7 +46,7 @@ const FieldText: React.FC<myProps> = (props) => {
         onChange={props.onChange}
         name={props.name}
         size="small"
-        sx={{ backgroundColor: props.readonly?"grey.300":"white", width: "100%" }}
+        sx={{ backgroundColor: props.readonly?"grey.50":"white", width: "100%" }}
         rows={4}
         slotProps={{
           input: {
