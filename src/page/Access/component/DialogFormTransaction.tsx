@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Box, Button, Dialog, IconButton, Slide } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
@@ -57,6 +57,7 @@ const DialogFormTransaction: React.FC = () => {
   // Hook *********************
   const { state, setState } = useAccess();
   const authContext = useAuth();
+  const [file, setFile] = useState<File | null>();
   // Local Function ***********
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -69,10 +70,12 @@ const DialogFormTransaction: React.FC = () => {
       description: state.transitionForm?.description || "",
       who: state.fieldContact,
       id: state.transitionForm?.id,
+      img: file,
+      bill: file===null?"":state.transitionForm?.bill,
     };
     console.log(newData);
     if (state.transitionForm?.id !== undefined) {
-      // Edit
+      // Edit      
       accessWithRetry_f
         .put(authContext, newData)
         .then(() => {
@@ -189,12 +192,12 @@ const DialogFormTransaction: React.FC = () => {
           <FieldText
             icon={<PaidIcon />}
             required
+            readonly={state.transitionForm?.readonly}
             value={state.transitionForm?.money?.toString() || ""}
             label="Amount"
             name="money"
             type="number"
             onChange={(event) => {
-              if (state.transitionForm?.readonly) return;
               setState({
                 ...state,
                 transitionForm: {
@@ -207,12 +210,12 @@ const DialogFormTransaction: React.FC = () => {
           <FieldSelector
             icon={<SyncAltIcon />}
             required
+            readonly={state.transitionForm?.readonly}
             value={state.transitionForm?.type?.toString() || ""}
             name="type"
             label="Transaction"
             list={TypeSelect}
             onChange={(val) => {
-              if (state.transitionForm?.readonly) return;
               setState({
                 ...state,
                 transitionForm: {
@@ -225,6 +228,7 @@ const DialogFormTransaction: React.FC = () => {
           <FieldText
             icon={<PaidIcon />}
             required
+            readonly={state.transitionForm?.readonly}
             value={state.transitionForm?.topic || ""}
             name="topic"
             label="Topic"
@@ -232,6 +236,7 @@ const DialogFormTransaction: React.FC = () => {
           />
           <FieldText
             icon={<SubjectIcon />}
+            readonly={state.transitionForm?.readonly}
             value={state.transitionForm?.description || ""}
             name="description"
             label="Description"
@@ -239,7 +244,9 @@ const DialogFormTransaction: React.FC = () => {
             onChange={onChangeHandler}
           />
           <FieldContactAccess
+            label="Contact"
             icon={<AccountBoxIcon />}
+            readonly={state.transitionForm?.readonly}
             placeholder="Contact"
             name="who"
             onClear={() => {
@@ -270,11 +277,10 @@ const DialogFormTransaction: React.FC = () => {
           />
           <FieldImage
             label="Bill Image"
+            readonly={state.transitionForm?.readonly}
             buttonSize={100}
             defauleValue={state.transitionForm?.bill}
-            onChange={(file) => {
-              console.log(file);
-            }}
+            onChange={(file)=>{file?setFile(file):setFile(null)}}
           />
           {!state.transitionForm?.readonly && (
             <Box
