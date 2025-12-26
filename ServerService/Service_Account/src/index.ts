@@ -7,6 +7,10 @@ import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
 import { errorCode_e, role_e, transactionType_e } from "./enum";
 import { read } from "fs";
+import multer from "multer";
+import * as minio from "minio";
+import sharp from "sharp";
+import crypto from "crypto";
 
 dotenv.config();
 /*********************************************** */
@@ -19,7 +23,10 @@ const app = express();
 /*********************************************** */
 const PORT = Number(process.env.PORT);
 const secret = process.env.SECRET as jwt.Secret;
-
+const BillBucket = "bill";
+const MAX_W = 720;
+const MAX_H = 720;
+const minioHost = process.env.MINIO_HOST ?? "http://localhost:9000";
 /*********************************************** */
 // Middleware Setup
 /*********************************************** */
@@ -32,6 +39,33 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+/*********************************************** */
+// Multer Setup
+/*********************************************** */
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB (ปรับตามต้องการ)
+    },
+    fileFilter: (req, file, cb) => {
+        // อนุญาตเฉพาะไฟล์ภาพที่คาดหวัง
+        if (!/^image\/(jpeg|png|webp|gif)$/i.test(file.mimetype)) {
+            return cb(new Error("Unsupported file type"));
+        }
+        cb(null, true);
+    },
+});
+/*********************************************** */
+// Minio Setup
+/*********************************************** */
+// เชื่อมต่อ Minio
+const minioClient = new minio.Client({
+    endPoint: process.env.MINIO_ENDPOINT || "localhost",
+    port: Number(process.env.MINIO_PORT || 9000),
+    useSSL: (process.env.MINIO_USE_SSL || "false") === "true",
+    accessKey: process.env.MINIO_USER || "",
+    secretKey: process.env.MINIO_PASSWORD || "",
+});
 /*********************************************** */
 // Mongoose Setup
 /*********************************************** */
@@ -143,6 +177,25 @@ function decoder(token: string): tokenPackage_t | null {
         return null;
     }
 }
+async function postImg(img: Buffer<ArrayBufferLike>, Bucket: string, Key: string): Promise<{ url: string }> {
+    try {
+        const webpBuf = await sharp(img)
+            .rotate()                           // แก้ orientation
+            .resize({ width: MAX_W, height: MAX_H, fit: "inside", withoutEnlargement: true })
+            .webp({ quality: 80 })
+            .toBuffer();
+        const newKey = `${Key}_${crypto.randomBytes(8).toString("hex")}`
+        await minioClient.putObject(Bucket, newKey, webpBuf, webpBuf.length, {
+            "Content-Type": "image/webp",
+            "Cache-Control": "public, max-age=36000, immutable",
+        });
+
+        const webpUrl = `${Bucket}/${newKey}`;
+        return { url: webpUrl }
+    } catch (err) {
+        throw new Error("Upload image failed");
+    }
+}
 /*********************************************** */
 // Middleware
 /*********************************************** */
@@ -199,12 +252,20 @@ app.post('/contact', AuthMiddleware, async (req: AuthRequest, res: Response) => 
         return res.send(result);
     }
 })
-app.post('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+app.post('/transaction', AuthMiddleware, upload.single("file"), async (req: AuthRequest, res: Response) => {
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
             const { money, type, ...rest } = req.body as TransitionForm_t;
-            const newTransatcion = new Transatcion(req.body);
+            let imgUrl: string | undefined = undefined;
+
+            if (req.file) {
+                const date = new Date();
+                const imgKey = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+                const resImg = await postImg(req.file.buffer, BillBucket, imgKey);
+                imgUrl = resImg.url;
+            }
+            const newTransatcion = new Transatcion({ ...req.body, bill: imgUrl });
             await newTransatcion.save();
             const val = await Wallet.findOne({ name: "main" });
             const resWallet = await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(type, val?.amount || 0, money) })
@@ -419,7 +480,19 @@ app.delete('/transaction', AuthMiddleware, async (req: AuthRequest, res: Respons
 
             if (resTran.deletedCount) {
                 const val = await Wallet.findOne({ name: "main" });
-                await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(dataTran?.type === undefined ? 255 : dataTran?.type, val?.amount || 0, dataTran?.money || 0, true) })
+                await Wallet.updateOne({ _id: val?._id }, {
+                    amount: calWallet(
+                        dataTran?.type === undefined ? 255 : dataTran?.type,
+                        val?.amount || 0,
+                        dataTran?.money || 0,
+                        true
+                    )
+                })
+            }
+            if (dataTran?.bill !== undefined && dataTran?.bill !== "") {
+                const Bucket = BillBucket;
+                const Key = dataTran?.bill?.split("/").pop() as string;
+                await minioClient.removeObject(Bucket, Key);
             }
             return res.send(result);
         } else {
@@ -453,13 +526,33 @@ app.put('/contact', AuthMiddleware, async (req: AuthRequest, res: Response) => {
     }
 
 })
-app.put('/transaction', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+app.put('/transaction', AuthMiddleware, upload.single("file"), async (req: AuthRequest, res: Response) => {
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
-            const { type, money } = req.body as TransitionForm_t;
+            const { type, money, ...rest } = req.body as TransitionForm_t;
             const dataTran = await Transatcion.findOne({ _id: req.query.id });
-            const updateRes = await Transatcion.updateOne({ _id: req.query.id }, req.body)
+            let newData: transatcion_t = { ...req.body };
+
+            if (req.file) {
+                if (dataTran?.bill) {
+                    const Bucket = BillBucket;
+                    const Key = dataTran.bill?.split("/").pop() as string;
+                    await minioClient.removeObject(Bucket, Key);
+                }
+                const date = new Date();
+                const imgKey = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+                const resImg = await postImg(req.file.buffer, BillBucket, imgKey);
+                newData = { ...newData, bill: resImg.url };
+            } else if (rest.bill === "") {
+                if (dataTran?.bill) {
+                    const Bucket = BillBucket;
+                    const Key = dataTran.bill?.split("/").pop() as string;
+                    await minioClient.removeObject(Bucket, Key);
+                }
+                newData = { ...newData, bill: "" };
+            }
+            const updateRes = await Transatcion.updateOne({ _id: req.query.id }, newData);
             if (updateRes.matchedCount) {
                 const val = await Wallet.findOne({ name: "main" });
                 const delWallet = calWallet(dataTran?.type === undefined ? 255 : dataTran?.type, val?.amount || 0, dataTran?.money || 0, true)
