@@ -26,6 +26,7 @@ export type TransitionForm_t = {
   description?: string;
   bill?: string;
   readonly?: boolean;
+  img?: File | null;
 };
 export type SearchTransForm_t = {
   to: Date;

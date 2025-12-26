@@ -44,7 +44,7 @@ export async function get(
 ): Promise<responst_t<"getTransaction">> {
   try {
     const { from, to, type, who, topic } = data;
-    let condition:string = `from=${from.toISOString()}&to=${to.toISOString()}`;
+    let condition: string = `from=${from.toISOString()}&to=${to.toISOString()}`;
     type && (condition += `&type=${type}`);
     who && (condition += `&who=${who}`);
     topic && (condition += `&topic=${topic}`);
@@ -79,9 +79,15 @@ export async function post(
   data: TransitionForm_t
 ): Promise<responst_t<"none">> {
   try {
+    const formData = new FormData();
+    const { img, ...rest } = data;
+    Object.entries(rest).forEach(([key, val]) => {
+      if (val !== undefined && val !== null) formData.append(key, String(val));
+    });
+    img && formData.append("file", img);
     const res = await axios_account.post(
       `/transaction`,
-      data, {
+      formData, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -98,9 +104,15 @@ export async function put(
 ): Promise<responst_t<"none">> {
   console.log(data);
   try {
+    const formData = new FormData();
+    const { img, ...rest } = data;
+    Object.entries(rest).forEach(([key, val]) => {
+      if (val !== undefined && val !== null) formData.append(key, String(val));
+    });
+    img && formData.append("file", img);
     const res = await axios_account.put(
       `/transaction?id=${data.id}`,
-      data, {
+      formData, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
