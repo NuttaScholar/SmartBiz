@@ -183,8 +183,9 @@ async function postTransactionLog(token: string, list: stockForm_t[], bill: stri
             description += `${resProduct.name} x${item.amount} |\r\n`;
             amount += item.price || 0;
         }
+        const date = new Date();
         const data: TransitionForm_t = {
-            date: new Date(),
+            date: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
             topic: "Stock In",
             type: transactionType_e.expenses,
             money: amount,
@@ -327,7 +328,8 @@ app.put('/product', AuthMiddleware, upload.single("file"), async (req: AuthReque
                     await minioClient.removeObject(Bucket, Key);
                 }
                 const resImg = await postImg(req.file.buffer, DefaultBucket, data.id);
-                await Product_m.updateOne({ id: data.id }, { ...data, status: status, img: resImg.url });
+                const imgUrl = `${minioHost}/${resImg.url}`;
+                await Product_m.updateOne({ id: data.id }, { ...data, status: status, img: imgUrl });
             } else if (data.img === "") {
                 if (resProduct.img) {
                     const Bucket = DefaultBucket;
