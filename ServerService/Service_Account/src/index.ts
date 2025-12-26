@@ -256,8 +256,8 @@ app.post('/transaction', AuthMiddleware, upload.single("file"), async (req: Auth
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
-            const { money, type, ...rest } = req.body as TransitionForm_t;
-            let imgUrl: string | undefined = undefined;
+            const { money, type, bill, ...rest } = req.body as TransitionForm_t;
+            let imgUrl: string | undefined = bill;
 
             if (req.file) {
                 const date = new Date();
