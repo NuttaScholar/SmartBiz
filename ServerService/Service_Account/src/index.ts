@@ -254,9 +254,12 @@ app.post('/contact', AuthMiddleware, async (req: AuthRequest, res: Response) => 
 })
 app.post('/transaction', AuthMiddleware, upload.single("file"), async (req: AuthRequest, res: Response) => {
     const data = req.authData;
+    console.log(req.body);
     try {
         if (data?.role === role_e.admin) {
             const { money, type, bill, ...rest } = req.body as TransitionForm_t;
+            const typeNum = Number(type);
+            const moneyNum = Number(money);
             let imgUrl: string | undefined = bill;
 
             if (req.file) {
@@ -268,7 +271,7 @@ app.post('/transaction', AuthMiddleware, upload.single("file"), async (req: Auth
             const newTransatcion = new Transatcion({ ...req.body, bill: imgUrl });
             await newTransatcion.save();
             const val = await Wallet.findOne({ name: "main" });
-            const resWallet = await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(type, val?.amount || 0, money) })
+            const resWallet = await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(typeNum, val?.amount || 0, moneyNum) })
 
             if (resWallet.acknowledged) {
                 const result: responst_t<"none"> = { status: "success" };
@@ -530,8 +533,10 @@ app.put('/transaction', AuthMiddleware, upload.single("file"), async (req: AuthR
     const data = req.authData;
     try {
         if (data?.role === role_e.admin) {
-            const { type, money, ...rest } = req.body as TransitionForm_t;
-            const dataTran = await Transatcion.findOne({ _id: req.query.id });
+            const { type, money, bill, ...rest } = req.body as TransitionForm_t;
+            const typeNum = Number(type);
+            const moneyNum = Number(money);
+            const dataTran = await Transatcion.findOne({ _id: req.query.id }) as transatcion_t | null;
             let newData: transatcion_t = { ...req.body };
 
             if (req.file) {
@@ -544,7 +549,7 @@ app.put('/transaction', AuthMiddleware, upload.single("file"), async (req: AuthR
                 const imgKey = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
                 const resImg = await postImg(req.file.buffer, BillBucket, imgKey);
                 newData = { ...newData, bill: resImg.url };
-            } else if (rest.bill === "") {
+            } else if (bill === "") {
                 if (dataTran?.bill) {
                     const Bucket = BillBucket;
                     const Key = dataTran.bill?.split("/").pop() as string;
@@ -554,10 +559,14 @@ app.put('/transaction', AuthMiddleware, upload.single("file"), async (req: AuthR
             }
             const updateRes = await Transatcion.updateOne({ _id: req.query.id }, newData);
             if (updateRes.matchedCount) {
-                const val = await Wallet.findOne({ name: "main" });
-                const delWallet = calWallet(dataTran?.type === undefined ? 255 : dataTran?.type, val?.amount || 0, dataTran?.money || 0, true)
+                const wallet = await Wallet.findOne({ name: "main" });
+                const delWallet = calWallet(
+                    dataTran?.type === undefined ? 255 : dataTran?.type,
+                    wallet?.amount || 0,
+                    dataTran?.money || 0,
+                    true);
 
-                const resWallet = await Wallet.updateOne({ _id: val?._id }, { amount: calWallet(type, delWallet, money) })
+                const resWallet = await Wallet.updateOne({ _id: wallet?._id }, { amount: calWallet(typeNum, delWallet, moneyNum) })
 
                 if (resWallet.acknowledged) {
                     const result: responst_t<"none"> = { status: "success" };
