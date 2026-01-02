@@ -84,6 +84,7 @@ export type stockOutForm_t = {
 export type stockInForm_t = {
   bill_Img?: File | null;
   products: stockForm_t[];
+  who?: string;
 }
 export type errList_t = stockForm_t[];
 export type tokenPackage_t = {

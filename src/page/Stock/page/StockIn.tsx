@@ -48,8 +48,6 @@ export default function Page_StockIn() {
     }
   };
   const onSave = () => {
-    console.log("img", state.billForm);
-    console.log("list", state.productList);
     if (
       state.billForm?.img === undefined ||
       state.billForm.img === null
@@ -69,6 +67,7 @@ export default function Page_StockIn() {
         const data: stockInForm_t = {
           bill_Img: state.billForm.img,
           products: list,
+          who: state.billForm?.who,
         };
     stockWithRetry_f
       .postStockIn(authContext, data)

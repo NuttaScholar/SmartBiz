@@ -128,8 +128,8 @@ export async function getLog(
     try {
         const { id, type, index, size } = req;
         let query: string = `id=${id}&type=${type}`;
-        (index!==undefined) && (query += `&index=${index}`);
-        (size!==undefined) && (query += `&size=${size}`);
+        (index !== undefined) && (query += `&index=${index}`);
+        (size !== undefined) && (query += `&size=${size}`);
 
         const res = await axios_stock.get(
             `/log?${query}`,
@@ -165,8 +165,9 @@ export async function postStockIn(token: string,
     data: stockInForm_t): Promise<responst_t<"postStock">> {
     try {
         const formData = new FormData();
-        const { bill_Img, ...rest } = data;
+        const { bill_Img, who, ...rest } = data;
         formData.append("products", JSON.stringify(rest.products));
+        who && formData.append("who", who);
         bill_Img && formData.append("file", bill_Img);
         const res = await axios_stock.post(
             `/stock_in`,
