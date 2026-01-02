@@ -101,38 +101,41 @@ const YearyTransaction: React.FC = () => {
     initTrans(authContext, { state, setState });
   }, [state.yearSelect, state.refaceTrans]);
   return (
-    <Box sx={{ width: "100%", marginBottom: "64px" }}>
+    <Box sx={{ width: "100%" }}>
       <YearSelector
         year={state.yearSelect}
         onChange={(year) => setState({ ...state, yearSelect: year })}
       />
 
-      <InfiniteScroll
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          margin: "16px 0",
-          gap: "16px",
-        }}
-        dataLength={state.transaction?.length || 0}
-        next={fetchTrans}
-        hasMore={state.hasMore}
-        loader={<h4>กำลังโหลด...</h4>}
-      >
-        {state.transaction?.map((val, index) => (
-          <MonthlyTotalList
-            expanded={state.expanded}
-            key={index}
-            value={val.detail}
-            onClick={onClickTransHandler}
-          />
-        ))}
-      </InfiniteScroll>
-      {state.transaction?.length === 0 && (
-        <Box style={{ margin: "16px 0", textAlign: "center" }}>
+      {state.transaction?.length === 0 ? (
+        <Box sx={{ m: "16px 0", height: "calc(100vh - 250px)", justifyContent: "center", display: "flex", alignItems: "center" }}>
           <h4>ไม่มีข้อมูลการทำรายการ</h4>
         </Box>
+      ) : (
+        <InfiniteScroll
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            marginTop: "16px",
+            gap: "16px",
+            height: "calc(100vh - 220px)",
+            overflow: "auto",
+          }}
+          dataLength={state.transaction?.length || 0}
+          next={fetchTrans}
+          hasMore={state.hasMore}
+          loader={<h4>กำลังโหลด...</h4>}
+        >
+          {state.transaction?.map((val, index) => (
+            <MonthlyTotalList
+              expanded={state.expanded}
+              key={index}
+              value={val.detail}
+              onClick={onClickTransHandler}
+            />
+          ))}
+        </InfiniteScroll>
       )}
     </Box>
   );
