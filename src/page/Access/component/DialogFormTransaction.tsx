@@ -18,9 +18,9 @@ import accessWithRetry_f from "../lib/accessWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 import { TypeSelect } from "../constants/typeSelect";
 import { accessDialog_e } from "../context/AccessContext";
-import FieldContactAccess from "./FieldContactAccess";
 import { TransitionForm_t } from "../../../API/AccountService/type";
 import FieldImage from "../../../component/Molecules/FieldImage";
+import FieldContactAccess from "../../../component/Organisms/FieldContactAccess";
 
 //*********************************************
 // Type
@@ -71,7 +71,7 @@ const DialogFormTransaction: React.FC = () => {
       who: state.fieldContact,
       id: state.transitionForm?.id,
       img: file,
-      bill: file===null?"":state.transitionForm?.bill,
+      bill: file===null?"":undefined,
     };
     console.log(newData);
     if (state.transitionForm?.id !== undefined) {
@@ -244,7 +244,6 @@ const DialogFormTransaction: React.FC = () => {
             onChange={onChangeHandler}
           />
           <FieldContactAccess
-            label="Contact"
             icon={<AccountBoxIcon />}
             readonly={state.transitionForm?.readonly}
             placeholder="Contact"
@@ -253,6 +252,11 @@ const DialogFormTransaction: React.FC = () => {
               setState({ ...state, fieldContact: "" });
             }}
             value={state.fieldContact}
+            onCloseList={()=>{setState({
+              ...state,
+              open: accessDialog_e.transactionForm,
+              contactKey: undefined,
+            })}}
             onOpenList={(list) => {
               setState({
                 ...state,
