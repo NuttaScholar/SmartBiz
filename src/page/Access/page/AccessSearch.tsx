@@ -29,6 +29,7 @@ import FieldContactAccess from "../component/FieldContactAccess";
 import { GoToTop } from "../../../function/Window";
 import { initPage } from "../../../lib/initPage";
 import { SearchTransForm_t, TransitionForm_t } from "../../../API/AccountService/type";
+import storageWithRetry_f from "../../../lib/storageWithRetry";
 
 const Page_AccessSearch: React.FC = () => {
   // Hook **************
@@ -77,11 +78,29 @@ const Page_AccessSearch: React.FC = () => {
     setForm(data);
     searchHandler(data);
   };
-  const onClickTransHandler = (value: TransitionForm_t) => {
-    console.log(value);
+  const onClickTransHandler = async (value: TransitionForm_t) => {
+    let data = value;
+    if (value.bill) {
+      try {
+        const spitUrl = value.bill.split("/");
+        const res = await storageWithRetry_f.getImg(authContext, {
+          Bucket: spitUrl[0],
+          Key: spitUrl[1],
+        });
+        if (res.status !== "success" || res.result === undefined) {
+          alert("ไม่สามารถโหลดรูปภาพได้");
+        } else {
+          data = { ...value, bill: res.result.url };
+        }
+      } catch (err) {
+        console.error("Get image error:", err);
+        alert("ไม่สามารถโหลดรูปภาพได้");
+      }
+    }
+    console.log(data);
     setState({
       ...state,
-      transitionForm: value,
+      transitionForm: data,
       fieldContact: value.who,
       open: accessDialog_e.transactionForm,
     });
