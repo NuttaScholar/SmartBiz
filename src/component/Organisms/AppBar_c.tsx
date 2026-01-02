@@ -117,7 +117,7 @@ const AppBar_c: React.FC<myProps> = (props) => {
           </Box>
         </Toolbar>
       </AppBar>
-      <Box sx={{ display: "flex", my: "50px", flexDirection: "column", alignItems: "center" }}>{props.children}</Box>
+      <Box sx={{ display: "flex", mt: "50px", flexDirection: "column", alignItems: "center" }}>{props.children}</Box>
     </>
   );
 };
