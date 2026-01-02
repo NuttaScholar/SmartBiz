@@ -35,7 +35,7 @@ const FormStockHeader: React.FC<myProps> = (props) => {
   const nowDate = new Date();
   // Local Function *****************
   const onChangeImage = (file: File | null) => {
-    setState({ ...state, billForm: { img: file } });
+    setState({ ...state, billForm: { ...state.billForm, img: file } });
   };
   const onChangeDecs = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -45,15 +45,10 @@ const FormStockHeader: React.FC<myProps> = (props) => {
     <Field direction="column">
       <FieldDate defaultValue={nowDate} label="Date" hideField readonly />
       {props.type === "in" ? (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <FieldImage
-            label="Bill Image"
-            hideField
-            buttonSize={100}
-            onChange={onChangeImage}
-          />
+        <Box sx={{ display: "flex", flexDirection: "column" }}>
           <FieldContactAccess
             hideField
+            label="Contact"
             value={state.billForm?.who}
             onChange={(val) =>
               setState({ ...state, billForm: { ...state.billForm, who: val } })
@@ -61,6 +56,12 @@ const FormStockHeader: React.FC<myProps> = (props) => {
             onClear={() => {
               setState({ ...state, billForm: { ...state.billForm, who: "" } });
             }}
+          />
+          <FieldImage
+            label="Bill Image *"
+            hideField
+            buttonSize={100}
+            onChange={onChangeImage}
           />
         </Box>
       ) : (
