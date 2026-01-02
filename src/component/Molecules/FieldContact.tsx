@@ -4,6 +4,7 @@ import {
   InputAdornment,
   InputLabel,
   OutlinedInput,
+  Typography,
 } from "@mui/material";
 import Field from "../Atoms/Field";
 import React from "react";
@@ -29,14 +30,23 @@ interface MyProps {
 /**************************************************** */
 const FieldContact: React.FC<MyProps> = (props) => {
   return (
-    <Field hide={props.hideField} alignItem="center">
-      {props.icon}
+    <Field
+      hide={props.hideField}
+      direction={props.label ? "column" : "row"}
+      alignItem={props.label ? "flex-start" : "center"}
+    >
+      {props.label ? (
+        <Typography variant="body1" sx={{ mr: 1 }} color="textSecondary">
+          {props.label}
+        </Typography>
+      ) : (
+        props.icon
+      )}
+
       <FormControl sx={{ width: "100%" }} variant="outlined">
-        <InputLabel >{props.label}</InputLabel>
         <OutlinedInput
-          label={props.label}
           type={"text"}
-          sx={{ bgcolor: props.readonly?"grey.50":"white" }}
+          sx={{ bgcolor: props.readonly ? "grey.50" : "white" }}
           size="small"
           placeholder={props.placeholder}
           name={props.name}
@@ -44,14 +54,16 @@ const FieldContact: React.FC<MyProps> = (props) => {
           readOnly
           value={props.value}
           endAdornment={
-            !props.readonly&&<InputAdornment position="end">
-              <IconButton onClick={props.onClear} edge="end" sx={{ mx: "0" }}>
-                <ClearIcon />
-              </IconButton>
-              <IconButton onClick={props.onOpenList} edge="end">
-                <AssignmentIndOutlinedIcon />
-              </IconButton>
-            </InputAdornment>
+            !props.readonly && (
+              <InputAdornment position="end">
+                <IconButton onClick={props.onClear} edge="end" sx={{ mx: "0" }}>
+                  <ClearIcon />
+                </IconButton>
+                <IconButton onClick={props.onOpenList} edge="end">
+                  <AssignmentIndOutlinedIcon />
+                </IconButton>
+              </InputAdornment>
+            )
           }
         />
       </FormControl>
