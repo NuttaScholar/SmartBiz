@@ -22,9 +22,10 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
         cnt++;
         if (_month > 1) {
           _month--;
+        }else{
+          finish = true;
         }
         if (cnt > 3) {
-          console.log(cnt);
           finish = true;
         }
       } else {
