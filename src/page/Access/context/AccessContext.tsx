@@ -1,5 +1,5 @@
 // src/context/AuthContext.tsx
-import { createContext } from "react";
+import { createContext, useRef } from "react";
 import { ContactInfo_t, statement_t, TransitionForm_t } from "../../../API/AccountService/type";
 
 export enum accessDialog_e {
@@ -24,6 +24,7 @@ export type access_t = {
   totalMoney: number;
   refaceTrans: number;
   expanded: boolean;
+  containerRef?: React.RefObject<HTMLDivElement>;
 };
 export type AccessContext_t = {
   state: access_t;
@@ -38,7 +39,7 @@ export const AccessDefaultState: access_t = {
   transaction: [],
   yearSelect: new Date().getFullYear(),
   refaceTrans: 0,
-  expanded: true
+  expanded: true,
 };
 export const AccessContext = createContext<AccessContext_t | undefined>(
   undefined
