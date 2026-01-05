@@ -5,16 +5,21 @@ import {
   type AuthResponse,
 } from "@toolpad/core/SignInPage";
 import { LoginForm_t } from "../API/LoginService/type";
-import * as login_F from "../API/LoginService/Login";
+import Login_f, * as login_F from "../API/LoginService/Login";
 import { useAuth } from "../hooks/useAuth";
+import React from "react";
 
 const providers = [{ id: "credentials", name: "Email and password" }];
 
 const Page_Login: React.FC = () => {
+  // Hook *********************
   const navigate = useNavigate();
   const { setAuth } = useAuth();
-
-  const signIn: ( provider: AuthProvider, formData?: FormData ) => Promise<AuthResponse> | void = async (__, formData) => {
+  // Local Function ***********
+  const signIn: (
+    provider: AuthProvider,
+    formData?: FormData
+  ) => Promise<AuthResponse> | void = async (__, formData) => {
     const promise = new Promise<AuthResponse>((resolve) => {
       if (formData) {
         const data: LoginForm_t = {
@@ -44,6 +49,16 @@ const Page_Login: React.FC = () => {
 
     return promise;
   };
+  // Use Effect ***************
+  React.useEffect(() => {
+    Login_f.getToken().then((data) => {
+      if (data.status === "success" && data.result) {
+        setAuth(data.result);
+        navigate("/access");
+      }
+    });
+  }, []);
+  // XML **********************
   return (
     <>
       <SignInPage

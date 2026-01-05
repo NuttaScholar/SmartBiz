@@ -50,7 +50,7 @@ const FieldImage: React.FC<myProps> = (props) => {
       <Field hide={props.hideField} direction="column" alignItem="flex-start">
         {props.label && (
           <Typography variant="body1" sx={{ mr: 1 }} color="textSecondary">
-            {props.label}:
+            {props.label}
           </Typography>
         )}
 
