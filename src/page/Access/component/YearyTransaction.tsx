@@ -14,6 +14,7 @@ import { accessDialog_e } from "../context/AccessContext";
 import { initTrans } from "../lib/initTrans";
 import { Box } from "@mui/material";
 import storageWithRetry_f from "../../../lib/storageWithRetry";
+import { useNavigate } from "react-router-dom";
 
 /**************************************************** */
 //  Interface
@@ -26,6 +27,7 @@ const YearyTransaction: React.FC = () => {
   // Hook *********************
   const authContext = useAuth();
   const { state, setState } = useAccess();
+  const navigate = useNavigate();
   // Local Function ***********
   const fetchTrans = async () => {
     let finish = false;
@@ -98,7 +100,10 @@ const YearyTransaction: React.FC = () => {
   };
 
   React.useEffect(() => {
-    initTrans(authContext, { state, setState });
+    initTrans(authContext, { state, setState }).catch((err) => {
+      console.log(err);
+      navigate("/");
+    });
   }, [state.yearSelect, state.refaceTrans]);
   return (
     <Box sx={{ width: "100%" }}>
@@ -108,34 +113,43 @@ const YearyTransaction: React.FC = () => {
       />
 
       {state.transaction?.length === 0 ? (
-        <Box sx={{ m: "16px 0", height: "calc(100vh - 250px)", justifyContent: "center", display: "flex", alignItems: "center" }}>
+        <Box
+          sx={{
+            m: "16px 0",
+            height: "calc(100vh - 250px)",
+            justifyContent: "center",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
           <h4>ไม่มีข้อมูลการทำรายการ</h4>
         </Box>
       ) : (
-        <InfiniteScroll
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            marginTop: "16px",
-            gap: "16px",
-            height: "calc(100vh - 220px)",
-            overflow: "auto",
-          }}
-          dataLength={state.transaction?.length || 0}
-          next={fetchTrans}
-          hasMore={state.hasMore}
-          loader={<h4>กำลังโหลด...</h4>}
-        >
-          {state.transaction?.map((val, index) => (
-            <MonthlyTotalList
-              expanded={state.expanded}
-              key={index}
-              value={val.detail}
-              onClick={onClickTransHandler}
-            />
-          ))}
-        </InfiniteScroll>
+        <Box id="scrollable" ref={state.containerRef} sx={{ height: "calc(100vh - 220px)", overflow: "auto" }}>
+          <InfiniteScroll           
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: "16px 0",
+              gap: "16px",
+            }}
+            scrollableTarget="scrollable"
+            dataLength={state.transaction?.length || 0}
+            next={fetchTrans}
+            hasMore={state.hasMore}
+            loader={<h4>กำลังโหลด...</h4>}
+          >
+            {state.transaction?.map((val, index) => (
+              <MonthlyTotalList
+                expanded={state.expanded}
+                key={index}
+                value={val.detail}
+                onClick={onClickTransHandler}
+              />
+            ))}
+          </InfiniteScroll>
+        </Box>
       )}
     </Box>
   );
