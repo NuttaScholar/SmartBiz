@@ -25,7 +25,6 @@ const secret = process.env.SECRET as jwt.Secret;
 const BillBucket = "bill";
 const MAX_W = 720;
 const MAX_H = 720;
-const minioHost = process.env.MINIO_HOST ?? "http://localhost:9000";
 /*********************************************** */
 // Middleware Setup
 /*********************************************** */

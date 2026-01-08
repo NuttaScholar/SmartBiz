@@ -41,7 +41,7 @@ const DefaultBucket = "product";
 const BillBucket = "bill";
 const MAX_W = 720;
 const MAX_H = 720;
-const minioHost = process.env.MINIO_HOST ?? "http://localhost:9000";
+const minioHost = `http://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}`;
 /*********************************************** */
 // Middleware Setup
 /*********************************************** */
