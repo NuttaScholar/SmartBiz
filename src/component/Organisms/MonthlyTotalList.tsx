@@ -97,7 +97,7 @@ const MonthlyTotalList: React.FC<myProps> = (props) => {
         <Label_parameter
           size="18px"
           label="รายจ่าย"
-          value={buff.expenses}
+          value={`-${buff.expenses}`}
           color_Value="error.main"
           unit="฿"
         />
