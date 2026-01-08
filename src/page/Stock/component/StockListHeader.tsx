@@ -84,7 +84,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
     let query: queryProduct_t = { type: productType_e.material, name: name };
     switch (state.filter) {
       case stockFilter_e.another:
-        query = { type: productType_e.another };
+        query.type = productType_e.another;
         break;
       case stockFilter_e.materialLow:
         query.status = stockStatus_e.stockLow;
