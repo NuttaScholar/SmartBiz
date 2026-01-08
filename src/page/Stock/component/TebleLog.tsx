@@ -69,8 +69,7 @@ const TebleLog: React.FC<myProps> = (props) => {
   const [page, setPage] = React.useState(0);
   const [totalRows, setTotalRows] = React.useState(0);
   // Local function **************************
-  const handleChangePage = (event: unknown, newPage: number) => {
-    console.log("New Page:", newPage);
+  const handleChangePage = (_event: unknown, newPage: number) => {  
     setPage(newPage);
   };
 
@@ -161,7 +160,8 @@ const TebleLog: React.FC<myProps> = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows
+              {rows.length > 0 ?
+                rows
                 .map((row, index) => (
                   <TableRow
                     hover
@@ -193,7 +193,9 @@ const TebleLog: React.FC<myProps> = (props) => {
                       )}
                     </TableCell>
                   </TableRow>
-                ))}
+                )): <TableRow
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  ><TableCell colSpan={4} align="center">ไม่มีข้อมูล</TableCell></TableRow>}
             </TableBody>
           </Table>
         </TableContainer>
