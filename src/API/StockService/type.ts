@@ -97,6 +97,7 @@ export type responst_t<
   | "getProduct"
   | "getStatus"
   | "getLog"
+  | "getStock"
   | "postStock"
   | "none"
 > = T extends "getProduct"
@@ -117,7 +118,13 @@ export type responst_t<
     result?: logRes_t;
     errCode?: errorCode_e;
   }
-  :T extends "postStock"
+  : T extends "getStock"
+  ? {
+    status: "success" | "error";
+    result?: productInfo_t[];
+    errCode?: errorCode_e;
+  }
+  : T extends "postStock"
   ? {
     status: "success" | "error" | "warning";
     errList?: errList_t; 

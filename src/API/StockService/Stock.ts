@@ -145,6 +145,24 @@ export async function getLog(
         throw err;
     }
 }
+export async function getStock(
+    token: string,
+): Promise<responst_t<"getStock">> {
+    try {
+        const res = await axios_stock.get(
+            `/stock`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+        return res.data as responst_t<"getStock">;
+
+    } catch (err) {
+        throw err;
+    }
+}
 export async function postStockOut(token: string,
     data: stockOutForm_t): Promise<responst_t<"postStock">> {
     try {
@@ -191,6 +209,7 @@ const Stock_f = {
     putProduct,
     getStatus,
     getLog,
+    getStock,
     postStockOut,
     postStockIn,
 }
