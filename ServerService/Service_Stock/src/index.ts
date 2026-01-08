@@ -609,7 +609,42 @@ app.get('/status', AuthMiddleware, async (req: AuthRequest, res: Response) => {
         return res.send(result);
     }
 });
-
+app.get('/stock', AuthMiddleware, async (req: AuthRequest, res: Response) => {
+    const data = req.authData;
+    try {
+        if (data?.role === role_e.admin) {
+            const productList: productInfo_t[] = await Product_m.aggregate([
+                { $match: {type: {$in:[productType_e.merchandise, productType_e.material]}} },
+                {
+                    $project: {
+                        _id: 0,
+                        id: "$id",            // ไม่ต้องส่ง _id ออก
+                        type: "$type",
+                        name: "$name",
+                        img: "$img",
+                        condition: "$condition",
+                        status: "$status",
+                        price: "$price",
+                        description: "$description",
+                        amount: "$amount"
+                    }
+                },
+                {
+                    $sort: { "name": 1 }
+                },
+            ]);
+            const result: responst_t<"getStock"> = { status: "success", result: productList }
+            return res.send(result);
+        } else {
+            const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.PermissionDeniedError }
+            return res.send(result);
+        }
+    } catch (err) {
+        console.error(err);
+        const result: responst_t<"none"> = { status: "error", errCode: errorCode_e.UnknownError };
+        return res.send(result);
+    }
+});
 /*********************************************** */
 // Start Server
 /*********************************************** */
