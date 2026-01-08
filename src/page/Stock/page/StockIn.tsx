@@ -91,10 +91,10 @@ export default function Page_StockIn() {
   // Use Effect ******************************
   React.useEffect(() => {
     stockWithRetry_f
-      .getProduct(authContext)
+      .getStock(authContext)
       .then((res) => {
         if (res.status === "success" && res.result !== undefined) {
-          res.result && setListOption(res.result.products);
+          res.result && setListOption(res.result);
         } else {
           alert(
             `เกินข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`
