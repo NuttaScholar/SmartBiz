@@ -1,30 +1,17 @@
-import React, { useMemo } from "react";
+import React from "react";
 import {
-  Box,
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
   IconButton,
   styled,
-  Typography,
 } from "@mui/material";
-import FieldText from "../Molecules/FieldText";
-import { useStockContext } from "../../page/Stock/hooks/useStockContex";
-import { stockDialog_e } from "../../page/Stock/context/StockContext";
-import { productType_e } from "./CardProduct";
-import { productInfo_t } from "../../API/StockService/type";
 import CloseIcon from "@mui/icons-material/Close";
 
 //*********************************************
 // Type
 //*********************************************
-type form_t = {
-  amount: string;
-  price?: string;
-};
+
 //*********************************************
 // Constante
 //*********************************************
@@ -61,6 +48,7 @@ const DialogShowImg: React.FC<myProps> = (props) => {
       onClose={props.onClose}
       aria-labelledby="customized-dialog-title"
       open={props.open}
+      maxWidth="md"
     >
       <DialogTitle sx={{ m: 0, px: 2 }} id="customized-dialog-title">
         Modal title
@@ -81,7 +69,7 @@ const DialogShowImg: React.FC<myProps> = (props) => {
         <img
           src= {props.img}
           alt="img"
-          style={{ width: "auto", height: "auto" }}
+          style={{ width: "auto", maxWidth: "720px", height: "auto" }}
         />
       </DialogContent>
     </BootstrapDialog>

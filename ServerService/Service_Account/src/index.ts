@@ -6,7 +6,6 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from "cookie-parser";
 import { errorCode_e, role_e, transactionType_e } from "./enum";
-import { read } from "fs";
 import multer from "multer";
 import * as minio from "minio";
 import sharp from "sharp";

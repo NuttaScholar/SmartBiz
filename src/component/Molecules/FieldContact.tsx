@@ -2,7 +2,6 @@ import {
   FormControl,
   IconButton,
   InputAdornment,
-  InputLabel,
   OutlinedInput,
   Typography,
 } from "@mui/material";

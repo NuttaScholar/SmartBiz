@@ -1,25 +1,14 @@
 import {
   Box,
   Dialog,
-  Paper,
   Slide,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
 } from "@mui/material";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
 import React from "react";
 import { TransitionProps } from "@mui/material/transitions";
-import CardProduct, {
-  productType_e,
-} from "../../../component/Organisms/CardProduct";
-import TabBox from "../../../component/Atoms/TabBox";
-import { stockLog_t } from "../../../API/StockService/type";
+import CardProduct from "../../../component/Organisms/CardProduct";
 import TebleLog from "./TebleLog";
 
 //*********************************************
@@ -40,7 +29,7 @@ interface myProps {}
 //*********************************************
 // Component
 //*********************************************
-const DialogHistory: React.FC<myProps> = (props) => {
+const DialogHistory: React.FC<myProps> = () => {
   const { state, setState } = useStockContext();
   const onClose = () => {
     setState({

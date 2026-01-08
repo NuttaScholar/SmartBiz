@@ -12,7 +12,7 @@ import FieldSelector, {
 import { useAuth } from "../../../hooks/useAuth";
 import stockWithRetry_f from "../lib/stockWithRetry";
 import { errorCode_e, productType_e } from "../../../enum";
-import { formProduct_t, productInfo_t } from "../../../API/StockService/type";
+import { formProduct_t } from "../../../API/StockService/type";
 import { ErrorString } from "../../../function/Enum";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -48,7 +48,7 @@ interface myProps {
 //*********************************************
 // Component
 //*********************************************
-const DialogFormProduct: React.FC<myProps> = (props) => {
+const DialogFormProduct: React.FC<myProps> = () => {
   // Hook *********************
   const authContext = useAuth();
   const { state, setState } = useStockContext();
