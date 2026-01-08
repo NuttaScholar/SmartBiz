@@ -1,12 +1,11 @@
 services:
-
   mongo:
     container_name: database
     image: mongo
     restart: always
     networks:
-        private:
-          ipv4_address: 192.168.110.80
+      private:
+        ipv4_address: 192.168.110.80
     volumes:
       - mongo-data:/data/db
     environment:
@@ -20,45 +19,115 @@ services:
     ports:
       - 8081:8081
     networks:
-        private:
-          ipv4_address: 192.168.110.81
+      private:
+        ipv4_address: 192.168.110.81
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
       ME_CONFIG_BASICAUTH: false
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://host.docker.internal:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      private:
+        ipv4_address: 192.168.110.82
+
   service_account:
     container_name: service_account
-    image: nuttascholar/smartbiz_account:1.1
+    image: nuttascholar/smartbiz_account:2.0
     environment:
-      SECRET: NuttaScholar
+      SECRET: ${SECRET}
       WEB_HOST: http://${VITE_HOST}:3030
       PORT: 3000
       DB_URL: mongodb://root:example@mongo:27017/Account?authSource=admin
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
     networks:
-        private:
-          ipv4_address: 192.168.110.90
+      private:
+        ipv4_address: 192.168.110.90
     ports:
       - 3000:3000
     depends_on:
       - mongo
+      - minio
 
   service_login:
     container_name: service_login
     image: nuttascholar/smartbiz_login:1.0
     environment:
-      SECRET: NuttaScholar
+      SECRET: ${SECRET}
       WEB_HOST: http://${VITE_HOST}:3030
       PORT: 3001
       DB_URL: mongodb://root:example@mongo:27017/User?authSource=admin
     networks:
-        private:
-          ipv4_address: 192.168.110.91
+      private:
+        ipv4_address: 192.168.110.91
     ports:
       - 3001:3001
     depends_on:
       - mongo
+
+  service_stock:
+    container_name: service_stock
+    image: nuttascholar/smartbiz_stock:1.0
+    environment:
+      SECRET: ${SECRET}
+      WEB_HOST: http://${VITE_HOST}:3030
+      PORT: 3003
+      DB_URL: mongodb://root:example@mongo:27017/Stock?authSource=admin
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      SERVICE_ACCOUNT_URL: http://service_account:3000
+    networks:
+      private:
+        ipv4_address: 192.168.110.93
+    ports:
+      - 3003:3003
+    depends_on:
+      - mongo
+      - minio
+
+  service_storage:
+    container_name: service_storage
+    image: nuttascholar/smartbiz_storage:1.0
+    environment:
+      SECRET: ${SECRET}
+      WEB_HOST: http://${VITE_HOST}:3030
+      PORT: 3002
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+    networks:
+      private:
+        ipv4_address: 192.168.110.92
+    ports:
+      - 3002:3002
+    depends_on:
+      - minio
 
   web:
     container_name: web
@@ -72,30 +141,12 @@ services:
     environment:
       - NGINX_PORT=80
 
-  minio:
-    image: minio/minio
-    container_name: minio
-    ports:
-      - "9000:9000"   # API
-      - "9001:9001"   # Console
-    environment:
-      MINIO_ROOT_USER: ${MINIO_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}   
-    volumes:
-      - minio-data:/data
-    command: server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
- 
-networks:    
-    private:
-      driver: bridge
-      ipam:
-        driver: default
-        config:
+networks:
+  private:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
         - subnet: 192.168.110.0/24
 
 volumes:
