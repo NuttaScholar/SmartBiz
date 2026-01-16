@@ -53,7 +53,7 @@ services:
     image: nuttascholar/smartbiz_account:2.0
     environment:
       SECRET: ${SECRET}
-      WEB_HOST: http://${VITE_HOST}:3030
+      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3000
       DB_URL: mongodb://root:example@mongo:27017/Account?authSource=admin
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
@@ -65,7 +65,7 @@ services:
       private:
         ipv4_address: 192.168.110.90
     ports:
-      - 3000:3000
+      - ${VITE_PORT_ACCESS}:3000
     depends_on:
       - mongo
       - minio
@@ -75,14 +75,14 @@ services:
     image: nuttascholar/smartbiz_login:1.0
     environment:
       SECRET: ${SECRET}
-      WEB_HOST: http://${VITE_HOST}:3030
+      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3001
       DB_URL: mongodb://root:example@mongo:27017/User?authSource=admin
     networks:
       private:
         ipv4_address: 192.168.110.91
     ports:
-      - 3001:3001
+      - ${VITE_PORT_LOGIN}:3001
     depends_on:
       - mongo
 
@@ -91,7 +91,7 @@ services:
     image: nuttascholar/smartbiz_stock:1.0
     environment:
       SECRET: ${SECRET}
-      WEB_HOST: http://${VITE_HOST}:3030
+      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3003
       DB_URL: mongodb://root:example@mongo:27017/Stock?authSource=admin
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
@@ -100,11 +100,12 @@ services:
       MINIO_USER: ${MINIO_USER}
       MINIO_PASSWORD: ${MINIO_PASSWORD}
       SERVICE_ACCOUNT_URL: http://service_account:3000
+      TZ: Asia/Bangkok
     networks:
       private:
         ipv4_address: 192.168.110.93
     ports:
-      - 3003:3003
+      - ${VITE_PORT_STOCK}:3003
     depends_on:
       - mongo
       - minio
@@ -114,7 +115,7 @@ services:
     image: nuttascholar/smartbiz_storage:1.0
     environment:
       SECRET: ${SECRET}
-      WEB_HOST: http://${VITE_HOST}:3030
+      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3002
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: 9000
@@ -125,7 +126,7 @@ services:
       private:
         ipv4_address: 192.168.110.92
     ports:
-      - 3002:3002
+      - ${VITE_PORT_STORE}:3002
     depends_on:
       - minio
 
@@ -137,7 +138,7 @@ services:
       - ./dist:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
-      - "3030:80"
+      - ${VITE_PORT_WEB}:80
     environment:
       - NGINX_PORT=80
 
