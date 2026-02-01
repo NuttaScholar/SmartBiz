@@ -138,7 +138,7 @@ services:
       - ./dist:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
-      - ${VITE_PORT_WEB}:80
+      - ${VITE_PORT}:80
     environment:
       - NGINX_PORT=80
 
