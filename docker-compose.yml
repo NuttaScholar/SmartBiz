@@ -25,7 +25,9 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
-      ME_CONFIG_BASICAUTH: false
+      ME_CONFIG_BASICAUTH: true
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: STRONG_PASSWORD123
 
   minio:
     image: minio/minio
@@ -40,7 +42,13 @@ services:
       - minio-data:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://host.docker.internal:9000/minio/health/live"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-fsS",
+          "http://host.docker.internal:9000/minio/health/live",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
