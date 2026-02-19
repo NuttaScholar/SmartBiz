@@ -1,5 +1,6 @@
 // src/context/AuthContext.tsx
 import { createContext } from "react";
+import { orderInfo_t } from "../../../API/BillService/type";
 
 export enum orderStatus_e {
   prepare,
@@ -8,10 +9,13 @@ export enum orderStatus_e {
 }
 export enum billDialog_e{
   none,
+  detail,
 }
 export type billState_t = {
   filter: orderStatus_e;
   dialogOpen: billDialog_e;
+  orderList?: orderInfo_t[];
+  
 };
 export type BillContext_t = {
   state: billState_t;
