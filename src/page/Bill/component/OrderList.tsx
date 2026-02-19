@@ -1,14 +1,15 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import CardProduct from "../../../component/Organisms/CardProduct";
-import { productInfo_t } from "../../../API/StockService/type";
 import { useBillContext } from "../hooks/useBillContex";
+import CardOrder from "../../../component/Organisms/CardOrder";
+import { orderInfo_t } from "../../../API/BillService/type";
+
 //*************************************************
 // Interface
 //*************************************************
 interface myProps {
   variant?: "readonly" | "editable" | "deleteable";
-  onClick?: (edit: boolean, value: productInfo_t) => void;
+  onClick?: ( value: orderInfo_t) => void;
 }
 //*************************************************
 // Function
@@ -24,9 +25,12 @@ const OrderList: React.FC<myProps> = (props) => {
         justifyContent: "center",
         flexWrap: "wrap",
         width: "100%",
+        gap: 1,
       }}
     >
-      
+      {state.orderList?.map((val, index)=>(
+        <CardOrder key={index} value={val} maxWidth="400px" onClick={props.onClick} />
+      ))}
     </Box>
   );
 };
