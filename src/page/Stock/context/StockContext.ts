@@ -31,6 +31,7 @@ export type stock_t = {
   indexList?: number;
   productForm?: productInfo_t;
   billForm?: billForm_t;
+  trigger_gotoTop?: number;
 };
 export type StockContext_t = {
   state: stock_t;

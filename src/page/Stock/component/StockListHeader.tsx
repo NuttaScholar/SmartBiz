@@ -158,6 +158,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
         onSubmit={onSearch}
       />
       <TabBox
+        gotoTop={state.trigger_gotoTop}
         list={["สินค้า", "วัตถุดิบ", "สินค้าขายพ่วง"]}
         height="calc(100vh - 150px)"
         alignItems="center"

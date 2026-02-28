@@ -36,10 +36,17 @@ const SpeedDial_Stock: React.FC = () => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
-        setState({ ...state, dialogOpen: stockDialog_e.productForm, productForm: undefined });
+        setState({
+          ...state,
+          dialogOpen: stockDialog_e.productForm,
+          productForm: undefined,
+        });
         break;
       case 3:
-        GoToTop();
+        setState({
+          ...state,
+          trigger_gotoTop: (state.trigger_gotoTop || 0) + 1,
+        });
         break;
     }
   };
