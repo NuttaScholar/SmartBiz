@@ -13,6 +13,7 @@ interface myProps {
   onChange?: (index: number) => void;
   onClick?: (index: number) => void;
   value: number;
+  gotoTop?: number;
   height?: string;
   overflow?: css_overflow;
   alignItems?: css_alignItem_t;
@@ -22,20 +23,27 @@ interface myProps {
 // StyledBadge
 //*************************************************
 const StyledBadge = styled(Badge)<BadgeProps>(({ theme }) => ({
-  '& .MuiBadge-badge': {
+  "& .MuiBadge-badge": {
     right: 4,
     top: 10,
     border: `2px solid ${(theme.vars ?? theme).palette.background.paper}`,
-    padding: '0 4px',
+    padding: "0 4px",
   },
 }));
 //*************************************************
 // Function
 //*************************************************
 const TabBox: React.FC<myProps> = (props) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
     props.onChange?.(newValue);
   };
+  React.useEffect(() => {
+    containerRef?.current?.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [props.gotoTop]);
   return (
     <Box
       sx={{
@@ -50,7 +58,10 @@ const TabBox: React.FC<myProps> = (props) => {
         <Tabs value={props.value} variant="scrollable" onChange={handleChange}>
           {props.list.map((item, index) => (
             <React.Fragment key={index}>
-              <StyledBadge badgeContent={props.valueList?.[index] || 0} color="primary">
+              <StyledBadge
+                badgeContent={props.valueList?.[index] || 0}
+                color="primary"
+              >
                 <Tab
                   key={index}
                   label={item}
@@ -63,6 +74,7 @@ const TabBox: React.FC<myProps> = (props) => {
         </Tabs>
       </Box>
       <Box
+        ref={containerRef}
         sx={{
           display: "flex",
           flexDirection: "column",
