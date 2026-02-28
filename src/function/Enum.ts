@@ -1,4 +1,4 @@
-import { errorCode_e, role_e } from "../enum";
+import { billStatus_e, errorCode_e, role_e } from "../enum";
 
 export function RoleString(data: role_e): string {
     switch (data) {
@@ -8,6 +8,18 @@ export function RoleString(data: role_e): string {
             return "Cashier";
         case role_e.laber:
             return "Laber";
+    }
+}
+export function BillStatusString(data: billStatus_e): string {
+    switch (data) {
+        case billStatus_e.preparing:
+            return "Preparing";
+        case billStatus_e.completed:
+            return "Completed";
+        case billStatus_e.recording:
+            return "Recording";
+        case billStatus_e.shipping:
+            return "Shipping";
     }
 }
 export function ErrorString(data: errorCode_e): string {

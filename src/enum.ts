@@ -28,6 +28,12 @@ export enum service_e{
   account,
   stock
 }
+export enum billStatus_e{
+  preparing,
+  shipping,
+  recording,
+  completed,
+}
 export enum errorCode_e {
   UnknownError, // ไม่สามารถระบุสาเหตุได้
   InUseError, // ยังถูกใช้งานอยู่
