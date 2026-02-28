@@ -9,10 +9,11 @@ import {
 import React from "react";
 import errImg from "../../assets/NoImage.jpg";
 import { orderInfo_t } from "../../API/BillService/type";
+import { billStatus_e } from "../../enum";
+import { BillStatusString } from "../../function/Enum";
 /**************************************************** */
 //  Type
 /**************************************************** */
-
 
 /**************************************************** */
 //  Interface
@@ -53,60 +54,95 @@ const CardOrder: React.FC<MyProps> = (props) => {
           height: "100%",
         }}
       >
-        <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
-          <CardContent sx={{ flex: "1", flexDirection: "row" }}>
-            <Typography component="div" variant="h5">
-              {props.value.customer}
-            </Typography>
-            <Typography
-              variant="subtitle1"
-              component="div"
-              sx={{ color: "text.secondary" }}
-            >
-              {`รหัสคำสั่งซื้อ: ${props.value.id}`}
-            </Typography>
-            <Typography
-              variant="subtitle2"
-              component="div"
-              sx={{ color: "text.secondary" }}
-            >
-              {`วันที่ทำรายการ: ${new Date().toLocaleDateString("th-TH")}`}
-            </Typography>
-
-            <Typography variant="h6" component="div">
-              ยอกรวม:{" "}
-              {props.value.total?.toLocaleString("th-TH", {
-                style: "currency",
-                currency: "THB",
-              })}
-            </Typography>
-          </CardContent>
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            gap: "8px",
-            alignItems: "center",
-            width: "95%",
-            py: "8px",
-          }}
+        <CardContent
+          sx={{ display: "flex", flexDirection: "column", width: "100%" }}
         >
-          {props.value.list.map(
-            (product, index) =>
-              index < 4 && (
-                <CardMedia
-                  key={index}
-                  component="img"
-                  sx={{ width: 100 }}
-                  image={product.img || errImg}
-                  onError={(event) => {
-                    (event.target as HTMLImageElement).src = errImg;
-                  }}
-                />
-              ),
-          )}
-        </Box>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              width: "100%",
+              px: 1,
+              justifyContent: "space-between",
+            }}
+          >
+            <Box>
+              <Typography component="div" variant="h5">
+                {props.value.customer}
+              </Typography>
+              <Typography
+                variant="subtitle1"
+                component="div"
+                sx={{ color: "text.secondary" }}
+              >
+                {`รหัสคำสั่งซื้อ: ${props.value.id}`}
+              </Typography>
+              <Typography
+                variant="subtitle2"
+                component="div"
+                sx={{ color: "text.secondary" }}
+              >
+                {`วันที่ทำรายการ: ${new Date().toLocaleDateString("th-TH")}`}
+              </Typography>
+
+              <Typography variant="h6" component="div">
+                ยอกรวม:{" "}
+                {props.value.total?.toLocaleString("th-TH", {
+                  style: "currency",
+                  currency: "THB",
+                })}
+              </Typography>
+            </Box>
+            <Box sx={{ mr: 2 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: "white",
+                  backgroundColor:
+                    props.value.status === billStatus_e.preparing
+                      ? "warning.dark"
+                      : props.value.status === billStatus_e.completed
+                        ? "success.main"
+                        : props.value.status === billStatus_e.recording
+                          ? "info.main"
+                          : props.value.status === billStatus_e.shipping
+                            ? "warning.main"
+                            : "default",
+                  p: "4px 8px",
+                  borderRadius: 1,
+                }}
+                textAlign={"center"}
+              >
+                {BillStatusString(props.value.status)}
+              </Typography>
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              gap: "8px",
+              alignItems: "center",
+              width: "95%",
+              py: "8px",
+            }}
+          >
+            {props.value.list.map(
+              (product, index) =>
+                index < 4 && (
+                  <CardMedia
+                    key={index}
+                    component="img"
+                    sx={{ width: 100 }}
+                    image={product.img || errImg}
+                    onError={(event) => {
+                      (event.target as HTMLImageElement).src = errImg;
+                    }}
+                  />
+                ),
+            )}
+          </Box>
+        </CardContent>
       </CardActionArea>
     </Card>
   );
