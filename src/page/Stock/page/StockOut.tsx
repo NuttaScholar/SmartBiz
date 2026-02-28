@@ -1,7 +1,6 @@
 import { Box, IconButton } from "@mui/material";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import FormStockHeader from "../component/FormStockHeader";
-import FormStock from "../component/FormStock";
 import { useNavigate } from "react-router-dom";
 import SaveIcon from "@mui/icons-material/Save";
 import {
@@ -22,13 +21,13 @@ import stockWithRetry_f from "../lib/stockWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 import { ErrorString } from "../../../function/Enum";
 import { errorCode_e } from "../../../enum";
+import AddProductForm from "../../../component/Organisms/AddProductForm";
 
 export default function Page_StockOut() {
   // Hook ************************************
   const authContext = useAuth();
   const nevigate = useNavigate();
   const [state, setState] = React.useState<stock_t>(StockDefaultState);
-  const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
   // Local function **************************
   const onEdit = (del: boolean, value: productInfo_t) => {
     if (state.productList !== undefined) {
@@ -83,7 +82,7 @@ export default function Page_StockOut() {
           `);
         } else {
           alert(
-            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`
+            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
           );
         }
       })
@@ -92,24 +91,13 @@ export default function Page_StockOut() {
         console.log("postStockOutError", err);
       });
   };
-  // Use Effect ******************************
-  React.useEffect(() => {
-    stockWithRetry_f
-      .getStock(authContext)
-      .then((res) => {
-        if (res.status === "success" && res.result !== undefined) {
-          res.result && setListOption(res.result);
-        } else {
-          alert(
-            `เกินข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`
-          );
-        }
-      })
-      .catch((err) => {
-        nevigate("/");
-        console.log(err);
-      });
-  }, []);
+  const onAdd = (product: productInfo_t) => {
+    setState({
+      ...state,
+      productList: [...(state.productList || []), product],
+    });
+  };
+  // Render ************************************
   return (
     <StockContext.Provider value={{ state, setState }}>
       <HeaderDialog label={"ตัดสต็อก"} onClick={() => nevigate("/stock")}>
@@ -136,7 +124,7 @@ export default function Page_StockOut() {
         }}
       >
         <FormStockHeader type="out" />
-        <FormStock type="out" listOption={listOption} />
+        <AddProductForm onAdd={onAdd} />
         <StockList variant="deleteable" onClick={onEdit} />
       </Box>
       <DialogStockEdit type="out" />

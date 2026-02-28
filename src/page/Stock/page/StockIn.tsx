@@ -1,7 +1,6 @@
 import { Box, IconButton } from "@mui/material";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import FormStockHeader from "../component/FormStockHeader";
-import FormStock from "../component/FormStock";
 import { useNavigate } from "react-router-dom";
 import SaveIcon from "@mui/icons-material/Save";
 import {
@@ -13,18 +12,22 @@ import {
 import React from "react";
 import StockList from "../component/StockList";
 import DialogStockEdit from "../component/DialogStockEdit";
-import { productInfo_t, stockForm_t, stockInForm_t } from "../../../API/StockService/type";
+import {
+  productInfo_t,
+  stockForm_t,
+  stockInForm_t,
+} from "../../../API/StockService/type";
 import { useAuth } from "../../../hooks/useAuth";
 import stockWithRetry_f from "../lib/stockWithRetry";
 import { ErrorString } from "../../../function/Enum";
 import { errorCode_e } from "../../../enum";
+import AddProductForm from "../../../component/Organisms/AddProductForm";
 
 export default function Page_StockIn() {
   // Hook ************************************
   const authContext = useAuth();
   const nevigate = useNavigate();
   const [state, setState] = React.useState<stock_t>(StockDefaultState);
-  const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
   const navigate = useNavigate();
   // Local function **************************
   const onEdit = (del: boolean, value: productInfo_t) => {
@@ -48,10 +51,7 @@ export default function Page_StockIn() {
     }
   };
   const onSave = () => {
-    if (
-      state.billForm?.img === undefined ||
-      state.billForm.img === null
-    ){
+    if (state.billForm?.img === undefined || state.billForm.img === null) {
       alert("กรุณาแนบรูปใบเสร็จรับเงิน");
       return;
     }
@@ -60,15 +60,15 @@ export default function Page_StockIn() {
       return;
     }
     const list: stockForm_t[] = state.productList.map((item) => ({
-          productID: item.id,
-          amount: item.amount || 0,
-          price: item.price,
-        }));
-        const data: stockInForm_t = {
-          bill_Img: state.billForm.img,
-          products: list,
-          who: state.billForm?.who,
-        };
+      productID: item.id,
+      amount: item.amount || 0,
+      price: item.price,
+    }));
+    const data: stockInForm_t = {
+      bill_Img: state.billForm.img,
+      products: list,
+      who: state.billForm?.who,
+    };
     stockWithRetry_f
       .postStockIn(authContext, data)
       .then((res) => {
@@ -79,7 +79,7 @@ export default function Page_StockIn() {
           `);
         } else {
           alert(
-            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`
+            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
           );
         }
       })
@@ -88,24 +88,13 @@ export default function Page_StockIn() {
         console.log("postStockOutError", err);
       });
   };
-  // Use Effect ******************************
-  React.useEffect(() => {
-    stockWithRetry_f
-      .getStock(authContext)
-      .then((res) => {
-        if (res.status === "success" && res.result !== undefined) {
-          res.result && setListOption(res.result);
-        } else {
-          alert(
-            `เกินข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`
-          );
-        }
-      })
-      .catch((err) => {
-        nevigate("/");
-        console.log(err);
-      });
-  }, []);
+  const onAdd = (product: productInfo_t) => {
+    setState({
+      ...state,
+      productList: [...(state.productList || []), product],
+    });
+  }
+  // Render **********************************
   return (
     <StockContext.Provider value={{ state, setState }}>
       <HeaderDialog label={"เติมสต็อก"} onClick={() => navigate("/stock")}>
@@ -132,12 +121,13 @@ export default function Page_StockIn() {
         }}
       >
         <FormStockHeader type="in" />
-        <FormStock type="in" listOption={listOption} />
+        <AddProductForm
+          fieldPriceEnable
+          onAdd={onAdd}
+        />
         <StockList variant="deleteable" onClick={onEdit} />
       </Box>
       <DialogStockEdit type="in" />
     </StockContext.Provider>
   );
 }
-
-
