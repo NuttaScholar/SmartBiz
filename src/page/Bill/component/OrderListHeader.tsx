@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import TabBox from "../../../component/Atoms/TabBox";
 import { productType_e } from "../../../component/Organisms/CardProduct";
 import FieldSearch from "../../../component/Molecules/FieldSearch";
-import { stockStatus_e } from "../../../enum";
+import { billStatus_e, stockStatus_e } from "../../../enum";
 import { useBillContext } from "../hooks/useBillContex";
 import { orderInfo_t } from "../../../API/BillService/type";
 //*************************************************
@@ -14,6 +14,7 @@ const dataSet: orderInfo_t = {
   customer: "NuttaScholar",
   total: 15000,
   date: new Date(),
+  status: billStatus_e.completed,
   list: [
     {
       id: "1",
@@ -86,8 +87,9 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       <FieldSearch
         placeholder="ชื่อลูกค้า"
         maxWidth="650px"
-      />
+      />  
       <TabBox
+        gotoTop={state.triger_gotoTop}
         list={["แพ็คสินค้า", "พร้อมจัดส่ง", "จัดการบิล", "เสร็จสิ้น"]}
         valueList={[1,2]}
         height="calc(100vh - 200px)"
