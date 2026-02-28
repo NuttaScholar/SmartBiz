@@ -61,6 +61,7 @@ const FieldContactAccess: React.FC<MyProps> = (props) => {
     <React.Fragment>
       <FieldContact
         label={props.label}
+        placeholder={props.placeholder}
         hideField={props.hideField}
         readonly={props.readonly}
         icon={props.icon}
