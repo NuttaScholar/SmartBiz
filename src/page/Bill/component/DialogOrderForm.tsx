@@ -7,6 +7,8 @@ import { useBillContext } from "../hooks/useBillContex";
 import { billDialog_e } from "../context/BillContext";
 import FormBillHeader from "./FormBillHeader";
 import AddProductForm from "../../../component/Organisms/AddProductForm";
+import MerchList from "./MerchList";
+import { productInfo_t } from "../../../API/StockService/type";
 
 //*********************************************
 // Transition
@@ -36,8 +38,14 @@ const DialogOrderForm: React.FC<myProps> = () => {
   const onSave = () => {
     console.log("save");
   };
+  const onAdd = (product: productInfo_t) => {
+    setState({
+      ...state,
+      merchList: [...(state.merchList || []), product],
+    });
+  };
   // Use Effect ******************************
-  
+
   // Render **********************************
   return (
     <Dialog
@@ -48,7 +56,7 @@ const DialogOrderForm: React.FC<myProps> = () => {
         transition: Transition,
       }}
     >
-      <HeaderDialog label={"เติมสต็อก"} onClick={onClose}>
+      <HeaderDialog label={"สร้างใบสั่งซื้อ"} onClick={onClose}>
         <Box sx={{ display: "flex", flexGrow: 1, justifyContent: "flex-end" }}>
           <IconButton
             onClick={onSave}
@@ -72,7 +80,13 @@ const DialogOrderForm: React.FC<myProps> = () => {
         }}
       >
         <FormBillHeader />
-        <AddProductForm />
+        <AddProductForm variant="Bill" onAdd={onAdd} />
+        <MerchList
+          variant="deleteable"
+          onClick={(edit, val) => {
+            console.log("edit", edit);
+          }}
+        />
       </Box>
     </Dialog>
   );
