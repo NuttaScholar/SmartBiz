@@ -1,6 +1,7 @@
 // src/context/AuthContext.tsx
 import { createContext } from "react";
 import { orderInfo_t, orderInfoForm_t } from "../../../API/BillService/type";
+import { productInfo_t } from "../../../API/StockService/type";
 
 export enum orderStatus_e {
   prepare,
@@ -16,6 +17,7 @@ export type billState_t = {
   filter: orderStatus_e;
   dialogOpen: billDialog_e;
   orderList?: orderInfo_t[];
+  merchList?: productInfo_t[];
   billForm?: orderInfoForm_t;
   triger_gotoTop?: number;
   containerRef?: React.RefObject<HTMLDivElement>;
