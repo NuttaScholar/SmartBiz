@@ -31,6 +31,7 @@ type Form_t = {
 // Interface
 //*********************************************
 interface myProps {
+  variant: "Bill" | "Stock";
   fieldPriceEnable?: boolean;
   onAdd?: (product: productInfo_t) => void;
 }
@@ -58,18 +59,28 @@ const AddProductForm: React.FC<myProps> = (props) => {
     event.preventDefault();
 
     if (!form) return;
+    if (props.variant === "Stock") {
+    }
     const newList: productInfo_t = {
       id: form.product?.code || "",
       name: form.product?.value || "",
       amount: form.amount ? Number(form.amount) : 0,
-      price: form.price ? Number(form.price) : 0,
-      type: props.fieldPriceEnable
-        ? productType_e.merchandise
-        : productType_e.material,
+      price:
+        props.variant === "Stock"
+          ? form.price
+            ? Number(form.price)
+            : 0
+          : listOption?.find((item) => item.id === form.product?.code)?.price ||
+            0,
+      type:
+        props.variant === "Stock"
+          ? props.fieldPriceEnable
+            ? productType_e.merchandise
+            : productType_e.material
+          : productType_e.merchandise,
       status: stockStatus_e.normal,
       img:
-        listOption?.find((item) => item.id === form.product?.code)?.img ||
-        "",
+        listOption?.find((item) => item.id === form.product?.code)?.img || "",
     };
     props.onAdd?.(newList);
     setForm(undefined);
@@ -85,6 +96,7 @@ const AddProductForm: React.FC<myProps> = (props) => {
       .getStock(authContext)
       .then((res) => {
         if (res.status === "success" && res.result !== undefined) {
+          console.log("Stock List", res.result);
           res.result && setListOption(res.result);
         } else {
           alert(
