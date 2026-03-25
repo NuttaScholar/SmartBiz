@@ -10,6 +10,10 @@ export type productInfo_t = {
   price?: number;
   description?: string;
   amount?: number;
+  // For Bill
+  total?: number;
+  percentDiscount?: number;
+  priceAfterDiscount?: number;
 }
 export type formProduct_t = {
   id: string;

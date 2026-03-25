@@ -12,12 +12,15 @@ export enum billDialog_e{
   none,
   detail,
   form,
+  discount,
+  editForm,
 }
 export type billState_t = {
   filter: orderStatus_e;
   dialogOpen: billDialog_e;
   orderList?: orderInfo_t[];
   merchList?: productInfo_t[];
+  indexList?: number;
   billForm?: orderInfoForm_t;
   triger_gotoTop?: number;
   containerRef?: React.RefObject<HTMLDivElement>;
