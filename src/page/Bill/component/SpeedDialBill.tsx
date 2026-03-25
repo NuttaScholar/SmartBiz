@@ -6,6 +6,7 @@ import { menuList_t } from "../../../component/Molecules/ButtonOption";
 import React from "react";
 import { billDialog_e } from "../context/BillContext";
 import { useBillContext } from "../hooks/useBillContex";
+import PercentIcon from '@mui/icons-material/Percent';
 
 //*********************************************
 // Style
@@ -15,8 +16,9 @@ import { useBillContext } from "../hooks/useBillContex";
 // Variable
 //*********************************************
 const MenuList: menuList_t[] = [
-  { text: "Create", icon: <AddIcon /> },
-  { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
+  { text: "Create", icon: <AddIcon />, path: "/bill/create"},
+  { text: "Discount", icon: <PercentIcon />, path: "/bill/discount"},
+  { text: "Go to Top", icon: <KeyboardArrowUpIcon />},
 ];
 //*********************************************
 // Interface
@@ -31,11 +33,8 @@ const SpeedDial_Bill: React.FC = () => {
   // Local function **************************
   const speedDialHandler = (index: number) => {
     console.log(`SpeedDial: ${index}`);
-    switch (index) {
-      case 0:
-        setState({ ...state, dialogOpen: billDialog_e.form });
-        break;
-      case 1:
+    switch (index) {      
+      case 2:
         setState({...state, triger_gotoTop: (state.triger_gotoTop || 0) + 1});
         break;
     }

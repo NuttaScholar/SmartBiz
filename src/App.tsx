@@ -20,6 +20,8 @@ import Page_AccessSearch from "./page/Access/page/AccessSearch";
 import Page_Stock from "./page/Stock/Stock";
 import Page_StockIn from "./page/Stock/page/StockIn";
 import Page_StockOut from "./page/Stock/page/StockOut";
+import Page_BillCreate from "./page/Bill/page/BillCreate";
+import Page_BillSetDiscount from "./page/Bill/page/SetDiscount";
 //*********************************************
 // Set Theme
 //*********************************************
@@ -58,7 +60,11 @@ function App() {
                 <Route path="search" element={<Page_AccessSearch />} />
               </Route>
               <Route path="/login" element={<Page_Login />} />
-              <Route path="/bill" element={<Page_Bill />} />
+              <Route path="/bill">
+                <Route index element={<Page_Bill />} />
+                <Route path="create" element={<Page_BillCreate />} />
+                <Route path="discount" element={<Page_BillSetDiscount />} />
+              </Route>
               <Route path="/cadit" element={<Page_Cadit />} />
               <Route path="/checkIn" element={<Page_CheckIn />} />
               <Route path="/stock">
