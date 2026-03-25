@@ -123,7 +123,6 @@ export default function Page_StockIn() {
         <FormStockHeader type="in" />
         <AddProductForm
           variant="Stock"
-          fieldPriceEnable
           onAdd={onAdd}
         />
         <StockList variant="deleteable" onClick={onEdit} />

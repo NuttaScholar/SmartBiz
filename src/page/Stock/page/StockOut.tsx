@@ -124,7 +124,7 @@ export default function Page_StockOut() {
         }}
       >
         <FormStockHeader type="out" />
-        <AddProductForm variant="Stock" onAdd={onAdd} />
+        <AddProductForm variant="Stock" hideFieldPrice onAdd={onAdd} />
         <StockList variant="deleteable" onClick={onEdit} />
       </Box>
       <DialogStockEdit type="out" />

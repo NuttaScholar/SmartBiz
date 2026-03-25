@@ -32,7 +32,8 @@ type Form_t = {
 //*********************************************
 interface myProps {
   variant: "Bill" | "Stock";
-  fieldPriceEnable?: boolean;
+  hideFieldPrice?: boolean;
+  hideFieldAmount?: boolean;
   onAdd?: (product: productInfo_t) => void;
 }
 //*********************************************
@@ -59,8 +60,7 @@ const AddProductForm: React.FC<myProps> = (props) => {
     event.preventDefault();
 
     if (!form) return;
-    if (props.variant === "Stock") {
-    }
+
     const newList: productInfo_t = {
       id: form.product?.code || "",
       name: form.product?.value || "",
@@ -74,40 +74,67 @@ const AddProductForm: React.FC<myProps> = (props) => {
             0,
       type:
         props.variant === "Stock"
-          ? props.fieldPriceEnable
-            ? productType_e.merchandise
-            : productType_e.material
+          ? props.hideFieldPrice
+            ? productType_e.material
+            : productType_e.merchandise
           : productType_e.merchandise,
       status: stockStatus_e.normal,
       img:
         listOption?.find((item) => item.id === form.product?.code)?.img || "",
+      priceAfterDiscount:
+        props.variant === "Bill" && props.hideFieldPrice
+          ? listOption?.find((item) => item.id === form.product?.code)?.price ||
+            0
+          : Number(form.price),
     };
     props.onAdd?.(newList);
     setForm(undefined);
     setClear(clear + 1);
-    console.log("Add Product", form);
   };
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [event.target.name]: event.target.value } as Form_t);
   };
+  const onSelectHandler = (option: Option_t | null) => {
+    if (props.variant === "Bill") {
+      const product = listOption?.find((item) => item.id === option?.code);
+      setForm({ ...form, product: option, price: product?.price } as Form_t);
+    } else {
+      setForm({ ...form, product: option } as Form_t);
+    }
+  };
   // Use Effect **********************
   React.useEffect(() => {
-    stockWithRetry_f
-      .getStock(authContext)
-      .then((res) => {
-        if (res.status === "success" && res.result !== undefined) {
-          console.log("Stock List", res.result);
-          res.result && setListOption(res.result);
-        } else {
-          alert(
-            `เกินข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
-          );
-        }
-      })
-      .catch((err) => {
-        nevigate("/");
-        console.log(err);
-      });
+    if (props.variant === "Stock") {
+      stockWithRetry_f
+        .getStock(authContext)
+        .then((res) => {
+          if (res.status === "success" && res.result !== undefined) {
+            console.log("Stock List", res.result);
+            res.result && setListOption(res.result);
+          } else {
+            alert(
+              `เกินข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+            );
+          }
+        })
+        .catch((err) => {
+          nevigate("/");
+          console.log(err);
+        });
+    } else {
+      // For Bill, get product list from stock
+      setListOption([
+        {
+          id: "P001",
+          name: "Product 1",
+          price: 100,
+          amount: 10,
+          type: productType_e.merchandise,
+          status: stockStatus_e.normal,
+          img: "",
+        },
+      ]);
+    }
   }, []);
   // UI *****************************
   return (
@@ -132,20 +159,22 @@ const AddProductForm: React.FC<myProps> = (props) => {
           hideField
           duble
           clear={clear}
-          onChange={(val) => setForm({ ...form, product: val } as Form_t)}
+          onChange={onSelectHandler}
         />
         <Field hide>
-          <FieldText
-            label="Amount"
-            required
-            name="amount"
-            type="number"
-            minWidth="100px"
-            hideField
-            value={form?.amount?.toString() || ""}
-            onChange={onChangeHandler}
-          />
-          {props.fieldPriceEnable && (
+          {!props.hideFieldAmount && (
+            <FieldText
+              label="Amount"
+              required
+              name="amount"
+              type="number"
+              minWidth="100px"
+              hideField
+              value={form?.amount?.toString() || ""}
+              onChange={onChangeHandler}
+            />
+          )}
+          {!props.hideFieldPrice && (
             <FieldText
               label="Price"
               required
