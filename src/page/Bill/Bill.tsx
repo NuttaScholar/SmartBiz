@@ -11,7 +11,6 @@ import OrderList from "./component/OrderList";
 import SpeedDial_Bill from "./component/SpeedDialBill";
 import DialogOrderDetail from "./component/DialogOrderDetail";
 import { orderInfo_t } from "../../API/BillService/type";
-import DialogOrderForm from "./component/DialogOrderForm";
 //*************************************************
 // Function
 //*************************************************
@@ -35,7 +34,6 @@ const Page_Bill: React.FC = () => {
         <SpeedDial_Bill />
       </AppBar_c>
       <DialogOrderDetail value={detail} />
-      <DialogOrderForm/>
     </BillContext.Provider>
   );
 };
