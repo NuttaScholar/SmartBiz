@@ -120,6 +120,17 @@ const CardProduct: React.FC<MyProps> = (props) => {
                 </Typography>
               </Box>
             )}
+            {props.value.total !== undefined && (
+              <Box sx={{ display: "flex", flexDirection: "row", gap: 1 }}>
+                <Typography variant="subtitle1">ยอดรวม:</Typography>
+                <Typography variant="subtitle1">
+                  {props.value.total.toLocaleString("th-TH", {
+                    style: "currency",
+                    currency: "THB",
+                  })}
+                </Typography>
+              </Box>
+            )}
           </CardContent>
         </Box>
       </CardActionArea>
