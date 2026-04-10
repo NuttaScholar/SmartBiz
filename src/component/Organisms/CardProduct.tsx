@@ -27,7 +27,6 @@ export enum productType_e {
 /**************************************************** */
 interface MyProps {
   value: productInfo_t;
-  type: productType_e;
   onClick?: (edit: boolean, value: productInfo_t) => void;
   disabled?: boolean;
   maxWidth?: string;
@@ -93,16 +92,35 @@ const CardProduct: React.FC<MyProps> = (props) => {
             >
               {props.value.description}
             </Typography>
-            {props.type !== productType_e.material && (
+            {props.value.price !== undefined && (
               <Typography variant="subtitle1" component="div">
                 ราคา:{" "}
-                {props.value.price?.toLocaleString("th-TH", {
-                  style: "currency",
-                  currency: "THB",
-                })}
+                <span
+                  style={
+                    props.value.priceAfterDiscount !== undefined
+                      ? { textDecoration: "line-through", color: "gray" }
+                      : undefined
+                  }
+                >
+                  {props.value.price?.toLocaleString("th-TH", {
+                    style: "currency",
+                    currency: "THB",
+                  })}
+                </span>{" "}
+                <span style={{ color: "red" }}>
+                  {props.value.priceAfterDiscount?.toLocaleString("th-TH", {
+                    style: "currency",
+                    currency: "THB",
+                  })}
+                </span>
               </Typography>
             )}
-            {props.type !== productType_e.another && (
+            {props.value.percentDiscount !== undefined && (
+              <Typography variant="subtitle1" component="div" color="error">
+                %ส่วนลด: {props.value.percentDiscount.toFixed(2)}%
+              </Typography>
+            )}
+            {props.value.amount !== undefined && (
               <Box sx={{ display: "flex", flexDirection: "row", gap: 1 }}>
                 <Typography variant="subtitle1">จำนวน:</Typography>
                 <Typography

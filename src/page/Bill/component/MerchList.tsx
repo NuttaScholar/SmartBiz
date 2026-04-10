@@ -21,21 +21,35 @@ const MerchList: React.FC<myProps> = (props) => {
     <Box
       sx={{
         display: "flex",
-        justifyContent: "center",
-        flexWrap: "wrap",
+        flexDirection: "column",
         width: "100%",
+        height: {
+          xs: "calc(100vh - 250px)",
+          sm: "calc(100vh - 255px)",
+          md: "calc(100vh - 210px)",
+        },
+        overflowY: "auto",
+        alignItems: "center",
       }}
     >
-      {state.merchList?.map((product, index) => (
-        <CardProduct
-          type={product.type}
-          key={index}
-          value={{ ...product, img: product.img }}
-          maxWidth="400px"
-          variant={props.variant}
-          onClick={props.onClick}          
-        />
-      ))}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          flexWrap: "wrap",
+          width: "100%",
+        }}
+      >
+        {state.merchList?.map((product, index) => (
+          <CardProduct
+            key={index}
+            value={{ ...product, img: product.img }}
+            maxWidth="400px"
+            variant={props.variant}
+            onClick={props.onClick}
+          />
+        ))}
+      </Box>
     </Box>
   );
 };

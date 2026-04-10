@@ -28,7 +28,6 @@ const StockList: React.FC<myProps> = (props) => {
     >
       {state.productList?.map((product, index) => (
         <CardProduct
-          type={product.type}
           key={index}
           value={{ ...product, img: product.img }}
           maxWidth="400px"
