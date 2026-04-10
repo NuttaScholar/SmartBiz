@@ -2,21 +2,16 @@ import React, { useMemo, useState } from "react";
 import { Box, Button } from "@mui/material";
 import FieldAutoComplete, { Option_t } from "../Molecules/FieldAutoComplete";
 import { productInfo_t } from "../../API/StockService/type";
-import { productType_e } from "./CardProduct";
-import { errorCode_e, stockStatus_e } from "../../enum";
 import Field from "../Atoms/Field";
 import FieldText from "../Molecules/FieldText";
-import stockWithRetry_f from "../../page/Stock/lib/stockWithRetry";
-import { useAuth } from "../../hooks/useAuth";
-import { ErrorString } from "../../function/Enum";
 import { useNavigate } from "react-router-dom";
 
 //*********************************************
 // Type
 //*********************************************
-type Form_t = {
+export type FormAddProduce_t = {
   product: Option_t | null;
-  amount: number;
+  amount?: number;
   price?: number;
 };
 //*********************************************
@@ -31,111 +26,62 @@ type Form_t = {
 // Interface
 //*********************************************
 interface myProps {
-  variant: "Bill" | "Stock";
+  list: productInfo_t[];
   hideFieldPrice?: boolean;
   hideFieldAmount?: boolean;
-  onAdd?: (product: productInfo_t) => void;
+  autoComplete?: boolean;
+  onAdd?: (from: FormAddProduce_t) => void;
 }
 //*********************************************
 // Component
 //*********************************************
 const AddProductForm: React.FC<myProps> = (props) => {
   // Hook *********************
-  const [form, setForm] = useState<Form_t>();
+  const [form, setForm] = useState<FormAddProduce_t>();
   const [clear, setClear] = useState(0);
-  const [listOption, setListOption] = useState<productInfo_t[]>([]);
-  const authContext = useAuth();
   const nevigate = useNavigate();
   // Local Variable *****************
   const options: Option_t[] = useMemo(() => {
     return (
-      listOption?.map((item: productInfo_t) => ({
+      props.list?.map((item: productInfo_t) => ({
         code: item.id,
         value: item.name,
       })) ?? []
     );
-  }, [listOption]);
+  }, [props.list]);
   // Local Function *****************
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!form) return;
-
-    const newList: productInfo_t = {
-      id: form.product?.code || "",
-      name: form.product?.value || "",
-      amount: form.amount ? Number(form.amount) : 0,
-      price:
-        props.variant === "Stock"
-          ? form.price
-            ? Number(form.price)
-            : 0
-          : listOption?.find((item) => item.id === form.product?.code)?.price ||
-            0,
-      type:
-        props.variant === "Stock"
-          ? props.hideFieldPrice
-            ? productType_e.material
-            : productType_e.merchandise
-          : productType_e.merchandise,
-      status: stockStatus_e.normal,
-      img:
-        listOption?.find((item) => item.id === form.product?.code)?.img || "",
-      priceAfterDiscount:
-        props.variant === "Bill" && props.hideFieldPrice
-          ? listOption?.find((item) => item.id === form.product?.code)?.price ||
-            0
-          : Number(form.price),
+    const formData: FormAddProduce_t = {
+      ...form,
+      price: form.price !== undefined ? Number(form.price) : undefined,
+      amount: form.amount !== undefined ? Number(form.amount) : undefined,
     };
-    props.onAdd?.(newList);
+    props.onAdd?.(formData);
     setForm(undefined);
     setClear(clear + 1);
   };
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [event.target.name]: event.target.value } as Form_t);
+    setForm({
+      ...form,
+      [event.target.name]: event.target.value,
+    } as FormAddProduce_t);
   };
   const onSelectHandler = (option: Option_t | null) => {
-    if (props.variant === "Bill") {
-      const product = listOption?.find((item) => item.id === option?.code);
-      setForm({ ...form, product: option, price: product?.price } as Form_t);
+    if (props.autoComplete) {
+      const product = props.list?.find((item) => item.id === option?.code);
+      setForm({
+        ...form,
+        product: option,
+        price: props.hideFieldPrice ? undefined : product?.price,
+        amount: props.hideFieldAmount ? undefined : product?.amount,
+      } as FormAddProduce_t);
     } else {
-      setForm({ ...form, product: option } as Form_t);
+      setForm({ ...form, product: option } as FormAddProduce_t);
     }
   };
-  // Use Effect **********************
-  React.useEffect(() => {
-    if (props.variant === "Stock") {
-      stockWithRetry_f
-        .getStock(authContext)
-        .then((res) => {
-          if (res.status === "success" && res.result !== undefined) {
-            console.log("Stock List", res.result);
-            res.result && setListOption(res.result);
-          } else {
-            alert(
-              `เกินข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
-            );
-          }
-        })
-        .catch((err) => {
-          nevigate("/");
-          console.log(err);
-        });
-    } else {
-      // For Bill, get product list from stock
-      setListOption([
-        {
-          id: "P001",
-          name: "Product 1",
-          price: 100,
-          amount: 10,
-          type: productType_e.merchandise,
-          status: stockStatus_e.normal,
-          img: "",
-        },
-      ]);
-    }
-  }, []);
   // UI *****************************
   return (
     <Field maxWidth="1280px">

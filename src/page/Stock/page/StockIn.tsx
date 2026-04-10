@@ -20,8 +20,10 @@ import {
 import { useAuth } from "../../../hooks/useAuth";
 import stockWithRetry_f from "../lib/stockWithRetry";
 import { ErrorString } from "../../../function/Enum";
-import { errorCode_e } from "../../../enum";
-import AddProductForm from "../../../component/Organisms/AddProductForm";
+import { errorCode_e, productType_e, stockStatus_e } from "../../../enum";
+import AddProductForm, {
+  FormAddProduce_t,
+} from "../../../component/Organisms/AddProductForm";
 
 export default function Page_StockIn() {
   // Hook ************************************
@@ -29,6 +31,7 @@ export default function Page_StockIn() {
   const nevigate = useNavigate();
   const [state, setState] = React.useState<stock_t>(StockDefaultState);
   const navigate = useNavigate();
+  const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
   // Local function **************************
   const onEdit = (del: boolean, value: productInfo_t) => {
     if (state.productList !== undefined) {
@@ -88,12 +91,40 @@ export default function Page_StockIn() {
         console.log("postStockOutError", err);
       });
   };
-  const onAdd = (product: productInfo_t) => {
+  const onAdd = (form: FormAddProduce_t) => {
+    const newList: productInfo_t = {
+      id: form.product?.code || "",
+      name: form.product?.value || "",
+      amount: form.amount !== undefined ? Number(form.amount) : undefined,
+      price: form.price ? Number(form.price) : 0,
+      type: productType_e.merchandise,
+      status: stockStatus_e.normal,
+      img: listOption?.find((item) => item.id === form.product?.code)?.img || "",          
+    };
     setState({
       ...state,
-      productList: [...(state.productList || []), product],
+      productList: [...(state.productList || []), newList],
     });
-  }
+  };
+  // Effect **********************************
+  React.useEffect(() => {
+    stockWithRetry_f
+        .getStock(authContext)
+        .then((res) => {
+          if (res.status === "success" && res.result !== undefined) {
+            console.log("Stock List", res.result);
+            res.result && setListOption(res.result);
+          } else {
+            alert(
+              `เกินข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+            );
+          }
+        })
+        .catch((err) => {
+          nevigate("/");
+          console.log(err);
+        });
+  }, []);
   // Render **********************************
   return (
     <StockContext.Provider value={{ state, setState }}>
@@ -121,10 +152,7 @@ export default function Page_StockIn() {
         }}
       >
         <FormStockHeader type="in" />
-        <AddProductForm
-          variant="Stock"
-          onAdd={onAdd}
-        />
+        <AddProductForm list={listOption} onAdd={onAdd} />
         <StockList variant="deleteable" onClick={onEdit} />
       </Box>
       <DialogStockEdit type="in" />
