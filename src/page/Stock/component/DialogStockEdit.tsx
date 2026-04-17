@@ -1,28 +1,15 @@
 import React, { useMemo } from "react";
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-} from "@mui/material";
-import FieldText from "../../../component/Molecules/FieldText";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
 import {
   productType_e,
 } from "../../../component/Organisms/CardProduct";
 import { productInfo_t } from "../../../API/StockService/type";
+import DialogEditProductList from "../../../component/Organisms/DialogEditProductList";
 
 //*********************************************
 // Type
 //*********************************************
-type form_t = {
-  amount: string;
-  price?: string;
-};
 //*********************************************
 // Constante
 //*********************************************
@@ -60,22 +47,12 @@ const DialogStockEdit: React.FC<myProps> = (props) => {
     }
   }, [state.productList, state.indexList]);
   // Local Function ***********
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const formJson = Object.fromEntries((formData as any).entries());
-    const data = formJson as form_t;
-    const newData: productInfo_t = {
-      ...info,
-      amount: Number(data.amount),
-      price: Number(data.price || 0),
-    };
-    console.log(newData);
+  const handleSubmit = (val :productInfo_t) => {    
     setState({
       ...state,
       dialogOpen: stockDialog_e.none,
       productList: state.productList?.map((item, index) =>
-        index === state.indexList ? newData : item
+        index === state.indexList ? val : item
       ),
     });
   };
@@ -83,58 +60,13 @@ const DialogStockEdit: React.FC<myProps> = (props) => {
     setState({ ...state, dialogOpen: stockDialog_e.none });
   };
   return (
-    <Dialog
+    <DialogEditProductList
       open={state.dialogOpen === stockDialog_e.editForm}
       onClose={onClose}
-    >
-      <DialogTitle>แก้ไขรายการ</DialogTitle>
-      <DialogContent>
-        {info && (
-          <DialogContentText>{`${info.name} (ID: ${info.id})`}</DialogContentText>
-        )}
-        <Box
-          id="form-stock-edit"
-          component="form"
-          onSubmit={handleSubmit}
-          noValidate
-          sx={{ mt: 1, gap: 1, display: "flex", flexDirection: "row" }}
-        >
-          <FieldText
-            label="Amount"
-            defauleValue={info?.amount?.toString()}
-            required
-            name="amount"
-            type="number"
-            minWidth="100px"
-            hideField
-          />
-          {props.type === "in" && (
-            <FieldText
-              label="Price"
-              defauleValue={info?.price?.toString()}
-              required
-              name="price"
-              type="number"
-              minWidth="100px"
-              hideField
-            />
-          )}
-        </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button
-          form="form-stock-edit"
-          variant="contained"
-          type="submit"
-          onClick={onClose}
-        >
-          Save
-        </Button>
-        <Button variant="outlined" onClick={onClose}>
-          Close
-        </Button>
-      </DialogActions>
-    </Dialog>
+      defaultValue={info}
+      onSubmit={handleSubmit}
+      hideFieldPrice={props.type === "out"}
+    />
   );
 };
 export default DialogStockEdit;
