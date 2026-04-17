@@ -47,8 +47,6 @@ const DialogEditProductList: React.FC<myProps> = (props) => {
     ({
       id: "",
       name: "",
-      amount: 0,
-      price: 0,
       img: "",
       type: productType_e.another,
     } as productInfo_t);
@@ -59,26 +57,34 @@ const DialogEditProductList: React.FC<myProps> = (props) => {
     const formData = new FormData(event.currentTarget);
     const formJson = Object.fromEntries((formData as any).entries());
     const data = formJson as form_t;
+
+    const amount = Number(data.amount);
+    const price = data.price !== undefined ? Number(data.price) : info.price;
+    let total: number | undefined = undefined;
+    if (info.total !== undefined) {
+      const basePrice = info.priceAfterDiscount ?? info.price;
+      if (basePrice !== undefined) {
+        total = amount * basePrice;
+      }
+    }
     const newData: productInfo_t = {
       ...info,
-      amount: Number(data.amount),
-      price: Number(data.price || 0),
+      amount: amount,
+      price: price,
+      total: total,
     };
     console.log(newData);
-    props.onSubmit?.(newData);    
+    props.onSubmit?.(newData);
   };
   return (
-    <Dialog
-      open={props.open}
-      onClose={props.onClose}
-    >
+    <Dialog open={props.open} onClose={props.onClose}>
       <DialogTitle>แก้ไขรายการ</DialogTitle>
       <DialogContent>
         {info && (
           <DialogContentText>{`${info.name} (ID: ${info.id})`}</DialogContentText>
         )}
         <Box
-          id="form-stock-edit"
+          id="form-editProductList"
           component="form"
           onSubmit={handleSubmit}
           noValidate
@@ -107,11 +113,7 @@ const DialogEditProductList: React.FC<myProps> = (props) => {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button
-          form="form-stock-edit"
-          variant="contained"
-          type="submit"
-        >
+        <Button form="form-editProductList" variant="contained" type="submit">
           Save
         </Button>
         <Button variant="outlined" onClick={props.onClose}>
