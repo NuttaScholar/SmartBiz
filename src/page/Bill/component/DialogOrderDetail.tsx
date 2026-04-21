@@ -1,7 +1,6 @@
 import {
   Box,
   Dialog,
-  Divider,
   IconButton,
   Slide,
   Typography,
@@ -66,6 +65,7 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
+        window.open(`http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/bill/preview`, '_blank')
         break;
       case 3:
         containerRef?.current?.scrollTo({
@@ -135,7 +135,6 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
             }}
           >
             <CardProduct
-              type={productType_e.merchandise}
               maxWidth="400px"
               value={{
                 id: "123456",
@@ -146,7 +145,6 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
               }}
             />
             <CardProduct
-              type={productType_e.merchandise}
               maxWidth="400px"
               value={{
                 id: "123456",
@@ -157,7 +155,6 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
               }}
             />
             <CardProduct
-              type={productType_e.merchandise}
               maxWidth="400px"
               value={{
                 id: "123456",
@@ -168,7 +165,6 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
               }}
             />
             <CardProduct
-              type={productType_e.merchandise}
               maxWidth="400px"
               value={{
                 id: "123456",
@@ -179,7 +175,6 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
               }}
             />
             <CardProduct
-              type={productType_e.merchandise}
               maxWidth="400px"
               value={{
                 id: "123456",

@@ -22,6 +22,7 @@ import Page_StockIn from "./page/Stock/page/StockIn";
 import Page_StockOut from "./page/Stock/page/StockOut";
 import Page_BillCreate from "./page/Bill/page/BillCreate";
 import Page_BillSetDiscount from "./page/Bill/page/SetDiscount";
+import Page_BillPreview from "./page/Bill/page/BillPreview";
 //*********************************************
 // Set Theme
 //*********************************************
@@ -64,6 +65,7 @@ function App() {
                 <Route index element={<Page_Bill />} />
                 <Route path="create" element={<Page_BillCreate />} />
                 <Route path="discount" element={<Page_BillSetDiscount />} />
+                <Route path="preview" element={<Page_BillPreview />} />
               </Route>
               <Route path="/cadit" element={<Page_Cadit />} />
               <Route path="/checkIn" element={<Page_CheckIn />} />

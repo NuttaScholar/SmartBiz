@@ -8,6 +8,10 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+.body_preview{
+  min-width: 800px;
+  background-color: gray;
+}
 .field{
   display: flex;
   background-color: #E0EFFF;
