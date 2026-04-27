@@ -1,28 +1,36 @@
-import "./App.css";
-import { Routes, Route, BrowserRouter } from "react-router-dom";
-import Page_Access from "./page/Access/Access";
-import Page_Login from "./page/Login";
-import Page_Bill from "./page/Bill/Bill";
-import Page_Cadit from "./page/Cadit";
-import Page_CheckIn from "./page/CheckIn";
-import Page_NotFound from "./page/NotFound";
-import Page_SetUser from "./page/SetUser";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import React, { Suspense, lazy } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider, createTheme } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { createTheme, ThemeProvider } from "@mui/material";
+import { AuthProvider } from "./context/AuthContext";
+import "./App.css";
 import "@fontsource/kanit/300.css";
 import "@fontsource/kanit/400.css";
 import "@fontsource/kanit/500.css";
 import "@fontsource/kanit/700.css";
-import { AuthProvider } from "./context/AuthContext";
-import Page_SetPass from "./page/SetPass";
-import Page_AccessSearch from "./page/Access/page/AccessSearch";
-import Page_Stock from "./page/Stock/Stock";
-import Page_StockIn from "./page/Stock/page/StockIn";
-import Page_StockOut from "./page/Stock/page/StockOut";
-import Page_BillCreate from "./page/Bill/page/BillCreate";
-import Page_BillSetDiscount from "./page/Bill/page/SetDiscount";
-import Page_BillPreview from "./page/Bill/page/BillPreview";
+import PageLoader from "./page/PageLoader";
+//*********************************************
+// Lazy load pages
+//*********************************************
+const Page_Login = lazy(() => import("./page/Login"));
+const Page_Access = lazy(() => import("./page/Access/Access"));
+const Page_AccessSearch = lazy(() => import("./page/Access/page/AccessSearch"));
+const Page_Bill = lazy(() => import("./page/Bill/Bill"));
+const Page_BillCreate = lazy(() => import("./page/Bill/page/BillCreate"));
+const Page_BillSetDiscount = lazy(() => import("./page/Bill/page/SetDiscount"));
+const Page_BillPreview = lazy(() => import("./page/Bill/page/BillPreview"));
+const Page_Cadit = lazy(() => import("./page/Cadit"));
+const Page_CheckIn = lazy(() => import("./page/CheckIn"));
+const Page_NotFound = lazy(() => import("./page/NotFound"));
+const Page_SetUser = lazy(() => import("./page/SetUser"));
+const Page_SetPass = lazy(() => import("./page/SetPass"));
+const Page_Stock = lazy(() => import("./page/Stock/Stock"));
+const Page_StockIn = lazy(() => import("./page/Stock/page/StockIn"));
+const Page_StockOut = lazy(() => import("./page/Stock/page/StockOut"));
+const PageDemo = lazy(() => import("./page/test"));
+
+
 //*********************************************
 // Set Theme
 //*********************************************
@@ -54,6 +62,7 @@ function App() {
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <AuthProvider>
           <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Page_Login />} />
               <Route path="/access">
@@ -76,8 +85,10 @@ function App() {
               </Route>
               <Route path="/setuser" element={<Page_SetUser />} />
               <Route path="/setpass" element={<Page_SetPass />} />
+              <Route path="/test" element={<PageDemo/>} />
               <Route path="*" element={<Page_NotFound />} />
             </Routes>
+          </Suspense>
           </BrowserRouter>
         </AuthProvider>
       </LocalizationProvider>
