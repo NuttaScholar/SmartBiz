@@ -42,7 +42,7 @@ const Transition = React.forwardRef(function Transition(
 //*********************************************
 const MenuList: menuList_t[] = [
   { text: "Print", icon: <PrintIcon /> },
-  { text: "Edit", icon: <EditIcon /> },
+  { text: "Edit", icon: <EditIcon />, path: "/bill/edit/123456" },
   { text: "Delete", icon: <DeleteIcon /> },
   { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
 ];
