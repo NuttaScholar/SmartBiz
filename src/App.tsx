@@ -73,6 +73,7 @@ function App() {
               <Route path="/bill">
                 <Route index element={<Page_Bill />} />
                 <Route path="create" element={<Page_BillCreate />} />
+                <Route path="edit/:orderID" element={<Page_BillCreate />} />
                 <Route path="discount" element={<Page_BillSetDiscount />} />
                 <Route path="preview" element={<Page_BillPreview />} />
               </Route>
