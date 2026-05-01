@@ -11,8 +11,6 @@ export enum orderStatus_e {
 export enum billDialog_e{
   none,
   detail,
-  form,
-  discount,
   editForm,
 }
 export type billState_t = {
