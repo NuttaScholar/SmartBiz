@@ -13,7 +13,7 @@ import AddProductForm, {
 } from "../../../component/Organisms/AddProductForm";
 import MerchList from "../component/MerchList";
 import { productInfo_t } from "../../../API/StockService/type";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { productType_e, stockStatus_e } from "../../../enum";
 import SummaryBar from "../../../component/Organisms/SummaryBar";
 import DialogBillEdit from "../component/DialogBillEdit";
@@ -26,6 +26,7 @@ export default function Page_BillCreate() {
   const [state, setState] = React.useState(BillDefaultState);
   const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
   const [total, setTotal] = React.useState(0);
+  const { orderID } = useParams<{ orderID: string }>();
   const navigate = useNavigate();
   // Local function **************************
   const onClose = () => {
@@ -83,6 +84,7 @@ export default function Page_BillCreate() {
   };
   // Use Effect ******************************
   React.useEffect(() => {
+    console.log("orderID", orderID);
     setListOption([
       {
         id: "P001",
@@ -115,7 +117,7 @@ export default function Page_BillCreate() {
   // Render **********************************
   return (
     <BillContext.Provider value={{ state, setState }}>
-      <HeaderDialog label={"สร้างใบสั่งซื้อ"} onClick={onClose}>
+      <HeaderDialog label={orderID?"แก้ไขใบสั่งซื้อ":"สร้างใบสั่งซื้อ"} onClick={onClose}>
         <Box sx={{ display: "flex", flexGrow: 1, justifyContent: "flex-end" }}>
           <IconButton
             onClick={onSave}
