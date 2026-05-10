@@ -1,62 +1,49 @@
+import BillRepo from "../repositories/bill.repo";
+
 const WORKFLOW = ["pending", "processing", "billing", "completed"];
 
 export default {
-  async searchOrders(customerName?: string, orderID?: string) {
-    return { customerName, orderID };
+  searchOrders(customerName?: string, orderID?: string) {
+    return BillRepo.findByCustomerAndOrder(customerName, orderID);
   },
 
-  async getOrdersByStatus(status: string) {
-    return { status, items: [] };
+  getOrdersByStatus(status: string) {
+    return BillRepo.findByStatus(status);
   },
 
-  async createOrder(payload: any) {
-    return { orderID: "NEW123", ...payload };
+  createOrder(data: any) {
+    return BillRepo.createOrder(data);
   },
 
-  async updateOrder(orderID: string, payload: any) {
-    return { orderID, ...payload };
+  updateOrder(orderID: string, data: any) {
+    return BillRepo.updateOrder(orderID, data);
   },
 
-  async deleteOrder(orderID: string) {
-    return true;
+  deleteOrder(orderID: string) {
+    return BillRepo.deleteOrder(orderID);
   },
 
   async moveToNextStep(orderID: string) {
-    const order = await this.getOrder(orderID);
-    const currentIndex = WORKFLOW.indexOf(order.status);
+    const order = await BillRepo.getOrder(orderID);
+    if (!order) throw new Error("Order not found");
 
-    if (currentIndex === -1 || currentIndex === WORKFLOW.length - 1) {
+    const currentIndex = WORKFLOW.indexOf(order.status);
+    if (currentIndex === -1 || currentIndex === WORKFLOW.length - 1)
       throw new Error("Cannot move to next step");
-    }
 
     const nextStatus = WORKFLOW[currentIndex + 1];
-
-    await this.updateStatus(orderID, nextStatus);
-
-    return { orderID, status: nextStatus };
+    return BillRepo.updateStatus(orderID, nextStatus);
   },
 
-  async markAsIncome(orderID: string) {
-    await this.updateStatus(orderID, "income_recorded");
-    return { orderID, status: "income_recorded" };
+  markAsIncome(orderID: string) {
+    return BillRepo.updateStatus(orderID, "income_recorded");
   },
 
-  async markAsDebt(orderID: string) {
-    await this.updateStatus(orderID, "debt_recorded");
-    return { orderID, status: "debt_recorded" };
+  markAsDebt(orderID: string) {
+    return BillRepo.updateStatus(orderID, "debt_recorded");
   },
 
-  async getStatus(orderID: string) {
-    const order = await this.getOrder(orderID);
-    return { orderID, status: order.status };
-  },
-
-  // Mock DB functions
-  async getOrder(orderID: string) {
-    return { orderID, status: "billing" }; // mock
-  },
-
-  async updateStatus(orderID: string, status: string) {
-    return true;
-  },
+  getStatus(orderID: string) {
+    return BillRepo.getOrder(orderID);
+  }
 };
