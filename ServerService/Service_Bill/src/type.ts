@@ -1,4 +1,4 @@
-import { errorCode_e, productType_e, role_e, stockLogType_e, stockStatus_e, transactionType_e } from "./enum";
+import { errorCode_e, productType_e, role_e, stockLogType_e, stockStatus_e, transactionType_e } from "./utils/enum";
 
 export type productInfo_t = {
   id: string;
