@@ -1,49 +1,44 @@
-import { getDB } from "../database/mongo";
-
-const COLLECTION = "orders";
+import Order from "../models/order.model";
+import { OrderStatus } from "../models/order.enum";
 
 export default {
-  async findByCustomerAndOrder(customerName?: string, orderID?: string) {
-    const db = getDB();
+  findByCustomerAndOrder(customerName?: string, orderID?: string) {
     const query: any = {};
 
-    if (customerName) query.customerName = { $regex: customerName, $options: "i" };
-    if (orderID) query.orderID = orderID;
+    if (customerName)
+      query.customerName = { $regex: customerName, $options: "i" };
 
-    return db.collection(COLLECTION).find(query).toArray();
+    if (orderID)
+      query.orderID = orderID;
+
+    return Order.find(query);
   },
 
-  async findByStatus(status: string) {
-    const db = getDB();
-    return db.collection(COLLECTION).find({ status }).toArray();
+  findByStatus(status: number) {
+    return Order.find({ status });
   },
 
-  async createOrder(data: any) {
-    const db = getDB();
-    await db.collection(COLLECTION).insertOne(data);
-    return data;
+  createOrder(data: any) {
+    return Order.create(data);
   },
 
-  async updateOrder(orderID: string, data: any) {
-    const db = getDB();
-    await db.collection(COLLECTION).updateOne({ orderID }, { $set: data });
-    return { orderID, ...data };
+  updateOrder(orderID: string, data: any) {
+    return Order.findOneAndUpdate({ orderID }, data, { new: true });
   },
 
-  async deleteOrder(orderID: string) {
-    const db = getDB();
-    await db.collection(COLLECTION).deleteOne({ orderID });
-    return true;
+  deleteOrder(orderID: string) {
+    return Order.deleteOne({ orderID });
   },
 
-  async updateStatus(orderID: string, status: string) {
-    const db = getDB();
-    await db.collection(COLLECTION).updateOne({ orderID }, { $set: { status } });
-    return { orderID, status };
+  updateStatus(orderID: string, status: OrderStatus) {
+    return Order.findOneAndUpdate(
+      { orderID },
+      { status },
+      { new: true }
+    );
   },
 
-  async getOrder(orderID: string) {
-    const db = getDB();
-    return db.collection(COLLECTION).findOne({ orderID });
+  getOrder(orderID: string) {
+    return Order.findOne({ orderID });
   }
 };

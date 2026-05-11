@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import BillService from "../services/bill.service";
+import { OrderStatus } from "../models/order.enum";
 
 export default {
   async searchOrders(req: Request, res: Response) {
@@ -9,9 +10,36 @@ export default {
   },
 
   async getOrdersByStatus(req: Request, res: Response) {
-    const { status } = req.params;
-    const data = await BillService.getOrdersByStatus(status);
-    res.json({ success: true, data });
+    try {
+      const { status } = req.params;
+      const statusNum = Number(status);
+
+      // ตรวจสอบว่าเป็นตัวเลขจริง
+      if (isNaN(statusNum)) {
+        return res.status(400).json({
+          success: false,
+          message: "Status must be a number"
+        });
+      }
+
+      // ตรวจสอบว่าอยู่ใน enum
+      if (!Object.values(OrderStatus).includes(statusNum)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid order status"
+        });
+      }
+
+      const data = await BillService.getOrdersByStatus(statusNum);
+
+      return res.json({ success: true, data });
+
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Server error"
+      });
+    }
   },
 
   async createOrder(req: Request, res: Response) {
@@ -31,7 +59,7 @@ export default {
     res.json({ success: true, message: "Order deleted" });
   },
 
-   async moveToNextStep(req: Request, res: Response) {
+  async moveToNextStep(req: Request, res: Response) {
     const { orderID } = req.params;
     const data = await BillService.moveToNextStep(orderID);
     res.json({ success: true, data });
