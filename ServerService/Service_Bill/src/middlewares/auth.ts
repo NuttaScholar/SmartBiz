@@ -29,30 +29,38 @@ export default function AuthMiddleware(
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
-        const result: responst_t<"none"> = {
-            status: "error",
-            errCode: errorCode_e.UnauthorizedError
-        };
-        return res.send(result);
+        return res.status(401).json({
+        success: false,
+        errCode: errorCode_e.UnauthorizedError,
+        message: "Authorization header missing"
+      });
     }
 
     const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        errCode: errorCode_e.UnauthorizedError,
+        message: "Token not provided"
+      });
+    }
+
     const decoded = decodeToken(token);
 
     if (!decoded) {
-        const result: responst_t<"none"> = {
-            status: "error",
-            errCode: errorCode_e.TokenExpiredError
-        };
-        return res.send(result);
+        return res.status(401).json({
+        success: false,
+        errCode: errorCode_e.TokenExpiredError,
+        message: "Token expired"
+      });
     }
 
     if (decoded.type !== "accessToken") {
-        const result: responst_t<"none"> = {
-            status: "error",
-            errCode: errorCode_e.UnauthorizedError
-        };
-        return res.send(result);
+        return res.status(401).json({
+        success: false,
+        errCode: errorCode_e.UnauthorizedError,
+        message: "Invalid token"
+      });      
     }
 
     // ผ่านการตรวจสอบทั้งหมด

@@ -1,84 +1,67 @@
 import { Request, Response } from "express";
 import BillService from "../services/bill.service";
-import { OrderStatus } from "../models/order.enum";
+import { errorCode_e } from "../utils/enum";
 
 export default {
   async searchOrders(req: Request, res: Response) {
-    const { customerName, orderID } = req.query;
-    const data = await BillService.searchOrders(customerName as string, orderID as string);
-    res.json({ success: true, data });
+    try {
+      const { customerName, orderID } = req.query;
+      const data = await BillService.searchOrders(
+        customerName as string,
+        orderID as string
+      );
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
   },
 
   async getOrdersByStatus(req: Request, res: Response) {
     try {
-      const { status } = req.params;
-      const statusNum = Number(status);
-
-      // ตรวจสอบว่าเป็นตัวเลขจริง
-      if (isNaN(statusNum)) {
-        return res.status(400).json({
-          success: false,
-          message: "Status must be a number"
-        });
-      }
-
-      // ตรวจสอบว่าอยู่ใน enum
-      if (!Object.values(OrderStatus).includes(statusNum)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid order status"
-        });
-      }
-
-      const data = await BillService.getOrdersByStatus(statusNum);
-
+      const status = Number(req.params.status);
+      const data = await BillService.getOrdersByStatus(status);
       return res.json({ success: true, data });
-
-    } catch (err) {
-      return res.status(500).json({
-        success: false,
-        message: "Server error"
-      });
+    } catch (err: any) {
+      return handleError(res, err);
     }
   },
 
   async createOrder(req: Request, res: Response) {
-    const data = await BillService.createOrder(req.body);
-    res.json({ success: true, data });
+    try {
+      const data = await BillService.createOrder(req.body);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
   },
 
   async updateOrder(req: Request, res: Response) {
-    const { orderID } = req.params;
-    const data = await BillService.updateOrder(orderID, req.body);
-    res.json({ success: true, data });
+    try {
+      const { orderID } = req.params;
+      const data = await BillService.updateOrder(orderID, req.body);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
   },
 
   async deleteOrder(req: Request, res: Response) {
-    const { orderID } = req.params;
-    await BillService.deleteOrder(orderID);
-    res.json({ success: true, message: "Order deleted" });
+    try {
+      const { orderID } = req.params;
+      const data = await BillService.deleteOrder(orderID);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
   },
 
   async moveToNextStep(req: Request, res: Response) {
     try {
       const { orderID } = req.params;
       const data = await BillService.moveToNextStep(orderID);
-
       return res.json({ success: true, data });
     } catch (err: any) {
-      // กรณี service ส่ง error แบบ object { code, message }
-      if (err.code) {
-        return res.status(400).json({
-          success: false,
-          errorCode: err.code,
-          message: err.message
-        });
-      }
-      // กรณีเป็น Error ปกติ เช่น throw new Error("Order not found")
-      return res.status(400).json({
-        success: false,
-        message: err.message || "Unknown error"
-      });
+      return handleError(res, err);
     }
   },
 
@@ -86,21 +69,9 @@ export default {
     try {
       const { orderID } = req.params;
       const data = await BillService.markAsIncome(orderID);
-      res.json({ success: true, data });
+      return res.json({ success: true, data });
     } catch (err: any) {
-      // กรณี service ส่ง error แบบ object { code, message }
-      if (err.code) {
-        return res.status(400).json({
-          success: false,
-          errorCode: err.code,
-          message: err.message
-        });
-      }
-      // กรณีเป็น Error ปกติ เช่น throw new Error("Order not found")
-      return res.status(400).json({
-        success: false,
-        message: err.message || "Unknown error"
-      });
+      return handleError(res, err);
     }
   },
 
@@ -108,21 +79,9 @@ export default {
     try {
       const { orderID } = req.params;
       const data = await BillService.markAsDebt(orderID);
-      res.json({ success: true, data });
+      return res.json({ success: true, data });
     } catch (err: any) {
-      // กรณี service ส่ง error แบบ object { code, message }
-      if (err.code) {
-        return res.status(400).json({
-          success: false,
-          errorCode: err.code,
-          message: err.message
-        });
-      }
-      // กรณีเป็น Error ปกติ เช่น throw new Error("Order not found")
-      return res.status(400).json({
-        success: false,
-        message: err.message || "Unknown error"
-      });
+      return handleError(res, err);
     }
   },
 
@@ -130,21 +89,28 @@ export default {
     try {
       const { orderID } = req.params;
       const data = await BillService.getStatus(orderID);
-      res.json({ success: true, data });
-    }catch (err: any) {
-      // กรณี service ส่ง error แบบ object { code, message }
-      if (err.code) {
-        return res.status(400).json({
-          success: false,
-          errorCode: err.code,
-          message: err.message
-        });
-      }
-      // กรณีเป็น Error ปกติ เช่น throw new Error("Order not found")
-      return res.status(400).json({
-        success: false,
-        message: err.message || "Unknown error"
-      });
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
     }
-  },
+  }
 };
+
+/**
+ * ฟังก์ชันกลางสำหรับจัดการ error
+ */
+function handleError(res: Response, err: any) {
+  if (err.code) {
+    return res.status(400).json({
+      success: false,
+      errCode: err.code,
+      message: err.message
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    errCode: errorCode_e.UnknownError,
+    message: err.message || "Unknown error"
+  });
+}
