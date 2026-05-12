@@ -60,9 +60,26 @@ export default {
   },
 
   async moveToNextStep(req: Request, res: Response) {
-    const { orderID } = req.params;
-    const data = await BillService.moveToNextStep(orderID);
-    res.json({ success: true, data });
+    try {
+      const { orderID } = req.params;
+      const data = await BillService.moveToNextStep(orderID);
+
+      return res.json({ success: true, data });      
+    } catch (err: any) {
+      // กรณี service ส่ง error แบบ object { code, message }
+      if (err.code) {
+        return res.status(400).json({
+          success: false,
+          errorCode: err.code,
+          message: err.message
+        });
+      }
+      // กรณีเป็น Error ปกติ เช่น throw new Error("Order not found")
+      return res.status(400).json({
+        success: false,
+        message: err.message || "Unknown error"
+      });
+    }
   },
 
   async markAsIncome(req: Request, res: Response) {

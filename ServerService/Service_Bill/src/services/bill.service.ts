@@ -1,11 +1,12 @@
 import BillRepo from "../repositories/bill.repo";
 import { OrderStatus } from "../models/order.enum";
+import { errorCode_e } from "../utils/enum";
 
 const WORKFLOW = [
-    OrderStatus.Pending,
-    OrderStatus.Processing,
-    OrderStatus.Billing,
-    OrderStatus.Completed
+  OrderStatus.Pending,
+  OrderStatus.Processing,
+  OrderStatus.Billing,
+  OrderStatus.Completed
 ];
 
 export default {
@@ -30,16 +31,28 @@ export default {
   },
 
   async moveToNextStep(orderID: string) {
-        const order = await BillRepo.getOrder(orderID);
-        if (!order) throw new Error("Order not found");
+    const order = await BillRepo.getOrder(orderID);
+    if (!order) {
+      throw { code: errorCode_e.NotFoundError, message: "Order not found" };
+    }
 
-        const currentIndex = WORKFLOW.indexOf(order.status);
-        if (currentIndex === -1 || currentIndex === WORKFLOW.length - 1)
-            throw new Error("Cannot move to next step");
+    const status = Number(order.status);
+    if (isNaN(status)) {
+      throw { code: errorCode_e.InvalidInputError, message: `Invalid status: ${order.status}` };
+    }
 
-        const nextStatus = WORKFLOW[currentIndex + 1];
-        return BillRepo.updateStatus(orderID, nextStatus);
-    },
+    const currentIndex = WORKFLOW.indexOf(status);
+    if (currentIndex === -1) {
+      throw { code: errorCode_e.InvalidInputError, message: `Status ${status} is not in workflow` };
+    }
+    if (currentIndex === WORKFLOW.length - 1) {
+      throw { code: errorCode_e.InvalidInputError, message: "Already at final step" };
+    }
+
+    const nextStatus = WORKFLOW[currentIndex + 1];
+    return BillRepo.updateStatus(orderID, nextStatus);
+  },
+
 
   markAsIncome(orderID: string) {
     return BillRepo.updateStatus(orderID, OrderStatus.IncomeRecorded);
