@@ -2,37 +2,44 @@ import mongoose, { Schema } from "mongoose";
 import { OrderStatus } from "./order.enum";
 import { OrderDocument } from "./order.interface";
 
+// ฟังก์ชันสร้าง orderID อัตโนมัติ
+function generateOrderID() {
+    const rand = Math.floor(1000 + Math.random() * 9000); // 4 digits
+    return `ORD-${Date.now()}-${rand}`;
+}
+
+const OrderItemSchema = new Schema(
+    {
+        productID: { type: String, required: true },
+        quantity: { type: Number, required: true },
+        priceOriginal: { type: Number, required: true },
+        priceAfterDiscount: { type: Number, required: true },
+        discountPercent: { type: Number, required: false }
+    },
+    { _id: false }
+);
+
 const OrderSchema = new Schema<OrderDocument>(
     {
-        orderID: { type: String, required: true, unique: true },
+        orderID: {
+            type: String,
+            unique: true,
+            default: generateOrderID   // ⭐ ให้ DB สร้างเอง
+        },
+
         customerName: { type: String, required: true },
 
         status: {
             type: Number,
             enum: Object.values(OrderStatus).filter(v => typeof v === "number"),
-            default: OrderStatus.Pending
+            required: true
         },
 
-        items: [
-            {
-                productID: String,
-                name: String,
-                qty: Number,
-                price: Number,
-                total: Number
-            }
-        ],
+        items: { type: [OrderItemSchema], required: true },
 
-        totalAmount: { type: Number, default: 0 },
-
-        billingType: {
-            type: Number,
-            enum: [OrderStatus.IncomeRecorded, OrderStatus.DebtRecorded],
-            default: null
-        }
+        totalAmount: { type: Number, required: true }
     },
     { timestamps: true }
 );
 
-// ❗ ต้องใส่ generic ตรงนี้
 export default mongoose.model<OrderDocument>("Order", OrderSchema);
