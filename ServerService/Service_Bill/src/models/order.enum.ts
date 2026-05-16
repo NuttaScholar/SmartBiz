@@ -1,8 +1,7 @@
 export enum OrderStatus {
-    Pending = 0,
-    Processing = 1,
-    Billing = 2,
-    Completed = 3,
-    IncomeRecorded = 4,
-    DebtRecorded = 5
+  PrepareProduct = 0,     // เตรียมสินค้า
+  PrepareShipment = 1,    // เตรียมจัดส่ง
+  Billing = 2,            // จัดการบิล
+  WaitingPayment = 3,     // รอชำระเงิน
+  Completed = 4           // เสร็จสิ้น
 }

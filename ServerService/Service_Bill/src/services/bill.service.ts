@@ -3,9 +3,10 @@ import { OrderStatus } from "../models/order.enum";
 import { errorCode_e } from "../utils/enum";
 
 const WORKFLOW = [
-  OrderStatus.Pending,
-  OrderStatus.Processing,
+  OrderStatus.PrepareProduct,
+  OrderStatus.PrepareShipment,
   OrderStatus.Billing,
+  OrderStatus.WaitingPayment,
   OrderStatus.Completed
 ];
 
@@ -47,6 +48,12 @@ export default {
         message: "Order not found"
       };
     }
+    if(order.status >= OrderStatus.Billing) {
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: "Cannot update order that is in Billing stage or later"
+      };
+    }
 
     return BillRepo.updateOrder(orderID, data);
   },
@@ -59,6 +66,12 @@ export default {
       throw {
         code: errorCode_e.NotFoundError,
         message: "Order not found"
+      };
+    }
+    if(order.status >= OrderStatus.Billing) {
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: "Cannot delete order that is in Billing stage or later"
       };
     }
 
@@ -98,6 +111,13 @@ export default {
       };
     }
 
+    if (currentIndex === OrderStatus.Billing) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "Cannot auto-advance from Billing stage. Please choose 'Mark as Income' or 'Mark as Debt'."
+      };
+    }
+
     const nextStatus = WORKFLOW[currentIndex + 1];
     return BillRepo.updateStatus(orderID, nextStatus);
   },
@@ -119,7 +139,7 @@ export default {
       };
     }
 
-    return BillRepo.updateStatus(orderID, OrderStatus.IncomeRecorded);
+    return BillRepo.updateStatus(orderID, OrderStatus.Completed);
   },
   /**
    * เลือกเส้นทาง “จัดการบิล → ลูกหนี้”
@@ -139,7 +159,7 @@ export default {
       };
     }
 
-    return BillRepo.updateStatus(orderID, OrderStatus.DebtRecorded);
+    return BillRepo.updateStatus(orderID, OrderStatus.WaitingPayment);
   },
   /**
    * ดึงสถานะปัจจุบันของคำสั่งซื้อ
@@ -150,6 +170,6 @@ export default {
       throw { code: errorCode_e.NotFoundError, message: "Order not found" };
     }
 
-    return order;
+    return order.status;
   }
 };
