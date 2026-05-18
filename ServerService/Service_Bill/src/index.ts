@@ -1,9 +1,13 @@
 import express from "express";
 import billRoutes from "./routes/bill.routes";
 import AuthMiddleware from "./middlewares/auth";
-import { connectMongo } from "./database/mongo";
+import { connectDB, getDB } from "./database/mongo";
 import discountRoutes from "./routes/discount.routes";
 import dotenv from 'dotenv';
+import { OrderDocument } from "./models/order.interface";
+import { OrderSchema } from "./models/order.model";
+import { DiscountDocument } from "./models/discount.interface";
+import { DiscountSchema } from "./models/discount.model";
 
 const app = express();
 app.use(express.json());
@@ -18,10 +22,22 @@ const PORT = Number(process.env.PORT) || 3000;
 /*********************************************** */
 // Start Server
 /*********************************************** */
-connectMongo().then(() => {
-  app.use("/bill", AuthMiddleware, billRoutes);
-  app.use("/discount", AuthMiddleware, discountRoutes);
+async function startServer() {
+  // ⭐ รอให้เชื่อมต่อทั้ง Account และ Bill
+  const dbs = await connectDB();
+  console.log("Databases connected:", Object.keys(dbs));
+
+   // ⭐ สร้าง Model หลัง DB เชื่อมต่อแล้ว
+  const OrderModel = getDB("Bill").model<OrderDocument>("Order", OrderSchema);
+  const DiscountModel = getDB("Bill").model<DiscountDocument>("Discount", DiscountSchema); // ⭐ สมมติชื่อเดียวกับไฟล์ model
+
+  // ⭐ ส่ง model เข้า routes (ถ้าต้องการ)
+  app.use("/bill", AuthMiddleware, billRoutes(OrderModel));
+  app.use("/discount", AuthMiddleware, discountRoutes(DiscountModel));
+  
   app.listen(PORT, () => {
-    console.log(`Service_Bill running on port ${PORT}`);
+    console.log(`Bill Service running on port ${PORT}`);
   });
-});
+}
+
+startServer();

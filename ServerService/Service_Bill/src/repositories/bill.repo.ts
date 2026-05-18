@@ -1,8 +1,15 @@
-import Order from "../models/order.model";
+import { Model } from "mongoose";
 import { OrderStatus } from "../models/order.enum";
+import { OrderDocument } from "../models/order.interface";
 
-export default {
-  findByCustomerAndOrder(customerName?: string, orderID?: string) {
+export default class BillRepo {
+  private OrderModel: Model<OrderDocument>;
+
+  constructor(OrderModel: Model<OrderDocument>) {
+    this.OrderModel = OrderModel;
+  }
+
+  async findByCustomerAndOrder(customerName?: string, orderID?: string) {
     const query: any = {};
 
     if (customerName)
@@ -11,34 +18,36 @@ export default {
     if (orderID)
       query.orderID = orderID;
 
-    return Order.find(query);
-  },
+    return this.OrderModel.find(query);
+  }
 
-  findByStatus(status: number) {
-    return Order.find({ status });
-  },
+  async findByStatus(status: number) {
+    return this.OrderModel.find({ status });
+  }
 
-  createOrder(data: any) {
-    return Order.create(data);
-  },
+  async createOrder(data: any) {
+    const order = new this.OrderModel(data);
+    return order.save();
+  }
 
-  updateOrder(orderID: string, data: any) {
-    return Order.findOneAndUpdate({ orderID }, data, { new: true });
-  },
+  async updateOrder(orderID: string, data: any) {
+    return this.OrderModel.findOneAndUpdate({ orderID }, data, { new: true });
+  }
 
-  deleteOrder(orderID: string) {
-    return Order.deleteOne({ orderID });
-  },
+  async deleteOrder(orderID: string) {
+    return this.OrderModel.findOneAndDelete({ orderID });
+  }
 
-  updateStatus(orderID: string, status: OrderStatus) {
-    return Order.findOneAndUpdate(
+  async updateStatus(orderID: string, status: OrderStatus) {
+    return this.OrderModel.findOneAndUpdate(
       { orderID },
       { status },
       { new: true }
     );
-  },
-
-  getOrder(orderID: string) {
-    return Order.findOne({ orderID });
   }
-};
+
+  async getOrder(orderID: string) {
+    return this.OrderModel.findOne({ orderID });
+  }
+}
+

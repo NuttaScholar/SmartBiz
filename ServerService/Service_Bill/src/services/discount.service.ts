@@ -1,9 +1,17 @@
+import { Model } from "mongoose";
 import DiscountRepo from "../repositories/discount.repo";
 import { errorCode_e } from "../utils/enum";
+import { DiscountDocument } from "../models/discount.interface";
 
-export default {
+export default class DiscountService {
+  private repo: DiscountRepo;
+
+  constructor(DiscountModel: Model<DiscountDocument>) {
+    this.repo = new DiscountRepo(DiscountModel);
+  }
+
   async getDiscounts(customerID: string) {
-    const data = await DiscountRepo.getByCustomer(customerID);
+    const data = await this.repo.getByCustomer(customerID);
 
     if (!data) {
       throw {
@@ -13,7 +21,7 @@ export default {
     }
 
     return data;
-  },
+  }
 
   async updateDiscounts(customerID: string, discounts: any[]) {
     if (!Array.isArray(discounts)) {
@@ -23,6 +31,7 @@ export default {
       };
     }
 
-    return DiscountRepo.updateByCustomer(customerID, discounts);
+    return this.repo.updateByCustomer(customerID, discounts);
   }
-};
+}
+

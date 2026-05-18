@@ -1,7 +1,8 @@
 import mongoose, { Schema } from "mongoose";
 import { DiscountDocument } from "./discount.interface";
+import { getDB } from "../database/mongo";
 
-const DiscountSchema = new Schema<DiscountDocument>(
+export const DiscountSchema = new Schema<DiscountDocument>(
   {
     customerID: { type: String, required: true, unique: true },
 
@@ -15,4 +16,4 @@ const DiscountSchema = new Schema<DiscountDocument>(
   { timestamps: true }
 );
 
-export default mongoose.model<DiscountDocument>("Discount", DiscountSchema);
+

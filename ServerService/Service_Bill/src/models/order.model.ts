@@ -1,6 +1,7 @@
-import mongoose, { Schema } from "mongoose";
+import { Schema } from "mongoose";
 import { OrderStatus } from "./order.enum";
 import { OrderDocument } from "./order.interface";
+import { getDB } from "../database/mongo";
 
 // ฟังก์ชันสร้าง orderID อัตโนมัติ
 function generateOrderID() {
@@ -19,7 +20,7 @@ const OrderItemSchema = new Schema(
     { _id: false }
 );
 
-const OrderSchema = new Schema<OrderDocument>(
+export const OrderSchema = new Schema<OrderDocument>(
     {
         orderID: {
             type: String,
@@ -41,5 +42,3 @@ const OrderSchema = new Schema<OrderDocument>(
     },
     { timestamps: true }
 );
-
-export default mongoose.model<OrderDocument>("Order", OrderSchema);

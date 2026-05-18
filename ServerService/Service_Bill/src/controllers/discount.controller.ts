@@ -1,30 +1,38 @@
 import { Request, Response } from "express";
 import DiscountService from "../services/discount.service";
 import { errorCode_e } from "../utils/enum";
+import { Model } from "mongoose";
+import { DiscountDocument } from "../models/discount.interface";
 
-export default {
+export default class DiscountController {
+  private service: DiscountService;
+
+  constructor(DiscountModel: Model<DiscountDocument>) {
+    this.service = new DiscountService(DiscountModel);
+  }
+
   async getDiscounts(req: Request, res: Response) {
     try {
       const { customerID } = req.params;
-      const data = await DiscountService.getDiscounts(customerID);
+      const data = await this.service.getDiscounts(customerID);
       return res.json({ success: true, data });
     } catch (err: any) {
       return handleError(res, err);
     }
-  },
+  }
 
   async updateDiscounts(req: Request, res: Response) {
     try {
       const { customerID } = req.params;
       const { discounts } = req.body;
 
-      const data = await DiscountService.updateDiscounts(customerID, discounts);
+      const data = await this.service.updateDiscounts(customerID, discounts);
       return res.json({ success: true, data });
     } catch (err: any) {
       return handleError(res, err);
     }
   }
-};
+}
 
 function handleError(res: Response, err: any) {
   if (err.code) {

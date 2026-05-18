@@ -1,15 +1,22 @@
-import Discount from "../models/discount.model";
+import { Model } from "mongoose";
+import { DiscountDocument } from "../models/discount.interface";
 
-export default {
+export default class DiscountRepo {
+  private DiscountModel: Model<DiscountDocument>;
+
+  constructor(DiscountModel: Model<DiscountDocument>) {
+    this.DiscountModel = DiscountModel;
+  }
   getByCustomer(customerID: string) {
-    return Discount.findOne({ customerID });
-  },
+    return this.DiscountModel.findOne({ customerID });
+  }
 
   updateByCustomer(customerID: string, discounts: any[]) {
-    return Discount.findOneAndUpdate(
+    return this.DiscountModel.findOneAndUpdate(
       { customerID },
       { discounts },
       { new: true, upsert: true }
     );
   }
-};
+}
+

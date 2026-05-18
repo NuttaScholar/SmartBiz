@@ -1,12 +1,20 @@
 import { Request, Response } from "express";
 import BillService from "../services/bill.service";
 import { errorCode_e } from "../utils/enum";
+import { Model } from "mongoose";
+import { OrderDocument } from "../models/order.interface";
 
-export default {
+export default class BillController {
+  private service: BillService;
+
+  constructor(OrderModel: Model<OrderDocument>) {
+    this.service = new BillService(OrderModel);
+  }
+
   async searchOrders(req: Request, res: Response) {
     try {
       const { customerName, orderID } = req.query;
-      const data = await BillService.searchOrders(
+      const data = await this.service.searchOrders(
         customerName as string,
         orderID as string
       );
@@ -14,87 +22,88 @@ export default {
     } catch (err: any) {
       return handleError(res, err);
     }
-  },
+  }
 
   async getOrdersByStatus(req: Request, res: Response) {
     try {
       const status = Number(req.params.status);
-      const data = await BillService.getOrdersByStatus(status);
-      return res.json({ success: true, data });
-    } catch (err: any) {
-      return handleError(res, err);
-    }
-  },
-
-  async createOrder(req: Request, res: Response) {
-    try {
-      const data = await BillService.createOrder(req.body);
-      return res.json({ success: true, data });
-    } catch (err: any) {
-      return handleError(res, err);
-    }
-  },
-
-  async updateOrder(req: Request, res: Response) {
-    try {
-      const { orderID } = req.params;
-      const data = await BillService.updateOrder(orderID, req.body);
-      return res.json({ success: true, data });
-    } catch (err: any) {
-      return handleError(res, err);
-    }
-  },
-
-  async deleteOrder(req: Request, res: Response) {
-    try {
-      const { orderID } = req.params;
-      const data = await BillService.deleteOrder(orderID);
-      return res.json({ success: true, data });
-    } catch (err: any) {
-      return handleError(res, err);
-    }
-  },
-
-  async moveToNextStep(req: Request, res: Response) {
-    try {
-      const { orderID } = req.params;
-      const data = await BillService.moveToNextStep(orderID);
-      return res.json({ success: true, data });
-    } catch (err: any) {
-      return handleError(res, err);
-    }
-  },
-
-  async markAsIncome(req: Request, res: Response) {
-    try {
-      const { orderID } = req.params;
-      const data = await BillService.markAsIncome(orderID);
-      return res.json({ success: true, data });
-    } catch (err: any) {
-      return handleError(res, err);
-    }
-  },
-
-  async markAsDebt(req: Request, res: Response) {
-    try {
-      const { orderID } = req.params;
-      const data = await BillService.markAsDebt(orderID);
-      return res.json({ success: true, data });
-    } catch (err: any) {
-      return handleError(res, err);
-    }
-  },
-
-  async getStatus(req: Request, res: Response) {
-    try {
-      const { orderID } = req.params;
-      const data = await BillService.getStatus(orderID);
+      const data = await this.service.getOrdersByStatus(status);
       return res.json({ success: true, data });
     } catch (err: any) {
       return handleError(res, err);
     }
   }
-};
+
+  async createOrder(req: Request, res: Response) {
+    try {
+      const data = await this.service.createOrder(req.body);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async updateOrder(req: Request, res: Response) {
+    try {
+      const { orderID } = req.params;
+      const data = await this.service.updateOrder(orderID, req.body);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async deleteOrder(req: Request, res: Response) {
+    try {
+      const { orderID } = req.params;
+      const data = await this.service.deleteOrder(orderID);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async moveToNextStep(req: Request, res: Response) {
+    try {
+      const { orderID } = req.params;
+      const data = await this.service.moveToNextStep(orderID);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async markAsIncome(req: Request, res: Response) {
+    try {
+      const { orderID } = req.params;
+      const data = await this.service.markAsIncome(orderID);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async markAsDebt(req: Request, res: Response) {
+    try {
+      const { orderID } = req.params;
+      const data = await this.service.markAsDebt(orderID);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async getStatus(req: Request, res: Response) {
+    try {
+      const { orderID } = req.params;
+      const data = await this.service.getStatus(orderID);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+}
+
 
 /**
  * ฟังก์ชันกลางสำหรับจัดการ error

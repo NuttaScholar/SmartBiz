@@ -1,6 +1,8 @@
 import BillRepo from "../repositories/bill.repo";
 import { OrderStatus } from "../models/order.enum";
 import { errorCode_e } from "../utils/enum";
+import { Model } from "mongoose";
+import { OrderDocument } from "../models/order.interface";
 
 const WORKFLOW = [
   OrderStatus.PrepareProduct,
@@ -10,13 +12,19 @@ const WORKFLOW = [
   OrderStatus.Completed
 ];
 
-export default {
+export default class BillService {
+  private repo: BillRepo;
+
+  constructor(OrderModel: Model<OrderDocument>) {
+    this.repo = new BillRepo(OrderModel);
+  }
+
   /**
    * ค้นหารายการคำสั่งซื้อจากชื่อลูกค้า / orderID
    */
   searchOrders(customerName?: string, orderID?: string) {
-    return BillRepo.findByCustomerAndOrder(customerName, orderID);
-  },
+    return this.repo.findByCustomerAndOrder(customerName, orderID);
+  }
   /**
    * ดึงรายการคำสั่งซื้อตามสถานะ (OrderStatus)
    */
@@ -29,61 +37,61 @@ export default {
       };
     }
 
-    return BillRepo.findByStatus(status);
-  },
+    return this.repo.findByStatus(status);
+  }
   /**
    * สร้างคำสั่งซื้อใหม่
    */
   createOrder(data: any) {
-    return BillRepo.createOrder(data);
-  },
+    return this.repo.createOrder(data);
+  }
   /**
    * แก้ไขคำสั่งซื้อ
    */
   async updateOrder(orderID: string, data: any) {
-    const order = await BillRepo.getOrder(orderID);
+    const order = await this.repo.getOrder(orderID);
     if (!order) {
       throw {
         code: errorCode_e.NotFoundError,
         message: "Order not found"
       };
     }
-    if(order.status >= OrderStatus.Billing) {
+    if (order.status >= OrderStatus.Billing) {
       throw {
         code: errorCode_e.InvalidStateError,
         message: "Cannot update order that is in Billing stage or later"
       };
     }
 
-    return BillRepo.updateOrder(orderID, data);
-  },
+    return this.repo.updateOrder(orderID, data);
+  }
   /**
     * ลบคำสั่งซื้อ
     */
   async deleteOrder(orderID: string) {
-    const order = await BillRepo.getOrder(orderID);
+    const order = await this.repo.getOrder(orderID);
     if (!order) {
       throw {
         code: errorCode_e.NotFoundError,
         message: "Order not found"
       };
     }
-    if(order.status >= OrderStatus.Billing) {
+    if (order.status >= OrderStatus.Billing) {
       throw {
         code: errorCode_e.InvalidStateError,
         message: "Cannot delete order that is in Billing stage or later"
       };
     }
 
-    await BillRepo.deleteOrder(orderID);
+    await this.repo.deleteOrder(orderID);
     return { deleted: true };
-  },
+  }
   /**
    * เลื่อนไปยังสถานะถัดไปตาม WORKFLOW
    * ถ้า status ปัจจุบันไม่อยู่ใน workflow หรืออยู่ขั้นสุดท้ายแล้ว → โยน error
    */
   async moveToNextStep(orderID: string) {
-    const order = await BillRepo.getOrder(orderID);
+    const order = await this.repo.getOrder(orderID);
     if (!order) {
       throw { code: errorCode_e.NotFoundError, message: "Order not found" };
     }
@@ -119,14 +127,14 @@ export default {
     }
 
     const nextStatus = WORKFLOW[currentIndex + 1];
-    return BillRepo.updateStatus(orderID, nextStatus);
-  },
+    return this.repo.updateStatus(orderID, nextStatus);
+  }
   /**
    * เลือกเส้นทาง “จัดการบิล → รายรับ”
    * แนะนำให้อนุญาตเฉพาะเมื่ออยู่ในสถานะ Billing
    */
   async markAsIncome(orderID: string) {
-    const order = await BillRepo.getOrder(orderID);
+    const order = await this.repo.getOrder(orderID);
     if (!order) {
       throw { code: errorCode_e.NotFoundError, message: "Order not found" };
     }
@@ -139,14 +147,14 @@ export default {
       };
     }
 
-    return BillRepo.updateStatus(orderID, OrderStatus.Completed);
-  },
+    return this.repo.updateStatus(orderID, OrderStatus.Completed);
+  }
   /**
    * เลือกเส้นทาง “จัดการบิล → ลูกหนี้”
    * แนะนำให้อนุญาตเฉพาะเมื่ออยู่ในสถานะ Billing
    */
   async markAsDebt(orderID: string) {
-    const order = await BillRepo.getOrder(orderID);
+    const order = await this.repo.getOrder(orderID);
     if (!order) {
       throw { code: errorCode_e.NotFoundError, message: "Order not found" };
     }
@@ -159,17 +167,17 @@ export default {
       };
     }
 
-    return BillRepo.updateStatus(orderID, OrderStatus.WaitingPayment);
-  },
+    return this.repo.updateStatus(orderID, OrderStatus.WaitingPayment);
+  }
   /**
    * ดึงสถานะปัจจุบันของคำสั่งซื้อ
    */
   async getStatus(orderID: string) {
-    const order = await BillRepo.getOrder(orderID);
+    const order = await this.repo.getOrder(orderID);
     if (!order) {
       throw { code: errorCode_e.NotFoundError, message: "Order not found" };
     }
 
     return order.status;
   }
-};
+}
