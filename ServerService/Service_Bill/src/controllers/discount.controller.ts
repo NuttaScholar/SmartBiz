@@ -3,12 +3,13 @@ import DiscountService from "../services/discount.service";
 import { errorCode_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { DiscountDocument } from "../models/discount.interface";
+import { ContactDocument } from "../models/contact.interface";
 
 export default class DiscountController {
   private service: DiscountService;
 
-  constructor(DiscountModel: Model<DiscountDocument>) {
-    this.service = new DiscountService(DiscountModel);
+  constructor(DiscountModel: Model<DiscountDocument>, ContactModel: Model<ContactDocument>) {
+    this.service = new DiscountService(DiscountModel, ContactModel);
   }
 
   async getDiscounts(req: Request, res: Response) {

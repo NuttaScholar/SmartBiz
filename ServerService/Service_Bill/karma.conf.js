@@ -4,18 +4,19 @@ module.exports = function(config) {
     basePath: '',
     frameworks: ["jasmine"],
     files: [
-      { pattern: "tests/*.spec.*" }
+      { pattern: "tests/*.spec.ts" }
     ],
     exclude: [
     ],
     preprocessors: {
-      'tests/*.spec.*': ['webpack'],
+      'tests/*.spec.ts': ['webpack'],
     },
     webpack: webpackConfig,
     reporters: ["progress"],
     colors: true,
     logLevel: config.LOG_INFO,
-    browsers: ['Chrome'],
+    browsers: ['ChromeHeadless'],
+    singleRun: true,
     mime: {
       'text/x-typescript': ['ts','tsx']
     }

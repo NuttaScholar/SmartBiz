@@ -2,10 +2,11 @@ import { Router } from "express";
 import BillController from "../controllers/bill.controller";
 import { Model } from "mongoose";
 import { OrderDocument } from "../models/order.interface";
+import { ContactDocument } from "../models/contact.interface";
 
-export default function billRoutes(OrderModel: Model<OrderDocument>) {
+export default function billRoutes(OrderModel: Model<OrderDocument>, ContactModel: Model<ContactDocument>) {
     const router = Router();
-    const controller = new BillController(OrderModel);
+    const controller = new BillController(OrderModel, ContactModel);
 
     /**
      * 1. ขอข้อมูลใบสั่งซื้อตาม customerID และ หมายเลขคำสั่งซื้อ

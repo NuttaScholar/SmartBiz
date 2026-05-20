@@ -3,6 +3,8 @@ import { OrderStatus } from "../models/order.enum";
 import { errorCode_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { OrderDocument } from "../models/order.interface";
+import ContactRepo from "../repositories/contact.repo";
+import { ContactDocument } from "../models/contact.interface";
 
 const WORKFLOW = [
   OrderStatus.PrepareProduct,
@@ -14,9 +16,11 @@ const WORKFLOW = [
 
 export default class BillService {
   private repo: BillRepo;
+  private contactRepo: ContactRepo;
 
-  constructor(OrderModel: Model<OrderDocument>) {
+  constructor(OrderModel: Model<OrderDocument>, ContactModel: Model<ContactDocument>) {
     this.repo = new BillRepo(OrderModel);
+    this.contactRepo = new ContactRepo(ContactModel);
   }
 
   /**
@@ -42,7 +46,8 @@ export default class BillService {
   /**
    * สร้างคำสั่งซื้อใหม่
    */
-  createOrder(data: any) {
+  async createOrder(data: any) {
+    await this.ensureCustomerExists(data?.customerID);
     return this.repo.createOrder(data);
   }
   /**
@@ -61,6 +66,9 @@ export default class BillService {
         code: errorCode_e.InvalidStateError,
         message: "Cannot update order that is in Billing stage or later"
       };
+    }
+    if (data?.customerID) {
+      await this.ensureCustomerExists(data.customerID);
     }
 
     return this.repo.updateOrder(orderID, data);
@@ -179,5 +187,22 @@ export default class BillService {
     }
 
     return order.status;
+  }
+
+  private async ensureCustomerExists(customerID?: string) {
+    if (!customerID) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "customerID is required"
+      };
+    }
+
+    const contact = await this.contactRepo.findByCodeName(customerID);
+    if (!contact) {
+      throw {
+        code: errorCode_e.NotFoundError,
+        message: "Customer contact not found"
+      };
+    }
   }
 }

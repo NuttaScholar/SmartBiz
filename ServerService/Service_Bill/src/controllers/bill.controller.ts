@@ -3,12 +3,13 @@ import BillService from "../services/bill.service";
 import { errorCode_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { OrderDocument } from "../models/order.interface";
+import { ContactDocument } from "../models/contact.interface";
 
 export default class BillController {
   private service: BillService;
 
-  constructor(OrderModel: Model<OrderDocument>) {
-    this.service = new BillService(OrderModel);
+  constructor(OrderModel: Model<OrderDocument>, ContactModel: Model<ContactDocument>) {
+    this.service = new BillService(OrderModel, ContactModel);
   }
 
   async searchOrders(req: Request, res: Response) {

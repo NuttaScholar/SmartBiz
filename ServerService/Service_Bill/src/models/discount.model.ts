@@ -4,7 +4,7 @@ import { getDB } from "../database/mongo";
 
 export const DiscountSchema = new Schema<DiscountDocument>(
   {
-    customerID: { type: String, required: true, unique: true },
+    customerID: { type: String, required: true, unique: true, ref: "contact" },
 
     discounts: [
       {
