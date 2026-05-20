@@ -28,7 +28,7 @@ export const OrderSchema = new Schema<OrderDocument>(
             default: generateOrderID   // ⭐ ให้ DB สร้างเอง
         },
 
-        customerName: { type: String, required: true },
+        customerID: { type: String, required: true },
 
         status: {
             type: Number,

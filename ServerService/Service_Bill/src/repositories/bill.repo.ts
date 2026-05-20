@@ -9,11 +9,11 @@ export default class BillRepo {
     this.OrderModel = OrderModel;
   }
 
-  async findByCustomerAndOrder(customerName?: string, orderID?: string) {
+  async findByCustomerAndOrder(customerID?: string, orderID?: string) {
     const query: any = {};
 
-    if (customerName)
-      query.customerName = { $regex: customerName, $options: "i" };
+    if (customerID)
+      query.customerID = { $regex: customerID, $options: "i" };
 
     if (orderID)
       query.orderID = orderID;

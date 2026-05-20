@@ -13,9 +13,9 @@ export default class BillController {
 
   async searchOrders(req: Request, res: Response) {
     try {
-      const { customerName, orderID } = req.query;
+      const { customerID, orderID } = req.query;
       const data = await this.service.searchOrders(
-        customerName as string,
+        customerID as string,
         orderID as string
       );
       return res.json({ success: true, data });

@@ -8,8 +8,8 @@ export default function billRoutes(OrderModel: Model<OrderDocument>) {
     const controller = new BillController(OrderModel);
 
     /**
-     * 1. ขอข้อมูลใบสั่งซื้อตามชื่อลูกค้า และ หมายเลขคำสั่งซื้อ
-     * GET /bill/search?customerName=xxx&orderID=xxx
+     * 1. ขอข้อมูลใบสั่งซื้อตาม customerID และ หมายเลขคำสั่งซื้อ
+     * GET /bill/search?customerID=xxx&orderID=xxx
      */
     router.get("/search", (req, res) => controller.searchOrders(req, res));
 

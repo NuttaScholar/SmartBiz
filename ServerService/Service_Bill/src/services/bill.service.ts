@@ -20,10 +20,10 @@ export default class BillService {
   }
 
   /**
-   * ค้นหารายการคำสั่งซื้อจากชื่อลูกค้า / orderID
+   * ค้นหารายการคำสั่งซื้อจาก customerID / orderID
    */
-  searchOrders(customerName?: string, orderID?: string) {
-    return this.repo.findByCustomerAndOrder(customerName, orderID);
+  searchOrders(customerID?: string, orderID?: string) {
+    return this.repo.findByCustomerAndOrder(customerID, orderID);
   }
   /**
    * ดึงรายการคำสั่งซื้อตามสถานะ (OrderStatus)
