@@ -182,6 +182,22 @@ notes:
 | `items[].discountPercent` | number | no |
 | `totalAmount` | number | yes |
 
+total validation:
+
+- `totalAmount` must equal `sum(items[].quantity * items[].priceAfterDiscount)`
+- values are compared after rounding to 2 decimal places
+- if the calculated total does not match the received `totalAmount`, the API returns `InvalidInputError`
+
+error example:
+
+```json
+{
+  "success": false,
+  "errCode": 6,
+  "message": "totalAmount does not match calculated total (900)"
+}
+```
+
 `orderID` สร้างอัตโนมัติในรูปแบบ:
 
 ```text
@@ -216,6 +232,7 @@ body ส่ง field ที่ต้องการแก้ไข:
 - ถ้า order ไม่พบ จะได้ `NotFoundError`
 - ถ้า order อยู่สถานะ `Billing` หรือหลังจากนั้น จะได้ `InvalidStateError`
 - ถ้าส่ง `customerID` ใหม่ ระบบจะตรวจสอบกับ Contact ก่อน
+- ถ้าส่ง `items` หรือ `totalAmount` ระบบจะตรวจว่า `totalAmount` ต้องเท่ากับ `sum(items[].quantity * items[].priceAfterDiscount)` หากไม่ตรง จะได้ `InvalidInputError`
 
 ### Delete Order
 
@@ -410,8 +427,9 @@ npm test
 
 ```text
 npm run build: pass
-npm test: pass, 8 specs
+npm test: pass, 9 specs
 npm run dev: pass
+API smoke test: pass
 ```
 
 ผลทดสอบ `npm run dev` ล่าสุด:
@@ -436,4 +454,17 @@ response ที่ได้ถูกต้องตาม `AuthMiddleware`:
   "errCode": 2,
   "message": "Authorization header missing"
 }
+```
+
+ผลทดสอบ API ล่าสุด:
+
+```text
+GET /bill/search without token: pass
+POST /bill invalid totalAmount: pass, InvalidInputError
+POST /bill valid totalAmount: pass
+PUT /bill/:orderID invalid totalAmount: pass, InvalidInputError
+PUT /bill/:orderID valid totalAmount: pass
+GET /bill/:orderID/status: pass
+GET /bill/search: pass
+DELETE /bill/:orderID cleanup: pass
 ```

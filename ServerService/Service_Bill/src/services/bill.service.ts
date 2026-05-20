@@ -2,7 +2,7 @@ import BillRepo from "../repositories/bill.repo";
 import { OrderStatus } from "../models/order.enum";
 import { errorCode_e } from "../utils/enum";
 import { Model } from "mongoose";
-import { OrderDocument } from "../models/order.interface";
+import { OrderDocument, OrderItem } from "../models/order.interface";
 import ContactRepo from "../repositories/contact.repo";
 import { ContactDocument } from "../models/contact.interface";
 
@@ -48,6 +48,7 @@ export default class BillService {
    */
   async createOrder(data: any) {
     await this.ensureCustomerExists(data?.customerID);
+    this.validateTotalAmount(data?.items, data?.totalAmount);
     return this.repo.createOrder(data);
   }
   /**
@@ -69,6 +70,9 @@ export default class BillService {
     }
     if (data?.customerID) {
       await this.ensureCustomerExists(data.customerID);
+    }
+    if (data?.items || data?.totalAmount !== undefined) {
+      this.validateTotalAmount(data?.items ?? order.items, data?.totalAmount ?? order.totalAmount);
     }
 
     return this.repo.updateOrder(orderID, data);
@@ -204,5 +208,49 @@ export default class BillService {
         message: "Customer contact not found"
       };
     }
+  }
+
+  private validateTotalAmount(items: OrderItem[], totalAmount: number) {
+    if (!Array.isArray(items)) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "items is required"
+      };
+    }
+
+    if (typeof totalAmount !== "number" || !Number.isFinite(totalAmount)) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "totalAmount is required"
+      };
+    }
+
+    const calculatedTotal = this.roundMoney(
+      items.reduce((sum, item) => {
+        const quantity = Number(item?.quantity);
+        const priceAfterDiscount = Number(item?.priceAfterDiscount);
+
+        if (!Number.isFinite(quantity) || !Number.isFinite(priceAfterDiscount)) {
+          throw {
+            code: errorCode_e.InvalidInputError,
+            message: "items quantity and priceAfterDiscount must be valid numbers"
+          };
+        }
+
+        return sum + quantity * priceAfterDiscount;
+      }, 0)
+    );
+
+    const receivedTotal = this.roundMoney(totalAmount);
+    if (calculatedTotal !== receivedTotal) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: `totalAmount does not match calculated total (${calculatedTotal})`
+      };
+    }
+  }
+
+  private roundMoney(value: number) {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
   }
 }

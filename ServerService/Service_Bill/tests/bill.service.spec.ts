@@ -25,8 +25,16 @@ describe("BillService", () => {
     const payload = {
       customerID: "CUST001",
       status: OrderStatus.PrepareProduct,
-      items: [],
-      totalAmount: 100,
+      items: [
+        {
+          productID: "PROD001",
+          quantity: 2,
+          priceOriginal: 500,
+          priceAfterDiscount: 450,
+          discountPercent: 10,
+        },
+      ],
+      totalAmount: 900,
     };
 
     const result = await service.createOrder(payload);
@@ -44,6 +52,31 @@ describe("BillService", () => {
       fail("Expected createOrder to throw");
     } catch (err: any) {
       expect(err.code).toBe(errorCode_e.NotFoundError);
+      expect(service.repo.createOrder).not.toHaveBeenCalled();
+    }
+  });
+
+  it("rejects order creation when totalAmount does not match items total", async () => {
+    const service = createService();
+
+    try {
+      await service.createOrder({
+        customerID: "CUST001",
+        status: OrderStatus.PrepareProduct,
+        items: [
+          {
+            productID: "PROD001",
+            quantity: 2,
+            priceOriginal: 500,
+            priceAfterDiscount: 450,
+            discountPercent: 10,
+          },
+        ],
+        totalAmount: 901,
+      });
+      fail("Expected createOrder to throw");
+    } catch (err: any) {
+      expect(err.code).toBe(errorCode_e.InvalidInputError);
       expect(service.repo.createOrder).not.toHaveBeenCalled();
     }
   });
