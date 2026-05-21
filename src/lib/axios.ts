@@ -24,3 +24,8 @@ export const axios_stock = axios.create({
     baseURL: `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_STOCK}`,
     withCredentials: true,
 });
+
+export const axios_bill = axios.create({
+    baseURL: `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_BILL}`,
+    withCredentials: true,
+});

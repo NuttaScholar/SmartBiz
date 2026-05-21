@@ -26,13 +26,20 @@ export enum stockLogType_e {
 export enum service_e{
   login,
   account,
-  stock
+  stock,
+  bill
 }
 export enum billStatus_e{
-  preparing,
-  shipping,
-  recording,
-  completed,
+  preparing = 0,
+  shipping = 1,
+  recording = 2,
+  waitingPayment = 3,
+  completed = 4,
+  PrepareProduct = 0,
+  PrepareShipment = 1,
+  Billing = 2,
+  WaitingPayment = 3,
+  Completed = 4,
 }
 export enum errorCode_e {
   UnknownError, // ไม่สามารถระบุสาเหตุได้
