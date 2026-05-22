@@ -62,6 +62,7 @@ function orderQuery(condition?: searchOrderForm_t) {
     const params = new URLSearchParams();
     condition?.customerID && params.append("customerID", condition.customerID);
     condition?.orderID && params.append("orderID", condition.orderID);
+    condition?.status !== undefined && params.append("status", String(condition.status));
     const query = params.toString();
     return query ? `?${query}` : "";
 }

@@ -48,6 +48,7 @@ export type updateOrderForm_t = Partial<createOrderForm_t>;
 export type searchOrderForm_t = {
     customerID?: string;
     orderID?: string;
+    status?: billStatus_e;
 }
 
 export type discountItem_t = {
