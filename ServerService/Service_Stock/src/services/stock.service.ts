@@ -5,7 +5,7 @@ import { ProductDocument } from "../models/product.interface";
 import LogRepo from "../repositories/log.repo";
 import ProductRepo from "../repositories/product.repo";
 import { logInfo_t, logRes_t, productInfo_t, productRes_t, stockForm_t, stockOutForm_t } from "../type";
-import { errorCode_e, stockLogType_e, stockStatus_e } from "../utils/enum";
+import { errorCode_e, productType_e, stockLogType_e, stockStatus_e } from "../utils/enum";
 import StorageService from "./storage.service";
 import TransactionService from "./transaction.service";
 
@@ -137,8 +137,8 @@ export default class StockService {
     return this.productRepo.getStockStatus();
   }
 
-  getStock() {
-    return this.productRepo.listStockProducts();
+  getStock(productType?: string | string[]) {
+    return this.productRepo.listStockProducts(this.parseProductTypes(productType));
   }
 
   private async ensureProductIsUnique(id: string, name: string) {
@@ -200,6 +200,30 @@ export default class StockService {
     if (amount === 0) return stockStatus_e.stockOut;
     if (amount < condition) return stockStatus_e.stockLow;
     return stockStatus_e.normal;
+  }
+
+  private parseProductTypes(productType?: string | string[]) {
+    const defaultTypes = [productType_e.merchandise, productType_e.material];
+    if (productType === undefined) return defaultTypes;
+
+    const rawTypes = Array.isArray(productType)
+      ? productType.flatMap((type) => type.split(","))
+      : productType.split(",");
+
+    const parsedTypes = rawTypes
+      .map((type) => type.trim())
+      .filter(Boolean)
+      .map(Number);
+
+    const allowedTypes = Object.values(productType_e).filter((value): value is productType_e => typeof value === "number");
+    if (
+      parsedTypes.length === 0 ||
+      parsedTypes.some((type) => !Number.isInteger(type) || !allowedTypes.includes(type))
+    ) {
+      throw { code: errorCode_e.InvalidInputError, message: "Invalid productType" };
+    }
+
+    return [...new Set(parsedTypes)] as productType_e[];
   }
 
   private async removeProductImage(img?: string) {

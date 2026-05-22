@@ -42,9 +42,9 @@ export default class ProductRepo {
     ]);
   }
 
-  listStockProducts() {
+  listStockProducts(productTypes: productType_e[]) {
     return this.ProductModel.aggregate<productInfo_t>([
-      { $match: { type: { $in: [productType_e.merchandise, productType_e.material] } } },
+      { $match: { type: { $in: productTypes } } },
       this.projectProduct(),
       { $sort: { name: 1 } },
     ]);

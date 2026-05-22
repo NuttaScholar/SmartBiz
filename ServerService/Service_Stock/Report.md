@@ -241,7 +241,21 @@ DELETE /product?id=PROD001
 GET /stock
 ```
 
-ดึงเฉพาะ product ที่เป็น `merchandise` หรือ `material`
+ค่า default จะดึงเฉพาะ product ที่เป็น `merchandise` หรือ `material`
+
+สามารถเลือก `productType` ที่ต้องการได้:
+
+```http
+GET /stock?productType=0
+GET /stock?productType=0,1
+GET /stock?productType=0&productType=1
+```
+
+| Query | Type | Required | Description |
+| --- | --- | --- | --- |
+| `productType` | number, comma-separated numbers, or repeated query | no | filter ตาม Product Type; ถ้าไม่ส่งจะใช้ `0,1` |
+
+ถ้าส่งค่าไม่อยู่ใน Product Type จะได้ `InvalidInputError`
 
 response:
 

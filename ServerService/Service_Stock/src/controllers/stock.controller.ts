@@ -62,7 +62,7 @@ export default class StockController {
   async getStock(req: AuthRequest, res: Response) {
     try {
       this.ensureAdmin(req);
-      const result = await this.service.getStock();
+      const result = await this.service.getStock(req.query.productType as string | string[] | undefined);
       return res.send({ status: "success", result });
     } catch (err: any) {
       return handleError(res, err);
