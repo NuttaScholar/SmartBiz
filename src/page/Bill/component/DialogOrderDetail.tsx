@@ -1,10 +1,4 @@
-import {
-  Box,
-  Dialog,
-  IconButton,
-  Slide,
-  Typography,
-} from "@mui/material";
+import { Box, Dialog, IconButton, Slide, Typography } from "@mui/material";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import React from "react";
 import { TransitionProps } from "@mui/material/transitions";
@@ -65,7 +59,10 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
-        window.open(`http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/bill/preview`, '_blank')
+        window.open(
+          `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/bill/preview`,
+          "_blank",
+        );
         break;
       case 3:
         containerRef?.current?.scrollTo({
@@ -134,56 +131,19 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
               gap: 1,
             }}
           >
-            <CardProduct
-              maxWidth="400px"
-              value={{
-                id: "123456",
-                img: "http://192.168.1.47:9000/product/01B002_e53564ef3cfd0789",
-                name: "ถ้วยนก",
-                status: stockStatus_e.normal,
-                type: productType_e.merchandise,
-              }}
-            />
-            <CardProduct
-              maxWidth="400px"
-              value={{
-                id: "123456",
-                img: "http://192.168.1.47:9000/product/01B002_e53564ef3cfd0789",
-                name: "ถ้วยนก",
-                status: stockStatus_e.normal,
-                type: productType_e.merchandise,
-              }}
-            />
-            <CardProduct
-              maxWidth="400px"
-              value={{
-                id: "123456",
-                img: "http://192.168.1.47:9000/product/01B002_e53564ef3cfd0789",
-                name: "ถ้วยนก",
-                status: stockStatus_e.normal,
-                type: productType_e.merchandise,
-              }}
-            />
-            <CardProduct
-              maxWidth="400px"
-              value={{
-                id: "123456",
-                img: "http://192.168.1.47:9000/product/01B002_e53564ef3cfd0789",
-                name: "ถ้วยนก",
-                status: stockStatus_e.normal,
-                type: productType_e.merchandise,
-              }}
-            />
-            <CardProduct
-              maxWidth="400px"
-              value={{
-                id: "123456",
-                img: "http://192.168.1.47:9000/product/01B002_e53564ef3cfd0789",
-                name: "ถ้วยนก",
-                status: stockStatus_e.normal,
-                type: productType_e.merchandise,
-              }}
-            />
+            {props.value?.list.map((item, index) => (
+              <CardProduct
+                key={index}
+                maxWidth="400px"
+                value={{
+                  id: item.id,
+                  img: item.img,
+                  name: item.name,
+                  status: stockStatus_e.normal,
+                  type: productType_e.merchandise,
+                }}
+              />
+            ))}
           </Box>
         </Box>
       </Box>
