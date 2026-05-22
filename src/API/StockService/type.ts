@@ -45,6 +45,9 @@ export type logReq_t = {
   index?: number;
   size?: number;
 }
+export type stockReq_t = {
+  productType?: productType_e | productType_e[];
+}
 export type logRes_t = {
   total: number;
   index: number;
