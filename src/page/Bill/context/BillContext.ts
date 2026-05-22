@@ -1,5 +1,5 @@
 // src/context/AuthContext.tsx
-import { createContext } from "react";
+import { createContext, Dispatch, SetStateAction } from "react";
 import { orderInfo_t, orderInfoForm_t } from "../../../API/BillService/type";
 import { productInfo_t } from "../../../API/StockService/type";
 
@@ -25,7 +25,7 @@ export type billState_t = {
 };
 export type BillContext_t = {
   state: billState_t;
-  setState: (state: billState_t) => void;
+  setState: Dispatch<SetStateAction<billState_t>>;
 };
 export const BillDefaultState: billState_t = {
   filter: orderStatus_e.prepare,
