@@ -15,7 +15,7 @@ export default class DiscountRepo {
     return this.DiscountModel.findOneAndUpdate(
       { customerID },
       { discounts },
-      { new: true, upsert: true }
+      { new: true, upsert: true, runValidators: true }
     );
   }
 }

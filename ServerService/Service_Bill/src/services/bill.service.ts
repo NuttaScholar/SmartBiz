@@ -6,6 +6,8 @@ import { OrderDocument, OrderItem } from "../models/order.interface";
 import ContactRepo from "../repositories/contact.repo";
 import { ContactDocument } from "../models/contact.interface";
 
+type OrderUpdateInput = Partial<Pick<OrderDocument, "customerID" | "items" | "totalAmount">>;
+
 const WORKFLOW = [
   OrderStatus.PrepareProduct,
   OrderStatus.PrepareShipment,
@@ -48,6 +50,7 @@ export default class BillService {
    */
   async createOrder(data: any) {
     await this.ensureCustomerExists(data?.customerID);
+    this.validateStatus(data?.status);
     this.validateTotalAmount(data?.items, data?.totalAmount);
     return this.repo.createOrder(data);
   }
@@ -75,7 +78,8 @@ export default class BillService {
       this.validateTotalAmount(data?.items ?? order.items, data?.totalAmount ?? order.totalAmount);
     }
 
-    return this.repo.updateOrder(orderID, data);
+    const updateData = this.pickOrderUpdate(data);
+    return this.repo.updateOrder(orderID, updateData);
   }
   /**
     * ลบคำสั่งซื้อ
@@ -210,11 +214,53 @@ export default class BillService {
     }
   }
 
+  private pickOrderUpdate(data: any): OrderUpdateInput {
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "Update payload must be an object"
+      };
+    }
+
+    const allowedFields = new Set(["customerID", "items", "totalAmount"]);
+    for (const field of Object.keys(data)) {
+      if (!allowedFields.has(field)) {
+        throw {
+          code: errorCode_e.InvalidInputError,
+          message: `Field '${field}' cannot be updated from this endpoint`
+        };
+      }
+    }
+
+    const updateData: OrderUpdateInput = {};
+    if ("customerID" in data) updateData.customerID = data.customerID;
+    if ("items" in data) updateData.items = data.items;
+    if ("totalAmount" in data) updateData.totalAmount = data.totalAmount;
+
+    return updateData;
+  }
+
+  private validateStatus(status: OrderStatus) {
+    if (!Object.values(OrderStatus).includes(status)) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: `Invalid status: ${status}`
+      };
+    }
+  }
+
   private validateTotalAmount(items: OrderItem[], totalAmount: number) {
     if (!Array.isArray(items)) {
       throw {
         code: errorCode_e.InvalidInputError,
         message: "items is required"
+      };
+    }
+
+    if (items.length === 0) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "items must not be empty"
       };
     }
 
@@ -227,15 +273,9 @@ export default class BillService {
 
     const calculatedTotal = this.roundMoney(
       items.reduce((sum, item) => {
+        this.validateItem(item);
         const quantity = Number(item?.quantity);
         const priceAfterDiscount = Number(item?.priceAfterDiscount);
-
-        if (!Number.isFinite(quantity) || !Number.isFinite(priceAfterDiscount)) {
-          throw {
-            code: errorCode_e.InvalidInputError,
-            message: "items quantity and priceAfterDiscount must be valid numbers"
-          };
-        }
 
         return sum + quantity * priceAfterDiscount;
       }, 0)
@@ -246,6 +286,53 @@ export default class BillService {
       throw {
         code: errorCode_e.InvalidInputError,
         message: `totalAmount does not match calculated total (${calculatedTotal})`
+      };
+    }
+  }
+
+  private validateItem(item: OrderItem) {
+    if (!item || typeof item !== "object") {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "items must contain valid objects"
+      };
+    }
+
+    if (typeof item.productID !== "string" || item.productID.trim() === "") {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "items productID is required"
+      };
+    }
+
+    this.validateNonNegativeNumber(item.priceOriginal, "items priceOriginal");
+    this.validateNonNegativeNumber(item.priceAfterDiscount, "items priceAfterDiscount");
+
+    if (!Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "items quantity must be greater than 0"
+      };
+    }
+
+    if (
+      item.discountPercent !== undefined &&
+      (!Number.isFinite(Number(item.discountPercent)) ||
+        Number(item.discountPercent) < 0 ||
+        Number(item.discountPercent) > 100)
+    ) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "items discountPercent must be between 0 and 100"
+      };
+    }
+  }
+
+  private validateNonNegativeNumber(value: number, fieldName: string) {
+    if (!Number.isFinite(Number(value)) || Number(value) < 0) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: `${fieldName} must be a non-negative number`
       };
     }
   }

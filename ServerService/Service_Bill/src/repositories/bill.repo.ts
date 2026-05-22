@@ -2,6 +2,8 @@ import { Model } from "mongoose";
 import { OrderStatus } from "../models/order.enum";
 import { OrderDocument } from "../models/order.interface";
 
+type OrderUpdateData = Partial<Pick<OrderDocument, "customerID" | "items" | "totalAmount">>;
+
 export default class BillRepo {
   private OrderModel: Model<OrderDocument>;
 
@@ -13,12 +15,12 @@ export default class BillRepo {
     const query: any = {};
 
     if (customerID)
-      query.customerID = { $regex: customerID, $options: "i" };
+      query.customerID = { $regex: escapeRegex(customerID), $options: "i" };
 
     if (orderID)
       query.orderID = orderID;
 
-    return this.OrderModel.find(query);
+    return this.OrderModel.find(query).limit(100);
   }
 
   async findByStatus(status: number) {
@@ -30,8 +32,12 @@ export default class BillRepo {
     return order.save();
   }
 
-  async updateOrder(orderID: string, data: any) {
-    return this.OrderModel.findOneAndUpdate({ orderID }, data, { new: true });
+  async updateOrder(orderID: string, data: OrderUpdateData) {
+    return this.OrderModel.findOneAndUpdate(
+      { orderID },
+      { $set: data },
+      { new: true, runValidators: true }
+    );
   }
 
   async deleteOrder(orderID: string) {
@@ -42,7 +48,7 @@ export default class BillRepo {
     return this.OrderModel.findOneAndUpdate(
       { orderID },
       { status },
-      { new: true }
+      { new: true, runValidators: true }
     );
   }
 
@@ -51,3 +57,6 @@ export default class BillRepo {
   }
 }
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

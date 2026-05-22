@@ -1,6 +1,5 @@
-import mongoose, { Schema } from "mongoose";
+import { Schema } from "mongoose";
 import { DiscountDocument } from "./discount.interface";
-import { getDB } from "../database/mongo";
 
 export const DiscountSchema = new Schema<DiscountDocument>(
   {
@@ -9,7 +8,7 @@ export const DiscountSchema = new Schema<DiscountDocument>(
     discounts: [
       {
         productID: { type: String, required: true },
-        discountPercent: { type: Number, required: true }
+        discountPercent: { type: Number, required: true, min: 0, max: 100 }
       }
     ]
   },

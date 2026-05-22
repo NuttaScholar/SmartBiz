@@ -97,6 +97,31 @@ describe("BillService", () => {
     }
   });
 
+  it("rejects protected fields in order updates", async () => {
+    const service = createService();
+    service.repo.getOrder.and.resolveTo({
+      orderID: "ORD001",
+      status: OrderStatus.PrepareProduct,
+      items: [
+        {
+          productID: "PROD001",
+          quantity: 1,
+          priceOriginal: 100,
+          priceAfterDiscount: 100,
+        },
+      ],
+      totalAmount: 100,
+    });
+
+    try {
+      await service.updateOrder("ORD001", { status: OrderStatus.Completed });
+      fail("Expected updateOrder to throw");
+    } catch (err: any) {
+      expect(err.code).toBe(errorCode_e.InvalidInputError);
+      expect(service.repo.updateOrder).not.toHaveBeenCalled();
+    }
+  });
+
   it("moves an order to the next workflow step", async () => {
     const service = createService();
     service.repo.getOrder.and.resolveTo({

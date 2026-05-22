@@ -55,6 +55,20 @@ describe("DiscountService", () => {
     }
   });
 
+  it("rejects discount updates when percent is outside 0-100", async () => {
+    const service = createService();
+
+    try {
+      await service.updateDiscounts("CUST001", [
+        { productID: "PROD001", discountPercent: 120 },
+      ]);
+      fail("Expected updateDiscounts to throw");
+    } catch (err: any) {
+      expect(err.code).toBe(errorCode_e.InvalidInputError);
+      expect(service.repo.updateByCustomer).not.toHaveBeenCalled();
+    }
+  });
+
   it("updates discounts for an existing customer", async () => {
     const service = createService();
     const discounts = [{ productID: "PROD001", discountPercent: 15 }];

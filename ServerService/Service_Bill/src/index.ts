@@ -10,16 +10,20 @@ import { DiscountDocument } from "./models/discount.interface";
 import { DiscountSchema } from "./models/discount.model";
 import { ContactDocument } from "./models/contact.interface";
 import { ContactSchema } from "./models/contact.model";
+import cors from "cors";
+import { PORT, WEB_HOST } from "./config";
 
 const app = express();
+app.use(
+  cors({
+    origin: WEB_HOST,
+    credentials: true,
+  }),
+);
 app.use(express.json());
 dotenv.config();
 
 
-/*********************************************** */
-// Config
-/*********************************************** */
-const PORT = Number(process.env.PORT) || 3000;
 
 /*********************************************** */
 // Start Server
@@ -37,7 +41,7 @@ async function startServer() {
   // ⭐ ส่ง model เข้า routes (ถ้าต้องการ)
   app.use("/bill", AuthMiddleware, billRoutes(OrderModel, ContactModel));
   app.use("/discount", AuthMiddleware, discountRoutes(DiscountModel, ContactModel));
-  
+
   app.listen(PORT, () => {
     console.log(`Bill Service running on port ${PORT}`);
   });

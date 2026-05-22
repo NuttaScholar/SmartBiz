@@ -4,6 +4,7 @@ import { errorCode_e } from "../utils/enum";
 import { DiscountDocument } from "../models/discount.interface";
 import ContactRepo from "../repositories/contact.repo";
 import { ContactDocument } from "../models/contact.interface";
+import { DiscountItem } from "../models/discount.interface";
 
 export default class DiscountService {
   private repo: DiscountRepo;
@@ -38,6 +39,8 @@ export default class DiscountService {
       };
     }
 
+    discounts.forEach((discount) => this.validateDiscount(discount));
+
     return this.repo.updateByCustomer(customerID, discounts);
   }
 
@@ -57,5 +60,31 @@ export default class DiscountService {
       };
     }
   }
-}
 
+  private validateDiscount(discount: DiscountItem) {
+    if (!discount || typeof discount !== "object") {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "Discount item must be an object"
+      };
+    }
+
+    if (typeof discount.productID !== "string" || discount.productID.trim() === "") {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "discounts productID is required"
+      };
+    }
+
+    if (
+      !Number.isFinite(Number(discount.discountPercent)) ||
+      Number(discount.discountPercent) < 0 ||
+      Number(discount.discountPercent) > 100
+    ) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "discounts discountPercent must be between 0 and 100"
+      };
+    }
+  }
+}

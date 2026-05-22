@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { MONGO_URI_ACCOUNT, MONGO_URI_BILL } from "../config";
 
 const connections: Record<string, mongoose.Connection> = {};
 
@@ -15,22 +16,16 @@ async function createConn(name: string, uri: string) {
 export async function connectDB() {
   if (Object.keys(connections).length > 0) return connections;
 
-  connections.Account = await createConn(
-    "Account",
-    process.env.MONGO_URI_ACCOUNT || "mongodb://localhost:27017/Account"
-  );
-  
-  connections.Bill = await createConn(
-    "Bill",
-    process.env.MONGO_URI_BILL || "mongodb://localhost:27017/Bill"
-  );
+  connections.Account = await createConn("Account", MONGO_URI_ACCOUNT);
+
+  connections.Bill = await createConn("Bill", MONGO_URI_BILL);
 
   console.log("Connected to databases:", Object.keys(connections));
   return connections;
 }
 
 export function getDB(name: "Account" | "Bill") {
-  const conn = connections[name];  
+  const conn = connections[name];
   if (!conn) throw new Error(`Database '${name}' is not connected`);
   return conn;
 }

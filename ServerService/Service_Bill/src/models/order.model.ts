@@ -1,7 +1,6 @@
 import { Schema } from "mongoose";
 import { OrderStatus } from "./order.enum";
 import { OrderDocument } from "./order.interface";
-import { getDB } from "../database/mongo";
 
 // ฟังก์ชันสร้าง orderID อัตโนมัติ
 function generateOrderID() {
@@ -12,10 +11,10 @@ function generateOrderID() {
 const OrderItemSchema = new Schema(
     {
         productID: { type: String, required: true },
-        quantity: { type: Number, required: true },
-        priceOriginal: { type: Number, required: true },
-        priceAfterDiscount: { type: Number, required: true },
-        discountPercent: { type: Number, required: false }
+        quantity: { type: Number, required: true, min: 1 },
+        priceOriginal: { type: Number, required: true, min: 0 },
+        priceAfterDiscount: { type: Number, required: true, min: 0 },
+        discountPercent: { type: Number, required: false, min: 0, max: 100 }
     },
     { _id: false }
 );
@@ -36,9 +35,16 @@ export const OrderSchema = new Schema<OrderDocument>(
             required: true
         },
 
-        items: { type: [OrderItemSchema], required: true },
+        items: {
+            type: [OrderItemSchema],
+            required: true,
+            validate: {
+                validator: (items: unknown[]) => Array.isArray(items) && items.length > 0,
+                message: "items must not be empty"
+            }
+        },
 
-        totalAmount: { type: Number, required: true }
+        totalAmount: { type: Number, required: true, min: 0 }
     },
     { timestamps: true }
 );

@@ -1,12 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { responst_t, tokenPackage_t } from "../type";
+import { tokenPackage_t } from "../type";
 import { errorCode_e } from "../utils/enum";
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const secret = process.env.SECRET || "SMARTBIZ_SECRET_KEY";
+import { JWT_SECRET } from "../config";
 
 export interface AuthRequest extends Request {
     authData?: tokenPackage_t;
@@ -14,7 +10,7 @@ export interface AuthRequest extends Request {
 
 function decodeToken(token: string): tokenPackage_t | null {
     try {
-        const decoded = jwt.verify(token, secret) as tokenPackage_t;
+        const decoded = jwt.verify(token, JWT_SECRET) as tokenPackage_t;
         return decoded;
     } catch (err) {
         return null;
