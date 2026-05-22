@@ -12,6 +12,7 @@ const tabStatusList = [
   billStatus_e.PrepareProduct,
   billStatus_e.PrepareShipment,
   billStatus_e.Billing,
+  billStatus_e.WaitingPayment,
   billStatus_e.Completed,
 ];
 
@@ -49,24 +50,59 @@ interface myProps {
 const OrderListHeader: React.FC<myProps> = (props) => {
   // Hook ************************************
   const [tab, setTab] = React.useState(0);
+  const [searchValue, setSearchValue] = React.useState("");
   const { state, setState } = useBillContext();
   const authContext = useAuth();
   // Local function **************************
+  const updateOrderList = React.useCallback(
+    async (status: billStatus_e, value?: string) => {
+      const keyword = value?.trim();
 
+      if (!keyword) {
+        const res = await billWithRetry_f.getOrdersByStatus(authContext, status);
+        return res.status === "success" ? res.result ?? [] : [];
+      }
+
+      const [customerRes, orderRes] = await Promise.all([
+        billWithRetry_f.searchOrders(authContext, {
+          customerID: keyword,
+          status,
+        }),
+        billWithRetry_f.searchOrders(authContext, {
+          orderID: keyword,
+          status,
+        }),
+      ]);
+
+      const orderMap = new Map<string, order_t>();
+      if (customerRes.status === "success") {
+        customerRes.result?.forEach((order) => orderMap.set(order.orderID, order));
+      }
+      if (orderRes.status === "success") {
+        orderRes.result?.forEach((order) => orderMap.set(order.orderID, order));
+      }
+
+      return Array.from(orderMap.values());
+    },
+    [authContext],
+  );
+
+  const onSerch = (value: string) => {
+    setSearchValue(value);
+  };
   // Effect **********************************
   React.useEffect(() => {
     let isActive = true;
     const status = tabStatusList[tab];
 
     async function fetchOrders() {
-      const res = await billWithRetry_f.getOrdersByStatus(authContext, status);
+      const orders = await updateOrderList(status, searchValue);
       if (!isActive) return;
 
       setState((prev) => ({
         ...prev,
         filter: tab,
-        orderList:
-          res.status === "success" ? res.result?.map(mapOrderToOrderInfo) ?? [] : [],
+        orderList: orders.map(mapOrderToOrderInfo),
       }));
     }
 
@@ -80,7 +116,7 @@ const OrderListHeader: React.FC<myProps> = (props) => {
     return () => {
       isActive = false;
     };
-  }, [authContext, setState, tab]);
+  }, [searchValue, setState, tab, updateOrderList]);
 
   return (
     <Box
@@ -94,12 +130,13 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       }}
     >
       <FieldSearch
-        placeholder="ชื่อลูกค้า"
+        placeholder="ชื่อลูกค้า หรือ รหัสคำสั่งซื้อ"
         maxWidth="650px"
+        onSubmit={onSerch}
       />  
       <TabBox
         gotoTop={state.triger_gotoTop}
-        list={["แพ็คสินค้า", "พร้อมจัดส่ง", "จัดการบิล", "เสร็จสิ้น"]}
+        list={["แพ็คสินค้า", "พร้อมจัดส่ง", "จัดการบิล", "รอชำระเงิน", "เสร็จสิ้น"]}
         height="calc(100vh - 200px)"
         alignItems="center"
         onClick={setTab}
