@@ -14,10 +14,11 @@ export default class BillController {
 
   async searchOrders(req: Request, res: Response) {
     try {
-      const { customerID, orderID } = req.query;
+      const { customerID, orderID, status } = req.query;
       const data = await this.service.searchOrders(
         customerID as string,
-        orderID as string
+        orderID as string,
+        status as string
       );
       return res.json({ success: true, data });
     } catch (err: any) {

@@ -11,7 +11,7 @@ export default class BillRepo {
     this.OrderModel = OrderModel;
   }
 
-  async findByCustomerAndOrder(customerID?: string, orderID?: string) {
+  async findByCustomerAndOrder(customerID?: string, orderID?: string, status?: number) {
     const query: any = {};
 
     if (customerID)
@@ -19,6 +19,9 @@ export default class BillRepo {
 
     if (orderID)
       query.orderID = orderID;
+
+    if (status !== undefined)
+      query.status = status;
 
     return this.OrderModel.find(query).limit(100);
   }

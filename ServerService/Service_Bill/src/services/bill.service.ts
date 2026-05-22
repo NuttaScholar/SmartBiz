@@ -26,10 +26,11 @@ export default class BillService {
   }
 
   /**
-   * ค้นหารายการคำสั่งซื้อจาก customerID / orderID
+   * ค้นหารายการคำสั่งซื้อจาก customerID / orderID / status
    */
-  searchOrders(customerID?: string, orderID?: string) {
-    return this.repo.findByCustomerAndOrder(customerID, orderID);
+  searchOrders(customerID?: string, orderID?: string, status?: string) {
+    const parsedStatus = this.parseOptionalStatus(status);
+    return this.repo.findByCustomerAndOrder(customerID, orderID, parsedStatus);
   }
   /**
    * ดึงรายการคำสั่งซื้อตามสถานะ (OrderStatus)
@@ -247,6 +248,16 @@ export default class BillService {
         message: `Invalid status: ${status}`
       };
     }
+  }
+
+  private parseOptionalStatus(status?: string) {
+    if (status === undefined || status === "") {
+      return undefined;
+    }
+
+    const parsedStatus = Number(status);
+    this.validateStatus(parsedStatus);
+    return parsedStatus;
   }
 
   private validateTotalAmount(items: OrderItem[], totalAmount: number) {

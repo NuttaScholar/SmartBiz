@@ -102,15 +102,16 @@ PrepareProduct -> PrepareShipment -> Billing -> WaitingPayment -> Completed
 ### Search Orders
 
 ```http
-GET /bill/search?customerID=CUST001&orderID=ORD-123
+GET /bill/search?customerID=CUST001&orderID=ORD-123&status=2
 ```
 
-query ทั้งสองตัวเป็น optional:
+query ทั้งสามตัวเป็น optional:
 
 | Query | Type | Required | Description |
 | --- | --- | --- | --- |
 | `customerID` | string | no | ค้นหาแบบ regex ไม่สนตัวพิมพ์เล็กใหญ่ |
 | `orderID` | string | no | ค้นหาด้วย orderID แบบตรงตัว |
+| `status` | number | no | ค้นหาด้วย OrderStatus; ถ้าค่าไม่ถูกต้องจะได้ `InvalidInputError` |
 
 ตัวอย่าง response:
 

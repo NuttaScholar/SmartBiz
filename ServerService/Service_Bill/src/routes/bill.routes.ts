@@ -10,7 +10,7 @@ export default function billRoutes(OrderModel: Model<OrderDocument>, ContactMode
 
     /**
      * 1. ขอข้อมูลใบสั่งซื้อตาม customerID และ หมายเลขคำสั่งซื้อ
-     * GET /bill/search?customerID=xxx&orderID=xxx
+     * GET /bill/search?customerID=xxx&orderID=xxx&status=0
      */
     router.get("/search", (req, res) => controller.searchOrders(req, res));
 

@@ -12,6 +12,7 @@ describe("BillService", () => {
     };
     service.repo = {
       createOrder: jasmine.createSpy("createOrder").and.callFake((data) => Promise.resolve(data)),
+      findByCustomerAndOrder: jasmine.createSpy("findByCustomerAndOrder").and.resolveTo([]),
       getOrder: jasmine.createSpy("getOrder"),
       updateOrder: jasmine.createSpy("updateOrder").and.callFake((orderID, data) => Promise.resolve({ orderID, ...data })),
       updateStatus: jasmine.createSpy("updateStatus").and.callFake((orderID, status) => Promise.resolve({ orderID, status })),
@@ -42,6 +43,31 @@ describe("BillService", () => {
     expect(service.contactRepo.findByCodeName).toHaveBeenCalledWith("CUST001");
     expect(service.repo.createOrder).toHaveBeenCalledWith(payload);
     expect(result).toEqual(payload);
+  });
+
+  it("searches orders with optional status", async () => {
+    const service = createService();
+
+    const result = await service.searchOrders("CUST001", "ORD001", String(OrderStatus.Billing));
+
+    expect(service.repo.findByCustomerAndOrder).toHaveBeenCalledWith(
+      "CUST001",
+      "ORD001",
+      OrderStatus.Billing
+    );
+    expect(result).toEqual([]);
+  });
+
+  it("rejects search orders with invalid status", async () => {
+    const service = createService();
+
+    try {
+      await service.searchOrders(undefined, undefined, "99");
+      fail("Expected searchOrders to throw");
+    } catch (err: any) {
+      expect(err.code).toBe(errorCode_e.InvalidInputError);
+      expect(service.repo.findByCustomerAndOrder).not.toHaveBeenCalled();
+    }
   });
 
   it("rejects order creation when customerID does not exist", async () => {
