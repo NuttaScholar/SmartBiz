@@ -118,6 +118,25 @@ services:
       - mongo
       - minio
 
+  service_bill:
+    container_name: service_bill
+    image: nuttascholar/smartbiz_bill:1.0
+    environment:
+      SECRET: ${SECRET}
+      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
+      PORT: 3004
+      MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
+      MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin
+      SERVICE_ACCOUNT_URL: http://service_account:3000
+      TZ: Asia/Bangkok
+    networks:
+      private:
+        ipv4_address: 192.168.110.94
+    ports:
+      - ${VITE_PORT_BILL}:3004
+    depends_on:
+      - mongo
+
   service_storage:
     container_name: service_storage
     image: nuttascholar/smartbiz_storage:1.0
