@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import DiscountService from "../services/discount.service";
-import { errorCode_e } from "../utils/enum";
+import { errorCode_e, role_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { DiscountDocument } from "../models/discount.interface";
 import { ContactDocument } from "../models/contact.interface";
+import { AuthRequest } from "../middlewares/auth";
 
 export default class DiscountController {
   private service: DiscountService;
@@ -12,7 +13,13 @@ export default class DiscountController {
     this.service = new DiscountService(DiscountModel, ContactModel);
   }
 
-  async getDiscounts(req: Request, res: Response) {
+  async getDiscounts(req: AuthRequest, res: Response) {
+      if (req.authData?.role !== role_e.admin) {
+        return res.status(403).json({
+          success: false, errCode: errorCode_e.PermissionDeniedError,
+          message: "You do not have permission to access this resource"
+        });
+      }
     try {
       const { customerID } = req.params;
       const data = await this.service.getDiscounts(customerID);
@@ -22,7 +29,13 @@ export default class DiscountController {
     }
   }
 
-  async updateDiscounts(req: Request, res: Response) {
+  async updateDiscounts(req: AuthRequest, res: Response) {
+    if (req.authData?.role !== role_e.admin) {
+      return res.status(403).json({
+        success: false, errCode: errorCode_e.PermissionDeniedError,
+        message: "You do not have permission to access this resource"
+      });
+    }
     try {
       const { customerID } = req.params;
       const { discounts } = req.body;
