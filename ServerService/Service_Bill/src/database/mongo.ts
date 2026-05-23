@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { MONGO_URI_ACCOUNT, MONGO_URI_BILL } from "../config";
+import { MONGO_URI_ACCOUNT, MONGO_URI_BILL, MONGO_URI_STOCK } from "../config";
 
 const connections: Record<string, mongoose.Connection> = {};
 
@@ -19,12 +19,13 @@ export async function connectDB() {
   connections.Account = await createConn("Account", MONGO_URI_ACCOUNT);
 
   connections.Bill = await createConn("Bill", MONGO_URI_BILL);
+  connections.Stock = await createConn("Stock", MONGO_URI_STOCK);
 
   console.log("Connected to databases:", Object.keys(connections));
   return connections;
 }
 
-export function getDB(name: "Account" | "Bill") {
+export function getDB(name: "Account" | "Bill" | "Stock") {
   const conn = connections[name];
   if (!conn) throw new Error(`Database '${name}' is not connected`);
   return conn;

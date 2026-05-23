@@ -5,6 +5,8 @@ import { OrderDocument, OrderItem } from "../models/order.interface";
 import ContactRepo from "../repositories/contact.repo";
 import { ContactDocument } from "../models/contact.interface";
 import { orderInfo_t, productInfo_t } from "../type";
+import ProductRepo from "../repositories/product.repo";
+import { ProductDocument } from "../models/product.interface";
 
 type OrderUpdateInput = Partial<Pick<OrderDocument, "customerID" | "items" | "totalAmount">>;
 
@@ -19,10 +21,16 @@ const WORKFLOW = [
 export default class BillService {
   private repo: BillRepo;
   private contactRepo: ContactRepo;
+  private productRepo: ProductRepo;
 
-  constructor(OrderModel: Model<OrderDocument>, ContactModel: Model<ContactDocument>) {
+  constructor(
+    OrderModel: Model<OrderDocument>,
+    ContactModel: Model<ContactDocument>,
+    ProductModel: Model<ProductDocument>
+  ) {
     this.repo = new BillRepo(OrderModel);
     this.contactRepo = new ContactRepo(ContactModel);
+    this.productRepo = new ProductRepo(ProductModel);
   }
 
   /**
@@ -54,6 +62,7 @@ export default class BillService {
     await this.ensureCustomerExists(data?.customerID);
     this.validateStatus(data?.status);
     this.validateTotalAmount(data?.items, data?.totalAmount);
+    await this.ensureProductsExist(data?.items);
     return this.repo.createOrder(data);
   }
   /**
@@ -78,6 +87,9 @@ export default class BillService {
     }
     if (data?.items || data?.totalAmount !== undefined) {
       this.validateTotalAmount(data?.items ?? order.items, data?.totalAmount ?? order.totalAmount);
+    }
+    if (data?.items) {
+      await this.ensureProductsExist(data.items);
     }
 
     const updateData = this.pickOrderUpdate(data);
@@ -224,27 +236,33 @@ export default class BillService {
       customer: contact?.billName ?? order.customerID,
       date: order.createdAt,
       total: order.totalAmount,
-      list: order.items.map((item) => this.toProductInfo(item)),
+      list: await Promise.all(order.items.map((item) => this.toProductInfo(item))),
       status: order.status
     };
   }
 
-  private toProductInfo(item: OrderItem): productInfo_t {
+  private async toProductInfo(item: OrderItem): Promise<productInfo_t> {
     const quantity = Number(item.quantity);
     const priceAfterDiscount = Number(item.priceAfterDiscount);
+    const product = await this.productRepo.findById(item.productID);
 
-    return {
+    const productInfo: productInfo_t = {
       id: item.productID,
-      type: productType_e.merchandise,
-      name: item.productID,
-      img: "",
-      status: stockStatus_e.normal,
-      price: item.priceOriginal,
+      type: product?.type ?? productType_e.merchandise,
+      name: product?.name ?? item.productID,
+      img: product?.img ?? "",
+      status: product?.status ?? stockStatus_e.normal,
+      price: product?.price ?? item.priceOriginal,
       amount: quantity,
       total: this.roundMoney(quantity * priceAfterDiscount),
       percentDiscount: item.discountPercent,
       priceAfterDiscount
     };
+
+    if (product?.condition !== undefined) productInfo.condition = product.condition;
+    if (product?.description !== undefined) productInfo.description = product.description;
+
+    return productInfo;
   }
 
   private pickOrderUpdate(data: any): OrderUpdateInput {
@@ -367,6 +385,21 @@ export default class BillService {
       throw {
         code: errorCode_e.InvalidInputError,
         message: "items discountPercent must be between 0 and 100"
+      };
+    }
+  }
+
+  private async ensureProductsExist(items?: OrderItem[]) {
+    if (!Array.isArray(items)) return;
+
+    const productIDs = [...new Set(items.map((item) => item.productID))];
+    const products = await Promise.all(productIDs.map((productID) => this.productRepo.findById(productID)));
+    const missingProductID = productIDs.find((productID, index) => !products[index]);
+
+    if (missingProductID) {
+      throw {
+        code: errorCode_e.NotFoundError,
+        message: `Product not found: ${missingProductID}`
       };
     }
   }

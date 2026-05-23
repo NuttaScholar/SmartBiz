@@ -3,10 +3,15 @@ import BillController from "../controllers/bill.controller";
 import { Model } from "mongoose";
 import { OrderDocument } from "../models/order.interface";
 import { ContactDocument } from "../models/contact.interface";
+import { ProductDocument } from "../models/product.interface";
 
-export default function billRoutes(OrderModel: Model<OrderDocument>, ContactModel: Model<ContactDocument>) {
+export default function billRoutes(
+    OrderModel: Model<OrderDocument>,
+    ContactModel: Model<ContactDocument>,
+    ProductModel: Model<ProductDocument>
+) {
     const router = Router();
-    const controller = new BillController(OrderModel, ContactModel);
+    const controller = new BillController(OrderModel, ContactModel, ProductModel);
 
     /**
      * 1. ขอข้อมูลใบสั่งซื้อตาม customerID และ หมายเลขคำสั่งซื้อ

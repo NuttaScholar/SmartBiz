@@ -10,6 +10,8 @@ import { DiscountDocument } from "./models/discount.interface";
 import { DiscountSchema } from "./models/discount.model";
 import { ContactDocument } from "./models/contact.interface";
 import { ContactSchema } from "./models/contact.model";
+import { ProductDocument } from "./models/product.interface";
+import { ProductSchema } from "./models/product.model";
 import cors from "cors";
 import { PORT, WEB_HOST } from "./config";
 
@@ -37,9 +39,10 @@ async function startServer() {
   const OrderModel = getDB("Bill").model<OrderDocument>("Order", OrderSchema);
   const DiscountModel = getDB("Bill").model<DiscountDocument>("Discount", DiscountSchema); // ⭐ สมมติชื่อเดียวกับไฟล์ model
   const ContactModel = getDB("Account").model<ContactDocument>("contact", ContactSchema);
+  const ProductModel = getDB("Stock").model<ProductDocument>("product", ProductSchema);
 
   // ⭐ ส่ง model เข้า routes (ถ้าต้องการ)
-  app.use("/bill", AuthMiddleware, billRoutes(OrderModel, ContactModel));
+  app.use("/bill", AuthMiddleware, billRoutes(OrderModel, ContactModel, ProductModel));
   app.use("/discount", AuthMiddleware, discountRoutes(DiscountModel, ContactModel));
 
   app.listen(PORT, () => {

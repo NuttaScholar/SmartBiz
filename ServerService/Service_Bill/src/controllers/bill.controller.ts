@@ -4,12 +4,17 @@ import { errorCode_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { OrderDocument } from "../models/order.interface";
 import { ContactDocument } from "../models/contact.interface";
+import { ProductDocument } from "../models/product.interface";
 
 export default class BillController {
   private service: BillService;
 
-  constructor(OrderModel: Model<OrderDocument>, ContactModel: Model<ContactDocument>) {
-    this.service = new BillService(OrderModel, ContactModel);
+  constructor(
+    OrderModel: Model<OrderDocument>,
+    ContactModel: Model<ContactDocument>,
+    ProductModel: Model<ProductDocument>
+  ) {
+    this.service = new BillService(OrderModel, ContactModel, ProductModel);
   }
 
   async searchOrders(req: Request, res: Response) {
