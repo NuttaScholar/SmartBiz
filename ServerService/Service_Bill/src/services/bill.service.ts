@@ -4,7 +4,7 @@ import { Model } from "mongoose";
 import { OrderDocument, OrderItem } from "../models/order.interface";
 import ContactRepo from "../repositories/contact.repo";
 import { ContactDocument } from "../models/contact.interface";
-import { orderInfo_t, productInfo_t } from "../type";
+import { orderInfo_t, orderItemInfo_t, productInfo_t } from "../type";
 import ProductRepo from "../repositories/product.repo";
 import { ProductDocument } from "../models/product.interface";
 
@@ -39,7 +39,10 @@ export default class BillService {
   async searchOrders(customerID?: string, orderID?: string, status?: string): Promise<orderInfo_t[]> {
     const parsedStatus = this.parseOptionalStatus(status);
     const orders = await this.repo.findByCustomerAndOrder(customerID, orderID, parsedStatus);
-    return Promise.all(orders.map((order) => this.toOrderInfo(order)));
+    const products = await this.productRepo.findByIds(this.getProductIDs(orders));
+    const productById = new Map(products.map((product) => [product.id, product]));
+
+    return Promise.all(orders.map((order) => this.toOrderInfo(order, productById)));
   }
   /**
    * ดึงรายการคำสั่งซื้อตามสถานะ (OrderStatus)
@@ -228,7 +231,10 @@ export default class BillService {
     }
   }
 
-  private async toOrderInfo(order: OrderDocument): Promise<orderInfo_t> {
+  private async toOrderInfo(
+    order: OrderDocument,
+    productById?: Map<string, ProductDocument>
+  ): Promise<orderInfo_t> {
     const contact = await this.contactRepo.findByCodeName(order.customerID);
 
     return {
@@ -236,30 +242,29 @@ export default class BillService {
       customer: contact?.billName ?? order.customerID,
       date: order.createdAt,
       total: order.totalAmount,
-      list: await Promise.all(order.items.map((item) => this.toProductInfo(item))),
+      list: await Promise.all(order.items.map((item) => this.toProductInfo(item, productById?.get(item.productID)))),
       status: order.status
     };
   }
 
-  private async toProductInfo(item: OrderItem): Promise<productInfo_t> {
+  private async toProductInfo(item: OrderItem, stockProduct?: ProductDocument): Promise<orderItemInfo_t> {
     const quantity = Number(item.quantity);
     const priceAfterDiscount = Number(item.priceAfterDiscount);
-    const product = await this.productRepo.findById(item.productID);
+    const product = stockProduct ?? (await this.productRepo.findById(item.productID));
 
-    const productInfo: productInfo_t = {
+    const productInfo: orderItemInfo_t = {
       id: item.productID,
       type: product?.type ?? productType_e.merchandise,
       name: product?.name ?? item.productID,
       img: product?.img ?? "",
-      status: product?.status ?? stockStatus_e.normal,
-      price: product?.price ?? item.priceOriginal,
+      status: stockStatus_e.normal,
+      price: item.priceOriginal,
       amount: quantity,
       total: this.roundMoney(quantity * priceAfterDiscount),
       percentDiscount: item.discountPercent,
       priceAfterDiscount
     };
 
-    if (product?.condition !== undefined) productInfo.condition = product.condition;
     if (product?.description !== undefined) productInfo.description = product.description;
 
     return productInfo;
@@ -393,8 +398,9 @@ export default class BillService {
     if (!Array.isArray(items)) return;
 
     const productIDs = [...new Set(items.map((item) => item.productID))];
-    const products = await Promise.all(productIDs.map((productID) => this.productRepo.findById(productID)));
-    const missingProductID = productIDs.find((productID, index) => !products[index]);
+    const products = await this.productRepo.findByIds(productIDs);
+    const existingProductIDs = new Set(products.map((product) => product.id));
+    const missingProductID = productIDs.find((productID) => !existingProductIDs.has(productID));
 
     if (missingProductID) {
       throw {
@@ -415,5 +421,9 @@ export default class BillService {
 
   private roundMoney(value: number) {
     return Math.round((value + Number.EPSILON) * 100) / 100;
+  }
+
+  private getProductIDs(orders: OrderDocument[]) {
+    return [...new Set(orders.flatMap((order) => order.items.map((item) => item.productID)))];
   }
 }

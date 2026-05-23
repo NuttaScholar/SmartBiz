@@ -7,4 +7,8 @@ export default class ProductRepo {
   findById(id: string) {
     return this.ProductModel.findOne({ id });
   }
+
+  findByIds(ids: string[]) {
+    return this.ProductModel.find({ id: { $in: ids } });
+  }
 }

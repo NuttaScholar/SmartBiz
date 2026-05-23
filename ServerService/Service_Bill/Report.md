@@ -120,15 +120,33 @@ query ทั้งสามตัวเป็น optional:
   "success": true,
   "data": [
     {
-      "orderID": "ORD-1710000000000-1234",
-      "customerID": "CUST001",
+      "id": "ORD-1710000000000-1234",
+      "customer": "Customer One",
+      "date": "2026-05-23T10:00:00.000Z",
+      "total": 900,
       "status": 0,
-      "items": [],
-      "totalAmount": 1000
+      "list": [
+        {
+          "id": "PROD001",
+          "type": 0,
+          "name": "Product One",
+          "img": "https://example.com/product-one.jpg",
+          "status": 0,
+          "price": 500,
+          "amount": 2,
+          "total": 900,
+          "percentDiscount": 10,
+          "priceAfterDiscount": 450
+        }
+      ]
     }
   ]
 }
 ```
+
+Search Orders enriches each item in `list` from the Stock database by `items[].productID`.
+Product fields added to the response include `img`, `name`, and `total`, where `total = items[].quantity * items[].priceAfterDiscount`.
+If a Stock product is missing during search response mapping, the API falls back to `name = productID`, `img = ""`, and the price stored on the order item.
 
 ### Get Orders By Status
 
@@ -396,6 +414,7 @@ PORT=3004
 SECRET=NuttaScholar
 MONGO_URI_ACCOUNT=mongodb://root:example@localhost:27017/Account?authSource=admin
 MONGO_URI_BILL=mongodb://root:example@localhost:27017/Bill?authSource=admin
+MONGO_URI_STOCK=mongodb://root:example@localhost:27017/Stock?authSource=admin
 ```
 
 ## Run And Test
@@ -428,16 +447,16 @@ npm test
 
 ```text
 npm run build: pass
-npm test: pass, 9 specs
+npm test: pass, 14 specs
 npm run dev: pass
-API smoke test: pass
+API smoke test: pass (2026-05-23)
 ```
 
 ผลทดสอบ `npm run dev` ล่าสุด:
 
 ```text
-Connected to databases: [ 'Account', 'Bill' ]
-Databases connected: [ 'Account', 'Bill' ]
+Connected to databases: [ 'Account', 'Bill', 'Stock' ]
+Databases connected: [ 'Account', 'Bill', 'Stock' ]
 Bill Service running on port 3004
 ```
 
@@ -460,12 +479,20 @@ response ที่ได้ถูกต้องตาม `AuthMiddleware`:
 ผลทดสอบ API ล่าสุด:
 
 ```text
-GET /bill/search without token: pass
-POST /bill invalid totalAmount: pass, InvalidInputError
-POST /bill valid totalAmount: pass
-PUT /bill/:orderID invalid totalAmount: pass, InvalidInputError
-PUT /bill/:orderID valid totalAmount: pass
-GET /bill/:orderID/status: pass
-GET /bill/search: pass
+Test date: 2026-05-23
+Seed data: temporary Contact + Product in Account/Stock, removed after test
+
+GET /bill/search without token: pass, HTTP 401, errCode 2
+POST /bill invalid totalAmount: pass, HTTP 400, errCode 6
+POST /bill valid totalAmount: pass, created orderID ORD-1779548638754-1588
+GET /bill/search with customerID/orderID/status: pass
+GET /bill/search enrich product details from Stock: pass, list[0].name/img populated, list[0].total = 900
+GET /bill/:orderID/status: pass, status 0
+PUT /bill/:orderID invalid totalAmount: pass, HTTP 400, errCode 6
+PUT /bill/:orderID valid totalAmount: pass, totalAmount = 1350
+GET /bill/search after update: pass, list[0].total = 1350
+PUT /discount/:customerID: pass
+GET /discount/:customerID: pass
 DELETE /bill/:orderID cleanup: pass
+Cleanup seeded Contact/Product/Discount: pass
 ```
