@@ -2,10 +2,7 @@ import { Box, IconButton } from "@mui/material";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import SaveIcon from "@mui/icons-material/Save";
 import React from "react";
-import {
-  BillContext,
-  BillDefaultState
-} from "../context/BillContext";
+import { BillContext, BillDefaultState } from "../context/BillContext";
 import AddProductForm, {
   FormAddProduce_t,
 } from "../../../component/Organisms/AddProductForm";
@@ -13,7 +10,12 @@ import MerchList from "../component/MerchList";
 import { productInfo_t } from "../../../API/StockService/type";
 import FieldContactAccess from "../../../component/Organisms/FieldContactAccess";
 import { useNavigate } from "react-router-dom";
-import { productType_e, stockStatus_e } from "../../../enum";
+import { errorCode_e, productType_e, stockStatus_e } from "../../../enum";
+import stockWithRetry_f from "../../Stock/lib/stockWithRetry";
+import { useAuth } from "../../../hooks/useAuth";
+import { ErrorString } from "../../../function/Enum";
+import billWithRetry_f from "../lib/billWithRetry";
+import { discountItem_t } from "../../../API/BillService/type";
 
 //*********************************************
 // Interface
@@ -24,15 +26,61 @@ import { productType_e, stockStatus_e } from "../../../enum";
 //*********************************************
 export default function Page_BillSetDiscount() {
   // Hook ************************************
+  const authContext = useAuth();
   const [state, setState] = React.useState(BillDefaultState);
   const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
+  const [isSaving, setIsSaving] = React.useState(false);
   const navigate = useNavigate();
+  const selectedCustomerID = state.billForm?.customer?.trim() || "";
   // Local function **************************
   const onClose = () => {
     navigate("/bill");
   };
   const onSave = () => {
-    console.log("save");
+    const merchList = state.merchList || [];
+
+    if (!selectedCustomerID) {
+      alert("Please select customer");
+      return;
+    }
+
+    const discounts: discountItem_t[] = merchList.map((item) => ({
+      productID: item.id,
+      discountPercent: Number(item.percentDiscount ?? 0),
+    }));
+
+    if (
+      discounts.some(
+        (item) =>
+          !item.productID ||
+          !Number.isFinite(item.discountPercent) ||
+          item.discountPercent < 0 ||
+          item.discountPercent > 100,
+      )
+    ) {
+      alert("Please check product discount");
+      return;
+    }
+
+    setIsSaving(true);
+    billWithRetry_f
+      .putDiscounts(authContext, { customerID: selectedCustomerID, discounts })
+      .then((res) => {
+        if (res.status === "success") {
+          alert("บันทึกสำเร็จ");
+        } else {
+          alert(
+            `Error: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+          );
+        }
+      })
+      .catch((err) => {
+        alert("Error");
+        console.log("putDiscountsError", err);
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
   };
   const onAdd = (form: FormAddProduce_t) => {
     const product: productInfo_t = {
@@ -65,7 +113,8 @@ export default function Page_BillSetDiscount() {
     }
     const newProduct: productInfo_t = {
       ...product,
-      percentDiscount: ((product.price - product.priceAfterDiscount) / product.price) * 100,
+      percentDiscount:
+        ((product.price - product.priceAfterDiscount) / product.price) * 100,
     };
     setState({
       ...state,
@@ -85,29 +134,81 @@ export default function Page_BillSetDiscount() {
       console.log("view", value);
     }
   };
+  const toDiscountProduct = (discount: discountItem_t): productInfo_t => {
+    const product = listOption.find((item) => item.id === discount.productID);
+    const price = product?.price || 0;
+    const discountPercent = Number(discount.discountPercent);
+
+    return {
+      id: discount.productID,
+      name: product?.name || discount.productID,
+      price,
+      priceAfterDiscount: Number(
+        (price - (price * discountPercent) / 100).toFixed(2),
+      ),
+      percentDiscount: discountPercent,
+      type: product?.type || productType_e.merchandise,
+      status: product?.status || stockStatus_e.normal,
+      img: product?.img || "",
+    };
+  };
   // Use Effect ******************************
   React.useEffect(() => {
-    setListOption([
-      {
-        id: "P001",
-        name: "Product 1",
-        price: 100,
-        amount: 10,
-        type: productType_e.merchandise,
-        status: stockStatus_e.normal,
-        img: "",
-      },
-      {
-        id: "P002",
-        name: "Product 2",
-        price: 150,
-        amount: 5,
-        type: productType_e.merchandise,
-        status: stockStatus_e.normal,
-        img: "",
-      },
-    ]);
+    stockWithRetry_f
+      .getStock(authContext, {
+        productType: [productType_e.merchandise, productType_e.another],
+      })
+      .then((res) => {
+        if (res.status === "success" && res.result !== undefined) {
+          setListOption(res.result);
+        } else {
+          alert(
+            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+          );
+        }
+      })
+      .catch((err) => {
+        console.log("getStockError", err);
+        navigate("/");
+      });
   }, []);
+  React.useEffect(() => {
+    if (!selectedCustomerID) {
+      setState((prev) => ({ ...prev, merchList: [] }));
+      return;
+    }
+
+    let active = true;
+
+    billWithRetry_f
+      .getDiscounts(authContext, selectedCustomerID)
+      .then((res) => {
+        if (!active) return;
+
+        if (res.status === "success" && res.result !== undefined) {
+          setState((prev) => ({
+            ...prev,
+            merchList: res.result?.discounts.map(toDiscountProduct) || [],
+          }));
+        } else if (res.errCode === errorCode_e.NotFoundError) {
+          setState((prev) => ({ ...prev, merchList: [] }));
+        } else {
+          alert(
+            `Error: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+          );
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+
+        alert("Error");
+        console.log("getDiscountsError", err);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedCustomerID, listOption]);
   // Render **********************************
   return (
     <BillContext.Provider value={{ state, setState }}>
@@ -115,6 +216,7 @@ export default function Page_BillSetDiscount() {
         <Box sx={{ display: "flex", flexGrow: 1, justifyContent: "flex-end" }}>
           <IconButton
             onClick={onSave}
+            disabled={isSaving}
             size="large"
             sx={{
               color: "white",
