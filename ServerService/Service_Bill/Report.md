@@ -122,6 +122,7 @@ query ทั้งสามตัวเป็น optional:
     {
       "id": "ORD-1710000000000-1234",
       "customer": "Customer One",
+      "customerID": "Ctm01",
       "date": "2026-05-23T10:00:00.000Z",
       "total": 900,
       "status": 0,
@@ -148,6 +149,14 @@ Search Orders enriches each item in `list` from the Stock database by `items[].p
 Product fields added to the response include `img`, `name`, and `total`, where `total = items[].quantity * items[].priceAfterDiscount`.
 If a Stock product is missing during search response mapping, the API falls back to `name = productID`, `img = ""`, and the price stored on the order item.
 
+Frontend contract:
+
+- `src/API/BillService/type.ts` treats `responst_t<"getOrders">.result` as `orderInfo_t[]`.
+- `src/API/BillService/Bill.ts` maps `searchOrders` to the enriched Search Orders response shape directly.
+- Frontend `getOrdersByStatus` calls `GET /bill/search?status=<status>` so status tabs receive the same enriched `list[]` product data as normal search.
+- `src/page/Bill/component/OrderListHeader.tsx` stores API `orderInfo_t` directly instead of rebuilding product cards from raw order items.
+- `src/page/Bill/component/DialogOrderDetail.tsx` displays product `name`, `img`, `status`, `type`, `price`, `amount`, discount, and `total` from `list[]`.
+
 ### Get Orders By Status
 
 ```http
@@ -161,6 +170,8 @@ GET /bill/status/2
 ```
 
 ถ้า `status` ไม่อยู่ใน `OrderStatus` จะได้ `InvalidInputError`
+
+หมายเหตุสำหรับ frontend: หน้ารายการบิลใช้ `GET /bill/search?status=<status>` แทน endpoint นี้ เพื่อให้ได้ response แบบ enriched ที่มีรายละเอียดสินค้าใน `list[]`.
 
 ### Create Order
 
@@ -450,6 +461,7 @@ npm run build: pass
 npm test: pass, 14 specs
 npm run dev: pass
 API smoke test: pass (2026-05-23)
+Frontend npm run build: pass (2026-05-24)
 ```
 
 ผลทดสอบ `npm run dev` ล่าสุด:
@@ -495,4 +507,17 @@ PUT /discount/:customerID: pass
 GET /discount/:customerID: pass
 DELETE /bill/:orderID cleanup: pass
 Cleanup seeded Contact/Product/Discount: pass
+```
+
+ผลทดสอบ frontend ล่าสุด:
+
+```text
+Test date: 2026-05-24
+npm run build: pass
+Bill frontend API type update: pass
+Bill order list consumes enriched orderInfo_t[] directly: pass
+Bill status tab uses /bill/search?status=<status>: pass
+Bill order detail uses product status/type from API list[]: pass
+Vite dev server start: pass, http://127.0.0.1:3030/
+Browser UI smoke test: skipped, Codex in-app browser was unavailable in this session
 ```
