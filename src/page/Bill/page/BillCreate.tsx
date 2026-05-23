@@ -14,18 +14,25 @@ import AddProductForm, {
 import MerchList from "../component/MerchList";
 import { productInfo_t } from "../../../API/StockService/type";
 import { useNavigate, useParams } from "react-router-dom";
-import { productType_e, stockStatus_e } from "../../../enum";
+import { billStatus_e, errorCode_e, productType_e, stockStatus_e } from "../../../enum";
 import SummaryBar from "../../../component/Organisms/SummaryBar";
 import DialogBillEdit from "../component/DialogBillEdit";
+import { useAuth } from "../../../hooks/useAuth";
+import stockWithRetry_f from "../../Stock/lib/stockWithRetry";
+import { ErrorString } from "../../../function/Enum";
+import billWithRetry_f from "../lib/billWithRetry";
+import { createOrderForm_t, orderItem_t } from "../../../API/BillService/type";
 
 //*********************************************
 // Component
 //*********************************************
 export default function Page_BillCreate() {
   // Hook ************************************
+  const authContext = useAuth();
   const [state, setState] = React.useState(BillDefaultState);
   const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
   const [total, setTotal] = React.useState(0);
+  const [isSaving, setIsSaving] = React.useState(false);
   const { orderID } = useParams<{ orderID: string }>();
   const navigate = useNavigate();
   // Local function **************************
@@ -33,7 +40,72 @@ export default function Page_BillCreate() {
     navigate("/bill");
   };
   const onSave = () => {
-    console.log("save");
+    const customerID = state.billForm?.customer?.trim();
+    const merchList = state.merchList || [];
+
+    if (!customerID) {
+      alert("กรุณาเลือกลูกค้า");
+      return;
+    }
+
+    if (merchList.length <= 0) {
+      alert("กรุณาเพิ่มสินค้าในใบสั่งซื้อ");
+      return;
+    }
+
+    const items: orderItem_t[] = merchList.map((item) => ({
+      productID: item.id,
+      quantity: item.amount || 0,
+      priceOriginal: item.price || 0,
+      priceAfterDiscount: item.priceAfterDiscount ?? item.price ?? 0,
+      discountPercent: item.percentDiscount,
+    }));
+
+    if (
+      items.some(
+        (item) =>
+          !item.productID ||
+          item.quantity <= 0 ||
+          item.priceOriginal < 0 ||
+          item.priceAfterDiscount < 0,
+      )
+    ) {
+      alert("กรุณาตรวจสอบรายการสินค้าและจำนวนสินค้า");
+      return;
+    }
+
+    const totalAmount = Number(
+      items
+        .reduce((sum, item) => sum + item.quantity * item.priceAfterDiscount, 0)
+        .toFixed(2),
+    );
+
+    const data: createOrderForm_t = {
+      customerID,
+      status: billStatus_e.PrepareProduct,
+      items,
+      totalAmount,
+    };
+
+    setIsSaving(true);
+    billWithRetry_f
+      .postOrder(authContext, data)
+      .then((res) => {
+        if (res.status === "success") {
+          navigate("/bill");
+        } else {
+          alert(
+            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+          );
+        }
+      })
+      .catch((err) => {
+        alert("เกิดข้อผิดพลาด");
+        console.log("postOrderError", err);
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
   };
   const onEdit = (del: boolean, value: productInfo_t) => {
     if (state.merchList !== undefined) {
@@ -85,27 +157,21 @@ export default function Page_BillCreate() {
   // Use Effect ******************************
   React.useEffect(() => {
     console.log("orderID", orderID);
-    setListOption([
-      {
-        id: "P001",
-        name: "Product 1",
-        price: 100,
-        amount: 10,
-        type: productType_e.merchandise,
-        status: stockStatus_e.normal,
-        img: "",
-      },
-      {
-        id: "P002",
-        name: "Product 2",
-        price: 200,
-        amount: 5,
-        type: productType_e.merchandise,
-        status: stockStatus_e.normal,
-        img: "",
-        priceAfterDiscount: 150,
-      },
-    ]);
+    stockWithRetry_f
+      .getStock(authContext, { productType: [productType_e.merchandise, productType_e.another] })
+      .then((res) => {
+        if (res.status === "success" && res.result !== undefined) {
+          setListOption(res.result);
+        } else {
+          alert(
+            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+          );
+        }
+      })
+      .catch((err) => {
+        console.log("getStockError", err);
+        navigate("/");
+      });
   }, []);
   React.useEffect(() => {
     const newTotal = state.merchList?.reduce((sum, item) => {
@@ -121,6 +187,7 @@ export default function Page_BillCreate() {
         <Box sx={{ display: "flex", flexGrow: 1, justifyContent: "flex-end" }}>
           <IconButton
             onClick={onSave}
+            disabled={isSaving}
             size="large"
             sx={{
               color: "white",
