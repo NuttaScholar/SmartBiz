@@ -21,7 +21,11 @@ import { useAuth } from "../../../hooks/useAuth";
 import stockWithRetry_f from "../../Stock/lib/stockWithRetry";
 import { ErrorString } from "../../../function/Enum";
 import billWithRetry_f from "../lib/billWithRetry";
-import { createOrderForm_t, orderItem_t } from "../../../API/BillService/type";
+import {
+  createOrderForm_t,
+  discountItem_t,
+  orderItem_t,
+} from "../../../API/BillService/type";
 
 //*********************************************
 // Component
@@ -31,10 +35,14 @@ export default function Page_BillCreate() {
   const authContext = useAuth();
   const [state, setState] = React.useState(BillDefaultState);
   const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
+  const [customerDiscounts, setCustomerDiscounts] = React.useState<
+    discountItem_t[]
+  >([]);
   const [total, setTotal] = React.useState(0);
   const [isSaving, setIsSaving] = React.useState(false);
   const { orderID } = useParams<{ orderID: string }>();
   const navigate = useNavigate();
+  const selectedCustomerID = state.billForm?.customer?.trim() || "";
   // Local function **************************
   const onClose = () => {
     navigate("/bill");
@@ -127,28 +135,53 @@ export default function Page_BillCreate() {
       }
     }
   };
+  const applyDiscount = React.useCallback(
+    (product: productInfo_t, discounts: discountItem_t[]) => {
+      const stockProduct = listOption.find((item) => item.id === product.id);
+      const price = stockProduct?.price ?? product.price ?? 0;
+      const discount = discounts.find((item) => item.productID === product.id);
+      const amount = product.amount || 0;
+
+      if (!discount) {
+        return {
+          ...product,
+          price,
+          priceAfterDiscount: undefined,
+          percentDiscount: undefined,
+          total: price * amount,
+        };
+      }
+
+      const discountPercent = Number(discount.discountPercent);
+      const priceAfterDiscount = Number(
+        (price - (price * discountPercent) / 100).toFixed(2),
+      );
+
+      return {
+        ...product,
+        price,
+        priceAfterDiscount,
+        percentDiscount: discountPercent,
+        total: priceAfterDiscount * amount,
+      };
+    },
+    [listOption],
+  );
   const onAdd = (form: FormAddProduce_t) => {
+    const selectedProduct = listOption?.find(
+      (item) => item.id === form.product?.code,
+    );
     const product: productInfo_t = {
       id: form.product?.code || "",
       name: form.product?.value || "",
-      price:
-        listOption?.find((item) => item.id === form.product?.code)?.price || 0,
+      price: selectedProduct?.price || 0,
       amount: form.amount,
       type: productType_e.merchandise,
       status: stockStatus_e.normal,
-      img:
-        listOption?.find((item) => item.id === form.product?.code)?.img || "",
-      priceAfterDiscount:
-        listOption?.find((item) => item.id === form.product?.code)
-          ?.priceAfterDiscount || undefined,
+      img: selectedProduct?.img || "",
     };
-    const newProduct: productInfo_t = {
-      ...product,
-      total:
-        product.priceAfterDiscount === undefined
-          ? (product.price || 0) * (product.amount || 0)
-          : product.priceAfterDiscount * (product.amount || 0),
-    };
+
+    const newProduct = applyDiscount(product, customerDiscounts);
     setState({
       ...state,
       merchList: [...(state.merchList || []), newProduct],
@@ -173,6 +206,55 @@ export default function Page_BillCreate() {
         navigate("/");
       });
   }, []);
+  React.useEffect(() => {
+    if (!selectedCustomerID) {
+      setCustomerDiscounts([]);
+      setState((prev) => ({
+        ...prev,
+        merchList: prev.merchList?.map((item) => applyDiscount(item, [])),
+      }));
+      return;
+    }
+
+    let active = true;
+
+    billWithRetry_f
+      .getDiscounts(authContext, selectedCustomerID)
+      .then((res) => {
+        if (!active) return;
+
+        if (res.status === "success" && res.result !== undefined) {
+          const discounts = res.result.discounts || [];
+          setCustomerDiscounts(discounts);
+          setState((prev) => ({
+            ...prev,
+            merchList: prev.merchList?.map((item) =>
+              applyDiscount(item, discounts),
+            ),
+          }));
+        } else if (res.errCode === errorCode_e.NotFoundError) {
+          setCustomerDiscounts([]);
+          setState((prev) => ({
+            ...prev,
+            merchList: prev.merchList?.map((item) => applyDiscount(item, [])),
+          }));
+        } else {
+          alert(
+            `à¹€à¸à¸´à¸”à¸‚à¹‰à¸­à¸œà¸´à¸”à¸žà¸¥à¸²à¸”: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+          );
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+
+        alert("à¹€à¸à¸´à¸”à¸‚à¹‰à¸­à¸œà¸´à¸”à¸žà¸¥à¸²à¸”");
+        console.log("getDiscountsError", err);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authContext, selectedCustomerID, applyDiscount]);
   React.useEffect(() => {
     const newTotal = state.merchList?.reduce((sum, item) => {
       return sum + (item.total || 0);
