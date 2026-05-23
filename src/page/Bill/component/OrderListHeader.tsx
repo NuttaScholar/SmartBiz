@@ -109,7 +109,7 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       }}
     >
       <FieldSearch
-        placeholder="ชื่อลูกค้า หรือ รหัสคำสั่งซื้อ"
+        placeholder="รหัสลูกค้า หรือ รหัสคำสั่งซื้อ"
         maxWidth="650px"
         onSubmit={onSerch}
       />  

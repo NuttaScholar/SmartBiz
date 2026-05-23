@@ -239,6 +239,7 @@ export default class BillService {
 
     return {
       id: order.orderID,
+      customerID: order.customerID,
       customer: contact?.billName ?? order.customerID,
       date: order.createdAt,
       total: order.totalAmount,

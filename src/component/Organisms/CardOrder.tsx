@@ -75,6 +75,13 @@ const CardOrder: React.FC<MyProps> = (props) => {
                 component="div"
                 sx={{ color: "text.secondary" }}
               >
+                {`รหัสลูกค้า: ${props.value.customerID}`}
+              </Typography>
+              <Typography
+                variant="subtitle1"
+                component="div"
+                sx={{ color: "text.secondary" }}
+              >
                 {`รหัสคำสั่งซื้อ: ${props.value.id}`}
               </Typography>
               <Typography

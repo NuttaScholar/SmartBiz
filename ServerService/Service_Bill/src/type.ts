@@ -32,6 +32,7 @@ export type orderItemInfo_t = {
 
 export type orderInfo_t = {
   id: string;
+  customerID: string;
   customer: string;
   date: Date;
   total: number;
