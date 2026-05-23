@@ -2,9 +2,9 @@ import * as React from "react";
 import Box from "@mui/material/Box";
 import TabBox from "../../../component/Atoms/TabBox";
 import FieldSearch from "../../../component/Molecules/FieldSearch";
-import { billStatus_e, productType_e, stockStatus_e } from "../../../enum";
+import { billStatus_e } from "../../../enum";
 import { useBillContext } from "../hooks/useBillContex";
-import { order_t, orderInfo_t } from "../../../API/BillService/type";
+import { orderInfo_t } from "../../../API/BillService/type";
 import billWithRetry_f from "../lib/billWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -16,27 +16,6 @@ const tabStatusList = [
   billStatus_e.Completed,
 ];
 
-function mapOrderToOrderInfo(order: order_t): orderInfo_t {
-  return {
-    id: order.orderID,
-    customer: order.customerID,
-    total: order.totalAmount,
-    date: order.createdAt ? new Date(order.createdAt) : new Date(),
-    status: order.status,
-    list: order.items.map((item) => ({
-      id: item.productID,
-      name: item.productID,
-      type: productType_e.merchandise,
-      img: "",
-      status: stockStatus_e.normal,
-      amount: item.quantity,
-      total: item.quantity * item.priceAfterDiscount,
-      percentDiscount: item.discountPercent,
-      priceAfterDiscount: item.priceAfterDiscount,
-      price: item.priceOriginal,
-    })),
-  };
-}
 //*************************************************
 // Interface
 //*************************************************
@@ -74,12 +53,12 @@ const OrderListHeader: React.FC<myProps> = (props) => {
         }),
       ]);
 
-      const orderMap = new Map<string, order_t>();
+      const orderMap = new Map<string, orderInfo_t>();
       if (customerRes.status === "success") {
-        customerRes.result?.forEach((order) => orderMap.set(order.orderID, order));
+        customerRes.result?.forEach((order) => orderMap.set(order.id, order));
       }
       if (orderRes.status === "success") {
-        orderRes.result?.forEach((order) => orderMap.set(order.orderID, order));
+        orderRes.result?.forEach((order) => orderMap.set(order.id, order));
       }
 
       return Array.from(orderMap.values());
@@ -102,7 +81,7 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       setState((prev) => ({
         ...prev,
         filter: tab,
-        orderList: orders.map(mapOrderToOrderInfo),
+        orderList: orders,
       }));
     }
 

@@ -140,7 +140,13 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
                   img: item.img,
                   name: item.name,
                   status: stockStatus_e.normal,
-                  type: productType_e.merchandise,
+                  type: item.type ?? productType_e.merchandise,
+                  price: item.price,
+                  description: item.description,
+                  amount: item.amount,
+                  total: item.total,
+                  percentDiscount: item.percentDiscount,
+                  priceAfterDiscount: item.percentDiscount?item.priceAfterDiscount:undefined,
                 }}
               />
             ))}

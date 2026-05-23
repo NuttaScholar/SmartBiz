@@ -81,7 +81,7 @@ export type responst_t<
 > = T extends "getOrders"
   ? {
     status: "success" | "error";
-    result?: order_t[];
+    result?: orderInfo_t[];
     errCode?: errorCode_e;
     message?: string;
   }

@@ -2,7 +2,7 @@ import Bill_f from "../../../API/BillService/Bill";
 import {
     createOrderForm_t,
     discount_t,
-    order_t,
+    orderInfo_t,
     searchOrderForm_t,
     updateDiscountForm_t,
     updateOrderForm_t,
@@ -12,7 +12,7 @@ import { billStatus_e } from "../../../enum";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
 interface resOrdersWithRetry_t extends resApiWithRetry_t {
-    result?: order_t[];
+    result?: orderInfo_t[];
 }
 
 interface resOrderStatusWithRetry_t extends resApiWithRetry_t {

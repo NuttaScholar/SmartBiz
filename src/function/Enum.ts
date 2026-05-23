@@ -8,6 +8,8 @@ export function RoleString(data: role_e): string {
             return "Cashier";
         case role_e.laber:
             return "Laber";
+        default:
+            return "Unknown";
     }
 }
 export function BillStatusString(data: billStatus_e): string {
@@ -20,6 +22,10 @@ export function BillStatusString(data: billStatus_e): string {
             return "Recording";
         case billStatus_e.shipping:
             return "Shipping";
+        case billStatus_e.waitingPayment:
+            return "Waiting Payment";
+        default:
+            return "Unknown";
     }
 }
 export function ErrorString(data: errorCode_e): string {
@@ -46,5 +52,7 @@ export function ErrorString(data: errorCode_e): string {
             return "ยไม่ได้รับการยืนยันตัวตน";
         case errorCode_e.UnknownError:
             return "UnknownError"
+        default:
+            return "UnknownError";
     }
 }

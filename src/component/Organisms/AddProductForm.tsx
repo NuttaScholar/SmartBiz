@@ -4,7 +4,6 @@ import FieldAutoComplete, { Option_t } from "../Molecules/FieldAutoComplete";
 import { productInfo_t } from "../../API/StockService/type";
 import Field from "../Atoms/Field";
 import FieldText from "../Molecules/FieldText";
-import { useNavigate } from "react-router-dom";
 
 //*********************************************
 // Type
@@ -39,7 +38,6 @@ const AddProductForm: React.FC<myProps> = (props) => {
   // Hook *********************
   const [form, setForm] = useState<FormAddProduce_t>();
   const [clear, setClear] = useState(0);
-  const nevigate = useNavigate();
   // Local Variable *****************
   const options: Option_t[] = useMemo(() => {
     return (

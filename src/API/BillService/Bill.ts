@@ -7,6 +7,7 @@ import {
 import {
     createOrderForm_t,
     discount_t,
+    orderInfo_t,
     order_t,
     responst_t,
     searchOrderForm_t,
@@ -73,7 +74,7 @@ export async function searchOrders(
 ): Promise<responst_t<"getOrders">> {
     try {
         const res = await axios_bill.get(`/bill/search${orderQuery(condition)}`, authHeader(token));
-        return toResponse<order_t[]>(res.data) as responst_t<"getOrders">;
+        return toResponse<orderInfo_t[]>(res.data) as responst_t<"getOrders">;
     } catch (err) {
         return toErrorResponse(err) as responst_t<"getOrders">;
     }
@@ -84,8 +85,8 @@ export async function getOrdersByStatus(
     status: billStatus_e
 ): Promise<responst_t<"getOrders">> {
     try {
-        const res = await axios_bill.get(`/bill/status/${status}`, authHeader(token));
-        return toResponse<order_t[]>(res.data) as responst_t<"getOrders">;
+        const res = await axios_bill.get(`/bill/search${orderQuery({ status })}`, authHeader(token));
+        return toResponse<orderInfo_t[]>(res.data) as responst_t<"getOrders">;
     } catch (err) {
         return toErrorResponse(err) as responst_t<"getOrders">;
     }

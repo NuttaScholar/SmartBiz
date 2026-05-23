@@ -1,9 +1,7 @@
 import React from "react";
 import { Box } from "@mui/material";
 import Field from "../../../component/Atoms/Field";
-import FieldImage from "../../../component/Molecules/FieldImage";
 import FieldDate from "../../../component/Molecules/FieldDate";
-import FieldText from "../../../component/Molecules/FieldText";
 import FieldContactAccess from "../../../component/Organisms/FieldContactAccess";
 import { useBillContext } from "../hooks/useBillContex";
 
@@ -26,7 +24,7 @@ interface myProps {}
 //*********************************************
 // Component
 //*********************************************
-const FormBillHeader: React.FC<myProps> = (props) => {
+const FormBillHeader: React.FC<myProps> = () => {
   // Hook *********************
   const { state, setState } = useBillContext();
   // Local Variable *****************

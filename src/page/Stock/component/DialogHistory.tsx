@@ -60,7 +60,6 @@ const DialogHistory: React.FC<myProps> = () => {
       >
         {state.productForm && (
           <CardProduct
-            type={state.productForm.type}
             value={state.productForm}
             maxWidth="400px"
             variant={"readonly"}
