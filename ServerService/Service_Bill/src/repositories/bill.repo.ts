@@ -1,5 +1,5 @@
 import { Model } from "mongoose";
-import { OrderStatus } from "../models/order.enum";
+import { OrderStatus } from "../utils/enum";
 import { OrderDocument } from "../models/order.interface";
 
 type OrderUpdateData = Partial<Pick<OrderDocument, "customerID" | "items" | "totalAmount">>;

@@ -1,10 +1,10 @@
 import BillRepo from "../repositories/bill.repo";
-import { OrderStatus } from "../models/order.enum";
-import { errorCode_e } from "../utils/enum";
+import { errorCode_e, OrderStatus, productType_e, stockStatus_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { OrderDocument, OrderItem } from "../models/order.interface";
 import ContactRepo from "../repositories/contact.repo";
 import { ContactDocument } from "../models/contact.interface";
+import { orderInfo_t, productInfo_t } from "../type";
 
 type OrderUpdateInput = Partial<Pick<OrderDocument, "customerID" | "items" | "totalAmount">>;
 
@@ -28,9 +28,10 @@ export default class BillService {
   /**
    * ค้นหารายการคำสั่งซื้อจาก customerID / orderID / status
    */
-  searchOrders(customerID?: string, orderID?: string, status?: string) {
+  async searchOrders(customerID?: string, orderID?: string, status?: string): Promise<orderInfo_t[]> {
     const parsedStatus = this.parseOptionalStatus(status);
-    return this.repo.findByCustomerAndOrder(customerID, orderID, parsedStatus);
+    const orders = await this.repo.findByCustomerAndOrder(customerID, orderID, parsedStatus);
+    return Promise.all(orders.map((order) => this.toOrderInfo(order)));
   }
   /**
    * ดึงรายการคำสั่งซื้อตามสถานะ (OrderStatus)
@@ -213,6 +214,37 @@ export default class BillService {
         message: "Customer contact not found"
       };
     }
+  }
+
+  private async toOrderInfo(order: OrderDocument): Promise<orderInfo_t> {
+    const contact = await this.contactRepo.findByCodeName(order.customerID);
+
+    return {
+      id: order.orderID,
+      customer: contact?.billName ?? order.customerID,
+      date: order.createdAt,
+      total: order.totalAmount,
+      list: order.items.map((item) => this.toProductInfo(item)),
+      status: order.status
+    };
+  }
+
+  private toProductInfo(item: OrderItem): productInfo_t {
+    const quantity = Number(item.quantity);
+    const priceAfterDiscount = Number(item.priceAfterDiscount);
+
+    return {
+      id: item.productID,
+      type: productType_e.merchandise,
+      name: item.productID,
+      img: "",
+      status: stockStatus_e.normal,
+      price: item.priceOriginal,
+      amount: quantity,
+      total: this.roundMoney(quantity * priceAfterDiscount),
+      percentDiscount: item.discountPercent,
+      priceAfterDiscount
+    };
   }
 
   private pickOrderUpdate(data: any): OrderUpdateInput {

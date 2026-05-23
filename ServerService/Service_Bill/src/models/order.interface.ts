@@ -1,5 +1,5 @@
 import { Document } from "mongoose";
-import { OrderStatus } from "./order.enum";
+import { OrderStatus } from "../utils/enum";
 
 export interface OrderItem {
     productID: string;

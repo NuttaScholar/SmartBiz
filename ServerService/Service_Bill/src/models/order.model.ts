@@ -1,5 +1,5 @@
 import { Schema } from "mongoose";
-import { OrderStatus } from "./order.enum";
+import { OrderStatus } from "../utils/enum";
 import { OrderDocument } from "./order.interface";
 
 // ฟังก์ชันสร้าง orderID อัตโนมัติ

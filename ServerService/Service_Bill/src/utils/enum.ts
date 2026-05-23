@@ -23,6 +23,13 @@ export enum role_e{
   cashier,
   laber,
 }
+export enum OrderStatus{  
+  PrepareProduct = 0,
+  PrepareShipment = 1,
+  Billing = 2,
+  WaitingPayment = 3,
+  Completed = 4,
+}
 export enum errorCode_e {
   UnknownError, // ไม่สามารถระบุสาเหตุได้
   InUseError, // ยังถูกใช้งานอยู่
