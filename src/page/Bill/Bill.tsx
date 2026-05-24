@@ -3,27 +3,25 @@ import AppBar_c from "../../component/Organisms/AppBar_c";
 import {
   BillContext,
   BillDefaultState,
-  billDialog_e,
   billState_t,
 } from "./context/BillContext";
 import OrderListHeader from "./component/OrderListHeader";
 import OrderList from "./component/OrderList";
 import SpeedDial_Bill from "./component/SpeedDialBill";
-import DialogOrderDetail from "./component/DialogOrderDetail";
 import { orderInfo_t } from "../../API/BillService/type";
+import { useNavigate } from "react-router-dom";
 //*************************************************
 // Function
 //*************************************************
 const Page_Bill: React.FC = () => {
+  const navigate = useNavigate();
   const [state, setState] = React.useState<billState_t>({
     ...BillDefaultState,
     containerRef: React.useRef<HTMLDivElement>(null),
   });
-  const [detail, setDetail] = React.useState<orderInfo_t>();
 
   const onClickOrderList = (value: orderInfo_t) => {
-    setState({ ...state, dialogOpen: billDialog_e.detail });
-    setDetail(value);
+    navigate(`/bill/detail/${value.id}`);
   };
   return (
     <BillContext.Provider value={{ state, setState }}>
@@ -33,7 +31,6 @@ const Page_Bill: React.FC = () => {
         </OrderListHeader>
         <SpeedDial_Bill />
       </AppBar_c>
-      <DialogOrderDetail value={detail} />
     </BillContext.Provider>
   );
 };

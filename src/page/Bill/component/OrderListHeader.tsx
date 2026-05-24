@@ -95,7 +95,7 @@ const OrderListHeader: React.FC<myProps> = (props) => {
     return () => {
       isActive = false;
     };
-  }, [searchValue, setState, tab, updateOrderList]);
+  }, [searchValue, setState, state.trigger_updateOrderList, tab, updateOrderList]);
 
   return (
     <Box

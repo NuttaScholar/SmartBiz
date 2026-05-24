@@ -21,6 +21,7 @@ export type billState_t = {
   indexList?: number;
   billForm?: orderInfoForm_t;
   triger_gotoTop?: number;
+  trigger_updateOrderList?: number;
   containerRef?: React.RefObject<HTMLDivElement>;
 };
 export type BillContext_t = {

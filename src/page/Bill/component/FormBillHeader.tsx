@@ -28,22 +28,23 @@ const FormBillHeader: React.FC<myProps> = () => {
   // Hook *********************
   const { state, setState } = useBillContext();
   // Local Variable *****************
-  const nowDate = new Date();
+  const orderDate = state.billForm?.date
+    ? new Date(state.billForm.date)
+    : new Date();
+  const validOrderDate = Number.isNaN(orderDate.getTime())
+    ? new Date()
+    : orderDate;
+  
   // Local Function *****************
 
   return (
     <Field direction="column">
       <FieldDate
-        defaultValue={nowDate}
+        key={validOrderDate.toISOString()}
+        defaultValue={validOrderDate}
         label="Date"
         hideField
-        onChange={(val) =>
-          val &&
-          setState({
-            ...state,
-            billForm: { ...state.billForm, date: val.toDate() },
-          })
-        }
+        readonly        
       />
       <Box sx={{ display: "flex", flexDirection: "column" }}>
         <FieldContactAccess

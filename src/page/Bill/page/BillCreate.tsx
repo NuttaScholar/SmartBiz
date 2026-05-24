@@ -24,6 +24,7 @@ import billWithRetry_f from "../lib/billWithRetry";
 import {
   createOrderForm_t,
   discountItem_t,
+  orderInfo_t,
   orderItem_t,
 } from "../../../API/BillService/type";
 
@@ -40,12 +41,30 @@ export default function Page_BillCreate() {
   >([]);
   const [total, setTotal] = React.useState(0);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isLoadingOrder, setIsLoadingOrder] = React.useState(false);
   const { orderID } = useParams<{ orderID: string }>();
   const navigate = useNavigate();
   const selectedCustomerID = state.billForm?.customer?.trim() || "";
   // Local function **************************
+  const setOrderToForm = React.useCallback((order: orderInfo_t) => {
+    setState((prev) => ({
+      ...prev,
+      billForm: {
+        ...prev.billForm,
+        id: order.id,
+        customer: order.customerID,
+        date: order.date ? new Date(order.date) : undefined,
+      },
+      merchList: order.list || [],
+    }));
+  }, []);
+
   const onClose = () => {
-    navigate("/bill");
+    if (orderID) {
+      navigate(`/bill/detail/${orderID}`);
+    } else {
+      navigate("/bill");
+    }
   };
   const onSave = () => {
     const customerID = state.billForm?.customer?.trim();
@@ -96,11 +115,19 @@ export default function Page_BillCreate() {
     };
 
     setIsSaving(true);
-    billWithRetry_f
-      .postOrder(authContext, data)
+    const request = orderID
+      ? billWithRetry_f.putOrder(authContext, {
+          orderID,
+          customerID,
+          items,
+          totalAmount,
+        })
+      : billWithRetry_f.postOrder(authContext, data);
+
+    request
       .then((res) => {
         if (res.status === "success") {
-          navigate("/bill");
+          navigate(orderID ? `/bill/detail/${orderID}` : "/bill");
         } else {
           alert(
             `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
@@ -109,7 +136,7 @@ export default function Page_BillCreate() {
       })
       .catch((err) => {
         alert("เกิดข้อผิดพลาด");
-        console.log("postOrderError", err);
+        console.log(orderID ? "putOrderError" : "postOrderError", err);
       })
       .finally(() => {
         setIsSaving(false);
@@ -189,9 +216,10 @@ export default function Page_BillCreate() {
   };
   // Use Effect ******************************
   React.useEffect(() => {
-    console.log("orderID", orderID);
     stockWithRetry_f
-      .getStock(authContext, { productType: [productType_e.merchandise, productType_e.another] })
+      .getStock(authContext, {
+        productType: [productType_e.merchandise, productType_e.another],
+      })
       .then((res) => {
         if (res.status === "success" && res.result !== undefined) {
           setListOption(res.result);
@@ -205,7 +233,53 @@ export default function Page_BillCreate() {
         console.log("getStockError", err);
         navigate("/");
       });
-  }, []);
+  }, [authContext, navigate]);
+
+  React.useEffect(() => {
+    if (!orderID) return;
+
+    let active = true;
+    setIsLoadingOrder(true);
+
+    billWithRetry_f
+      .searchOrders(authContext, { orderID })
+      .then((res) => {
+        if (!active) return;
+
+        if (res.status === "success") {
+          const order = res.result?.find((item) => item.id === orderID);
+
+          if (order) {
+            setOrderToForm(order);
+          } else {
+            alert("ไม่พบข้อมูลคำสั่งซื้อ");
+            navigate("/bill");
+          }
+        } else {
+          alert(
+            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+          );
+          navigate("/bill");
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+
+        alert("เกิดข้อผิดพลาด");
+        console.log("getOrderForEditError", err);
+        navigate("/bill");
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingOrder(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authContext, navigate, orderID, setOrderToForm]);
+
   React.useEffect(() => {
     if (!selectedCustomerID) {
       setCustomerDiscounts([]);
@@ -240,14 +314,14 @@ export default function Page_BillCreate() {
           }));
         } else {
           alert(
-            `à¹€à¸à¸´à¸”à¸‚à¹‰à¸­à¸œà¸´à¸”à¸žà¸¥à¸²à¸”: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
           );
         }
       })
       .catch((err) => {
         if (!active) return;
 
-        alert("à¹€à¸à¸´à¸”à¸‚à¹‰à¸­à¸œà¸´à¸”à¸žà¸¥à¸²à¸”");
+        alert("เกิดข้อผิดพลาด");
         console.log("getDiscountsError", err);
       });
 
@@ -269,7 +343,7 @@ export default function Page_BillCreate() {
         <Box sx={{ display: "flex", flexGrow: 1, justifyContent: "flex-end" }}>
           <IconButton
             onClick={onSave}
-            disabled={isSaving}
+            disabled={isSaving || isLoadingOrder}
             size="large"
             sx={{
               color: "white",

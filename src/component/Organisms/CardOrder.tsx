@@ -27,6 +27,12 @@ interface MyProps {
 //  Function
 /**************************************************** */
 const CardOrder: React.FC<MyProps> = (props) => {
+  const orderDate = props.value.date ? new Date(props.value.date) : undefined;
+  const orderDateText =
+    orderDate && !Number.isNaN(orderDate.getTime())
+      ? orderDate.toLocaleDateString("th-TH")
+      : "-";
+
   return (
     <Card
       variant="elevation"
@@ -89,7 +95,7 @@ const CardOrder: React.FC<MyProps> = (props) => {
                 component="div"
                 sx={{ color: "text.secondary" }}
               >
-                {`วันที่ทำรายการ: ${new Date().toLocaleDateString("th-TH")}`}
+                {`วันที่ทำรายการ: ${orderDateText}`}
               </Typography>
 
               <Typography variant="h6" component="div">

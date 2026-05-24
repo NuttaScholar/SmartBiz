@@ -1,15 +1,12 @@
-import { Box, Dialog, IconButton, Slide, Typography } from "@mui/material";
+import { Box, IconButton, Typography } from "@mui/material";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import React from "react";
-import { TransitionProps } from "@mui/material/transitions";
 import CardProduct, {
   productType_e,
 } from "../../../component/Organisms/CardProduct";
-import { useBillContext } from "../hooks/useBillContex";
-import { billDialog_e } from "../context/BillContext";
 import CardOrder from "../../../component/Organisms/CardOrder";
 import { orderInfo_t } from "../../../API/BillService/type";
-import { stockStatus_e } from "../../../enum";
+import { errorCode_e, stockStatus_e } from "../../../enum";
 import Field from "../../../component/Atoms/Field";
 import MySpeedDial from "../../../component/Molecules/MySpeedDial";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -19,42 +16,40 @@ import PrintIcon from "@mui/icons-material/Print";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
+import billWithRetry_f from "../lib/billWithRetry";
+import { useAuth } from "../../../hooks/useAuth";
+import { ErrorString } from "../../../function/Enum";
+import { useNavigate, useParams } from "react-router-dom";
 
-//*********************************************
-// Transition
-//*********************************************
-const Transition = React.forwardRef(function Transition(
-  props: TransitionProps & {
-    children: React.ReactElement<unknown>;
-  },
-  ref: React.Ref<unknown>,
-) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
-//*********************************************
-// Const
-//*********************************************
-const MenuList: menuList_t[] = [
-  { text: "Print", icon: <PrintIcon /> },
-  { text: "Edit", icon: <EditIcon />, path: "/bill/edit/123456" },
-  { text: "Delete", icon: <DeleteIcon /> },
-  { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
-];
-//*********************************************
-// Interface
-//*********************************************
-interface myProps {
-  value?: orderInfo_t;
-}
 //*********************************************
 // Component
 //*********************************************
-const DialogOrderDetail: React.FC<myProps> = (props) => {
-  const { state, setState } = useBillContext();
+const Page_OrderDetail: React.FC = () => {
+  const authContext = useAuth();
+  const navigate = useNavigate();
+  const { orderID } = useParams<{ orderID: string }>();
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const [order, setOrder] = React.useState<orderInfo_t>();
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  const menuList = React.useMemo<menuList_t[]>(
+    () => [
+      { text: "Print", icon: <PrintIcon /> },
+      {
+        text: "Edit",
+        icon: <EditIcon />,
+        path: orderID ? `/bill/edit/${orderID}` : undefined,
+      },
+      { text: "Delete", icon: <DeleteIcon /> },
+      { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
+    ],
+    [orderID],
+  );
+
   const onClose = () => {
-    setState({ ...state, dialogOpen: billDialog_e.none });
+    navigate("/bill");
   };
+
   const speedDialHandler = (index: number) => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
@@ -64,24 +59,78 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
           "_blank",
         );
         break;
+      case 2:
+        if (!orderID) return;
+        billWithRetry_f
+          .delOrder(authContext, orderID)
+          .then((res) => {
+            if (res.status === "success") {
+              navigate("/bill");
+            } else {
+              alert(
+                `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+              );
+            }
+          })
+          .catch((err) => {
+            alert("เกิดข้อผิดพลาด");
+            console.log("delOrderError", err);
+          });
+        break;
       case 3:
-        containerRef?.current?.scrollTo({
+        containerRef.current?.scrollTo({
           top: 0,
           behavior: "smooth",
         });
         break;
     }
   };
+
+  React.useEffect(() => {
+    if (!orderID) {
+      setIsLoading(false);
+      setOrder(undefined);
+      return;
+    }
+
+    let active = true;
+    setIsLoading(true);
+
+    billWithRetry_f
+      .searchOrders(authContext, { orderID })
+      .then((res) => {
+        if (!active) return;
+
+        if (res.status === "success") {
+          setOrder(res.result?.find((item) => item.id === orderID));
+        } else {
+          alert(
+            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+          );
+          setOrder(undefined);
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+
+        alert("เกิดข้อผิดพลาด");
+        console.log("getOrderDetailError", err);
+        setOrder(undefined);
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authContext, orderID]);
+
   return (
-    <Dialog
-      fullScreen
-      open={state.dialogOpen === billDialog_e.detail}
-      onClose={onClose}
-      slots={{
-        transition: Transition,
-      }}
-    >
-      <HeaderDialog label={"รายละเอียด"} onClick={onClose}>
+    <>
+      <HeaderDialog label="รายละเอียด" onClick={onClose}>
         <Box
           sx={{
             display: "flex",
@@ -100,16 +149,26 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
           flexDirection: "column",
           width: "100%",
           alignItems: "center",
-          mt: "64px",
+          mt: "72px",
           gap: "8px",
         }}
       >
-        {props.value && (
-          <CardOrder maxWidth="400px" value={{ ...props.value, list: [] }} />
+        {isLoading && (
+          <Typography sx={{ mt: 4 }} color="text.secondary">
+            Loading...
+          </Typography>
         )}
-        <Field maxWidth="1280px" direction="column" alignItem="center">
-          <Typography variant="h6">รายการสินค้า</Typography>
-        </Field>
+        {!isLoading && !order && (
+          <Typography sx={{ mt: 4 }} color="text.secondary">
+            ไม่พบข้อมูลคำสั่งซื้อ
+          </Typography>
+        )}
+        {order && <CardOrder maxWidth="400px" value={{ ...order, list: [] }} />}
+        {order && (
+          <Field maxWidth="1280px" direction="column" alignItem="center">
+            <Typography variant="h6">รายการสินค้า</Typography>
+          </Field>
+        )}
         <Box
           ref={containerRef}
           sx={{
@@ -131,7 +190,7 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
               gap: 1,
             }}
           >
-            {props.value?.list.map((item, index) => (
+            {order?.list.map((item, index) => (
               <CardProduct
                 key={index}
                 maxWidth="400px"
@@ -146,19 +205,24 @@ const DialogOrderDetail: React.FC<myProps> = (props) => {
                   amount: item.amount,
                   total: item.total,
                   percentDiscount: item.percentDiscount,
-                  priceAfterDiscount: item.percentDiscount?item.priceAfterDiscount:undefined,
+                  priceAfterDiscount: item.percentDiscount
+                    ? item.priceAfterDiscount
+                    : undefined,
                 }}
               />
             ))}
           </Box>
         </Box>
       </Box>
-      <MySpeedDial
-        menuList={MenuList}
-        icon={<MoreVertIcon />}
-        onClick={speedDialHandler}
-      />
-    </Dialog>
+      {order && (
+        <MySpeedDial
+          menuList={menuList}
+          icon={<MoreVertIcon />}
+          onClick={speedDialHandler}
+        />
+      )}
+    </>
   );
 };
-export default DialogOrderDetail;
+
+export default Page_OrderDetail;
