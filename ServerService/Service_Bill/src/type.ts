@@ -11,9 +11,6 @@ export type productInfo_t = {
   price?: number;
   description?: string;
   amount?: number;
-  total?: number;
-  percentDiscount?: number;
-  priceAfterDiscount?: number;
 }
 
 export type orderItemInfo_t = {

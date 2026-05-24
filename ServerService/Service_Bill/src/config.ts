@@ -29,3 +29,4 @@ export const WEB_HOST = requireEnv("WEB_HOST");
 export const MONGO_URI_ACCOUNT = requireEnv("MONGO_URI_ACCOUNT");
 export const MONGO_URI_BILL = requireEnv("MONGO_URI_BILL");
 export const MONGO_URI_STOCK = process.env.MONGO_URI_STOCK || requireEnv("DB_URL");
+export const SERVICE_ACCOUNT_URL = process.env.SERVICE_ACCOUNT_URL || "http://localhost:3000";

@@ -1,5 +1,7 @@
 import BillRepo from "../repositories/bill.repo";
-import { errorCode_e, OrderStatus, productType_e, stockStatus_e } from "../utils/enum";
+import axios from "axios";
+import { SERVICE_ACCOUNT_URL } from "../config";
+import { errorCode_e, OrderStatus, productType_e, stockStatus_e, transactionType_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { OrderDocument, OrderItem } from "../models/order.interface";
 import ContactRepo from "../repositories/contact.repo";
@@ -9,6 +11,14 @@ import ProductRepo from "../repositories/product.repo";
 import { ProductDocument } from "../models/product.interface";
 
 type OrderUpdateInput = Partial<Pick<OrderDocument, "customerID" | "items" | "totalAmount">>;
+type StockChange = {
+  productID: string;
+  quantity: number;
+};
+type AccountApiResponse = {
+  status: "success" | "error";
+  errCode?: errorCode_e;
+};
 
 const WORKFLOW = [
   OrderStatus.PrepareProduct,
@@ -70,8 +80,15 @@ export default class BillService {
     await this.ensureCustomerExists(data?.customerID);
     this.validateStatus(data?.status);
     this.validateTotalAmount(data?.items, data?.totalAmount);
-    await this.ensureProductsExist(data?.items);
-    return this.repo.createOrder(data);
+    const stockChanges = this.getStockChanges(data.items);
+
+    await this.applyStockChanges(stockChanges);
+    try {
+      return await this.repo.createOrder(data);
+    } catch (error) {
+      await this.rollbackStockChanges(stockChanges);
+      throw error;
+    }
   }
   /**
    * แก้ไขคำสั่งซื้อ
@@ -96,12 +113,17 @@ export default class BillService {
     if (data?.items || data?.totalAmount !== undefined) {
       this.validateTotalAmount(data?.items ?? order.items, data?.totalAmount ?? order.totalAmount);
     }
-    if (data?.items) {
-      await this.ensureProductsExist(data.items);
-    }
 
     const updateData = this.pickOrderUpdate(data);
-    return this.repo.updateOrder(orderID, updateData);
+    const stockChanges = data?.items ? this.getStockChanges(data.items, order.items) : [];
+
+    await this.applyStockChanges(stockChanges);
+    try {
+      return await this.repo.updateOrder(orderID, updateData);
+    } catch (error) {
+      await this.rollbackStockChanges(stockChanges);
+      throw error;
+    }
   }
   /**
     * ลบคำสั่งซื้อ
@@ -121,14 +143,28 @@ export default class BillService {
       };
     }
 
-    await this.repo.deleteOrder(orderID);
+    const stockChanges = this.getStockChanges([], order.items);
+    await this.applyStockChanges(stockChanges);
+    try {
+      const deletedOrder = await this.repo.deleteOrder(orderID);
+      if (!deletedOrder) {
+        throw {
+          code: errorCode_e.NotFoundError,
+          message: "Order not found"
+        };
+      }
+    } catch (error) {
+      await this.rollbackStockChanges(stockChanges);
+      throw error;
+    }
+
     return { deleted: true };
   }
   /**
    * เลื่อนไปยังสถานะถัดไปตาม WORKFLOW
    * ถ้า status ปัจจุบันไม่อยู่ใน workflow หรืออยู่ขั้นสุดท้ายแล้ว → โยน error
    */
-  async moveToNextStep(orderID: string) {
+  async moveToNextStep(orderID: string, authorization?: string) {
     const order = await this.repo.getOrder(orderID);
     if (!order) {
       throw { code: errorCode_e.NotFoundError, message: "Order not found" };
@@ -165,13 +201,17 @@ export default class BillService {
     }
 
     const nextStatus = WORKFLOW[currentIndex + 1];
+    if (nextStatus === OrderStatus.Completed) {
+      return this.completeOrderWithIncome(order, authorization);
+    }
+
     return this.repo.updateStatus(orderID, nextStatus);
   }
   /**
    * เลือกเส้นทาง “จัดการบิล → รายรับ”
    * แนะนำให้อนุญาตเฉพาะเมื่ออยู่ในสถานะ Billing
    */
-  async markAsIncome(orderID: string) {
+  async markAsIncome(orderID: string, authorization?: string) {
     const order = await this.repo.getOrder(orderID);
     if (!order) {
       throw { code: errorCode_e.NotFoundError, message: "Order not found" };
@@ -185,7 +225,7 @@ export default class BillService {
       };
     }
 
-    return this.repo.updateStatus(orderID, OrderStatus.Completed);
+    return this.completeOrderWithIncome(order, authorization);
   }
   /**
    * เลือกเส้นทาง “จัดการบิล → ลูกหนี้”
@@ -217,6 +257,71 @@ export default class BillService {
     }
 
     return order.status;
+  }
+
+  private async completeOrderWithIncome(order: OrderDocument, authorization?: string) {
+    const previousStatus = order.status;
+    const completedOrder = await this.repo.updateStatus(order.orderID, OrderStatus.Completed);
+    if (!completedOrder) {
+      throw {
+        code: errorCode_e.NotFoundError,
+        message: "Order not found"
+      };
+    }
+
+    try {
+      await this.createIncomeTransaction(completedOrder, authorization);
+      return completedOrder;
+    } catch (error) {
+      await this.repo.updateStatus(order.orderID, previousStatus);
+      throw error;
+    }
+  }
+
+  private async createIncomeTransaction(order: OrderDocument, authorization?: string) {
+    if (!authorization) {
+      throw {
+        code: errorCode_e.UnauthorizedError,
+        message: "Authorization header missing"
+      };
+    }
+
+    try {
+      const response = await axios.post<AccountApiResponse>(
+        `${SERVICE_ACCOUNT_URL.replace(/\/$/, "")}/transaction`,
+        {
+          date: new Date().toISOString(),
+          topic: `ยอดขาย`,
+          type: transactionType_e.income,
+          money: order.totalAmount,
+          who: order.customerID,
+          description: `OrderID: ${order.orderID}`,
+          bill: "",
+          readonly: true
+        },
+        {
+          headers: {
+            Authorization: authorization,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      if (response.data?.status !== "success") {
+        throw {
+          code: response.data?.errCode ?? errorCode_e.UnknownError,
+          message: "Create income transaction failed"
+        };
+      }
+    } catch (error: any) {
+      if (error.code) throw error;
+
+      const accountError = error.response?.data;
+      throw {
+        code: accountError?.errCode ?? errorCode_e.UnknownError,
+        message: "Create income transaction failed"
+      };
+    }
   }
 
   private async ensureCustomerExists(customerID?: string) {
@@ -400,22 +505,6 @@ export default class BillService {
     }
   }
 
-  private async ensureProductsExist(items?: OrderItem[]) {
-    if (!Array.isArray(items)) return;
-
-    const productIDs = [...new Set(items.map((item) => item.productID))];
-    const products = await this.productRepo.findByIds(productIDs);
-    const existingProductIDs = new Set(products.map((product) => product.id));
-    const missingProductID = productIDs.find((productID) => !existingProductIDs.has(productID));
-
-    if (missingProductID) {
-      throw {
-        code: errorCode_e.NotFoundError,
-        message: `Product not found: ${missingProductID}`
-      };
-    }
-  }
-
   private validateNonNegativeNumber(value: number, fieldName: string) {
     if (!Number.isFinite(Number(value)) || Number(value) < 0) {
       throw {
@@ -431,5 +520,84 @@ export default class BillService {
 
   private getProductIDs(orders: OrderDocument[]) {
     return [...new Set(orders.flatMap((order) => order.items.map((item) => item.productID)))];
+  }
+
+  private getStockChanges(nextItems: OrderItem[], previousItems: OrderItem[] = []): StockChange[] {
+    const previousQuantityByProduct = this.getQuantityByProduct(previousItems);
+    const nextQuantityByProduct = this.getQuantityByProduct(nextItems);
+    const productIDs = new Set([
+      ...previousQuantityByProduct.keys(),
+      ...nextQuantityByProduct.keys()
+    ]);
+
+    return [...productIDs]
+      .map((productID) => ({
+        productID,
+        quantity: (nextQuantityByProduct.get(productID) || 0) - (previousQuantityByProduct.get(productID) || 0)
+      }))
+      .filter((change) => change.quantity !== 0);
+  }
+
+  private getQuantityByProduct(items: OrderItem[]) {
+    return items.reduce((quantityByProduct, item) => {
+      quantityByProduct.set(
+        item.productID,
+        (quantityByProduct.get(item.productID) || 0) + Number(item.quantity)
+      );
+      return quantityByProduct;
+    }, new Map<string, number>());
+  }
+
+  private async applyStockChanges(changes: StockChange[]) {
+    const appliedChanges: StockChange[] = [];
+
+    try {
+      for (const change of changes) {
+        await this.applyStockChange(change);
+        appliedChanges.push(change);
+      }
+    } catch (error) {
+      await this.rollbackStockChanges(appliedChanges);
+      throw error;
+    }
+  }
+
+  private async rollbackStockChanges(changes: StockChange[]) {
+    for (const change of [...changes].reverse()) {
+      await this.applyStockChange({
+        productID: change.productID,
+        quantity: -change.quantity
+      });
+    }
+  }
+
+  private async applyStockChange(change: StockChange) {
+    const product = await this.productRepo.findById(change.productID);
+    if (!product || product.amount === undefined) {
+      throw {
+        code: errorCode_e.NotFoundError,
+        message: `Product not found: ${change.productID}`
+      };
+    }
+
+    const currentAmount = Number(product.amount);
+    const nextAmount = currentAmount - change.quantity;
+    if (nextAmount < 0) {
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: `Insufficient stock for product ${change.productID}. Available: ${currentAmount}`
+      };
+    }
+
+    await this.productRepo.updateById(change.productID, {
+      amount: nextAmount,
+      status: this.resolveStockStatus(nextAmount, Number(product.condition))
+    });
+  }
+
+  private resolveStockStatus(amount: number, condition: number) {
+    if (amount === 0) return stockStatus_e.stockOut;
+    if (amount < condition) return stockStatus_e.stockLow;
+    return stockStatus_e.normal;
   }
 }

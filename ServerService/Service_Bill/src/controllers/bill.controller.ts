@@ -5,6 +5,7 @@ import { Model } from "mongoose";
 import { OrderDocument } from "../models/order.interface";
 import { ContactDocument } from "../models/contact.interface";
 import { ProductDocument } from "../models/product.interface";
+import { AuthRequest } from "../middlewares/auth";
 
 export default class BillController {
   private service: BillService;
@@ -83,20 +84,20 @@ export default class BillController {
     }
   }
 
-  async moveToNextStep(req: Request, res: Response) {
+  async moveToNextStep(req: AuthRequest, res: Response) {
     try {
       const { orderID } = req.params;
-      const data = await this.service.moveToNextStep(orderID);
+      const data = await this.service.moveToNextStep(orderID, req.headers.authorization);
       return res.json({ success: true, data });
     } catch (err: any) {
       return handleError(res, err);
     }
   }
 
-  async markAsIncome(req: Request, res: Response) {
+  async markAsIncome(req: AuthRequest, res: Response) {
     try {
       const { orderID } = req.params;
-      const data = await this.service.markAsIncome(orderID);
+      const data = await this.service.markAsIncome(orderID, req.headers.authorization);
       return res.json({ success: true, data });
     } catch (err: any) {
       return handleError(res, err);
