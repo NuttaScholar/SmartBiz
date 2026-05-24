@@ -17,10 +17,13 @@ import { useEffect } from "react";
 
 const mockData: ReceiptData = {
   customerName: "SmartBiz Shop",
+  customerID: "CUST-001",
   customerAddress: "Bangkok, Thailand",
-  taxId: "123456789",
+  customerTaxID: "123456789",
   orderNumber: "123456",
-  date: "2026-04-24",
+  billDate: "2026-04-24",
+  orderDate: "2026-04-23",
+  total: 896,
   items: [
     { name: "สินค้า A", qty: 2, price: 150 },
     { name: "สินค้า B", qty: 1, price: 299 },

@@ -1,160 +1,190 @@
 import React from "react";
 import {
+  Box,
+  Divider,
+  Grid,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Typography,
-  Divider,
-  Grid,
 } from "@mui/material";
-import Label_parameter from "../Atoms/Label_parameter";
 
 export interface ReceiptItem {
   name: string;
   qty: number;
   price: number;
+  total?: number;
+  discountPercent?: number;
 }
 
 export interface ReceiptData {
   customerName: string;
-  customerAddress: string;
-  taxId: string;
+  customerID: string;
+  customerAddress?: string;
+  customerTaxID?: string;
   orderNumber: string;
-  date: string;
+  billDate: string;
+  orderDate: string;
   items: ReceiptItem[];
+  total: number;
 }
 
 interface Props {
   data: ReceiptData;
 }
 
+const currencyFormat = new Intl.NumberFormat("th-TH", {
+  style: "currency",
+  currency: "THB",
+});
+
 const ReceiptPreview: React.FC<Props> = ({ data }) => {
   const subtotal = data.items.reduce(
-    (sum, item) => sum + item.qty * item.price,
+    (sum, item) => sum + (item.total ?? item.qty * item.price),
     0,
   );
-  const vat = subtotal * 0.07;
-  const total = subtotal + vat;
+  const total = data.total || subtotal;
 
   return (
-    <div
-      style={{
-        backgroundColor: "white",
-        padding: 32,
+    <Box
+      sx={{
+        bgcolor: "white",
+        p: { xs: 3, sm: 5 },
         maxWidth: 900,
-        margin: "0 auto",
+        mx: "auto",
+        color: "#111827",
       }}
     >
-      {/* Header */}
-      <Typography variant="h4" align="center" gutterBottom>
-        ใบเสร็จรับเงิน (Receipt)
-      </Typography>
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* Store Info */}
-      <Grid container spacing={1}>
-        <Grid size={8}>
-          <Label_parameter
-            label="ลูกค้า:"
-            value={data.customerName}
-            gap="8px"
-          />
-        </Grid>
-        <Grid size={4}>
-          <Label_parameter label="เลขที่:" value={data.orderNumber} gap="8px" />
-        </Grid>
-        <Grid size={8}>
-          <Label_parameter
-            label="ที่อยู่:"
-            value={data.customerAddress}
-            gap="8px"
-          />
-        </Grid>
-        <Grid size={4}>
-          <Label_parameter label="วันที่:" value={data.date} gap="8px" />
-        </Grid>
-        <Grid size={12}>
-          <Label_parameter
-            label="เลขผู้เสียภาษี:"
-            value={data.taxId}
-            gap="8px"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 3,
+          flexWrap: "wrap",
+          alignItems: "flex-start",
+        }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            ใบสั่งซื้อ
+          </Typography>
+          <Typography color="text.secondary">Order Summary</Typography>
+        </Box>
+        <Box sx={{ textAlign: { xs: "left", sm: "right" } }}>
+          <Typography sx={{ fontWeight: 700 }}>SmartBiz</Typography>
+          <Typography variant="body2" color="text.secondary">
+            เอกสารสำหรับตรวจสอบคำสั่งซื้อ
+          </Typography>
+        </Box>
+      </Box>
 
       <Divider sx={{ my: 3 }} />
 
-      {/* Table */}
-      <TableContainer component={Paper} sx={{ boxShadow: "none" }}>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, sm: 7 }}>
+          <Typography variant="caption" color="text.secondary">
+            ลูกค้า
+          </Typography>
+          <Typography sx={{ fontWeight: 700 }}>{data.customerName}</Typography>
+          {data.customerAddress && (
+            <Typography color="text.secondary">
+              ที่อยู่: {data.customerAddress}
+            </Typography>
+          )}
+          {data.customerTaxID && (
+            <Typography color="text.secondary">
+              เลขผู้เสียภาษี: {data.customerTaxID}
+            </Typography>
+          )}
+        </Grid>
+        <Grid size={{ xs: 12, sm: 5 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "auto 1fr",
+              gap: "6px 16px",
+              justifyContent: { sm: "end" },
+            }}
+          >
+            <Typography color="text.secondary">เลขที่</Typography>
+            <Typography sx={{ fontWeight: 700 }}>{data.orderNumber}</Typography>
+            <Typography color="text.secondary">วันที่ออกบิล</Typography>
+            <Typography>{data.billDate}</Typography>
+            <Typography color="text.secondary">วันที่สั่งซื้อ</Typography>
+            <Typography>{data.orderDate}</Typography>
+          </Box>
+        </Grid>
+      </Grid>
+
+      <TableContainer sx={{ mt: 4, border: "1px solid #e5e7eb" }}>
         <Table size="small">
           <TableHead>
-            <TableRow>
-              <TableCell>
-                <strong>สินค้า</strong>
+            <TableRow sx={{ bgcolor: "#f3f4f6" }}>
+              <TableCell sx={{ fontWeight: 700 }}>สินค้า</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                จำนวน
               </TableCell>
-              <TableCell align="right">
-                <strong>จำนวน</strong>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                ราคา/หน่วย
               </TableCell>
-              <TableCell align="right">
-                <strong>ราคา/หน่วย</strong>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                ส่วนลด
               </TableCell>
-              <TableCell align="right">
-                <strong>รวม</strong>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                รวม
               </TableCell>
             </TableRow>
           </TableHead>
-
           <TableBody>
-            {data.items.map((item, index) => (
-              <TableRow key={index}>
-                <TableCell>{item.name}</TableCell>
-                <TableCell align="right">{item.qty}</TableCell>
-                <TableCell align="right">{item.price.toFixed(2)}</TableCell>
-                <TableCell align="right">
-                  {(item.qty * item.price).toFixed(2)}
-                </TableCell>
-              </TableRow>
-            ))}
+            {data.items.map((item, index) => {
+              const lineTotal = item.total ?? item.qty * item.price;
 
-            {/* Summary */}
+              return (
+                <TableRow key={`${item.name}-${index}`}>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell align="right">{item.qty}</TableCell>
+                  <TableCell align="right">
+                    {currencyFormat.format(item.price)}
+                  </TableCell>
+                  <TableCell align="right">
+                    {item.discountPercent ? `${item.discountPercent}%` : "-"}
+                  </TableCell>
+                  <TableCell align="right">
+                    {currencyFormat.format(lineTotal)}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             <TableRow>
-              <TableCell rowSpan={3} />
-              <TableCell colSpan={2}>
-                <strong>Subtotal</strong>
+              <TableCell colSpan={3} />
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                ยอดรวม
               </TableCell>
-              <TableCell align="right">{subtotal.toFixed(2)}</TableCell>
-            </TableRow>
-
-            <TableRow>
-              <TableCell colSpan={2}>
-                <strong>VAT 7%</strong>
-              </TableCell>
-              <TableCell align="right">{vat.toFixed(2)}</TableCell>
-            </TableRow>
-
-            <TableRow>
-              <TableCell colSpan={2}>
-                <strong>Total</strong>
-              </TableCell>
-              <TableCell align="right">
-                <strong>{total.toFixed(2)}</strong>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                {currencyFormat.format(total)}
               </TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </TableContainer>
 
-      {/* Print Styles */}
+      <Box sx={{ mt: 5, display: "flex", justifyContent: "flex-end" }}>
+        <Box sx={{ width: 240, textAlign: "center" }}>
+          <Divider sx={{ mb: 1 }} />
+          <Typography variant="body2" color="text.secondary">
+            ผู้รับผิดชอบ
+          </Typography>
+        </Box>
+      </Box>
+
       <style>
         {`
           @media print {
             .no-print {
-              display: none;
+              display: none !important;
             }
             body {
               -webkit-print-color-adjust: exact;
@@ -163,7 +193,7 @@ const ReceiptPreview: React.FC<Props> = ({ data }) => {
           }
         `}
       </style>
-    </div>
+    </Box>
   );
 };
 

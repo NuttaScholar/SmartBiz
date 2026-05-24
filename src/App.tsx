@@ -83,6 +83,7 @@ function App() {
                 <Route path="edit/:orderID" element={<Page_BillCreate />} />
                 <Route path="discount" element={<Page_BillSetDiscount />} />
                 <Route path="preview" element={<Page_BillPreview />} />
+                <Route path="preview/:orderID" element={<Page_BillPreview />} />
               </Route>
               <Route path="/cadit" element={<Page_Cadit />} />
               <Route path="/checkIn" element={<Page_CheckIn />} />

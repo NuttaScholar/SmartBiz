@@ -1,182 +1,251 @@
-import { AppBar, Box, Button, Container, Divider, Paper, Toolbar, Tooltip, Typography } from "@mui/material";
-import { useEffect } from "react";
-import ReceiptPreview, { ReceiptData } from "../../../component/Organisms/ReceiptPreview";
+import {
+  AppBar,
+  Box,
+  Button,
+  Container,
+  Paper,
+  Toolbar,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import ReceiptPreview, {
+  ReceiptData,
+} from "../../../component/Organisms/ReceiptPreview";
 import PrintIcon from "@mui/icons-material/Print";
+import billWithRetry_f from "../lib/billWithRetry";
+import { useAuth } from "../../../hooks/useAuth";
+import { useParams } from "react-router-dom";
+import { orderInfo_t } from "../../../API/BillService/type";
+import { ErrorString } from "../../../function/Enum";
+import { errorCode_e } from "../../../enum";
+import contactWithRetry_f from "../../Access/lib/contactWithRetry";
+import { ContactInfo_t } from "../../../API/AccountService/type";
 
-//*********************************************
-// Mock Data
-//*********************************************
-const mockData: ReceiptData = {
-  customerName: "SmartBiz Shop",
-  customerAddress: "Bangkok, Thailand",
-  taxId: "123456789",
-  orderNumber: "123456",
-  date: "2026-04-24",
-  items: [
-    { name: "สินค้า A", qty: 2, price: 150 },
-    { name: "สินค้า B", qty: 1, price: 299 },
-    { name: "สินค้า C", qty: 3, price: 99 },
-  ],
-};
-//*********************************************
-// Interface
-//*********************************************
+const dateFormat = new Intl.DateTimeFormat("th-TH", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function formatDate(value?: Date | string) {
+  const date = value ? new Date(value) : undefined;
+  return date && !Number.isNaN(date.getTime()) ? dateFormat.format(date) : "-";
+}
+
+function toReceiptData(order: orderInfo_t, contact?: ContactInfo_t): ReceiptData {
+  const billName = contact?.billName?.trim();
+
+  return {
+    customerName: billName || order.customer || order.customerID,
+    customerID: order.customerID,
+    customerAddress: contact?.address,
+    customerTaxID: contact?.taxID,
+    orderNumber: order.id,
+    billDate: formatDate(new Date()),
+    orderDate: formatDate(order.date),
+    total: order.total || 0,
+    items: order.list.map((item) => {
+      const qty = item.amount || 0;
+      const price = item.priceAfterDiscount ?? item.price ?? 0;
+
+      return {
+        name: item.name,
+        qty,
+        price,
+        total: item.total ?? qty * price,
+        discountPercent: item.percentDiscount,
+      };
+    }),
+  };
+}
 
 //*********************************************
 // Component
 //*********************************************
 export default function Page_BillPreview() {
-  // Hook ************************************
+  const authContext = useAuth();
+  const { orderID } = useParams<{ orderID: string }>();
+  const [order, setOrder] = useState<orderInfo_t>();
+  const [contact, setContact] = useState<ContactInfo_t>();
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Local function **************************
-   const handlePrint = () => {
+  const receiptData = useMemo(
+    () => (order ? toReceiptData(order, contact) : undefined),
+    [contact, order],
+  );
+
+  const handlePrint = () => {
     window.print();
   };
-  // Use Effect ******************************
+
   useEffect(() => {
-    document.body.style.backgroundColor = "#f0f0f0";
+    document.body.style.backgroundColor = "#f3f4f6";
 
     return () => {
       document.body.style.backgroundColor = "";
     };
   }, []);
-  // Render **********************************
+
+  useEffect(() => {
+    if (!orderID) {
+      setOrder(undefined);
+      setContact(undefined);
+      setIsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setIsLoading(true);
+
+    billWithRetry_f
+      .searchOrders(authContext, { orderID })
+      .then((res) => {
+        if (!active) return;
+
+        if (res.status === "success") {
+          setOrder(res.result?.find((item) => item.id === orderID));
+        } else {
+          alert(
+            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+          );
+          setOrder(undefined);
+          setContact(undefined);
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+
+        alert("เกิดข้อผิดพลาด");
+        console.log("getPreviewOrderError", err);
+        setOrder(undefined);
+        setContact(undefined);
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authContext, orderID]);
+
+  useEffect(() => {
+    if (!order?.customerID) {
+      setContact(undefined);
+      return;
+    }
+
+    let active = true;
+
+    contactWithRetry_f
+      .get(authContext, order.customerID)
+      .then((res) => {
+        if (!active) return;
+
+        if (res.status === "success") {
+          setContact(
+            res.result?.find((item) => item.codeName === order.customerID),
+          );
+        } else {
+          console.log("getPreviewContactError", res.errCode);
+          setContact(undefined);
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+
+        console.log("getPreviewContactError", err);
+        setContact(undefined);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authContext, order?.customerID]);
+
   return (
     <Box sx={{ minHeight: "100vh" }}>
-      {/* Header Bar */}
       <AppBar
         position="sticky"
+        className="no-print"
         sx={{
           bgcolor: "#ffffff",
-          color: "#1a1a1",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          borderBottom: "1px solid #e0e0e0",
-          "@media print": {
-            display: "none",
-          },
+          color: "#111827",
+          boxShadow: "0 1px 8px rgba(15,23,42,0.12)",
+          borderBottom: "1px solid #e5e7eb",
         }}
       >
         <Container maxWidth="lg">
           <Toolbar
             sx={{
               justifyContent: "space-between",
-              alignItems: "center",
               minHeight: { xs: 56, sm: 64 },
+              px: { xs: 0, sm: 2 },
             }}
           >
-            {/* Left: Logo & Title */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  bgcolor: "#4f46e5",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ color: "#fff", fontWeight: 700, fontSize: 18 }}
-                >
-                  R
-                </Typography>
-              </Box>
-              <Box>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 700,
-                    color: "#1a1a1a",
-                    lineHeight: 1.2,
-                  }}
-                >
-                  Receipt Preview
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "#6b7280", display: "block" }}
-                >
-                  ใบเสร็จรรับเงิน
-                </Typography>
-              </Box>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                ตัวอย่างใบสั่งซื้อ
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {receiptData ? `เลขที่: ${receiptData.orderNumber}` : "Bill Preview"}
+              </Typography>
             </Box>
 
-            {/* Right: Actions */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "#6b7280",
-                  display: { xs: "none", sm: "block" },
-                }}
-              >
-                เลขที่: <strong>{mockData.orderNumber}</strong>
-              </Typography>
-              <Divider
-                orientation="vertical"
-                sx={{
-                  height: 24,
-                  bgcolor: "#e0e0e0",
-                  display: { xs: "none", sm: "block" },
-                }}
-              />
-              <Tooltip title="พิมพ์ใบเสร็จ">
+            <Tooltip title="พิมพ์เอกสาร">
+              <span>
                 <Button
                   variant="contained"
                   onClick={handlePrint}
-                  className="no-print"
+                  disabled={!receiptData}
                   startIcon={<PrintIcon />}
                   sx={{
-                    bgcolor: "#4f46e5",
-                    color: "#fff",
-                    fontWeight: 600,
-                    px: 3,
-                    py: 1,
-                    borderRadius: "8px",
                     textTransform: "none",
-                    fontSize: "0.9rem",
-                    "&:hover": {
-                      bgcolor: "#4338ca",
-                      boxShadow: "0 4px 12px rgba(79,70,229,0.4)",
-                    },
-                    transition: "all 0.2s ease",
+                    fontWeight: 700,
+                    borderRadius: 1,
                   }}
                 >
-                  พิมพ์ใบเสร็จ
+                  พิมพ์
                 </Button>
-              </Tooltip>
-            </Box>
+              </span>
+            </Tooltip>
           </Toolbar>
         </Container>
       </AppBar>
 
-      {/* Main Content */}
       <Box
         sx={{
-          py: { xs: 3, sm: 4 },
+          py: { xs: 2, sm: 4 },
           px: { xs: 1, sm: 2 },
-          maxWidth: 900,
+          maxWidth: 980,
           mx: "auto",
         }}
       >
         <Paper
           elevation={0}
           sx={{
-            bgcolor: "#ffffff",
-            borderRadius: 2,
             border: "1px solid #e5e7eb",
+            borderRadius: 1,
             overflow: "hidden",
-            // 👇 ซ่อน border และ shadow เมื่อพิมพ์
             "@media print": {
               border: "none",
-              boxShadow: "none",
             },
           }}
         >
-          <ReceiptPreview data={mockData} />
+          {isLoading && (
+            <Typography sx={{ p: 4 }} color="text.secondary">
+              Loading...
+            </Typography>
+          )}
+          {!isLoading && !receiptData && (
+            <Typography sx={{ p: 4 }} color="text.secondary">
+              ไม่พบข้อมูลคำสั่งซื้อ
+            </Typography>
+          )}
+          {receiptData && <ReceiptPreview data={receiptData} />}
         </Paper>
       </Box>
     </Box>

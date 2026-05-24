@@ -54,10 +54,9 @@ const Page_OrderDetail: React.FC = () => {
     console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
-        window.open(
-          `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT}/bill/preview`,
-          "_blank",
-        );
+        if (orderID) {
+          window.open(`/bill/preview/${orderID}`, "_blank");
+        }
         break;
       case 2:
         if (!orderID) return;
