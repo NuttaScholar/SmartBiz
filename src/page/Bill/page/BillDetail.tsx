@@ -1,30 +1,73 @@
-import { Box, IconButton, Typography } from "@mui/material";
-import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import React from "react";
-import CardProduct, {
-  productType_e,
-} from "../../../component/Organisms/CardProduct";
-import CardOrder from "../../../component/Organisms/CardOrder";
-import { orderInfo_t } from "../../../API/BillService/type";
-import { billStatus_e, errorCode_e, stockStatus_e } from "../../../enum";
-import Field from "../../../component/Atoms/Field";
-import MySpeedDial from "../../../component/Molecules/MySpeedDial";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { menuList_t } from "../../../component/Molecules/ButtonOption";
+import { Box, IconButton, Typography } from "@mui/material";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PrintIcon from "@mui/icons-material/Print";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
-import billWithRetry_f from "../lib/billWithRetry";
+import { useNavigate, useParams } from "react-router-dom";
+import HeaderDialog from "../../../component/Molecules/HeaderDialog";
+import CardProduct, {
+  productType_e,
+} from "../../../component/Organisms/CardProduct";
+import CardOrder from "../../../component/Organisms/CardOrder";
+import Field from "../../../component/Atoms/Field";
+import MySpeedDial from "../../../component/Molecules/MySpeedDial";
+import { menuList_t } from "../../../component/Molecules/ButtonOption";
+import { orderInfo_t } from "../../../API/BillService/type";
+import { billStatus_e, errorCode_e, stockStatus_e } from "../../../enum";
 import { useAuth } from "../../../hooks/useAuth";
 import { ErrorString } from "../../../function/Enum";
-import { useNavigate, useParams } from "react-router-dom";
+import billWithRetry_f from "../lib/billWithRetry";
 
-//*********************************************
+//*************************************************
+// Constants
+//*************************************************
+const editableStatuses = new Set<billStatus_e>([
+  billStatus_e.PrepareProduct,
+  billStatus_e.PrepareShipment,
+]);
+
+const menuAction = {
+  print: "Print",
+  edit: "Edit",
+  delete: "Delete",
+  goToTop: "Go to Top",
+} as const;
+
+//*************************************************
+// Helper functions
+//*************************************************
+function canEditOrder(status?: billStatus_e) {
+  return status !== undefined && editableStatuses.has(status);
+}
+
+function getErrorMessage(errCode?: errorCode_e) {
+  return `เกิดข้อผิดพลาด: ${ErrorString(errCode || errorCode_e.UnknownError)}`;
+}
+
+function toProductCardValue(item: orderInfo_t["list"][number]) {
+  return {
+    id: item.id,
+    img: item.img,
+    name: item.name,
+    status: stockStatus_e.normal,
+    type: item.type ?? productType_e.merchandise,
+    price: item.price,
+    description: item.description,
+    amount: item.amount,
+    total: item.total,
+    percentDiscount: item.percentDiscount,
+    priceAfterDiscount: item.percentDiscount ? item.priceAfterDiscount : undefined,
+  };
+}
+
+//*************************************************
 // Component
-//*********************************************
+//*************************************************
 const Page_OrderDetail: React.FC = () => {
+  // Hooks ************************************
   const authContext = useAuth();
   const navigate = useNavigate();
   const { orderID } = useParams<{ orderID: string }>();
@@ -33,25 +76,46 @@ const Page_OrderDetail: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
 
-  const menuList = React.useMemo<menuList_t[]>(
-    () => [
-      { text: "Print", icon: <PrintIcon /> },
+  // Memo *************************************
+  const menuList = React.useMemo<menuList_t[]>(() => {
+    const commonMenu: menuList_t[] = [
+      { text: menuAction.print, icon: <PrintIcon /> },
+      { text: menuAction.goToTop, icon: <KeyboardArrowUpIcon /> },
+    ];
+
+    if (!canEditOrder(order?.status)) return commonMenu;
+
+    return [
+      { text: menuAction.print, icon: <PrintIcon /> },
       {
-        text: "Edit",
+        text: menuAction.edit,
         icon: <EditIcon />,
         path: orderID ? `/bill/edit/${orderID}` : undefined,
       },
-      { text: "Delete", icon: <DeleteIcon /> },
-      { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
-    ],
-    [orderID],
-  );
+      { text: menuAction.delete, icon: <DeleteIcon /> },
+      { text: menuAction.goToTop, icon: <KeyboardArrowUpIcon /> },
+    ];
+  }, [order?.status, orderID]);
 
-  const onClose = () => {
+  // UI handlers ******************************
+  const scrollToTop = React.useCallback(() => {
+    containerRef.current?.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, []);
+
+  const openPreview = React.useCallback(() => {
+    if (!orderID) return;
+    window.open(`/bill/preview/${orderID}`, "_blank");
+  }, [orderID]);
+
+  const onClose = React.useCallback(() => {
     navigate("/bill");
-  };
+  }, [navigate]);
 
-  const onNext = () => {
+  // API handlers *****************************
+  const onNext = React.useCallback(async () => {
     if (!orderID || !order || isUpdatingStatus) return;
 
     if (order.status === billStatus_e.Completed) {
@@ -60,104 +124,103 @@ const Page_OrderDetail: React.FC = () => {
     }
 
     setIsUpdatingStatus(true);
-    billWithRetry_f
-      .nextStep(authContext, orderID)
-      .then((res) => {
-        if (res.status === "success") {
-          navigate("/bill");
-          return;
-        }
+    try {
+      const res = await billWithRetry_f.nextStep(authContext, orderID);
+      if (res.status === "success") {
+        navigate("/bill");
+        return;
+      }
 
-        alert(
-          `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
-        );
-      })
-      .catch((err) => {
-        alert("เกิดข้อผิดพลาด");
-        console.log("nextStepError", err);
-      })
-      .finally(() => {
-        setIsUpdatingStatus(false);
-      });
-  };
-
-  const speedDialHandler = (index: number) => {
-    console.log(`SpeedDial: ${index}`);
-    switch (index) {
-      case 0:
-        if (orderID) {
-          window.open(`/bill/preview/${orderID}`, "_blank");
-        }
-        break;
-      case 2:
-        if (!orderID) return;
-        billWithRetry_f
-          .delOrder(authContext, orderID)
-          .then((res) => {
-            if (res.status === "success") {
-              navigate("/bill");
-            } else {
-              alert(
-                `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
-              );
-            }
-          })
-          .catch((err) => {
-            alert("เกิดข้อผิดพลาด");
-            console.log("delOrderError", err);
-          });
-        break;
-      case 3:
-        containerRef.current?.scrollTo({
-          top: 0,
-          behavior: "smooth",
-        });
-        break;
+      alert(getErrorMessage(res.errCode));
+    } catch (err) {
+      alert("เกิดข้อผิดพลาด");
+      console.log("nextStepError", err);
+    } finally {
+      setIsUpdatingStatus(false);
     }
-  };
+  }, [authContext, isUpdatingStatus, navigate, order, orderID]);
 
+  const onDelete = React.useCallback(async () => {
+    if (!orderID) return;
+
+    try {
+      const res = await billWithRetry_f.delOrder(authContext, orderID);
+      if (res.status === "success") {
+        navigate("/bill");
+        return;
+      }
+
+      alert(getErrorMessage(res.errCode));
+    } catch (err) {
+      alert("เกิดข้อผิดพลาด");
+      console.log("delOrderError", err);
+    }
+  }, [authContext, navigate, orderID]);
+
+  const speedDialHandler = React.useCallback(
+    (index: number) => {
+      const action = menuList[index]?.text;
+
+      switch (action) {
+        case menuAction.print:
+          openPreview();
+          break;
+        case menuAction.delete:
+          onDelete();
+          break;
+        case menuAction.goToTop:
+          scrollToTop();
+          break;
+      }
+    },
+    [menuList, onDelete, openPreview, scrollToTop],
+  );
+
+  // Effects **********************************
   React.useEffect(() => {
-    if (!orderID) {
-      setIsLoading(false);
-      setOrder(undefined);
-      return;
-    }
-
     let active = true;
-    setIsLoading(true);
 
-    billWithRetry_f
-      .searchOrders(authContext, { orderID })
-      .then((res) => {
+    async function loadOrder() {
+      if (!orderID) {
+        setOrder(undefined);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await billWithRetry_f.searchOrders(authContext, {
+          orderID,
+        });
         if (!active) return;
 
         if (res.status === "success") {
           setOrder(res.result?.find((item) => item.id === orderID));
         } else {
-          alert(
-            `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
-          );
           setOrder(undefined);
+          alert(getErrorMessage(res.errCode));
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!active) return;
 
         alert("เกิดข้อผิดพลาด");
         console.log("getOrderDetailError", err);
         setOrder(undefined);
-      })
-      .finally(() => {
+      } finally {
         if (active) {
           setIsLoading(false);
         }
-      });
+      }
+    }
+
+    loadOrder();
 
     return () => {
       active = false;
     };
   }, [authContext, orderID]);
 
+  // Render ***********************************
   return (
     <>
       <HeaderDialog label="รายละเอียด" onClick={onClose}>
@@ -232,21 +295,7 @@ const Page_OrderDetail: React.FC = () => {
               <CardProduct
                 key={index}
                 maxWidth="400px"
-                value={{
-                  id: item.id,
-                  img: item.img,
-                  name: item.name,
-                  status: stockStatus_e.normal,
-                  type: item.type ?? productType_e.merchandise,
-                  price: item.price,
-                  description: item.description,
-                  amount: item.amount,
-                  total: item.total,
-                  percentDiscount: item.percentDiscount,
-                  priceAfterDiscount: item.percentDiscount
-                    ? item.priceAfterDiscount
-                    : undefined,
-                }}
+                value={toProductCardValue(item)}
               />
             ))}
           </Box>
