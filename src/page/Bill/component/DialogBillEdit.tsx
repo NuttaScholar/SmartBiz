@@ -21,6 +21,7 @@ import { billDialog_e } from "../context/BillContext";
 //*********************************************
 interface myProps {
   hideFieldPrice?: boolean;
+  onSubmit?: (data: productInfo_t) => void;
 }
 //*********************************************
 // Component
@@ -38,15 +39,6 @@ const DialogBillEdit: React.FC<myProps> = (props) => {
     }
   }, [state.merchList, state.indexList]);
   // Local Function ***********
-  const handleSubmit = (val :productInfo_t) => {   
-    setState({
-      ...state,
-      dialogOpen: billDialog_e.none,
-      merchList: state.merchList?.map((item, index) =>
-        index === state.indexList ? val : item,
-      ),
-    });
-  };
   const onClose = () => {
     setState({ ...state, dialogOpen: billDialog_e.none });
   };
@@ -55,7 +47,7 @@ const DialogBillEdit: React.FC<myProps> = (props) => {
       open={state.dialogOpen === billDialog_e.editForm}
       onClose={onClose}
       defaultValue={info}
-      onSubmit={handleSubmit}
+      onSubmit={props.onSubmit}
       hideFieldPrice={props.hideFieldPrice}
     />
   );
