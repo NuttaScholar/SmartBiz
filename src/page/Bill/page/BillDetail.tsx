@@ -12,6 +12,7 @@ import CardProduct, {
   productType_e,
 } from "../../../component/Organisms/CardProduct";
 import CardOrder from "../../../component/Organisms/CardOrder";
+import DialogQuestion from "../../../component/Organisms/DialogQuestion";
 import Field from "../../../component/Atoms/Field";
 import MySpeedDial from "../../../component/Molecules/MySpeedDial";
 import { menuList_t } from "../../../component/Molecules/ButtonOption";
@@ -75,6 +76,8 @@ const Page_OrderDetail: React.FC = () => {
   const [order, setOrder] = React.useState<orderInfo_t>();
   const [isLoading, setIsLoading] = React.useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
+  const [isPaymentQuestionOpen, setIsPaymentQuestionOpen] =
+    React.useState(false);
 
   // Memo *************************************
   const menuList = React.useMemo<menuList_t[]>(() => {
@@ -115,11 +118,20 @@ const Page_OrderDetail: React.FC = () => {
   }, [navigate]);
 
   // API handlers *****************************
+  const closePaymentQuestion = React.useCallback(() => {
+    setIsPaymentQuestionOpen(false);
+  }, []);
+
   const onNext = React.useCallback(async () => {
     if (!orderID || !order || isUpdatingStatus) return;
 
     if (order.status === billStatus_e.Completed) {
       alert("คำสั่งซื้ออยู่ในสถานะสุดท้ายแล้ว");
+      return;
+    }
+
+    if (order.status === billStatus_e.Billing) {
+      setIsPaymentQuestionOpen(true);
       return;
     }
 
@@ -139,6 +151,40 @@ const Page_OrderDetail: React.FC = () => {
       setIsUpdatingStatus(false);
     }
   }, [authContext, isUpdatingStatus, navigate, order, orderID]);
+
+  const updateBillingStatus = React.useCallback(
+    async (isPaid: boolean) => {
+      if (!orderID || isUpdatingStatus) return;
+
+      closePaymentQuestion();
+      setIsUpdatingStatus(true);
+      try {
+        const updateStatus = isPaid
+          ? billWithRetry_f.markBillingAsIncome
+          : billWithRetry_f.markBillingAsDebt;
+        const res = await updateStatus(authContext, orderID);
+
+        if (res.status === "success") {
+          navigate("/bill");
+          return;
+        }
+
+        alert(getErrorMessage(res.errCode));
+      } catch (err) {
+        alert("เกิดข้อผิดพลาด");
+        console.log("updateBillingStatusError", err);
+      } finally {
+        setIsUpdatingStatus(false);
+      }
+    },
+    [
+      authContext,
+      closePaymentQuestion,
+      isUpdatingStatus,
+      navigate,
+      orderID,
+    ],
+  );
 
   const onDelete = React.useCallback(async () => {
     if (!orderID) return;
@@ -308,6 +354,18 @@ const Page_OrderDetail: React.FC = () => {
           onClick={speedDialHandler}
         />
       )}
+      <DialogQuestion
+        open={isPaymentQuestionOpen}
+        title="ยืนยันการชำระเงิน"
+        content="ลูกค้าชำระเงินแล้วใช่หรือไม่"
+        questionType="yesNo"
+        confirmText="ชำระแล้ว"
+        cancelText="ยังไม่ชำระ"
+        confirmColor="success"
+        onConfirm={() => updateBillingStatus(true)}
+        onCancel={() => updateBillingStatus(false)}
+        onClose={closePaymentQuestion}
+      />
     </>
   );
 };
