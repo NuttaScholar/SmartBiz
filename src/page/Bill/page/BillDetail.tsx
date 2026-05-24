@@ -6,7 +6,7 @@ import CardProduct, {
 } from "../../../component/Organisms/CardProduct";
 import CardOrder from "../../../component/Organisms/CardOrder";
 import { orderInfo_t } from "../../../API/BillService/type";
-import { errorCode_e, stockStatus_e } from "../../../enum";
+import { billStatus_e, errorCode_e, stockStatus_e } from "../../../enum";
 import Field from "../../../component/Atoms/Field";
 import MySpeedDial from "../../../component/Molecules/MySpeedDial";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -31,6 +31,7 @@ const Page_OrderDetail: React.FC = () => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [order, setOrder] = React.useState<orderInfo_t>();
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
 
   const menuList = React.useMemo<menuList_t[]>(
     () => [
@@ -48,6 +49,36 @@ const Page_OrderDetail: React.FC = () => {
 
   const onClose = () => {
     navigate("/bill");
+  };
+
+  const onNext = () => {
+    if (!orderID || !order || isUpdatingStatus) return;
+
+    if (order.status === billStatus_e.Completed) {
+      alert("คำสั่งซื้ออยู่ในสถานะสุดท้ายแล้ว");
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    billWithRetry_f
+      .nextStep(authContext, orderID)
+      .then((res) => {
+        if (res.status === "success") {
+          navigate("/bill");
+          return;
+        }
+
+        alert(
+          `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
+        );
+      })
+      .catch((err) => {
+        alert("เกิดข้อผิดพลาด");
+        console.log("nextStepError", err);
+      })
+      .finally(() => {
+        setIsUpdatingStatus(false);
+      });
   };
 
   const speedDialHandler = (index: number) => {
@@ -137,7 +168,15 @@ const Page_OrderDetail: React.FC = () => {
             flexGrow: 1,
           }}
         >
-          <IconButton color="inherit">
+          <IconButton
+            color="inherit"
+            disabled={
+              !order ||
+              isUpdatingStatus ||
+              order.status === billStatus_e.Completed
+            }
+            onClick={onNext}
+          >
             <SendIcon />
           </IconButton>
         </Box>

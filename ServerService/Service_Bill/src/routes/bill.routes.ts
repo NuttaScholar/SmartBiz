@@ -19,6 +19,8 @@ export default function billRoutes(
      */
     router.get("/search", (req, res) => controller.searchOrders(req, res));
 
+    router.get("/status/count", (req, res) => controller.countOrdersByStatus(req, res));
+
     /**
      * 2. ขอรายการคำสั่งซื้อตามสถานะ
      * GET /bill/status/:status

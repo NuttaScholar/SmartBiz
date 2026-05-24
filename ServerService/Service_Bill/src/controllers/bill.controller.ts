@@ -31,6 +31,19 @@ export default class BillController {
     }
   }
 
+  async countOrdersByStatus(req: Request, res: Response) {
+    try {
+      const { customerID, orderID } = req.query;
+      const data = await this.service.countOrdersByStatus(
+        customerID as string,
+        orderID as string
+      );
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
   async getOrdersByStatus(req: Request, res: Response) {
     try {
       const status = Number(req.params.status);

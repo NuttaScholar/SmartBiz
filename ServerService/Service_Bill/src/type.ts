@@ -40,6 +40,11 @@ export type orderInfo_t = {
   status: OrderStatus;
 }
 
+export type orderStatusCount_t = {
+  status: OrderStatus;
+  count: number;
+}
+
 export type tokenPackage_t = {
   username: string;
   role: role_e;

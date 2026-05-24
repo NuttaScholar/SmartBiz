@@ -3,6 +3,7 @@ import {
     createOrderForm_t,
     discount_t,
     orderInfo_t,
+    orderStatusCount_t,
     searchOrderForm_t,
     updateDiscountForm_t,
     updateOrderForm_t,
@@ -17,6 +18,10 @@ interface resOrdersWithRetry_t extends resApiWithRetry_t {
 
 interface resOrderStatusWithRetry_t extends resApiWithRetry_t {
     result?: billStatus_e;
+}
+
+interface resOrderStatusCountsWithRetry_t extends resApiWithRetry_t {
+    result?: orderStatusCount_t[];
 }
 
 interface resDiscountWithRetry_t extends resApiWithRetry_t {
@@ -35,6 +40,18 @@ export async function searchOrders(context: AuthContext_t, condition?: searchOrd
 export async function getOrdersByStatus(context: AuthContext_t, status: billStatus_e): Promise<resOrdersWithRetry_t> {
     try {
         const res: resOrdersWithRetry_t = await ApiWithRetry(context, Bill_f.getOrdersByStatus, status);
+        return res;
+    } catch (err) {
+        throw err;
+    }
+}
+
+export async function getOrderStatusCounts(
+    context: AuthContext_t,
+    condition?: Pick<searchOrderForm_t, "customerID" | "orderID">
+): Promise<resOrderStatusCountsWithRetry_t> {
+    try {
+        const res: resOrderStatusCountsWithRetry_t = await ApiWithRetry(context, Bill_f.getOrderStatusCounts, condition);
         return res;
     } catch (err) {
         throw err;
@@ -125,6 +142,7 @@ export async function putDiscounts(context: AuthContext_t, data: updateDiscountF
 const billWithRetry_f = {
     searchOrders,
     getOrdersByStatus,
+    getOrderStatusCounts,
     postOrder,
     putOrder,
     delOrder,

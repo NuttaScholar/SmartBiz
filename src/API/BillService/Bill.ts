@@ -8,6 +8,7 @@ import {
     createOrderForm_t,
     discount_t,
     orderInfo_t,
+    orderStatusCount_t,
     order_t,
     responst_t,
     searchOrderForm_t,
@@ -89,6 +90,18 @@ export async function getOrdersByStatus(
         return toResponse<orderInfo_t[]>(res.data) as responst_t<"getOrders">;
     } catch (err) {
         return toErrorResponse(err) as responst_t<"getOrders">;
+    }
+}
+
+export async function getOrderStatusCounts(
+    token: string,
+    condition?: Pick<searchOrderForm_t, "customerID" | "orderID">
+): Promise<responst_t<"getOrderStatusCounts">> {
+    try {
+        const res = await axios_bill.get(`/bill/status/count${orderQuery(condition)}`, authHeader(token));
+        return toResponse<orderStatusCount_t[]>(res.data) as responst_t<"getOrderStatusCounts">;
+    } catch (err) {
+        return toErrorResponse(err) as responst_t<"getOrderStatusCounts">;
     }
 }
 
@@ -205,6 +218,7 @@ export async function putDiscounts(
 const Bill_f = {
     searchOrders,
     getOrdersByStatus,
+    getOrderStatusCounts,
     postOrder,
     putOrder,
     delOrder,

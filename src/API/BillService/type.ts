@@ -37,6 +37,11 @@ export type order_t = {
     updatedAt?: Date;
 }
 
+export type orderStatusCount_t = {
+    status: billStatus_e;
+    count: number;
+}
+
 export type createOrderForm_t = {
     customerID: string;
     status: billStatus_e;
@@ -75,6 +80,7 @@ export type deleted_t = {
 export type responst_t<
   T extends
   | "getOrders"
+  | "getOrderStatusCounts"
   | "getOrderStatus"
   | "getDiscount"
   | "deleteOrder"
@@ -83,6 +89,13 @@ export type responst_t<
   ? {
     status: "success" | "error";
     result?: orderInfo_t[];
+    errCode?: errorCode_e;
+    message?: string;
+  }
+  : T extends "getOrderStatusCounts"
+  ? {
+    status: "success" | "error";
+    result?: orderStatusCount_t[];
     errCode?: errorCode_e;
     message?: string;
   }

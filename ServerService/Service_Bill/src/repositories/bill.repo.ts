@@ -26,6 +26,23 @@ export default class BillRepo {
     return this.OrderModel.find(query).limit(100);
   }
 
+  async countByStatus(customerID?: string, orderID?: string) {
+    const match: any = {};
+
+    if (customerID)
+      match.customerID = { $regex: escapeRegex(customerID), $options: "i" };
+
+    if (orderID)
+      match.orderID = orderID;
+
+    return this.OrderModel.aggregate([
+      { $match: match },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+      { $project: { _id: 0, status: "$_id", count: 1 } },
+      { $sort: { status: 1 } },
+    ]);
+  }
+
   async findByStatus(status: number) {
     return this.OrderModel.find({ status });
   }

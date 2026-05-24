@@ -9,7 +9,7 @@ import { css_alignItem_t, css_overflow } from "../../type";
 interface myProps {
   children?: React.ReactNode;
   list: string[];
-  valueList?: number[];
+  valueList?: Array<number|null>;
   onChange?: (index: number) => void;
   onClick?: (index: number) => void;
   value: number;

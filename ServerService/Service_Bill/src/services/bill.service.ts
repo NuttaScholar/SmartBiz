@@ -4,7 +4,7 @@ import { Model } from "mongoose";
 import { OrderDocument, OrderItem } from "../models/order.interface";
 import ContactRepo from "../repositories/contact.repo";
 import { ContactDocument } from "../models/contact.interface";
-import { orderInfo_t, orderItemInfo_t, productInfo_t } from "../type";
+import { orderInfo_t, orderItemInfo_t, orderStatusCount_t, productInfo_t } from "../type";
 import ProductRepo from "../repositories/product.repo";
 import { ProductDocument } from "../models/product.interface";
 
@@ -44,6 +44,11 @@ export default class BillService {
 
     return Promise.all(orders.map((order) => this.toOrderInfo(order, productById)));
   }
+
+  async countOrdersByStatus(customerID?: string, orderID?: string): Promise<orderStatusCount_t[]> {
+    return this.repo.countByStatus(customerID, orderID);
+  }
+
   /**
    * ดึงรายการคำสั่งซื้อตามสถานะ (OrderStatus)
    */

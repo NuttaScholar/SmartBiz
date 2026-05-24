@@ -16,6 +16,12 @@ const tabStatusList = [
   billStatus_e.Completed,
 ];
 
+const completedTabIndex = tabStatusList.indexOf(billStatus_e.Completed);
+
+function emptyStatusCountList() {
+  return tabStatusList.map((_, index) => (index === completedTabIndex ? null : 0));
+}
+
 //*************************************************
 // Interface
 //*************************************************
@@ -30,9 +36,59 @@ const OrderListHeader: React.FC<myProps> = (props) => {
   // Hook ************************************
   const [tab, setTab] = React.useState(0);
   const [searchValue, setSearchValue] = React.useState("");
+  const [statusCountList, setStatusCountList] = React.useState<Array<number | null>>(emptyStatusCountList);
   const { state, setState } = useBillContext();
   const authContext = useAuth();
   // Local function **************************
+  const countOrders = React.useCallback((orders: orderInfo_t[]) => {
+    const countByStatus = new Map<billStatus_e, number>();
+    orders.forEach((order) => {
+      countByStatus.set(order.status, (countByStatus.get(order.status) ?? 0) + 1);
+    });
+
+    return tabStatusList.map((status, index) =>
+      index === completedTabIndex ? null : countByStatus.get(status) ?? 0,
+    );
+  }, []);
+
+  const updateOrderStatusCounts = React.useCallback(
+    async (value?: string) => {
+      const keyword = value?.trim();
+
+      if (!keyword) {
+        const res = await billWithRetry_f.getOrderStatusCounts(authContext);
+        const countByStatus = new Map<billStatus_e, number>();
+        if (res.status === "success") {
+          res.result?.forEach((item) => countByStatus.set(item.status, item.count));
+        }
+
+        return tabStatusList.map((status, index) =>
+          index === completedTabIndex ? null : countByStatus.get(status) ?? 0,
+        );
+      }
+
+      const [customerRes, orderRes] = await Promise.all([
+        billWithRetry_f.searchOrders(authContext, {
+          customerID: keyword,
+        }),
+        billWithRetry_f.searchOrders(authContext, {
+          orderID: keyword,
+        }),
+      ]);
+
+      const orderMap = new Map<string, orderInfo_t>();
+      if (customerRes.status === "success") {
+        customerRes.result?.forEach((order) => orderMap.set(order.id, order));
+      }
+      if (orderRes.status === "success") {
+        orderRes.result?.forEach((order) => orderMap.set(order.id, order));
+      }
+
+      return countOrders(Array.from(orderMap.values()));
+    },
+    [authContext, countOrders],
+  );
+
   const updateOrderList = React.useCallback(
     async (status: billStatus_e, value?: string) => {
       const keyword = value?.trim();
@@ -75,9 +131,13 @@ const OrderListHeader: React.FC<myProps> = (props) => {
     const status = tabStatusList[tab];
 
     async function fetchOrders() {
-      const orders = await updateOrderList(status, searchValue);
+      const [orders, statusCounts] = await Promise.all([
+        updateOrderList(status, searchValue),
+        updateOrderStatusCounts(searchValue),
+      ]);
       if (!isActive) return;
 
+      setStatusCountList(statusCounts);
       setState((prev) => ({
         ...prev,
         filter: tab,
@@ -88,6 +148,7 @@ const OrderListHeader: React.FC<myProps> = (props) => {
     fetchOrders().catch((err) => {
       console.log("fetchOrders err", err);
       if (isActive) {
+        setStatusCountList(emptyStatusCountList());
         setState((prev) => ({ ...prev, filter: tab, orderList: [] }));
       }
     });
@@ -95,7 +156,7 @@ const OrderListHeader: React.FC<myProps> = (props) => {
     return () => {
       isActive = false;
     };
-  }, [searchValue, setState, state.trigger_updateOrderList, tab, updateOrderList]);
+  }, [searchValue, setState, state.trigger_updateOrderList, tab, updateOrderList, updateOrderStatusCounts]);
 
   return (
     <Box
@@ -119,6 +180,7 @@ const OrderListHeader: React.FC<myProps> = (props) => {
         height="calc(100vh - 200px)"
         alignItems="center"
         onClick={setTab}
+        valueList={statusCountList}
         value={tab}
         maxWidth="1280px"
       >
