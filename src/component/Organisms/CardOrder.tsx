@@ -113,14 +113,16 @@ const CardOrder: React.FC<MyProps> = (props) => {
                   color: "white",
                   backgroundColor:
                     props.value.status === billStatus_e.preparing
-                      ? "warning.dark"
+                      ? "warning.main"
                       : props.value.status === billStatus_e.completed
                         ? "success.main"
                         : props.value.status === billStatus_e.recording
                           ? "info.main"
                           : props.value.status === billStatus_e.shipping
-                            ? "warning.main"
-                            : "default",
+                            ? "warning.light"
+                            : props.value.status === billStatus_e.waitingPayment
+                              ? "error.main"
+                              : "default",
                   p: "4px 8px",
                   borderRadius: 1,
                 }}

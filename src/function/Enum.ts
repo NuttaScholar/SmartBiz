@@ -23,7 +23,7 @@ export function BillStatusString(data: billStatus_e): string {
         case billStatus_e.shipping:
             return "Shipping";
         case billStatus_e.waitingPayment:
-            return "Waiting Payment";
+            return "Unpaid";
         default:
             return "Unknown";
     }
@@ -49,7 +49,7 @@ export function ErrorString(data: errorCode_e): string {
         case errorCode_e.TokenExpiredError:
             return "Token หมดอายุ";
         case errorCode_e.UnauthorizedError:
-            return "ยไม่ได้รับการยืนยันตัวตน";
+            return "ยังไม่ได้รับการยืนยันตัวตน";
         case errorCode_e.UnknownError:
             return "UnknownError"
         default:
