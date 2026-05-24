@@ -19,7 +19,7 @@ const Page_AccessSearch = lazy(() => import("./page/Access/page/AccessSearch"));
 const Page_Bill = lazy(() => import("./page/Bill/Bill"));
 const Page_BillCreate = lazy(() => import("./page/Bill/page/BillCreate"));
 const Page_BillOrderDetail = lazy(
-  () => import("./page/Bill/component/DialogOrderDetail"),
+  () => import("./page/Bill/page/BillDetail"),
 );
 const Page_BillSetDiscount = lazy(() => import("./page/Bill/page/SetDiscount"));
 const Page_BillPreview = lazy(() => import("./page/Bill/page/BillPreview"));
