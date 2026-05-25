@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import BillService from "../services/bill.service";
-import { errorCode_e } from "../utils/enum";
+import { errorCode_e, role_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { OrderDocument } from "../models/order.interface";
 import { ContactDocument } from "../models/contact.interface";
@@ -18,8 +18,9 @@ export default class BillController {
     this.service = new BillService(OrderModel, ContactModel, ProductModel);
   }
 
-  async searchOrders(req: Request, res: Response) {
+  async searchOrders(req: AuthRequest, res: Response) {
     try {
+      if (!ensureBillUser(req, res)) return;
       const { customerID, orderID, status } = req.query;
       const data = await this.service.searchOrders(
         customerID as string,
@@ -32,8 +33,9 @@ export default class BillController {
     }
   }
 
-  async countOrdersByStatus(req: Request, res: Response) {
+  async countOrdersByStatus(req: AuthRequest, res: Response) {
     try {
+      if (!ensureBillUser(req, res)) return;
       const { customerID, orderID } = req.query;
       const data = await this.service.countOrdersByStatus(
         customerID as string,
@@ -45,8 +47,9 @@ export default class BillController {
     }
   }
 
-  async getOrdersByStatus(req: Request, res: Response) {
+  async getOrdersByStatus(req: AuthRequest, res: Response) {
     try {
+      if (!ensureBillUser(req, res)) return;
       const status = Number(req.params.status);
       const data = await this.service.getOrdersByStatus(status);
       return res.json({ success: true, data });
@@ -55,8 +58,9 @@ export default class BillController {
     }
   }
 
-  async createOrder(req: Request, res: Response) {
+  async createOrder(req: AuthRequest, res: Response) {
     try {
+      if (!ensureBillUser(req, res)) return;
       const data = await this.service.createOrder(req.body);
       return res.json({ success: true, data });
     } catch (err: any) {
@@ -64,8 +68,9 @@ export default class BillController {
     }
   }
 
-  async updateOrder(req: Request, res: Response) {
+  async updateOrder(req: AuthRequest, res: Response) {
     try {
+      if (!ensureBillUser(req, res)) return;
       const { orderID } = req.params;
       const data = await this.service.updateOrder(orderID, req.body);
       return res.json({ success: true, data });
@@ -74,8 +79,9 @@ export default class BillController {
     }
   }
 
-  async deleteOrder(req: Request, res: Response) {
+  async deleteOrder(req: AuthRequest, res: Response) {
     try {
+      if (!ensureBillUser(req, res)) return;
       const { orderID } = req.params;
       const data = await this.service.deleteOrder(orderID);
       return res.json({ success: true, data });
@@ -86,6 +92,7 @@ export default class BillController {
 
   async moveToNextStep(req: AuthRequest, res: Response) {
     try {
+      if (!ensureBillUser(req, res)) return;
       const { orderID } = req.params;
       const data = await this.service.moveToNextStep(orderID, req.headers.authorization);
       return res.json({ success: true, data });
@@ -96,6 +103,7 @@ export default class BillController {
 
   async markAsIncome(req: AuthRequest, res: Response) {
     try {
+      if (!ensureBillUser(req, res)) return;
       const { orderID } = req.params;
       const data = await this.service.markAsIncome(orderID, req.headers.authorization);
       return res.json({ success: true, data });
@@ -104,8 +112,9 @@ export default class BillController {
     }
   }
 
-  async markAsDebt(req: Request, res: Response) {
+  async markAsDebt(req: AuthRequest, res: Response) {
     try {
+      if (!ensureBillUser(req, res)) return;
       const { orderID } = req.params;
       const data = await this.service.markAsDebt(orderID);
       return res.json({ success: true, data });
@@ -114,8 +123,9 @@ export default class BillController {
     }
   }
 
-  async getStatus(req: Request, res: Response) {
+  async getStatus(req: AuthRequest, res: Response) {
     try {
+      if (!ensureBillUser(req, res)) return;
       const { orderID } = req.params;
       const data = await this.service.getStatus(orderID);
       return res.json({ success: true, data });
@@ -125,6 +135,21 @@ export default class BillController {
   }
 }
 
+function ensureBillUser(req: AuthRequest, res: Response) {
+  if (
+    req.authData?.role === role_e.admin ||
+    req.authData?.role === role_e.cashier
+  ) {
+    return true;
+  }
+
+  res.status(403).json({
+    success: false,
+    errCode: errorCode_e.PermissionDeniedError,
+    message: "You do not have permission to access this resource"
+  });
+  return false;
+}
 
 /**
  * ฟังก์ชันกลางสำหรับจัดการ error

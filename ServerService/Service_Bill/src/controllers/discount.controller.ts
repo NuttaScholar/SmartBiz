@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import DiscountService from "../services/discount.service";
 import { errorCode_e, role_e } from "../utils/enum";
 import { Model } from "mongoose";
@@ -14,12 +14,8 @@ export default class DiscountController {
   }
 
   async getDiscounts(req: AuthRequest, res: Response) {
-      if (req.authData?.role !== role_e.admin) {
-        return res.status(403).json({
-          success: false, errCode: errorCode_e.PermissionDeniedError,
-          message: "You do not have permission to access this resource"
-        });
-      }
+    if (!ensureDiscountReader(req, res)) return;
+
     try {
       const { customerID } = req.params;
       const data = await this.service.getDiscounts(customerID);
@@ -30,12 +26,8 @@ export default class DiscountController {
   }
 
   async updateDiscounts(req: AuthRequest, res: Response) {
-    if (req.authData?.role !== role_e.admin) {
-      return res.status(403).json({
-        success: false, errCode: errorCode_e.PermissionDeniedError,
-        message: "You do not have permission to access this resource"
-      });
-    }
+    if (!ensureAdmin(req, res)) return;
+
     try {
       const { customerID } = req.params;
       const { discounts } = req.body;
@@ -46,6 +38,33 @@ export default class DiscountController {
       return handleError(res, err);
     }
   }
+}
+
+function ensureAdmin(req: AuthRequest, res: Response) {
+  if (req.authData?.role === role_e.admin) return true;
+
+  res.status(403).json({
+    success: false,
+    errCode: errorCode_e.PermissionDeniedError,
+    message: "You do not have permission to access this resource"
+  });
+  return false;
+}
+
+function ensureDiscountReader(req: AuthRequest, res: Response) {
+  if (
+    req.authData?.role === role_e.admin ||
+    req.authData?.role === role_e.cashier
+  ) {
+    return true;
+  }
+
+  res.status(403).json({
+    success: false,
+    errCode: errorCode_e.PermissionDeniedError,
+    message: "You do not have permission to access this resource"
+  });
+  return false;
 }
 
 function handleError(res: Response, err: any) {
