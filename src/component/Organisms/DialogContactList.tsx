@@ -47,30 +47,72 @@ const DialogContactList: React.FC<myProps> = (props) => {
   const navigate = useNavigate();
   const authContext = useAuth();
   const [keySearch, setKeySearch] = React.useState<string>("");
+  const [pageIndex, setPageIndex] = React.useState(0);
+  const [hasMore, setHasMore] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const pageSize = 30;
 
   // Local Function ***********
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setKeySearch(event.target.value);
   };
 
-  const onSearch = async (keyword: string) => {
-    console.log(keyword);
-    contactWithRetry_f
-      .get(authContext, keyword)
-      .then((val) => {
-        if (val.result) {
-          props.onChange?.(val.result);
-        } else if (val.errCode) {
-          alert(ErrorString(val.errCode));
-          if (val.errCode === errorCode_e.TokenExpiredError) {
-            navigate("/");
+  const loadContacts = React.useCallback(
+    async (index: number, append = false, keyword = keySearch) => {
+      if (isLoading) return;
+
+      setIsLoading(true);
+
+      contactWithRetry_f
+        .get(authContext, {
+          id: keyword,
+          index,
+          size: pageSize,
+        })
+        .then((val) => {
+          if (val.result) {
+            props.onChange?.(append ? [...props.list, ...val.result] : val.result);
+            setPageIndex(index);
+            setHasMore(val.hasMore ?? false);
+          } else if (val.errCode) {
+            alert(ErrorString(val.errCode));
+            if (val.errCode === errorCode_e.TokenExpiredError) {
+              navigate("/");
+            }
           }
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    },
+    [authContext, isLoading, keySearch, navigate, props, pageSize],
+  );
+
+  const onSearch = async (keyword: string) => {
+    loadContacts(0, false, keyword);
   };
+
+  const onScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const element = event.currentTarget;
+    const distanceToBottom =
+      element.scrollHeight - element.scrollTop - element.clientHeight;
+
+    if (distanceToBottom < 160 && hasMore && !isLoading) {
+      loadContacts(pageIndex + 1, true);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!props.open) return;
+
+    setPageIndex(0);
+    setHasMore(true);
+    loadContacts(0, false);
+  }, [props.open]);
+
   const onDelContacat = async (data: contactInfo_t) => {
     contactWithRetry_f
       .del(authContext, data)
@@ -104,7 +146,14 @@ const DialogContactList: React.FC<myProps> = (props) => {
           value={keySearch}
           onSearch={onSearch}
         />
-        <Box sx={{ my: "64px" }}>
+        <Box
+          onScroll={onScroll}
+          sx={{
+            my: "64px",
+            height: "calc(100vh - 128px)",
+            overflowY: "auto",
+          }}
+        >
           <Box sx={{ display: "flex", justifyContent: "center" }}>
             <FieldSearch
               label="Search"

@@ -2,11 +2,35 @@ import axios from "axios";
 import { ContactForm_t, responst_t } from "./type";
 import { contactInfo_t } from "../../component/Molecules/ContactInfo";
 
-export async function get(token: string, id?: string): Promise<responst_t<"getContact">> {
+export type ContactSearchParams_t = {
+  id?: string;
+  index?: number;
+  size?: number;
+};
+
+function toContactQuery(params?: string | ContactSearchParams_t) {
+  const search = new URLSearchParams();
+
+  if (typeof params === "string") {
+    if (params) search.set("id", params);
+  } else if (params) {
+    if (params.id) search.set("id", params.id);
+    if (params.index !== undefined) search.set("index", String(params.index));
+    if (params.size !== undefined) search.set("size", String(params.size));
+  }
+
+  const query = search.toString();
+  return query ? `?${query}` : "";
+}
+
+export async function get(
+  token: string,
+  params?: string | ContactSearchParams_t,
+): Promise<responst_t<"getContact">> {
   try {
     const res = await axios.get(
       `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/contact${id ? `?id=${id}` : ""}`, {
+      }/contact${toContactQuery(params)}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

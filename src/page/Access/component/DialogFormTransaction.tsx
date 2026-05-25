@@ -13,14 +13,15 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import FieldDate from "../../../component/Molecules/FieldDate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useAccess } from "../hooks/useAccess";
-import DialogContactList from "./DialogContactList";
+import DialogContactList from "../../../component/Organisms/DialogContactList";
+import DialogFormContact from "../../../component/Organisms/DialogFormContact";
 import accessWithRetry_f from "../lib/accessWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 import { TypeSelect } from "../constants/typeSelect";
 import { accessDialog_e } from "../context/AccessContext";
 import { TransitionForm_t } from "../../../API/AccountService/type";
 import FieldImage from "../../../component/Molecules/FieldImage";
-import FieldContactAccess from "../../../component/Organisms/FieldContactAccess";
+import FieldContact from "../../../component/Molecules/FieldContact";
 
 //*********************************************
 // Type
@@ -243,7 +244,7 @@ const DialogFormTransaction: React.FC = () => {
             multiline
             onChange={onChangeHandler}
           />
-          <FieldContactAccess
+          <FieldContact
             icon={<AccountBoxIcon />}
             readonly={state.transitionForm?.readonly}
             placeholder="Contact"
@@ -252,16 +253,11 @@ const DialogFormTransaction: React.FC = () => {
               setState({ ...state, fieldContact: "" });
             }}
             value={state.fieldContact}
-            onCloseList={()=>{setState({
-              ...state,
-              open: accessDialog_e.transactionForm,
-              contactKey: undefined,
-            })}}
-            onOpenList={(list) => {
+            onOpenList={() => {
               setState({
                 ...state,
                 open: accessDialog_e.contactList,
-                contactList: list,
+                contactList: [],
                 contactKey: undefined,
               });
             }}
@@ -319,6 +315,8 @@ const DialogFormTransaction: React.FC = () => {
 
       <DialogContactList
         open={state.open === accessDialog_e.contactList}
+        list={state.contactList}
+        onChange={(list) => setState({ ...state, contactList: list })}
         onClose={() => {
           setState({
             ...state,
@@ -333,7 +331,25 @@ const DialogFormTransaction: React.FC = () => {
             fieldContact: codeName,
           });
         }}
-        onCloseForm={(val) => {
+        onAdd={() =>
+          setState({
+            ...state,
+            open: accessDialog_e.contactFrom,
+            contactInfo: undefined,
+          })
+        }
+        onEdit={(val) =>
+          setState({
+            ...state,
+            open: accessDialog_e.contactFrom,
+            contactInfo: val,
+          })
+        }
+      />
+      <DialogFormContact
+        open={state.open === accessDialog_e.contactFrom}
+        defaultValue={state.contactInfo}
+        onClose={(val) => {
           if (val) {
             setState({
               ...state,

@@ -43,6 +43,18 @@ const getMainWalletAmount = async () => {
   return wallet?.amount || 0;
 };
 
+const parseOptionalPageNumber = (value: unknown, defaultValue?: number) => {
+  if (value === undefined || value === null || value === "") return defaultValue;
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) return defaultValue;
+  return parsed;
+};
+
+const escapeRegex = (value: string) => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
 app.post("/contact", AuthMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     if (!requireAdmin(req, res)) return;
@@ -89,10 +101,17 @@ app.get("/contact", AuthMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     if (!requireAdmin(req, res)) return;
 
-    const id = req.query.id;
-    const matchStage = id ? { $match: { codeName: { $regex: id, $options: "i" } } } : null;
+    const { id, index, size } = req.query;
+    const pageIndex = parseOptionalPageNumber(index, 0) ?? 0;
+    const pageSize = parseOptionalPageNumber(size);
+    const shouldPaginate = pageSize !== undefined;
+    const filter = id ? { codeName: { $regex: escapeRegex(id as string), $options: "i" } } : {};
+    const matchStage = id ? { $match: filter } : null;
+    const total = await Contact.countDocuments(filter);
     const data: ContactInfo_t[] = await Contact.aggregate([
       ...(matchStage ? [matchStage] : []),
+      { $sort: { codeName: 1 } },
+      ...(shouldPaginate ? [{ $skip: pageIndex * pageSize }, { $limit: pageSize }] : []),
       {
         $project: {
           _id: 0,
@@ -104,10 +123,19 @@ app.get("/contact", AuthMiddleware, async (req: AuthRequest, res: Response) => {
           tel: "$tel",
         },
       },
-      { $sort: { codeName: 1 } },
     ]);
 
-    return res.send(success<"getContact">(data));
+    return res.send({
+      ...success<"getContact">(data),
+      ...(shouldPaginate
+        ? {
+            index: pageIndex,
+            size: pageSize,
+            total,
+            hasMore: (pageIndex + 1) * pageSize < total,
+          }
+        : {}),
+    });
   } catch (err) {
     console.error(err);
     return res.send(error<"none">(errorCode_e.UnknownError));

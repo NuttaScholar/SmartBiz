@@ -1,4 +1,5 @@
 import Contact_f from "../../../API/AccountService/Contact";
+import { ContactSearchParams_t } from "../../../API/AccountService/Contact";
 import { ContactForm_t, ContactInfo_t } from "../../../API/AccountService/type";
 import Login_f from "../../../API/LoginService/Login";
 import { contactInfo_t } from "../../../component/Molecules/ContactInfo";
@@ -12,6 +13,10 @@ interface resApiWithRetry_t {
 }
 interface resContactWithRetry_t extends resApiWithRetry_t {
     result?: ContactInfo_t[];
+    index?: number;
+    size?: number;
+    total?: number;
+    hasMore?: boolean;
 }
 async function contactWithRetry(context: AuthContext_t, func: (token: string, data: any) => Promise<resApiWithRetry_t>, data: any) {
     if (!context.auth) {
@@ -57,15 +62,28 @@ async function contactWithRetry(context: AuthContext_t, func: (token: string, da
         throw new Error(`${err}`);
     }
 }
-export async function get(context: AuthContext_t, keyword?: string): Promise<resContactWithRetry_t> {
+function toContactResult(response: resContactWithRetry_t): resContactWithRetry_t {
+    return {
+        status: "success",
+        result: response.result,
+        index: response.index,
+        size: response.size,
+        total: response.total,
+        hasMore: response.hasMore,
+    };
+}
+
+export async function get(
+    context: AuthContext_t,
+    keyword?: string | ContactSearchParams_t
+): Promise<resContactWithRetry_t> {
     if (!context.auth) {
         throw new Error("apiWithRetry_f must be used within an AuthProvider");
     }
     try {
         const contactRes = await Contact_f.get(context.auth.token, keyword);
         if (contactRes.status === "success" && contactRes.result) {
-            const result: resContactWithRetry_t = { status: "success", result: contactRes.result }
-            return result;
+            return toContactResult(contactRes);
         }
 
         if (contactRes.errCode === errorCode_e.TokenExpiredError) {
@@ -74,8 +92,7 @@ export async function get(context: AuthContext_t, keyword?: string): Promise<res
                 const retryRes = await Contact_f.get(tokenRes.result.token, keyword);
                 context.setAuth(tokenRes.result);
                 if (retryRes.status === "success" && retryRes.result) {
-                    const result: resContactWithRetry_t = { status: "success", result: retryRes.result }
-                    return result;
+                    return toContactResult(retryRes);
                 } else if (retryRes.errCode) {
                     const result: resContactWithRetry_t = { status: "error", errCode: retryRes.errCode }
                     return result;

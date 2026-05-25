@@ -24,8 +24,9 @@ import accessWithRetry_f from "../lib/accessWithRetry";
 import { errorCode_e } from "../../../enum";
 import { ErrorString } from "../../../function/Enum";
 import DialogFormTransaction from "../component/DialogFormTransaction";
-import DialogContactList from "../component/DialogContactList";
-import FieldContactAccess from "../component/FieldContactAccess";
+import DialogContactList from "../../../component/Organisms/DialogContactList";
+import DialogFormContact from "../../../component/Organisms/DialogFormContact";
+import FieldContact from "../../../component/Molecules/FieldContact";
 import { GoToTop } from "../../../function/Window";
 import { initPage } from "../../../lib/initPage";
 import { SearchTransForm_t, TransitionForm_t } from "../../../API/AccountService/type";
@@ -147,18 +148,18 @@ const Page_AccessSearch: React.FC = () => {
             defaultValue={{ from: new Date(), to: new Date() }}
             name="duration"
           />
-          <FieldContactAccess
+          <FieldContact
             name="who"
             icon={<AccountBoxIcon />}
             placeholder="Contact"
             value={contact}
             onClear={() => SetContact("")}
-            onOpenList={(list) => {
+            onOpenList={() => {
               SetContact("");
               setState({
                 ...state,
                 open: accessDialog_e.contactListSearch,
-                contactList: list,
+                contactList: [],
               });
             }}
           />
@@ -194,6 +195,8 @@ const Page_AccessSearch: React.FC = () => {
       <DialogFormTransaction />
       <DialogContactList
         open={state.open === accessDialog_e.contactListSearch}
+        list={state.contactList}
+        onChange={(list) => setState({ ...state, contactList: list })}
         onClose={() => {
           setState({ ...state, open: accessDialog_e.none });
         }}
@@ -201,7 +204,25 @@ const Page_AccessSearch: React.FC = () => {
           SetContact(codeName);
           setState({ ...state, open: accessDialog_e.none });
         }}
-        onCloseForm={(val) => {
+        onAdd={() =>
+          setState({
+            ...state,
+            open: accessDialog_e.contactFrom,
+            contactInfo: undefined,
+          })
+        }
+        onEdit={(val) =>
+          setState({
+            ...state,
+            open: accessDialog_e.contactFrom,
+            contactInfo: val,
+          })
+        }
+      />
+      <DialogFormContact
+        open={state.open === accessDialog_e.contactFrom}
+        defaultValue={state.contactInfo}
+        onClose={(val) => {
           if (val) {
             setState({
               ...state,

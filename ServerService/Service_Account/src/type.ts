@@ -71,6 +71,10 @@ export type responst_t<
   ? {
     status: "success" | "error";
     result?: ContactInfo_t[];
+    index?: number;
+    size?: number;
+    total?: number;
+    hasMore?: boolean;
     errCode?: errorCode_e;
   }
   : T extends "getWallet"
