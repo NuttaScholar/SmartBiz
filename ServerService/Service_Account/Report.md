@@ -25,7 +25,7 @@ src/
 
 - `index.ts`: ประกอบ Express app, connect database, mount routes
 - `routes/`: กำหนด endpoint
-- `controllers/`: รับ `req/res`, ตรวจสิทธิ์ admin, ส่ง response
+- `controllers/`: รับ `req/res`, ตรวจสิทธิ์ตาม role, ส่ง response
 - `services/`: business logic เช่น wallet update, transaction image, contact in-use check
 - `repositories/`: query MongoDB
 - `models/`: Mongoose schema/interface
@@ -59,7 +59,24 @@ token ต้อง decode ด้วย `SECRET` และ payload ต้อง�
 }
 ```
 
-ทุก route ต้องเป็น admin (`role = 0`) ไม่เช่นนั้นจะได้ `PermissionDeniedError`
+role ใน token:
+
+| Value | Name |
+| --- | --- |
+| 0 | `admin` |
+| 1 | `cashier` |
+| 2 | `laber` |
+
+สิทธิ์การใช้งาน:
+
+| Area | Method | Role |
+| --- | --- | --- |
+| Contact | `GET`, `POST`, `PUT` | `admin`, `cashier` |
+| Contact | `DELETE` | `admin` |
+| Transaction | all | `admin` |
+| Wallet | all | `admin` |
+
+ถ้า role ไม่มีสิทธิ์จะได้ `PermissionDeniedError`
 
 ## Response Format
 
@@ -99,7 +116,7 @@ token ต้อง decode ด้วย `SECRET` และ payload ต้อง�
 | 1 | `InUseError` | ข้อมูลถูกใช้งานอยู่หรือข้อมูลซ้ำ |
 | 2 | `UnauthorizedError` | ไม่ได้ส่ง token หรือ token type ไม่ใช่ accessToken |
 | 4 | `TokenExpiredError` | token verify ไม่ผ่านหรือหมดอายุ |
-| 5 | `PermissionDeniedError` | ผู้ใช้ไม่ใช่ admin |
+| 5 | `PermissionDeniedError` | ผู้ใช้ไม่มีสิทธิ์สำหรับ endpoint นั้น |
 | 7 | `NotFoundError` | ไม่พบข้อมูล |
 | 10 | `TimeoutError` | update wallet ไม่สำเร็จ |
 
@@ -115,6 +132,8 @@ token ต้อง decode ด้วย `SECRET` และ payload ต้อง�
 เมื่อสร้าง/แก้ไข/ลบ transaction ระบบจะปรับ wallet หลักชื่อ `main` ตาม `type` และ `money`
 
 ## Contact APIs
+
+Contact APIs อนุญาตให้ `admin` และ `cashier` ค้นหา เพิ่ม และแก้ไขรายชื่อได้ ส่วนการลบรายชื่อยังจำกัดเฉพาะ `admin`
 
 ### Search Contacts
 

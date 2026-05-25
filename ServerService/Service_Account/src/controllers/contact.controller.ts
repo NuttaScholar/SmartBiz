@@ -20,7 +20,7 @@ export default class ContactController {
 
   async createContact(req: AuthRequest, res: Response) {
     try {
-      if (!requireAdmin(req, res)) return;
+      if (!requireContactEditor(req, res)) return;
 
       await this.service.createContact(req.body as ContactForm_t);
       return res.send(success<"none">());
@@ -31,7 +31,7 @@ export default class ContactController {
 
   async searchContacts(req: AuthRequest, res: Response) {
     try {
-      if (!requireAdmin(req, res)) return;
+      if (!requireContactEditor(req, res)) return;
 
       const { id, index, size } = req.query;
       const result = await this.service.searchContacts(
@@ -58,7 +58,7 @@ export default class ContactController {
 
   async updateContact(req: AuthRequest, res: Response) {
     try {
-      if (!requireAdmin(req, res)) return;
+      if (!requireContactEditor(req, res)) return;
 
       await this.service.updateContact(req.body as ContactForm_t);
       return res.send(success<"none">());
@@ -81,6 +81,18 @@ export default class ContactController {
 
 function requireAdmin(req: AuthRequest, res: Response) {
   if (req.authData?.role === role_e.admin) return true;
+
+  res.send(error<"none">(errorCode_e.PermissionDeniedError));
+  return false;
+}
+
+function requireContactEditor(req: AuthRequest, res: Response) {
+  if (
+    req.authData?.role === role_e.admin ||
+    req.authData?.role === role_e.cashier
+  ) {
+    return true;
+  }
 
   res.send(error<"none">(errorCode_e.PermissionDeniedError));
   return false;
