@@ -10,10 +10,8 @@ COPY ./src ./src
 
 RUN npm ci
 
-COPY .env .
-
 RUN npm run build
 
-EXPOSE 3000
+EXPOSE 3002
 
 CMD ["node", "dist/index.js"]

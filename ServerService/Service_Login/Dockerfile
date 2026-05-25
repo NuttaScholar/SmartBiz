@@ -10,8 +10,6 @@ COPY ./src ./src
 
 RUN npm ci
 
-COPY .env .
-
 RUN npm run build
 
 EXPOSE 3001
