@@ -1,29 +1,55 @@
 # Service_Account API Guide
 
-คู่มือนี้อ้างอิงจาก route/controller ปัจจุบันของ `Service_Account` และผลทดสอบ API ล่าสุด
+เอกสารนี้อัปเดตล่าสุดวันที่ 2026-05-25 หลัง refactor `Service_Account` ให้แยกโครงสร้างตามแนวทางเดียวกับ `Service_Bill`
+
+## Structure
+
+โครงสร้างหลักของ service:
+
+```text
+src/
+  controllers/
+  database/
+  middlewares/
+  models/
+  repositories/
+  routes/
+  services/
+  utils/
+  config.ts
+  index.ts
+  type.ts
+```
+
+หน้าที่หลัก:
+
+- `index.ts`: ประกอบ Express app, connect database, mount routes
+- `routes/`: กำหนด endpoint
+- `controllers/`: รับ `req/res`, ตรวจสิทธิ์ admin, ส่ง response
+- `services/`: business logic เช่น wallet update, transaction image, contact in-use check
+- `repositories/`: query MongoDB
+- `models/`: Mongoose schema/interface
 
 ## Base URL
 
-ค่าปัจจุบันจาก `.env` ของ service นี้คือ:
+ค่า default จาก `.env`:
 
 ```text
 http://localhost:3000
 ```
 
-service อ่าน port จาก `PORT` ใน `.env` ถ้าไม่ได้กำหนดจะ fallback เป็น `3000`
-
 ## Authentication
 
-ทุก endpoint ต้องส่ง access token ผ่าน header:
+ทุก endpoint ต้องส่ง access token:
 
 ```http
 Authorization: Bearer <accessToken>
 Content-Type: application/json
 ```
 
-สำหรับ endpoint ที่รับรูปภาพบิลของ transaction ให้ส่งเป็น `multipart/form-data` พร้อม field `file`
+endpoint ที่แนบรูปบิลของ transaction ใช้ `multipart/form-data` พร้อม field `file`
 
-token ต้อง decode ได้ด้วย `SECRET` และ payload ต้องมี:
+token ต้อง decode ด้วย `SECRET` และ payload ต้องเป็น:
 
 ```json
 {
@@ -33,7 +59,7 @@ token ต้อง decode ได้ด้วย `SECRET` และ payload ต�
 }
 ```
 
-ทุก route ใน service นี้ตรวจสิทธิ์ admin เท่านั้น (`role = 0`) หาก role อื่นเรียกใช้จะได้ `PermissionDeniedError`
+ทุก route ต้องเป็น admin (`role = 0`) ไม่เช่นนั้นจะได้ `PermissionDeniedError`
 
 ## Response Format
 
@@ -46,7 +72,7 @@ token ต้อง decode ได้ด้วย `SECRET` และ payload ต�
 }
 ```
 
-บาง endpoint ที่ไม่มีข้อมูลส่งกลับจะตอบ:
+สำเร็จแบบไม่มี payload:
 
 ```json
 {
@@ -63,18 +89,18 @@ token ต้อง decode ได้ด้วย `SECRET` และ payload ต�
 }
 ```
 
-หมายเหตุ: implementation ปัจจุบันใช้ `res.send(...)` โดยไม่ได้ set HTTP status แยก ดังนั้น error response ส่วนใหญ่ยังได้ HTTP 200
+หมายเหตุ: service ยังส่ง error ผ่าน `res.send(...)` เป็นหลัก ดังนั้นบาง error อาจยังได้ HTTP 200 พร้อม `status: "error"`
 
-## Error Codes ที่ใช้บ่อย
+## Error Codes
 
 | Code | Name | ความหมาย |
 | --- | --- | --- |
 | 0 | `UnknownError` | ไม่สามารถระบุสาเหตุได้ |
-| 1 | `InUseError` | ข้อมูลถูกใช้งานอยู่ หรือข้อมูลซ้ำ |
+| 1 | `InUseError` | ข้อมูลถูกใช้งานอยู่หรือข้อมูลซ้ำ |
 | 2 | `UnauthorizedError` | ไม่ได้ส่ง token หรือ token type ไม่ใช่ accessToken |
 | 4 | `TokenExpiredError` | token verify ไม่ผ่านหรือหมดอายุ |
 | 5 | `PermissionDeniedError` | ผู้ใช้ไม่ใช่ admin |
-| 7 | `NotFoundError` | ไม่พบข้อมูลที่ต้องการ |
+| 7 | `NotFoundError` | ไม่พบข้อมูล |
 | 10 | `TimeoutError` | update wallet ไม่สำเร็จ |
 
 ## Transaction Types
@@ -86,19 +112,27 @@ token ต้อง decode ได้ด้วย `SECRET` และ payload ต�
 | 2 | `loan` | เพิ่มเงิน |
 | 3 | `lend` | ลดเงิน |
 
-เมื่อสร้าง/แก้ไข/ลบ transaction ระบบจะปรับ wallet หลักชื่อ `main` ตาม type และ money
+เมื่อสร้าง/แก้ไข/ลบ transaction ระบบจะปรับ wallet หลักชื่อ `main` ตาม `type` และ `money`
 
 ## Contact APIs
 
 ### Search Contacts
 
 ```http
-GET /contact?id=CUST001
+GET /contact?id=CUST001&index=0&size=30
 ```
 
-query `id` เป็น optional ถ้าส่งมาจะค้นหา `codeName` แบบ regex ไม่สนตัวพิมพ์เล็กใหญ่
+query:
 
-response:
+| Query | Type | Required | Description |
+| --- | --- | --- | --- |
+| `id` | string | no | ค้นหา `codeName` แบบ regex ไม่สนตัวพิมพ์เล็กใหญ่ |
+| `index` | number | no | page index เริ่มจาก 0 |
+| `size` | number | no | จำนวนรายการต่อหน้า |
+
+ถ้าไม่ส่ง `index/size` จะคืนรายการทั้งหมดเหมือน behavior เดิม
+
+response แบบ pagination:
 
 ```json
 {
@@ -112,7 +146,11 @@ response:
       "taxID": "1234567890123",
       "tel": "0800000000"
     }
-  ]
+  ],
+  "index": 0,
+  "size": 30,
+  "total": 1,
+  "hasMore": false
 }
 ```
 
@@ -135,7 +173,7 @@ body:
 }
 ```
 
-ถ้า `codeName` ซ้ำจะได้ `InUseError`
+ถ้า `codeName` ซ้ำ จะได้ `InUseError`
 
 ### Update Contact
 
@@ -143,7 +181,7 @@ body:
 PUT /contact
 ```
 
-body ใช้ `codeName` เป็น key สำหรับหา record และ field อื่นเป็นค่าที่ต้องการแก้ไข
+ใช้ `codeName` เป็น key:
 
 ```json
 {
@@ -155,6 +193,8 @@ body ใช้ `codeName` เป็น key สำหรับหา record แ�
   "description": "updated"
 }
 ```
+
+ถ้าไม่พบ contact จะได้ `NotFoundError`
 
 ### Delete Contact
 
@@ -172,7 +212,7 @@ DELETE /contact?id=CUST001
 ### Search Transactions
 
 ```http
-GET /transaction?from=2026-05-24T00:00:00.000Z&to=2026-05-24T23:59:59.999Z&who=CUST001&topic=ขายสินค้า&type=0
+GET /transaction?from=2026-05-25T00:00:00.000Z&to=2026-05-25T23:59:59.999Z&who=CUST001&topic=ยอดขาย&type=0
 ```
 
 query:
@@ -181,11 +221,11 @@ query:
 | --- | --- | --- | --- |
 | `from` | ISO date string | no | วันที่เริ่มต้น ถ้าไม่ส่งจะใช้เวลาปัจจุบัน |
 | `to` | ISO date string | no | วันที่สิ้นสุด ถ้าไม่ส่งจะใช้เวลาปัจจุบัน |
-| `who` | string | no | filter ด้วย contact codeName |
+| `who` | string | no | filter ด้วย contact `codeName` |
 | `topic` | string | no | filter ด้วย topic แบบตรงตัว |
 | `type` | number | no | filter ด้วย transaction type |
 
-response จะ group เป็นเดือนและวัน:
+response group ตามเดือนและวัน:
 
 ```json
 {
@@ -195,15 +235,15 @@ response จะ group เป็นเดือนและวัน:
       "date": "2026-05-01T00:00:00.000Z",
       "detail": [
         {
-          "date": "2026-05-24T10:35:20.666Z",
+          "date": "2026-05-25T10:35:20.666Z",
           "transactions": [
             {
               "id": "6a12d468132f6cb9119beca9",
-              "topic": "ขายสินค้า",
+              "topic": "ยอดขาย",
               "type": 0,
               "money": 1250,
               "who": "CUST001",
-              "description": "income",
+              "description": "OrderID: ORD001",
               "readonly": false,
               "bill": ""
             }
@@ -223,38 +263,20 @@ GET /trandetail?id=<transactionObjectId>
 
 ถ้าไม่พบ transaction จะได้ `NotFoundError`
 
-response:
-
-```json
-{
-  "status": "success",
-  "result": {
-    "date": "2026-05-24T10:35:20.666Z",
-    "money": 1250,
-    "topic": "ขายสินค้า",
-    "type": 0,
-    "description": "income",
-    "who": "CUST001",
-    "readonly": false,
-    "bill": ""
-  }
-}
-```
-
 ### Create Transaction
 
 ```http
 POST /transaction
 ```
 
-รองรับทั้ง `application/json` และ `multipart/form-data` หากต้องแนบรูปบิลให้ส่ง field `file`
+รองรับทั้ง `application/json` และ `multipart/form-data`
 
 body:
 
 ```json
 {
-  "date": "2026-05-24T10:35:20.666Z",
-  "topic": "ขายสินค้า",
+  "date": "2026-05-25T10:35:20.666Z",
+  "topic": "ยอดขาย",
   "type": 0,
   "money": 1250,
   "who": "CUST001",
@@ -268,7 +290,7 @@ body:
 
 - ถ้ามี `file` จะ upload เข้า MinIO bucket `bill` และเก็บ URL ใน field `bill`
 - หลังบันทึก transaction จะปรับ wallet หลักตาม `type` และ `money`
-- ถ้า update wallet ไม่สำเร็จจะได้ `TimeoutError`
+- ถ้า update wallet ไม่สำเร็จ จะได้ `TimeoutError`
 
 ### Update Transaction
 
@@ -278,12 +300,10 @@ PUT /transaction?id=<transactionObjectId>
 
 รองรับทั้ง `application/json` และ `multipart/form-data`
 
-body ส่ง field ที่ต้องการแก้ไขในรูปแบบเดียวกับ create transaction
+พฤติกรรม:
 
-พฤติกรรมเกี่ยวกับรูปบิล:
-
-- ถ้าส่ง `file` ใหม่ ระบบจะลบรูปเก่าและ upload รูปใหม่
-- ถ้าส่ง `bill` เป็น string ว่าง ระบบจะลบรูปเก่าและล้างค่า `bill`
+- ถ้าส่ง `file` ใหม่ จะลบรูปเก่าและ upload รูปใหม่
+- ถ้าส่ง `bill` เป็น string ว่าง จะลบรูปเก่าและล้างค่า `bill`
 - ระบบ revert ผลกระทบ wallet ของ transaction เดิมก่อน แล้วคำนวณ transaction ใหม่
 - ถ้าไม่พบ transaction จะได้ `NotFoundError`
 
@@ -296,7 +316,7 @@ DELETE /transaction?id=<transactionObjectId>
 พฤติกรรม:
 
 - ลบ transaction ตาม id
-- ถ้าลบสำเร็จ ระบบจะ revert ผลกระทบ wallet ของ transaction นั้น
+- ถ้าลบสำเร็จ จะ revert wallet จาก transaction นั้น
 - ลบรูปบิลจาก MinIO ถ้ามี
 
 ## Wallet APIs
@@ -316,11 +336,9 @@ response:
 }
 ```
 
-เมื่อ service start จะเรียก `ensureMainWallet()` เพื่อสร้าง wallet หลักชื่อ `main` ถ้ายังไม่มี
+ตอน service start จะเรียก `ensureMainWallet()` เพื่อสร้าง wallet หลักชื่อ `main` ถ้ายังไม่มี
 
 ## Environment
-
-`.env` ที่เกี่ยวข้อง:
 
 ```env
 WEB_HOST="http://localhost:3030"
@@ -342,7 +360,7 @@ MINIO_PASSWORD=StrongPass123!
 npm install
 ```
 
-รัน service:
+run dev:
 
 ```bash
 npm run dev
@@ -354,40 +372,10 @@ build:
 npm run build
 ```
 
-unit test:
-
-```bash
-npm test
-```
-
-ผลทดสอบล่าสุด:
+ผลตรวจล่าสุด:
 
 ```text
-Test date: 2026-05-24
-npm run build: pass
-npx karma start karma.conf.js --single-run --browsers ChromeHeadless: no specs found, 0 executed
-API smoke test: pass, 15 checks
-Seed data: temporary Contact + Transaction in Account database, removed after test
-Running service: Docker container service_account on http://localhost:3000
-```
-
-ผลทดสอบ API ล่าสุด:
-
-```text
-GET /contact without token: pass, errCode 2
-GET /contact with non-admin token: pass, errCode 5
-POST /contact create: pass
-POST /contact duplicate: pass, errCode 1
-GET /contact?id search: pass
-GET /wallet: pass
-POST /transaction create income: pass
-GET /transaction filter by who/type: pass
-Extract transaction id from GET /transaction: pass
-GET /trandetail?id: pass
-PUT /transaction update: pass
-DELETE /contact while transaction exists: pass, errCode 1
-DELETE /transaction cleanup: pass
-PUT /contact update: pass
-DELETE /contact cleanup: pass
-Cleanup seeded Contact/Transaction: pass
+Test date: 2026-05-25
+Service_Account npm run build: pass
+Frontend npm run build: pass
 ```
