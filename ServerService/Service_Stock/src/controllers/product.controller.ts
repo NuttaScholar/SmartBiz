@@ -37,7 +37,7 @@ export default class ProductController {
 
   async getProducts(req: AuthRequest, res: Response) {
     try {
-      this.ensureAdmin(req);
+      this.ensureStockReader(req);
       const { type, name, status } = req.query;
       const result = await this.service.getProducts(type as string, name as string, status as string);
       return res.send({ status: "success", result });
@@ -58,6 +58,15 @@ export default class ProductController {
 
   private ensureAdmin(req: AuthRequest) {
     if (req.authData?.role !== role_e.admin) {
+      throw { code: errorCode_e.PermissionDeniedError, message: "Permission denied" };
+    }
+  }
+
+  private ensureStockReader(req: AuthRequest) {
+    if (
+      req.authData?.role !== role_e.admin &&
+      req.authData?.role !== role_e.cashier
+    ) {
       throw { code: errorCode_e.PermissionDeniedError, message: "Permission denied" };
     }
   }
