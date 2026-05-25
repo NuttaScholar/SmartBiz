@@ -101,6 +101,10 @@ function getMaxEditableAmount(
   );
 }
 
+function shouldLimitStock(product: productInfo_t) {
+  return product.type !== productType_e.another;
+}
+
 function createMerchProduct(
   stockProduct: productInfo_t,
   amount: number,
@@ -110,8 +114,8 @@ function createMerchProduct(
     name: stockProduct.name,
     price: stockProduct.price || 0,
     amount,
-    type: productType_e.merchandise,
-    status: stockStatus_e.normal,
+    type: stockProduct.type,
+    status: stockProduct.status ?? stockStatus_e.normal,
     img: stockProduct.img || "",
   };
 }
@@ -234,7 +238,9 @@ export default function Page_BillCreate() {
         return;
       }
 
-      const availableAmount = selectedProduct.amount || 0;
+      const availableAmount = shouldLimitStock(selectedProduct)
+        ? selectedProduct.amount || 0
+        : Number.POSITIVE_INFINITY;
       const requestedAmount =
         getProductListAmount(state.merchList, selectedProduct.id) + form.amount;
 
@@ -268,12 +274,14 @@ export default function Page_BillCreate() {
         return;
       }
 
-      const availableAmount = getMaxEditableAmount(
-        selectedProduct,
-        data.id,
-        orderID,
-        originalOrderAmountMap,
-      );
+      const availableAmount = shouldLimitStock(selectedProduct)
+        ? getMaxEditableAmount(
+            selectedProduct,
+            data.id,
+            orderID,
+            originalOrderAmountMap,
+          )
+        : Number.POSITIVE_INFINITY;
       const requestedAmount =
         getProductListAmount(state.merchList, data.id, state.indexList) +
         data.amount;
