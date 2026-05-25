@@ -279,6 +279,11 @@ export default class BillService {
   }
 
   private async createIncomeTransaction(order: OrderDocument, authorization?: string) {
+    const merchandiseTotal = await this.getMerchandiseTotal(order.items);
+    if (!merchandiseTotal.hasMerchandise) {
+      return;
+    }
+
     if (!authorization) {
       throw {
         code: errorCode_e.UnauthorizedError,
@@ -293,7 +298,7 @@ export default class BillService {
           date: new Date().toISOString(),
           topic: `ยอดขาย`,
           type: transactionType_e.income,
-          money: order.totalAmount,
+          money: merchandiseTotal.total,
           who: order.customerID,
           description: `OrderID: ${order.orderID}`,
           bill: "",
@@ -322,6 +327,34 @@ export default class BillService {
         message: "Create income transaction failed"
       };
     }
+  }
+
+  private async getMerchandiseTotal(items: OrderItem[]) {
+    const productIDs = [...new Set(items.map((item) => item.productID))];
+    const products = await this.productRepo.findByIds(productIDs);
+    const productById = new Map(products.map((product) => [product.id, product]));
+    let hasMerchandise = false;
+
+    const total = this.roundMoney(
+      items.reduce((sum, item) => {
+        const product = productById.get(item.productID);
+        if (!product) {
+          throw {
+            code: errorCode_e.NotFoundError,
+            message: `Product not found: ${item.productID}`
+          };
+        }
+
+        if (product.type !== productType_e.merchandise) {
+          return sum;
+        }
+
+        hasMerchandise = true;
+        return sum + Number(item.quantity) * Number(item.priceAfterDiscount);
+      }, 0)
+    );
+
+    return { hasMerchandise, total };
   }
 
   private async ensureCustomerExists(customerID?: string) {
@@ -553,8 +586,10 @@ export default class BillService {
 
     try {
       for (const change of changes) {
-        await this.applyStockChange(change);
-        appliedChanges.push(change);
+        const applied = await this.applyStockChange(change);
+        if (applied) {
+          appliedChanges.push(change);
+        }
       }
     } catch (error) {
       await this.rollbackStockChanges(appliedChanges);
@@ -573,10 +608,21 @@ export default class BillService {
 
   private async applyStockChange(change: StockChange) {
     const product = await this.productRepo.findById(change.productID);
-    if (!product || product.amount === undefined) {
+    if (!product) {
       throw {
         code: errorCode_e.NotFoundError,
         message: `Product not found: ${change.productID}`
+      };
+    }
+
+    if (product.type === productType_e.another) {
+      return false;
+    }
+
+    if (product.amount === undefined) {
+      throw {
+        code: errorCode_e.NotFoundError,
+        message: `Product stock amount not found: ${change.productID}`
       };
     }
 
@@ -593,6 +639,8 @@ export default class BillService {
       amount: nextAmount,
       status: this.resolveStockStatus(nextAmount, Number(product.condition))
     });
+
+    return true;
   }
 
   private resolveStockStatus(amount: number, condition: number) {

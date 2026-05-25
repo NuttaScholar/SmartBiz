@@ -120,7 +120,7 @@ services:
 
   service_bill:
     container_name: service_bill
-    image: nuttascholar/smartbiz_bill:1.0
+    image: nuttascholar/smartbiz_bill:1.1
     environment:
       SECRET: ${SECRET}
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
