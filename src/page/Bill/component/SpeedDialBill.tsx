@@ -6,7 +6,9 @@ import { menuList_t } from "../../../component/Molecules/ButtonOption";
 import React from "react";
 import { billDialog_e } from "../context/BillContext";
 import { useBillContext } from "../hooks/useBillContex";
-import PercentIcon from '@mui/icons-material/Percent';
+import PercentIcon from "@mui/icons-material/Percent";
+import { useAuth } from "../../../hooks/useAuth";
+import { role_e } from "../../../enum";
 
 //*********************************************
 // Style
@@ -15,10 +17,10 @@ import PercentIcon from '@mui/icons-material/Percent';
 //*********************************************
 // Variable
 //*********************************************
-const MenuList: menuList_t[] = [
-  { text: "Create", icon: <AddIcon />, path: "/bill/create"},
-  { text: "Discount", icon: <PercentIcon />, path: "/bill/discount"},
-  { text: "Go to Top", icon: <KeyboardArrowUpIcon />},
+const AdminMenuList: menuList_t[] = [
+  { text: "Create", icon: <AddIcon />, path: "/bill/create" },
+  { text: "Discount", icon: <PercentIcon />, path: "/bill/discount" },
+  { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
 ];
 //*********************************************
 // Interface
@@ -30,12 +32,23 @@ const MenuList: menuList_t[] = [
 const SpeedDial_Bill: React.FC = () => {
   // Hook ************************************
   const { state, setState } = useBillContext();
+  const { auth } = useAuth();
+  const menuList = React.useMemo(
+    () =>
+      auth?.role === role_e.admin
+        ? AdminMenuList
+        : AdminMenuList.filter((menu) => menu.text !== "Discount"),
+    [auth?.role]
+  );
+
   // Local function **************************
   const speedDialHandler = (index: number) => {
     console.log(`SpeedDial: ${index}`);
-    switch (index) {      
-      case 2:
-        setState({...state, triger_gotoTop: (state.triger_gotoTop || 0) + 1});
+    const selectedMenu = menuList[index];
+
+    switch (selectedMenu?.text) {
+      case "Go to Top":
+        setState({ ...state, triger_gotoTop: (state.triger_gotoTop || 0) + 1 });
         break;
     }
   };
@@ -44,7 +57,7 @@ const SpeedDial_Bill: React.FC = () => {
     <>
       {state.dialogOpen === billDialog_e.none && (
         <MySpeedDial
-          menuList={MenuList}
+          menuList={menuList}
           icon={<MoreVertIcon />}
           onClick={speedDialHandler}
         />
