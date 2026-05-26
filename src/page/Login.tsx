@@ -8,6 +8,7 @@ import { LoginForm_t } from "../API/LoginService/type";
 import Login_f, * as login_F from "../API/LoginService/Login";
 import { useAuth } from "../hooks/useAuth";
 import React from "react";
+import { role_e } from "../enum";
 
 const providers = [{ id: "credentials", name: "Email and password" }];
 
@@ -32,9 +33,15 @@ const Page_Login: React.FC = () => {
             console.log("success", data);
             if (data.status === "success" && data.result) {
               setAuth(data.result);
-              navigate("/access");
-            } else {
-              resolve({
+              if (data.result.role === role_e.admin) {
+                navigate("/access");
+              }else if (data.result.role === role_e.cashier) {
+                navigate("/bill");
+              } else{
+                navigate("/checkIn");
+              }
+            }else {
+                resolve({
                 type: "CredentialsSignin",
                 error: "Invalid credentials.",
               });
