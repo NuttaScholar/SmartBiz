@@ -58,7 +58,7 @@ services:
 
   service_account:
     container_name: service_account
-    image: nuttascholar/smartbiz_account:2.1
+    image: nuttascholar/smartbiz_account:2.2
     environment:
       SECRET: ${SECRET}
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}

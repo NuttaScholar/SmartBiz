@@ -22,6 +22,8 @@ export default class TransactionService {
   async createTransaction(data: TransitionForm_t, file?: Express.Multer.File) {
     const typeNum = Number(data.type);
     const moneyNum = Number(data.money);
+    if (this.isZeroMoney(moneyNum)) return;
+
     const billUrl = file ? await uploadBillImage(file.buffer) : data.bill;
 
     await this.transactionRepo.create({ ...data, bill: billUrl });
@@ -73,6 +75,8 @@ export default class TransactionService {
   async updateTransaction(id: string | string[] | undefined, data: TransitionForm_t, file?: Express.Multer.File) {
     const typeNum = Number(data.type);
     const moneyNum = Number(data.money);
+    if (this.isZeroMoney(moneyNum)) return;
+
     const dataTran = await this.transactionRepo.findById(id);
     let newData: TransitionForm_t = { ...data };
 
@@ -114,5 +118,9 @@ export default class TransactionService {
     if (!updateRes.acknowledged) {
       throw { code: errorCode_e.TimeoutError, message: "Update wallet failed" };
     }
+  }
+
+  private isZeroMoney(money: number) {
+    return money === 0;
   }
 }
