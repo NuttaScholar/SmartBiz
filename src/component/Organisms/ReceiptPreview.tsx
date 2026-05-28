@@ -41,6 +41,10 @@ const currencyFormat = new Intl.NumberFormat("th-TH", {
   currency: "THB",
 });
 
+function formatDiscountPercent(value?: number) {
+  return value === undefined ? "-" : `${value.toFixed(2)}%`;
+}
+
 const ReceiptPreview: React.FC<Props> = ({ data }) => {
   const subtotal = data.items.reduce(
     (sum, item) => sum + (item.total ?? item.qty * item.price),
@@ -150,7 +154,7 @@ const ReceiptPreview: React.FC<Props> = ({ data }) => {
                     {currencyFormat.format(item.price)}
                   </TableCell>
                   <TableCell align="right">
-                    {item.discountPercent ? `${item.discountPercent}%` : "-"}
+                    {formatDiscountPercent(item.discountPercent)}
                   </TableCell>
                   <TableCell align="right">
                     {currencyFormat.format(lineTotal)}
