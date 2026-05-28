@@ -7,6 +7,7 @@ import { useBillContext } from "../hooks/useBillContex";
 import { orderInfo_t } from "../../../API/BillService/type";
 import billWithRetry_f from "../lib/billWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const tabStatusList = [
   billStatus_e.PrepareProduct,
@@ -39,6 +40,7 @@ const OrderListHeader: React.FC<myProps> = (props) => {
   const [statusCountList, setStatusCountList] = React.useState<Array<number | null>>(emptyStatusCountList);
   const { state, setState } = useBillContext();
   const authContext = useAuth();
+  const navigate = useNavigate();
   // Local function **************************
   const countOrders = React.useCallback((orders: orderInfo_t[]) => {
     const countByStatus = new Map<billStatus_e, number>();
@@ -149,8 +151,9 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       console.log("fetchOrders err", err);
       if (isActive) {
         setStatusCountList(emptyStatusCountList());
-        setState((prev) => ({ ...prev, filter: tab, orderList: [] }));
+        setState((prev) => ({ ...prev, filter: tab, orderList: [] }));        
       }
+      navigate("/login");
     });
 
     return () => {

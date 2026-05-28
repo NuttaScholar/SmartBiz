@@ -16,6 +16,10 @@ import { useAuth } from "../../../hooks/useAuth";
 import { ErrorString } from "../../../function/Enum";
 import billWithRetry_f from "../lib/billWithRetry";
 import { discountItem_t } from "../../../API/BillService/type";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../lib/authRedirect";
 
 //*********************************************
 // Interface
@@ -69,12 +73,16 @@ export default function Page_BillSetDiscount() {
         if (res.status === "success") {
           alert("บันทึกสำเร็จ");
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert(
             `Error: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
           );
         }
       })
       .catch((err) => {
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
         alert("Error");
         console.log("putDiscountsError", err);
       })
@@ -162,16 +170,20 @@ export default function Page_BillSetDiscount() {
         if (res.status === "success" && res.result !== undefined) {
           setListOption(res.result);
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert(
             `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
           );
         }
       })
       .catch((err) => {
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
         console.log("getStockError", err);
-        navigate("/");
+        navigate("/login", { replace: true });
       });
-  }, []);
+  }, [authContext, navigate]);
   React.useEffect(() => {
     if (!selectedCustomerID) {
       setState((prev) => ({ ...prev, merchList: [] }));
@@ -193,6 +205,8 @@ export default function Page_BillSetDiscount() {
         } else if (res.errCode === errorCode_e.NotFoundError) {
           setState((prev) => ({ ...prev, merchList: [] }));
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert(
             `Error: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
           );
@@ -200,6 +214,7 @@ export default function Page_BillSetDiscount() {
       })
       .catch((err) => {
         if (!active) return;
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         alert("Error");
         console.log("getDiscountsError", err);
@@ -208,7 +223,7 @@ export default function Page_BillSetDiscount() {
     return () => {
       active = false;
     };
-  }, [selectedCustomerID, listOption]);
+  }, [authContext, navigate, selectedCustomerID, listOption]);
   // Render **********************************
   return (
     <BillContext.Provider value={{ state, setState }}>

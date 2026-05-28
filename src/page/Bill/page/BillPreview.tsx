@@ -15,12 +15,16 @@ import ReceiptPreview, {
 import PrintIcon from "@mui/icons-material/Print";
 import billWithRetry_f from "../lib/billWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { orderInfo_t } from "../../../API/BillService/type";
 import { ErrorString } from "../../../function/Enum";
 import { errorCode_e } from "../../../enum";
 import contactWithRetry_f from "../../Access/lib/contactWithRetry";
 import { ContactInfo_t } from "../../../API/AccountService/type";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../lib/authRedirect";
 
 const dateFormat = new Intl.DateTimeFormat("th-TH", {
   year: "numeric",
@@ -65,6 +69,7 @@ function toReceiptData(order: orderInfo_t, contact?: ContactInfo_t): ReceiptData
 //*********************************************
 export default function Page_BillPreview() {
   const authContext = useAuth();
+  const navigate = useNavigate();
   const { orderID } = useParams<{ orderID: string }>();
   const [order, setOrder] = useState<orderInfo_t>();
   const [contact, setContact] = useState<ContactInfo_t>();
@@ -106,6 +111,8 @@ export default function Page_BillPreview() {
         if (res.status === "success") {
           setOrder(res.result?.find((item) => item.id === orderID));
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert(
             `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
           );
@@ -115,6 +122,8 @@ export default function Page_BillPreview() {
       })
       .catch((err) => {
         if (!active) return;
+
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         alert("เกิดข้อผิดพลาด");
         console.log("getPreviewOrderError", err);
@@ -130,7 +139,7 @@ export default function Page_BillPreview() {
     return () => {
       active = false;
     };
-  }, [authContext, orderID]);
+  }, [authContext, navigate, orderID]);
 
   useEffect(() => {
     if (!order?.customerID) {
@@ -150,12 +159,16 @@ export default function Page_BillPreview() {
             res.result?.find((item) => item.codeName === order.customerID),
           );
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           console.log("getPreviewContactError", res.errCode);
           setContact(undefined);
         }
       })
       .catch((err) => {
         if (!active) return;
+
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         console.log("getPreviewContactError", err);
         setContact(undefined);
@@ -164,7 +177,7 @@ export default function Page_BillPreview() {
     return () => {
       active = false;
     };
-  }, [authContext, order?.customerID]);
+  }, [authContext, navigate, order?.customerID]);
 
   return (
     <Box sx={{ minHeight: "100vh" }}>

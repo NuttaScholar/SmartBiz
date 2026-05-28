@@ -32,6 +32,10 @@ import {
 import FormBillHeader from "../component/FormBillHeader";
 import MerchList from "../component/MerchList";
 import DialogBillEdit from "../component/DialogBillEdit";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../lib/authRedirect";
 
 //*************************************************
 // Helper functions
@@ -355,8 +359,12 @@ export default function Page_BillCreate() {
         return;
       }
 
+      if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
       alert(toErrorMessage(res.errCode));
     } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       alert("เกิดข้อผิดพลาด");
       console.log(orderID ? "putOrderError" : "postOrderError", err);
     } finally {
@@ -380,12 +388,16 @@ export default function Page_BillCreate() {
         if (res.status === "success" && res.result !== undefined) {
           setListOption(res.result);
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert(toErrorMessage(res.errCode));
         }
       })
       .catch((err) => {
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
         console.log("getStockError", err);
-        navigate("/");
+        navigate("/login", { replace: true });
       });
   }, [authContext, navigate]);
 
@@ -409,12 +421,16 @@ export default function Page_BillCreate() {
             navigate("/bill");
           }
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert(toErrorMessage(res.errCode));
           navigate("/bill");
         }
       })
       .catch((err) => {
         if (!active) return;
+
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         alert("เกิดข้อผิดพลาด");
         console.log("getOrderForEditError", err);
@@ -464,11 +480,15 @@ export default function Page_BillCreate() {
             merchList: prev.merchList?.map((item) => applyDiscount(item, [])),
           }));
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert(toErrorMessage(res.errCode));
         }
       })
       .catch((err) => {
         if (!active) return;
+
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         alert("เกิดข้อผิดพลาด");
         console.log("getDiscountsError", err);
@@ -477,7 +497,7 @@ export default function Page_BillCreate() {
     return () => {
       active = false;
     };
-  }, [authContext, selectedCustomerID, applyDiscount]);
+  }, [authContext, navigate, selectedCustomerID, applyDiscount]);
 
   React.useEffect(() => {
     const newTotal = state.merchList?.reduce((sum, item) => {

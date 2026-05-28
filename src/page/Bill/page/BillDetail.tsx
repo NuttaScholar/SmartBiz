@@ -21,6 +21,10 @@ import { billStatus_e, errorCode_e, stockStatus_e } from "../../../enum";
 import { useAuth } from "../../../hooks/useAuth";
 import { ErrorString } from "../../../function/Enum";
 import billWithRetry_f from "../lib/billWithRetry";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../lib/authRedirect";
 
 //*************************************************
 // Constants
@@ -143,8 +147,12 @@ const Page_OrderDetail: React.FC = () => {
         return;
       }
 
+      if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
       alert(getErrorMessage(res.errCode));
     } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       alert("เกิดข้อผิดพลาด");
       console.log("nextStepError", err);
     } finally {
@@ -169,8 +177,12 @@ const Page_OrderDetail: React.FC = () => {
           return;
         }
 
+        if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
         alert(getErrorMessage(res.errCode));
       } catch (err) {
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
         alert("เกิดข้อผิดพลาด");
         console.log("updateBillingStatusError", err);
       } finally {
@@ -196,8 +208,12 @@ const Page_OrderDetail: React.FC = () => {
         return;
       }
 
+      if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
       alert(getErrorMessage(res.errCode));
     } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       alert("เกิดข้อผิดพลาด");
       console.log("delOrderError", err);
     }
@@ -243,11 +259,15 @@ const Page_OrderDetail: React.FC = () => {
         if (res.status === "success") {
           setOrder(res.result?.find((item) => item.id === orderID));
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           setOrder(undefined);
           alert(getErrorMessage(res.errCode));
         }
       } catch (err) {
         if (!active) return;
+
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         alert("เกิดข้อผิดพลาด");
         console.log("getOrderDetailError", err);
@@ -264,7 +284,7 @@ const Page_OrderDetail: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [authContext, orderID]);
+  }, [authContext, navigate, orderID]);
 
   // Render ***********************************
   return (
