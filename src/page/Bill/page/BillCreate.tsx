@@ -243,26 +243,54 @@ export default function Page_BillCreate() {
       }
 
       const availableAmount = shouldLimitStock(selectedProduct)
-        ? selectedProduct.amount || 0
+        ? getMaxEditableAmount(
+            selectedProduct,
+            selectedProduct.id,
+            orderID,
+            originalOrderAmountMap,
+          )
         : Number.POSITIVE_INFINITY;
       const requestedAmount =
         getProductListAmount(state.merchList, selectedProduct.id) + form.amount;
 
       if (requestedAmount > availableAmount) {
         alert(
-          `จำนวนสินค้าไม่เพียงพอ\n${selectedProduct.name} มีคงเหลือ ${availableAmount} ชิ้น`,
+          `จำนวนสินค้าไม่เพียงพอ\n${selectedProduct.name} สามารถใส่ได้สูงสุด ${availableAmount} ชิ้น`,
         );
         return;
       }
 
-      const product = createMerchProduct(selectedProduct, form.amount);
+      const existingProductIndex = state.merchList?.findIndex(
+        (item) => item.id === selectedProduct.id,
+      );
+      const existingProduct =
+        existingProductIndex !== undefined && existingProductIndex >= 0
+          ? state.merchList?.[existingProductIndex]
+          : undefined;
+      const product = createMerchProduct(
+        selectedProduct,
+        (existingProduct?.amount || 0) + form.amount,
+      );
       const newProduct = applyDiscount(product, customerDiscounts);
+
       setState((prev) => ({
         ...prev,
-        merchList: [...(prev.merchList || []), newProduct],
+        merchList:
+          existingProductIndex !== undefined && existingProductIndex >= 0
+            ? prev.merchList?.map((item, index) =>
+                index === existingProductIndex ? newProduct : item,
+              )
+            : [...(prev.merchList || []), newProduct],
       }));
     },
-    [applyDiscount, customerDiscounts, listOption, state.merchList],
+    [
+      applyDiscount,
+      customerDiscounts,
+      listOption,
+      orderID,
+      originalOrderAmountMap,
+      state.merchList,
+    ],
   );
 
   const onSubmitEdit = React.useCallback(
