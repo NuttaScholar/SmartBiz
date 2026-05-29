@@ -35,7 +35,7 @@ import DialogBillEdit from "../component/DialogBillEdit";
 import {
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
-} from "../lib/authRedirect";
+} from "../../../lib/authRedirect";
 
 //*************************************************
 // Helper functions

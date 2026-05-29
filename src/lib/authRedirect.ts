@@ -1,5 +1,5 @@
-import { errorCode_e } from "../../../enum";
-import { ErrorString } from "../../../function/Enum";
+import { errorCode_e } from "../enum";
+import { ErrorString } from "../function/Enum";
 
 type NavigateTo = (to: string, options?: { replace?: boolean }) => void;
 

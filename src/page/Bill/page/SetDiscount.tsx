@@ -19,7 +19,7 @@ import { discountItem_t } from "../../../API/BillService/type";
 import {
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
-} from "../lib/authRedirect";
+} from "../../../lib/authRedirect";
 
 //*********************************************
 // Interface

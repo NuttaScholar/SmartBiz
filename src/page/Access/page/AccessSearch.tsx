@@ -21,7 +21,6 @@ import FieldSelector from "../../../component/Molecules/FieldSelector";
 import FieldText from "../../../component/Molecules/FieldText";
 import FieldDuration from "../../../component/Molecules/FieldDuration";
 import accessWithRetry_f from "../lib/accessWithRetry";
-import { errorCode_e } from "../../../enum";
 import { ErrorString } from "../../../function/Enum";
 import DialogFormTransaction from "../component/DialogFormTransaction";
 import DialogContactList from "../../../component/Organisms/DialogContactList";
@@ -31,6 +30,10 @@ import { GoToTop } from "../../../function/Window";
 import { initPage } from "../../../lib/initPage";
 import { SearchTransForm_t, TransitionForm_t } from "../../../API/AccountService/type";
 import storageWithRetry_f from "../../../lib/storageWithRetry";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 
 const Page_AccessSearch: React.FC = () => {
   // Hook **************
@@ -49,13 +52,14 @@ const Page_AccessSearch: React.FC = () => {
             console.log("Search Result:", res.result);
             setState({ ...state, transaction: res.result });
           } else if (res.errCode) {
+            if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
             alert(ErrorString(res.errCode));
-            if (res.errCode === errorCode_e.TokenExpiredError) {
-              navigate("/");
-            }
           }
         })
         .catch((err) => {
+          if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
           console.error("Error fetching transactions:", err);
           alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
         });
@@ -89,11 +93,15 @@ const Page_AccessSearch: React.FC = () => {
           Key: spitUrl[1],
         });
         if (res.status !== "success" || res.result === undefined) {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert("ไม่สามารถโหลดรูปภาพได้");
         } else {
           data = { ...value, bill: res.result.url };
         }
       } catch (err) {
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
         console.error("Get image error:", err);
         alert("ไม่สามารถโหลดรูปภาพได้");
       }
@@ -108,7 +116,11 @@ const Page_AccessSearch: React.FC = () => {
   };
   // Use Effect **************
   React.useEffect(() => {
-    initPage(authContext);
+    initPage(authContext).catch((err) => {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
+      console.error("Error during initPage:", err);
+    });
     form && searchHandler(form);
   }, [state.refaceTrans]);
   return (

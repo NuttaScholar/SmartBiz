@@ -19,6 +19,12 @@ export async function initPage(authContext: AuthContext_t): Promise<Auth_t> {
             }
         } catch (err) {
             console.error("Error during initPage:", err);
+            if (
+                err === ErrorString(errorCode_e.TokenExpiredError) ||
+                err === ErrorString(errorCode_e.UnauthorizedError)
+            ) {
+                throw err;
+            }
             throw ErrorString(errorCode_e.UnknownError);
         }
     } else {

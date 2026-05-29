@@ -24,7 +24,7 @@ import { ContactInfo_t } from "../../../API/AccountService/type";
 import {
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
-} from "../lib/authRedirect";
+} from "../../../lib/authRedirect";
 
 const dateFormat = new Intl.DateTimeFormat("th-TH", {
   year: "numeric",

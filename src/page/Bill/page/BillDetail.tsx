@@ -24,7 +24,7 @@ import billWithRetry_f from "../lib/billWithRetry";
 import {
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
-} from "../lib/authRedirect";
+} from "../../../lib/authRedirect";
 
 //*************************************************
 // Constants
