@@ -24,6 +24,10 @@ import { errorCode_e, productType_e, stockStatus_e } from "../../../enum";
 import AddProductForm, {
   FormAddProduce_t,
 } from "../../../component/Organisms/AddProductForm";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 
 export default function Page_StockIn() {
   // Hook ************************************
@@ -81,12 +85,16 @@ export default function Page_StockIn() {
           alert(`พบปัญหา! ไม่สามารถตัดสต็อกรายการต่อไปนี้ได้\n${res.result?.map((item) => `ID: ${item.productID}, Amount: ${item.amount}`).join("\n")}
           `);
         } else {
+          if (redirectToLoginOnAuthError(nevigate, res.errCode)) return;
+
           alert(
             `เกิดข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
           );
         }
       })
       .catch((err) => {
+        if (redirectToLoginOnThrownAuthError(nevigate, err)) return;
+
         alert(`เกิดข้อผิดพลาด`);
         console.log("postStockOutError", err);
       });
@@ -115,13 +123,16 @@ export default function Page_StockIn() {
             console.log("Stock List", res.result);
             res.result && setListOption(res.result);
           } else {
+            if (redirectToLoginOnAuthError(nevigate, res.errCode)) return;
+
             alert(
               `เกินข้อผิดพลาด: ${ErrorString(res.errCode || errorCode_e.UnknownError)}`,
             );
           }
         })
         .catch((err) => {
-          nevigate("/");
+          if (redirectToLoginOnThrownAuthError(nevigate, err)) return;
+
           console.log(err);
         });
   }, []);

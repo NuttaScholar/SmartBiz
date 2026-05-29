@@ -8,6 +8,11 @@ import { useAuth } from "../hooks/useAuth";
 import * as User_f from "../API/LoginService/User";
 import { ErrorString } from "../function/Enum";
 import { errorCode_e } from "../enum";
+import {
+  redirectToLogin,
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../lib/authRedirect";
 
 type form_t = {
   oldPass: string;
@@ -23,18 +28,27 @@ const Page_SetPass: React.FC = () => {
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
     const { confirmPass, newPass, oldPass } = formJson as form_t;
-    if (newPass === confirmPass && auth?.token) {
+    if (!auth?.token) {
+      redirectToLogin(navigate);
+      return;
+    }
+
+    if (newPass === confirmPass) {
       const data: EditPassFrom_t = { newPass: newPass, oldPass: oldPass };
       User_f.putPass(auth.token, data)
         .then((data) => {
           if (data.status === "success") {
             alert("แก้ไข Password สำเร็จ");
           } else {
+            if (redirectToLoginOnAuthError(navigate, data.errCode)) return;
+
             alert("แก้ไข Password ไม่สำเร็จ");
             console.log(ErrorString(data.errCode || errorCode_e.UnknownError));
           }
         })
         .catch((err) => {
+          if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
           alert("แก้ไข Password ไม่สำเร็จ");
           console.log(err);
         });

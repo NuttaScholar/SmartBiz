@@ -22,6 +22,11 @@ import { accessDialog_e } from "../context/AccessContext";
 import { TransitionForm_t } from "../../../API/AccountService/type";
 import FieldImage from "../../../component/Molecules/FieldImage";
 import FieldContact from "../../../component/Molecules/FieldContact";
+import { useNavigate } from "react-router-dom";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 
 //*********************************************
 // Type
@@ -58,6 +63,7 @@ const DialogFormTransaction: React.FC = () => {
   // Hook *********************
   const { state, setState } = useAccess();
   const authContext = useAuth();
+  const navigate = useNavigate();
   const [file, setFile] = useState<File | null>();
   // Local Function ***********
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -79,7 +85,14 @@ const DialogFormTransaction: React.FC = () => {
       // Edit      
       accessWithRetry_f
         .put(authContext, newData)
-        .then(() => {
+        .then((res) => {
+          if (res.status !== "success") {
+            if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
+            alert("ไม่สามารถแก้ไขรายการได้");
+            return;
+          }
+
           setState({
             ...state,
             open: accessDialog_e.none,
@@ -90,6 +103,8 @@ const DialogFormTransaction: React.FC = () => {
           console.log(state.refaceTrans);
         })
         .catch((err) => {
+          if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
           alert("ไม่สามารถแก้ไขรายการได้");
           console.log(err);
         });
@@ -97,7 +112,14 @@ const DialogFormTransaction: React.FC = () => {
       // Add
       accessWithRetry_f
         .post(authContext, newData)
-        .then(() => {
+        .then((res) => {
+          if (res.status !== "success") {
+            if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
+            alert("ไม่สามารถเพิ่มรายการได้");
+            return;
+          }
+
           setState({
             ...state,
             open: accessDialog_e.none,
@@ -107,6 +129,8 @@ const DialogFormTransaction: React.FC = () => {
           });
         })
         .catch((err) => {
+          if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
           alert("ไม่สามารถเพิ่มรายการได้");
           console.log(err);
         });
@@ -116,7 +140,14 @@ const DialogFormTransaction: React.FC = () => {
     if (state.transitionForm?.id) {
       accessWithRetry_f
         .del(authContext, state.transitionForm.id)
-        .then(() => {
+        .then((res) => {
+          if (res.status !== "success") {
+            if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
+            alert("ไม่สามารถลบรายการได้");
+            return;
+          }
+
           setState({
             ...state,
             open: accessDialog_e.none,
@@ -126,6 +157,8 @@ const DialogFormTransaction: React.FC = () => {
           });
         })
         .catch((err) => {
+          if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
           alert("ไม่สามารถลบรายการได้");
           console.log(err);
         });

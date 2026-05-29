@@ -14,6 +14,11 @@ import HeaderDialog_Search from "../component/Molecules/HeaderDialog_Search";
 import { Box } from "@mui/material";
 import FieldSearch from "../component/Molecules/FieldSearch";
 import ListUser from "../component/Molecules/ListUser";
+import {
+  redirectToLogin,
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../lib/authRedirect";
 
 const Page_SetUser: React.FC = () => {
   // Local Function **************
@@ -28,6 +33,17 @@ const Page_SetUser: React.FC = () => {
   const [openEdit, setOpenEdit] = React.useState(false);
   const [editValue, setEditValue] = React.useState<UserProfile_t>();
   // Local Function **************
+  const refreshTokenOrRedirect = async () => {
+    const resToken = await Login_f.getToken();
+    if (resToken.status === "success" && resToken.result?.token) {
+      setToken(resToken.result.token);
+      return true;
+    }
+
+    redirectToLogin(navigate);
+    return false;
+  };
+
   function onChangeHandler(event: React.ChangeEvent<HTMLInputElement>) {
     setKey(event.target.value);
   }
@@ -37,17 +53,16 @@ const Page_SetUser: React.FC = () => {
       if (resUser.status === "success") {
         setList(resUser.result || []);
       } else if (resUser.errCode === errorCode_e.TokenExpiredError) {
-        const resToken = await Login_f.getToken();
-        if (resToken.result?.token) {
-          setToken(resToken.result.token);
-        } else {
-          navigate("/");
-        }
+        await refreshTokenOrRedirect();
+      } else if (redirectToLoginOnAuthError(navigate, resUser.errCode)) {
+        return;
       } else {
         alert("รับรายการ User ล้มเหลว");
         console.log("errCode", resUser.errCode);
       }
     } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       console.log(err);
     }
   };
@@ -60,21 +75,22 @@ const Page_SetUser: React.FC = () => {
           setList(resGet.result);
           setOpenAdd(false);
         } else {
+          if (redirectToLoginOnAuthError(navigate, resGet.errCode)) return;
+
           alert("รับรายการ User ล้มเหลว");
           console.log("errCode", resGet.errCode);
         }
       } else if (resUser.errCode === errorCode_e.TokenExpiredError) {
-        const res = await Login_f.getToken();
-        if (res.result?.token) {
-          setToken(res.result.token);
-        } else {
-          navigate("/");
-        }
+        await refreshTokenOrRedirect();
+      } else if (redirectToLoginOnAuthError(navigate, resUser.errCode)) {
+        return;
       } else {
         alert("สร้างบัญชี User ล้มเหลว");
         console.log("errCode", resUser.errCode);
       }
     } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       console.log(err);
     }
   };
@@ -87,22 +103,23 @@ const Page_SetUser: React.FC = () => {
           setList(resGet.result);
           setOpenEdit(false);
         } else {
+          if (redirectToLoginOnAuthError(navigate, resGet.errCode)) return;
+
           alert("รับรายการ User ล้มเหลว");
           console.log("errCode", resGet.errCode);
         }
       } else if (resPut.errCode === errorCode_e.TokenExpiredError) {
-        const res = await Login_f.getToken();
         console.log("get Token");
-        if (res.result?.token) {
-          setToken(res.result.token);
-        } else {
-          navigate("/");
-        }
+        await refreshTokenOrRedirect();
+      } else if (redirectToLoginOnAuthError(navigate, resPut.errCode)) {
+        return;
       } else {
         alert("แก้ไข User ล้มเหลว");
         console.log("errCode", resPut.errCode);
       }
     } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       console.log(err);
     }
   };
@@ -115,22 +132,23 @@ const Page_SetUser: React.FC = () => {
           setList(resGet.result);
           setOpenDel(false);
         } else {
+          if (redirectToLoginOnAuthError(navigate, resGet.errCode)) return;
+
           alert("รับรายการ User ล้มเหลว");
           console.log("errCode", resGet.errCode);
         }
       } else if (resDel.errCode === errorCode_e.TokenExpiredError) {
-        const res = await Login_f.getToken();
         console.log("get Token");
-        if (res.result?.token) {
-          setToken(res.result.token);
-        } else {
-          navigate("/");
-        }
+        await refreshTokenOrRedirect();
+      } else if (redirectToLoginOnAuthError(navigate, resDel.errCode)) {
+        return;
       } else {
         alert("ลบ User ล้มเหลว");
         console.log("errCode", resDel.errCode);
       }
     } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       console.log(err);
     }
   };
@@ -139,7 +157,7 @@ const Page_SetUser: React.FC = () => {
       const resLogin = await Login_f.getToken();
       console.log(resLogin);
       if (resLogin.status === "error" || !resLogin.result?.token) {
-        navigate("/");
+        redirectToLogin(navigate);
       } else {
         const resUser = await User_f.get(resLogin.result?.token);
         setToken(resLogin.result?.token);
@@ -147,10 +165,14 @@ const Page_SetUser: React.FC = () => {
           setList(resUser.result);
           console.log(resUser);
         } else {
+          if (redirectToLoginOnAuthError(navigate, resUser.errCode)) return;
+
           alert("รับรายการ User ล้มเหลว");
         }
       }
     } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       console.log(err);
     }
   };

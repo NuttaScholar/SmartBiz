@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   SignInPage,
   type AuthProvider,
@@ -12,9 +12,29 @@ import { role_e } from "../enum";
 
 const providers = [{ id: "credentials", name: "Email and password" }];
 
+function getDefaultPath(role: role_e) {
+  if (role === role_e.admin) return "/access";
+  if (role === role_e.cashier) return "/bill";
+  return "/checkIn";
+}
+
+function getRedirectPath(state: unknown, role: role_e) {
+  const from =
+    state && typeof state === "object" && "from" in state
+      ? (state as { from?: unknown }).from
+      : undefined;
+
+  if (typeof from === "string" && from && from !== "/" && from !== "/login") {
+    return from;
+  }
+
+  return getDefaultPath(role);
+}
+
 const Page_Login: React.FC = () => {
   // Hook *********************
   const navigate = useNavigate();
+  const location = useLocation();
   const { setAuth } = useAuth();
   // Local Function ***********
   const signIn: (
@@ -33,13 +53,9 @@ const Page_Login: React.FC = () => {
             console.log("success", data);
             if (data.status === "success" && data.result) {
               setAuth(data.result);
-              if (data.result.role === role_e.admin) {
-                navigate("/access");
-              }else if (data.result.role === role_e.cashier) {
-                navigate("/bill");
-              } else{
-                navigate("/checkIn");
-              }
+              navigate(getRedirectPath(location.state, data.result.role), {
+                replace: true,
+              });
             }else {
                 resolve({
                 type: "CredentialsSignin",
@@ -61,7 +77,9 @@ const Page_Login: React.FC = () => {
     Login_f.getToken().then((data) => {
       if (data.status === "success" && data.result) {
         setAuth(data.result);
-        navigate("/access");
+        navigate(getRedirectPath(location.state, data.result.role), {
+          replace: true,
+        });
       }
     });
   }, []);

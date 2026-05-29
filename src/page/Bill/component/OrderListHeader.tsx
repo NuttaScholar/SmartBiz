@@ -8,6 +8,10 @@ import { orderInfo_t } from "../../../API/BillService/type";
 import billWithRetry_f from "../lib/billWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 
 const tabStatusList = [
   billStatus_e.PrepareProduct,
@@ -62,6 +66,8 @@ const OrderListHeader: React.FC<myProps> = (props) => {
         const countByStatus = new Map<billStatus_e, number>();
         if (res.status === "success") {
           res.result?.forEach((item) => countByStatus.set(item.status, item.count));
+        } else if (redirectToLoginOnAuthError(navigate, res.errCode)) {
+          return emptyStatusCountList();
         }
 
         return tabStatusList.map((status, index) =>
@@ -81,14 +87,18 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       const orderMap = new Map<string, orderInfo_t>();
       if (customerRes.status === "success") {
         customerRes.result?.forEach((order) => orderMap.set(order.id, order));
+      } else if (redirectToLoginOnAuthError(navigate, customerRes.errCode)) {
+        return emptyStatusCountList();
       }
       if (orderRes.status === "success") {
         orderRes.result?.forEach((order) => orderMap.set(order.id, order));
+      } else if (redirectToLoginOnAuthError(navigate, orderRes.errCode)) {
+        return emptyStatusCountList();
       }
 
       return countOrders(Array.from(orderMap.values()));
     },
-    [authContext, countOrders],
+    [authContext, countOrders, navigate],
   );
 
   const updateOrderList = React.useCallback(
@@ -97,6 +107,8 @@ const OrderListHeader: React.FC<myProps> = (props) => {
 
       if (!keyword) {
         const res = await billWithRetry_f.getOrdersByStatus(authContext, status);
+        if (redirectToLoginOnAuthError(navigate, res.errCode)) return [];
+
         return res.status === "success" ? res.result ?? [] : [];
       }
 
@@ -114,14 +126,18 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       const orderMap = new Map<string, orderInfo_t>();
       if (customerRes.status === "success") {
         customerRes.result?.forEach((order) => orderMap.set(order.id, order));
+      } else if (redirectToLoginOnAuthError(navigate, customerRes.errCode)) {
+        return [];
       }
       if (orderRes.status === "success") {
         orderRes.result?.forEach((order) => orderMap.set(order.id, order));
+      } else if (redirectToLoginOnAuthError(navigate, orderRes.errCode)) {
+        return [];
       }
 
       return Array.from(orderMap.values());
     },
-    [authContext],
+    [authContext, navigate],
   );
 
   const onSerch = (value: string) => {
@@ -149,11 +165,12 @@ const OrderListHeader: React.FC<myProps> = (props) => {
 
     fetchOrders().catch((err) => {
       console.log("fetchOrders err", err);
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       if (isActive) {
         setStatusCountList(emptyStatusCountList());
         setState((prev) => ({ ...prev, filter: tab, orderList: [] }));        
       }
-      navigate("/login");
     });
 
     return () => {

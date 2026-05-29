@@ -4,6 +4,11 @@ import { useAuth } from "../../../hooks/useAuth";
 import contactWithRetry_f from "../lib/contactWithRetry";
 import { ErrorString } from "../../../function/Enum";
 import { ContactInfo_t } from "../../../API/AccountService/type";
+import { useNavigate } from "react-router-dom";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 
 /**************************************************** */
 //  Interface
@@ -24,6 +29,7 @@ interface MyProps {
 const FieldContactAccess: React.FC<MyProps> = (props) => {
   // Hook *********************
   const AuthContext = useAuth();
+  const navigate = useNavigate();
 
   // Local function ***********
   const onOpenList = async () => {
@@ -33,10 +39,14 @@ const FieldContactAccess: React.FC<MyProps> = (props) => {
         if (val.result) {
           props.onOpenList?.(val.result);          
         } else if (val.errCode) {
+          if (redirectToLoginOnAuthError(navigate, val.errCode)) return;
+
           alert(ErrorString(val.errCode));
         }
       })
       .catch((err) => {
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
         console.log(err);
       });
   };

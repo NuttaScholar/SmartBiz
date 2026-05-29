@@ -11,6 +11,10 @@ import { stockStatus_e } from "../../../enum";
 import { ErrorString } from "../../../function/Enum";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 //*********************************************
 // Data Set
 //*********************************************
@@ -113,11 +117,14 @@ const StockListHeader: React.FC<myProps> = (props) => {
         if (res.status === "success" && res.result !== undefined) {
           res.result && setState({ ...state, productList: res.result.products, status: res.result.status });
         } else {
+          if (redirectToLoginOnAuthError(nevigate, res.errCode)) return;
+
           res.errCode && alert(ErrorString(res.errCode));
         }
       })
       .catch((err) => {
-        nevigate("/");
+        if (redirectToLoginOnThrownAuthError(nevigate, err)) return;
+
         console.log(err);
       });
   };

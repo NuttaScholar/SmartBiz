@@ -15,6 +15,11 @@ import contactWithRetry_f from "../lib/contactWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 import { ErrorString } from "../../../function/Enum";
 import { ContactForm_t, ContactInfo_t } from "../../../API/AccountService/type";
+import { useNavigate } from "react-router-dom";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 
 //*********************************************
 // Type
@@ -56,6 +61,7 @@ const DialogFormContact: React.FC<myProps> = (props) => {
   // Hook *********************
   const { state } = useAccess();
   const authContext = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = React.useState<ContactForm_t>(defaultValue);
   // Local Function ***********
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,10 +77,14 @@ const DialogFormContact: React.FC<myProps> = (props) => {
           if (val.result) {            
             props.onClose(val.result);
           } else if (val.errCode) {
+            if (redirectToLoginOnAuthError(navigate, val.errCode)) return;
+
             alert(ErrorString(val.errCode));
           }
         })
         .catch((err) => {
+          if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
           console.log(err);
           alert("Error: " + err.message);
         });
@@ -86,10 +96,14 @@ const DialogFormContact: React.FC<myProps> = (props) => {
           if (val.result) {
             props.onClose(val.result);
           } else if (val.errCode) {
+            if (redirectToLoginOnAuthError(navigate, val.errCode)) return;
+
             alert(ErrorString(val.errCode));
           }
         })
         .catch((err) => {
+          if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
           console.log(err);
           alert(err.message);
         });

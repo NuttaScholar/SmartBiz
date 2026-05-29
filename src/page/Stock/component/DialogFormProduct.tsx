@@ -15,6 +15,11 @@ import { errorCode_e, productType_e } from "../../../enum";
 import { formProduct_t } from "../../../API/StockService/type";
 import { ErrorString } from "../../../function/Enum";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useNavigate } from "react-router-dom";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 
 //*********************************************
 // Type
@@ -51,6 +56,7 @@ interface myProps {
 const DialogFormProduct: React.FC<myProps> = () => {
   // Hook *********************
   const authContext = useAuth();
+  const navigate = useNavigate();
   const { state, setState } = useStockContext();
   const [type, setType] = useState<number | null>(productType_e.merchandise);
   const [file, setFile] = useState<File | null>();
@@ -76,6 +82,8 @@ const DialogFormProduct: React.FC<myProps> = () => {
           });
           setFile(undefined);
         } else {
+          if (redirectToLoginOnAuthError(navigate, result.errCode)) return;
+
           alert(
             `เกิดข้อผิดพลาด ${ErrorString(result.errCode || errorCode_e.UnknownError)}`
           );
@@ -93,6 +101,8 @@ const DialogFormProduct: React.FC<myProps> = () => {
           });
           setFile(undefined);
         } else {
+          if (redirectToLoginOnAuthError(navigate, result.errCode)) return;
+
           alert(
             `เกิดข้อผิดพลาด ${ErrorString(result.errCode || errorCode_e.UnknownError)}`
           );
@@ -100,6 +110,8 @@ const DialogFormProduct: React.FC<myProps> = () => {
       }
 
     } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       alert(`เกิดข้อผิดพลาด`);
       console.log("postProductError", err);
     }
@@ -123,6 +135,8 @@ const DialogFormProduct: React.FC<myProps> = () => {
             reface: state.reface + 1,
           });
         } else {
+          if (redirectToLoginOnAuthError(navigate, resProduct.errCode)) return;
+
           alert(
             `เกิดข้อผิดพลาด ${ErrorString(resProduct.errCode || errorCode_e.UnknownError)}`
           );
@@ -130,6 +144,8 @@ const DialogFormProduct: React.FC<myProps> = () => {
         }
       }
     } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       alert(`เกิดข้อผิดพลาด`);
       console.log("postProductError", err);
     }

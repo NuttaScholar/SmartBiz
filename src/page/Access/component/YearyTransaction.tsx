@@ -15,6 +15,10 @@ import { initTrans } from "../lib/initTrans";
 import { Box } from "@mui/material";
 import storageWithRetry_f from "../../../lib/storageWithRetry";
 import { useNavigate } from "react-router-dom";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 
 /**************************************************** */
 //  Interface
@@ -54,6 +58,8 @@ const YearyTransaction: React.FC = () => {
           });
           finish = true;
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           if (_month > 1) {
             _month--;
           } else {
@@ -66,6 +72,8 @@ const YearyTransaction: React.FC = () => {
           }
         }
       } catch (err) {
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
         console.log(err);
         return;
       }
@@ -81,11 +89,15 @@ const YearyTransaction: React.FC = () => {
           Key: spitUrl[1],
         });
         if (res.status !== "success" || res.result === undefined) {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert("ไม่สามารถโหลดรูปภาพได้");
         } else {
           data = { ...value, bill: res.result.url };
         }
       } catch (err) {
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
         console.error("Get image error:", err);
         alert("ไม่สามารถโหลดรูปภาพได้");
       }
@@ -101,8 +113,9 @@ const YearyTransaction: React.FC = () => {
 
   React.useEffect(() => {
     initTrans(authContext, { state, setState }).catch((err) => {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
       console.log(err);
-      navigate("/");
     });
   }, [state.yearSelect, state.refaceTrans]);
   return (

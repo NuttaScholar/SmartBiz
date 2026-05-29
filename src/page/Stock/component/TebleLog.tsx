@@ -18,6 +18,11 @@ import stockWithRetry_f from "../lib/stockWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 import { stockLogType_e } from "../../../enum";
 import storageWithRetry_f from "../../../lib/storageWithRetry";
+import { useNavigate } from "react-router-dom";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 
 //*********************************************
 // Type
@@ -61,6 +66,7 @@ const headerStockOut: headerTable_t[] = [
 const TebleLog: React.FC<myProps> = (props) => {
   // Hook ************************************
   const auth = useAuth();
+  const navigate = useNavigate();
   const [rows, setRow] = React.useState<logInfo_t[]>([]);
   const [tab, setTab] = React.useState(0);
   const [open, setOpen] = React.useState(false);
@@ -85,6 +91,8 @@ const TebleLog: React.FC<myProps> = (props) => {
       .getImg(auth, { Bucket: spitUrl[0], Key: spitUrl[1] })
       .then((res) => {
         if(res.status !== "success" || res.result === undefined){
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert("ไม่สามารถโหลดรูปภาพได้");
           return;
         }
@@ -92,6 +100,8 @@ const TebleLog: React.FC<myProps> = (props) => {
         setOpen(true);
       })
       .catch((err) => {
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
         console.error("Get image error:", err);
         alert("ไม่สามารถโหลดรูปภาพได้");
       });
@@ -112,10 +122,14 @@ const TebleLog: React.FC<myProps> = (props) => {
           setRow(res.result.logs);
           setTotalRows(res.result.total);
         } else {
+          if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
+
           alert("ไม่สามารถดึงข้อมูลประวัติการเปลี่ยนแปลงสต็อกได้");
         }
       })
       .catch((err) => {
+        if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+
         console.error("Get log error:", err);
       });
   }, [tab, props.productID, page, rowsPerPage]);

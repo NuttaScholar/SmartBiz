@@ -1,7 +1,10 @@
 import { errorCode_e } from "../enum";
 import { ErrorString } from "../function/Enum";
 
-type NavigateTo = (to: string, options?: { replace?: boolean }) => void;
+type NavigateTo = (
+  to: string,
+  options?: { replace?: boolean; state?: { from?: string } },
+) => void;
 
 const authErrorCodes = new Set<errorCode_e>([
   errorCode_e.TokenExpiredError,
@@ -22,13 +25,18 @@ export function isAuthError(err: unknown) {
 }
 
 export function redirectToLogin(navigate: NavigateTo) {
-  navigate("/login", { replace: true });
+  const from = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  navigate("/login", {
+    replace: true,
+    state: from && from !== "/login" ? { from } : undefined,
+  });
 }
 
 export function redirectToLoginOnAuthError(
   navigate: NavigateTo,
   errCode?: errorCode_e,
 ) {
+
   if (!isAuthErrorCode(errCode)) return false;
 
   redirectToLogin(navigate);
