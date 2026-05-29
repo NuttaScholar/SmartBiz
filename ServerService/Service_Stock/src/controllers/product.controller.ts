@@ -49,7 +49,7 @@ export default class ProductController {
   async deleteProduct(req: AuthRequest, res: Response) {
     try {
       this.ensureAdmin(req);
-      await this.service.deleteProduct(req.query.id as string);
+      await this.service.deleteProduct(req.query.id as string, req.headers.authorization);
       return res.send({ status: "success" });
     } catch (err: any) {
       return handleError(res, err);

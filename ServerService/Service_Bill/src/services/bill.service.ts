@@ -59,6 +59,22 @@ export default class BillService {
     return this.repo.countByStatus(customerID, orderID);
   }
 
+  async getProductUsage(productID?: string) {
+    if (!productID) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "productID is required"
+      };
+    }
+
+    const orderCount = await this.repo.countByProduct(productID);
+    return {
+      productID,
+      isUsed: orderCount > 0,
+      orderCount
+    };
+  }
+
   /**
    * ดึงรายการคำสั่งซื้อตามสถานะ (OrderStatus)
    */

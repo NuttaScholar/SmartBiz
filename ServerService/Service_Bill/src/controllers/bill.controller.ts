@@ -47,6 +47,17 @@ export default class BillController {
     }
   }
 
+  async getProductUsage(req: AuthRequest, res: Response) {
+    try {
+      if (!ensureBillUser(req, res)) return;
+      const { productID } = req.params;
+      const data = await this.service.getProductUsage(productID);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
   async getOrdersByStatus(req: AuthRequest, res: Response) {
     try {
       if (!ensureBillUser(req, res)) return;

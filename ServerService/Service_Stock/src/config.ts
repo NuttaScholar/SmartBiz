@@ -26,6 +26,7 @@ export const JWT_SECRET = requireEnv("SECRET") as Secret;
 export const WEB_HOST = requireEnv("WEB_HOST");
 export const DB_URL = requireEnv("DB_URL");
 export const SERVICE_ACCOUNT_URL = requireEnv("SERVICE_ACCOUNT_URL");
+export const SERVICE_BILL_URL = process.env.SERVICE_BILL_URL || "http://localhost:3004";
 
 export const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "localhost";
 export const MINIO_PORT = Number(process.env.MINIO_PORT || 9000);

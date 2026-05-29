@@ -21,6 +21,8 @@ export default function billRoutes(
 
     router.get("/status/count", (req, res) => controller.countOrdersByStatus(req, res));
 
+    router.get("/product/:productID/usage", (req, res) => controller.getProductUsage(req, res));
+
     /**
      * 2. ขอรายการคำสั่งซื้อตามสถานะ
      * GET /bill/status/:status

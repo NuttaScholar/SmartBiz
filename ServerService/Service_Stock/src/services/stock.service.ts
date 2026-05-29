@@ -1,5 +1,6 @@
 import { Model } from "mongoose";
-import { BILL_BUCKET, DEFAULT_BUCKET, MINIO_HOST } from "../config";
+import axios from "axios";
+import { BILL_BUCKET, DEFAULT_BUCKET, MINIO_HOST, SERVICE_BILL_URL } from "../config";
 import { LogDocument } from "../models/log.interface";
 import { ProductDocument } from "../models/product.interface";
 import LogRepo from "../repositories/log.repo";
@@ -8,6 +9,16 @@ import { logInfo_t, logRes_t, productInfo_t, productRes_t, stockForm_t, stockOut
 import { errorCode_e, productType_e, stockLogType_e, stockStatus_e } from "../utils/enum";
 import StorageService from "./storage.service";
 import TransactionService from "./transaction.service";
+
+type ProductUsageResponse = {
+  success: boolean;
+  data?: {
+    productID: string;
+    isUsed: boolean;
+    orderCount: number;
+  };
+  errCode?: errorCode_e;
+};
 
 export default class StockService {
   private productRepo: ProductRepo;
@@ -69,10 +80,12 @@ export default class StockService {
     return { products, status: stockStatus };
   }
 
-  async deleteProduct(id?: string) {
+  async deleteProduct(id?: string, token?: string) {
     if (!id) {
       throw { code: errorCode_e.InvalidInputError, message: "id is required" };
     }
+
+    await this.ensureProductIsNotUsedInOrders(id, token);
 
     const product = await this.productRepo.findById(id);
     if (product?.img) {
@@ -224,6 +237,45 @@ export default class StockService {
     }
 
     return [...new Set(parsedTypes)] as productType_e[];
+  }
+
+  private async ensureProductIsNotUsedInOrders(productID: string, token?: string) {
+    if (!token) {
+      throw { code: errorCode_e.UnauthorizedError, message: "Authorization token is required" };
+    }
+
+    try {
+      const response = await axios.get<ProductUsageResponse>(
+        `${SERVICE_BILL_URL.replace(/\/$/, "")}/bill/product/${encodeURIComponent(productID)}/usage`,
+        {
+          headers: {
+            Authorization: token,
+          },
+        },
+      );
+
+      if (!response.data?.success) {
+        throw {
+          code: response.data?.errCode || errorCode_e.UnknownError,
+          message: "Check product usage failed",
+        };
+      }
+
+      if (response.data.data?.isUsed) {
+        throw {
+          code: errorCode_e.InUseError,
+          message: `Product is used in ${response.data.data.orderCount} order(s)`,
+        };
+      }
+    } catch (err: any) {
+      if (err.code) throw err;
+
+      const billError = err.response?.data;
+      throw {
+        code: billError?.errCode || errorCode_e.UnknownError,
+        message: "Check product usage failed",
+      };
+    }
   }
 
   private async removeProductImage(img?: string) {

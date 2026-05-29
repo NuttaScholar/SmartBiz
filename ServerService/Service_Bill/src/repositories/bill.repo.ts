@@ -47,6 +47,10 @@ export default class BillRepo {
     return this.OrderModel.find({ status });
   }
 
+  async countByProduct(productID: string) {
+    return this.OrderModel.countDocuments({ "items.productID": productID });
+  }
+
   async createOrder(data: any) {
     const order = new this.OrderModel(data);
     return order.save();
