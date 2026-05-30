@@ -2,6 +2,8 @@ import { Model } from "mongoose";
 import { statement_t, TransitionForm_t } from "../type";
 import { TransactionDocument } from "../models/transaction.interface";
 
+const LOCAL_TIMEZONE = "Asia/Bangkok";
+
 export default class TransactionRepo {
   constructor(private TransactionModel: Model<TransactionDocument>) {}
 
@@ -22,16 +24,15 @@ export default class TransactionRepo {
       { $match: filter },
       {
         $addFields: {
-          newDate: {
-            $add: ["$date", { $multiply: [7, 60, 60, 1000] }],
-          },
+          localDate: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: LOCAL_TIMEZONE } },
+          localMonth: { $dateToString: { format: "%Y-%m", date: "$date", timezone: LOCAL_TIMEZONE } },
         },
       },
       {
         $group: {
           _id: {
-            date: "$date",
-            month: { $dateToString: { format: "%Y-%m", date: "$newDate" } },
+            date: "$localDate",
+            month: "$localMonth",
           },
           transactions: {
             $push: {
@@ -63,9 +64,9 @@ export default class TransactionRepo {
     ]);
 
     return data.map((monthGroup) => ({
-      date: new Date(`${monthGroup._id}-01`),
-      detail: monthGroup.detail.map((daily: { date: Date; transactions: unknown[] }) => ({
-        date: new Date(daily.date),
+      date: new Date(`${monthGroup._id}-01T00:00:00+07:00`),
+      detail: monthGroup.detail.map((daily: { date: string; transactions: unknown[] }) => ({
+        date: new Date(`${daily.date}T00:00:00+07:00`),
         transactions: daily.transactions,
       })),
     }));
