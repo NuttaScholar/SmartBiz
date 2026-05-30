@@ -18,11 +18,13 @@ export async function getToken(
 ): Promise<responstLogin_t<"getToken">> {
     try {
         const res = await axios_login.get(
-            "/token"
+            "/token",
+            {
+                validateStatus: (status) => status < 500,
+            }
         );
         return res.data as responstLogin_t<"getToken">;
     } catch (err) {
-        console.error("Error during getToken:", err);
         throw err;
     }
 }
