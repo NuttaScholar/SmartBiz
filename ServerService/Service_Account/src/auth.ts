@@ -20,18 +20,18 @@ const decoder = (token: string): tokenPackage_t | null => {
 export const AuthMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
   const authorization = req.headers.authorization;
   if (!authorization) {
-    return res.send(error<"none">(errorCode_e.UnauthorizedError));
+    return res.status(401).json(error<"none">(errorCode_e.UnauthorizedError, "Authorization header missing"));
   }
 
   const accessToken = authorization.split(" ")[1];
   const decoded = decoder(accessToken);
 
   if (!decoded) {
-    return res.send(error<"none">(errorCode_e.TokenExpiredError));
+    return res.status(401).json(error<"none">(errorCode_e.TokenExpiredError, "Token expired"));
   }
 
   if (decoded.type !== "accessToken") {
-    return res.send(error<"none">(errorCode_e.UnauthorizedError));
+    return res.status(401).json(error<"none">(errorCode_e.UnauthorizedError, "Invalid token"));
   }
 
   req.authData = decoded;

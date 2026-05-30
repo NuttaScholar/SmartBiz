@@ -16,8 +16,9 @@ type StockChange = {
   quantity: number;
 };
 type AccountApiResponse = {
-  status: "success" | "error";
+  success: boolean;
   errCode?: errorCode_e;
+  message?: string;
 };
 
 const WORKFLOW = [
@@ -328,10 +329,10 @@ export default class BillService {
         }
       );
 
-      if (response.data?.status !== "success") {
+      if (!response.data?.success) {
         throw {
           code: response.data?.errCode ?? errorCode_e.UnknownError,
-          message: "Create income transaction failed"
+          message: response.data?.message ?? "Create income transaction failed"
         };
       }
     } catch (error: any) {

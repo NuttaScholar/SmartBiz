@@ -22,7 +22,10 @@ export default class StockController {
       const { products, who } = req.body as { products?: string; who?: string };
       const token = req.headers.authorization!.split(" ")[1];
       const errors = await this.service.stockIn(token, products, who, req.file);
-      return res.send(errors.length ? { status: "warning", result: errors } : { status: "success" });
+      return res.json({
+        success: true,
+        ...(errors.length ? { data: errors, message: "Completed with warnings" } : {}),
+      });
     } catch (err: any) {
       return handleError(res, err);
     }
@@ -32,7 +35,10 @@ export default class StockController {
     try {
       this.ensureAdmin(req);
       const errors = await this.service.stockOut(req.body as stockOutForm_t);
-      return res.send(errors.length ? { status: "warning", result: errors } : { status: "success" });
+      return res.json({
+        success: true,
+        ...(errors.length ? { data: errors, message: "Completed with warnings" } : {}),
+      });
     } catch (err: any) {
       return handleError(res, err);
     }
@@ -43,7 +49,7 @@ export default class StockController {
       this.ensureAdmin(req);
       const { id, type, index, size } = req.query;
       const result = await this.service.getLog(id as string, type as string, index as string, size as string);
-      return res.send({ status: "success", result });
+      return res.json({ success: true, data: result });
     } catch (err: any) {
       return handleError(res, err);
     }
@@ -53,7 +59,7 @@ export default class StockController {
     try {
       this.ensureAdmin(req);
       const result = await this.service.getStatus();
-      return res.send({ status: "success", result });
+      return res.json({ success: true, data: result });
     } catch (err: any) {
       return handleError(res, err);
     }
@@ -63,7 +69,7 @@ export default class StockController {
     try {
       this.ensureStockReader(req);
       const result = await this.service.getStock(req.query.productType as string | string[] | undefined);
-      return res.send({ status: "success", result });
+      return res.json({ success: true, data: result });
     } catch (err: any) {
       return handleError(res, err);
     }

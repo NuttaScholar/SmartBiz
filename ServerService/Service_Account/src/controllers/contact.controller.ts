@@ -23,7 +23,7 @@ export default class ContactController {
       if (!requireContactEditor(req, res)) return;
 
       await this.service.createContact(req.body as ContactForm_t);
-      return res.send(success<"none">());
+      return res.json(success<"none">());
     } catch (err) {
       return handleError(res, err);
     }
@@ -40,17 +40,17 @@ export default class ContactController {
         size as string
       );
 
-      return res.send({
-        ...success<"getContact">(result.data),
-        ...(result.size !== undefined
-          ? {
-              index: result.index,
-              size: result.size,
-              total: result.total,
-              hasMore: result.hasMore,
-            }
-          : {}),
-      });
+      const data = result.size !== undefined
+        ? {
+            contacts: result.data,
+            index: result.index,
+            size: result.size,
+            total: result.total,
+            hasMore: result.hasMore,
+          }
+        : result.data;
+
+      return res.json(success<"getContact">(data));
     } catch (err) {
       return handleError(res, err);
     }
@@ -61,7 +61,7 @@ export default class ContactController {
       if (!requireContactEditor(req, res)) return;
 
       await this.service.updateContact(req.body as ContactForm_t);
-      return res.send(success<"none">());
+      return res.json(success<"none">());
     } catch (err) {
       return handleError(res, err);
     }
@@ -72,7 +72,7 @@ export default class ContactController {
       if (!requireAdmin(req, res)) return;
 
       await this.service.deleteContact(req.query.id as string);
-      return res.send(success<"none">());
+      return res.json(success<"none">());
     } catch (err) {
       return handleError(res, err);
     }
@@ -82,7 +82,7 @@ export default class ContactController {
 function requireAdmin(req: AuthRequest, res: Response) {
   if (req.authData?.role === role_e.admin) return true;
 
-  res.send(error<"none">(errorCode_e.PermissionDeniedError));
+  res.status(403).json(error<"none">(errorCode_e.PermissionDeniedError, "You do not have permission to access this resource"));
   return false;
 }
 
@@ -94,11 +94,12 @@ function requireContactEditor(req: AuthRequest, res: Response) {
     return true;
   }
 
-  res.send(error<"none">(errorCode_e.PermissionDeniedError));
+  res.status(403).json(error<"none">(errorCode_e.PermissionDeniedError, "You do not have permission to access this resource"));
   return false;
 }
 
 function handleError(res: Response, err: any) {
   console.error(err);
-  return res.send(error<"none">(err?.code || errorCode_e.UnknownError));
+  const errCode = err?.code || errorCode_e.UnknownError;
+  return res.status(err?.code ? 400 : 500).json(error<"none">(errCode, err?.message || "Unknown error"));
 }

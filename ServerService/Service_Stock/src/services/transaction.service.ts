@@ -39,7 +39,11 @@ export default class TransactionService {
       return response.data;
     } catch (err) {
       console.error("postTransactionLog error:", err);
-      return { status: "error", errCode: errorCode_e.UnknownError };
+      return {
+        success: false,
+        errCode: errorCode_e.UnknownError,
+        message: "Create transaction failed",
+      };
     }
   }
 }

@@ -52,19 +52,22 @@ export type responstLogin_t<
   | "none"
 > = T extends "getUser"
   ? {
-    status: "success" | "error";
-    result?: UserProfile_t[];
+    success: boolean;
+    data?: UserProfile_t[];
     errCode?: errorCode_e;
+    message?: string;
   }
   : T extends "getToken" | "postLogin"
   ? {
-    status: "success" | "error";
-    result?: Auth_t;
+    success: boolean;
+    data?: Auth_t;
     errCode?: errorCode_e;
+    message?: string;
   }
   : {
-    status: "success" | "error";
+    success: boolean;
     errCode?: errorCode_e;
+    message?: string;
   };
 
 

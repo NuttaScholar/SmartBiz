@@ -23,7 +23,7 @@ export default class TransactionController {
       if (!requireAdmin(req, res)) return;
 
       await this.service.createTransaction(req.body as TransitionForm_t, req.file);
-      return res.send(success<"none">());
+      return res.json(success<"none">());
     } catch (err) {
       return handleError(res, err);
     }
@@ -34,7 +34,7 @@ export default class TransactionController {
       if (!requireAdmin(req, res)) return;
 
       const result = await this.service.getTransactionDetail(req.query.id as string);
-      return res.send(success<"getTransDetail">(result));
+      return res.json(success<"getTransDetail">(result));
     } catch (err) {
       return handleError(res, err, "getTransDetail");
     }
@@ -52,7 +52,7 @@ export default class TransactionController {
         topic: topic as string,
         type: type as string,
       });
-      return res.send(success<"getTransaction">(result));
+      return res.json(success<"getTransaction">(result));
     } catch (err) {
       return handleError(res, err, "getTransaction");
     }
@@ -67,7 +67,7 @@ export default class TransactionController {
         req.body as TransitionForm_t,
         req.file
       );
-      return res.send(success<"none">());
+      return res.json(success<"none">());
     } catch (err) {
       return handleError(res, err);
     }
@@ -78,7 +78,7 @@ export default class TransactionController {
       if (!requireAdmin(req, res)) return;
 
       await this.service.deleteTransaction(req.query.id as string);
-      return res.send(success<"none">());
+      return res.json(success<"none">());
     } catch (err) {
       return handleError(res, err);
     }
@@ -88,14 +88,15 @@ export default class TransactionController {
 function requireAdmin(req: AuthRequest, res: Response) {
   if (req.authData?.role === role_e.admin) return true;
 
-  res.send(error<"none">(errorCode_e.PermissionDeniedError));
+  res.status(403).json(error<"none">(errorCode_e.PermissionDeniedError, "You do not have permission to access this resource"));
   return false;
 }
 
 function handleError(res: Response, err: any, kind: "getTransDetail" | "getTransaction" | "none" = "none") {
   console.error(err);
   const errCode = err?.code || errorCode_e.UnknownError;
-  if (kind === "getTransDetail") return res.send(error<"getTransDetail">(errCode));
-  if (kind === "getTransaction") return res.send(error<"getTransaction">(errCode));
-  return res.send(error<"none">(errCode));
+  const message = err?.message || "Unknown error";
+  if (kind === "getTransDetail") return res.status(err?.code ? 400 : 500).json(error<"getTransDetail">(errCode, message));
+  if (kind === "getTransaction") return res.status(err?.code ? 400 : 500).json(error<"getTransaction">(errCode, message));
+  return res.status(err?.code ? 400 : 500).json(error<"none">(errCode, message));
 }

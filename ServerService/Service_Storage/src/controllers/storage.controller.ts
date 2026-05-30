@@ -11,7 +11,7 @@ export default class StorageController {
       if (!ensureAdmin(req, res)) return;
       const { Bucket, Key } = req.query;
       const url = await this.service.presignedPut(Bucket as string | undefined, Key as string | undefined);
-      return res.send({ status: "success", result: { url } });
+      return res.json({ success: true, data: { url } });
     } catch (err) {
       return handleError(res, err);
     }
@@ -22,7 +22,7 @@ export default class StorageController {
       if (!ensureAdmin(req, res)) return;
       const { Bucket, Key } = req.query;
       const url = await this.service.presignedGet(Bucket as string | undefined, Key as string | undefined);
-      return res.send({ status: "success", result: { url } });
+      return res.json({ success: true, data: { url } });
     } catch (err) {
       return handleError(res, err);
     }
@@ -33,7 +33,7 @@ export default class StorageController {
       if (!ensureAdmin(req, res)) return;
       const { Bucket, Private } = req.body;
       await this.service.createBucket(Bucket, Private || false);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err) {
       return handleError(res, err);
     }
@@ -44,7 +44,7 @@ export default class StorageController {
       if (!ensureAdmin(req, res)) return;
       const { Bucket, Private } = req.body;
       await this.service.updateBucket(Bucket, Private);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err) {
       return handleError(res, err);
     }
@@ -55,7 +55,7 @@ export default class StorageController {
       if (!ensureAdmin(req, res)) return;
       const { Bucket } = req.body;
       await this.service.deleteBucket(Bucket);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err) {
       return handleError(res, err);
     }
@@ -76,7 +76,7 @@ export default class StorageController {
         Number(width) || undefined,
         Number(height) || undefined,
       );
-      return res.send({ status: "success", result });
+      return res.json({ success: true, data: result });
     } catch (err) {
       return handleError(res, err);
     }
@@ -87,7 +87,7 @@ export default class StorageController {
       if (!ensureAdmin(req, res)) return;
       const { Bucket, Key } = req.query;
       await this.service.removeImage(Bucket as string | undefined, Key as string | undefined);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err) {
       return handleError(res, err);
     }
@@ -99,14 +99,19 @@ function ensureAdmin(req: AuthRequest, res: Response) {
     return true;
   }
 
-  res.send({ status: "error", errCode: errorCode_e.PermissionDeniedError });
+  res.status(403).json({
+    success: false,
+    errCode: errorCode_e.PermissionDeniedError,
+    message: "You do not have permission to access this resource",
+  });
   return false;
 }
 
 function handleError(res: Response, err: any) {
   console.log(err);
-  return res.send({
-    status: "error",
+  return res.status(err?.code ? 400 : 500).json({
+    success: false,
     errCode: err?.code ?? errorCode_e.UnknownError,
+    message: err?.message || "Unknown error",
   });
 }

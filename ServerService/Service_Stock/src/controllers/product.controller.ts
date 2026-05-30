@@ -19,7 +19,7 @@ export default class ProductController {
     try {
       this.ensureAdmin(req);
       await this.service.createProduct(req.body as productInfo_t, req.file);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err: any) {
       return handleError(res, err);
     }
@@ -29,7 +29,7 @@ export default class ProductController {
     try {
       this.ensureAdmin(req);
       await this.service.updateProduct(req.body as productInfo_t, req.file);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err: any) {
       return handleError(res, err);
     }
@@ -40,7 +40,7 @@ export default class ProductController {
       this.ensureStockReader(req);
       const { type, name, status } = req.query;
       const result = await this.service.getProducts(type as string, name as string, status as string);
-      return res.send({ status: "success", result });
+      return res.json({ success: true, data: result });
     } catch (err: any) {
       return handleError(res, err);
     }
@@ -50,7 +50,7 @@ export default class ProductController {
     try {
       this.ensureAdmin(req);
       await this.service.deleteProduct(req.query.id as string, req.headers.authorization);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err: any) {
       return handleError(res, err);
     }
@@ -74,8 +74,9 @@ export default class ProductController {
 
 export function handleError(res: Response, err: any) {
   console.error(err);
-  return res.send({
-    status: "error",
+  return res.status(err?.code ? 400 : 500).json({
+    success: false,
     errCode: err?.code || errorCode_e.UnknownError,
+    message: err?.message || "Unknown error",
   });
 }

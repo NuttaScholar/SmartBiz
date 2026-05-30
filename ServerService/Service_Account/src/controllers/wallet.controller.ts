@@ -17,10 +17,10 @@ export default class WalletController {
     try {
       if (!requireAdmin(req, res)) return;
 
-      return res.send(success<"getWallet">(await this.service.getMainWalletAmount()));
+      return res.json(success<"getWallet">(await this.service.getMainWalletAmount()));
     } catch (err) {
       console.error(err);
-      return res.send(error<"getWallet">(errorCode_e.UnknownError));
+      return res.status(500).json(error<"getWallet">(errorCode_e.UnknownError, "Unknown error"));
     }
   }
 }
@@ -28,6 +28,6 @@ export default class WalletController {
 function requireAdmin(req: AuthRequest, res: Response) {
   if (req.authData?.role === role_e.admin) return true;
 
-  res.send(error<"none">(errorCode_e.PermissionDeniedError));
+  res.status(403).json(error<"none">(errorCode_e.PermissionDeniedError, "You do not have permission to access this resource"));
   return false;
 }

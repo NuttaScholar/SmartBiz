@@ -4,15 +4,17 @@ import { responst_t } from "./type";
 type ResponseKind = "getTransaction" | "getTransDetail" | "getContact" | "getWallet" | "none";
 
 export const success = <T extends ResponseKind>(
-  result?: unknown,
+  data?: unknown,
 ): responst_t<T> => ({
-  status: "success",
-  ...(result !== undefined ? { result } : {}),
+  success: true,
+  ...(data !== undefined ? { data } : {}),
 } as responst_t<T>);
 
 export const error = <T extends ResponseKind>(
   errCode: errorCode_e,
+  message = "Something went wrong",
 ): responst_t<T> => ({
-  status: "error",
+  success: false,
   errCode,
+  message,
 } as responst_t<T>);

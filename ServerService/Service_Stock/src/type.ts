@@ -96,35 +96,41 @@ export type responst_t<
   | "none"
 > = T extends "getProduct"
   ? {
-    status: "success" | "error";
-    result?: productRes_t;
+    success: boolean;
+    data?: productRes_t;
     errCode?: errorCode_e;
+    message?: string;
   }
   : T extends "getStatus"
   ? {
-    status: "success" | "error";
-    result?: stockStatus_t;
+    success: boolean;
+    data?: stockStatus_t;
     errCode?: errorCode_e;
+    message?: string;
   }
   : T extends "getLog"
   ? {
-    status: "success" | "error";
-    result?: logRes_t;
+    success: boolean;
+    data?: logRes_t;
     errCode?: errorCode_e;
+    message?: string;
   }
   : T extends "getStock"
   ? {
-    status: "success" | "error";
-    result?: productInfo_t[];
+    success: boolean;
+    data?: productInfo_t[];
     errCode?: errorCode_e;
+    message?: string;
   }
   : T extends "postStock"
   ? {
-    status: "success" | "error" | "warning";
-    result?: errList_t;
+    success: boolean;
+    data?: errList_t;
     errCode?: errorCode_e;
+    message?: string;
   }
   : {
-    status: "success" | "error";
+    success: boolean;
     errCode?: errorCode_e;
+    message?: string;
   }

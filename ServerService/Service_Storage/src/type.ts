@@ -19,11 +19,13 @@ export type responst_t<
   | "none"
 > = T extends "getPresigned" | "postImg"
   ? {
-    status: "success" | "error";
-    result?: { url: string };
+    success: boolean;
+    data?: { url: string };
     errCode?: errorCode_e;
+    message?: string;
   }
   : {
-    status: "success" | "error";
+    success: boolean;
     errCode?: errorCode_e;
+    message?: string;
   }

@@ -12,17 +12,29 @@ const tokenService = new TokenService();
 export default function AuthMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    return res.send({ status: "error", errCode: errorCode_e.UnauthorizedError });
+    return res.status(401).json({
+      success: false,
+      errCode: errorCode_e.UnauthorizedError,
+      message: "Authorization header missing",
+    });
   }
 
   const accessToken = authHeader.split(" ")[1];
   const decoded = tokenService.decode(accessToken);
   if (!decoded) {
-    return res.send({ status: "error", errCode: errorCode_e.TokenExpiredError });
+    return res.status(401).json({
+      success: false,
+      errCode: errorCode_e.TokenExpiredError,
+      message: "Token expired",
+    });
   }
 
   if (decoded.type !== "accessToken") {
-    return res.send({ status: "error", errCode: errorCode_e.UnauthorizedError });
+    return res.status(401).json({
+      success: false,
+      errCode: errorCode_e.UnauthorizedError,
+      message: "Invalid token",
+    });
   }
 
   req.authData = decoded;

@@ -109,7 +109,7 @@ export default class StockService {
     const uploadedBill = await this.storageService.uploadImage(file.buffer, BILL_BUCKET, imgKey);
 
     const transactionRes = await this.transactionService.postStockIn(token, products, uploadedBill.url, who);
-    if (transactionRes.status === "error") {
+    if (!transactionRes.success) {
       throw { code: transactionRes.errCode || errorCode_e.UnknownError, message: "Create transaction failed" };
     }
 

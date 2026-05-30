@@ -15,7 +15,7 @@ export default class UserController {
   async createUser(req: AuthRequest, res: Response) {
     try {
       await this.service.createUser(req.authData?.role, req.body);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err) {
       return handleError(res, err);
     }
@@ -25,7 +25,7 @@ export default class UserController {
     try {
       const result = await this.service.login(req.body);
       res.cookie("refreshToken", result.refreshToken, cookieOptions());
-      return res.send({ status: "success", result: { role: result.role, token: result.token } });
+      return res.json({ success: true, data: { role: result.role, token: result.token } });
     } catch (err) {
       return handleError(res, err);
     }
@@ -33,13 +33,13 @@ export default class UserController {
 
   logout(req: Request, res: Response) {
     res.clearCookie("refreshToken", { ...cookieOptions(), path: "/" });
-    return res.send({ status: "success" });
+    return res.json({ success: true });
   }
 
   async listUsers(req: AuthRequest, res: Response) {
     try {
       const result = await this.service.listUsers(req.authData?.role, req.query.name as string | undefined);
-      return res.send({ status: "success", result });
+      return res.json({ success: true, data: result });
     } catch (err) {
       return handleError(res, err);
     }
@@ -48,7 +48,7 @@ export default class UserController {
   async refreshToken(req: Request, res: Response) {
     try {
       const result = await this.service.refreshToken(req.cookies.refreshToken);
-      return res.send({ status: "success", result });
+      return res.json({ success: true, data: result });
     } catch (err) {
       return handleError(res, err);
     }
@@ -56,13 +56,13 @@ export default class UserController {
 
   health(req: Request, res: Response) {
     console.log("refreshToken", req.cookies.refreshToken);
-    return res.send({ status: "success" });
+    return res.json({ success: true });
   }
 
   async deleteUser(req: AuthRequest, res: Response) {
     try {
       await this.service.deleteUser(req.authData?.role, req.query.id as string | undefined);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err) {
       return handleError(res, err);
     }
@@ -71,7 +71,7 @@ export default class UserController {
   async updateUser(req: AuthRequest, res: Response) {
     try {
       await this.service.updateUser(req.authData?.role, req.body);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err) {
       return handleError(res, err);
     }
@@ -80,7 +80,7 @@ export default class UserController {
   async updatePassword(req: AuthRequest, res: Response) {
     try {
       await this.service.updatePassword(req.authData?.username, req.body);
-      return res.send({ status: "success" });
+      return res.json({ success: true });
     } catch (err) {
       return handleError(res, err);
     }
@@ -97,8 +97,9 @@ function cookieOptions() {
 }
 
 function handleError(res: Response, err: any) {
-  return res.send({
-    status: "error",
+  return res.status(err?.code ? 400 : 500).json({
+    success: false,
     errCode: err?.code ?? errorCode_e.UnknownError,
+    message: err?.message || "Unknown error",
   });
 }
