@@ -80,7 +80,7 @@ services:
 
   service_login:
     container_name: service_login
-    image: nuttascholar/smartbiz_login:1.0
+    image: nuttascholar/smartbiz_login:1.1
     environment:
       SECRET: ${SECRET}
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
@@ -141,7 +141,7 @@ services:
 
   service_storage:
     container_name: service_storage
-    image: nuttascholar/smartbiz_storage:1.0
+    image: nuttascholar/smartbiz_storage:1.1
     environment:
       SECRET: ${SECRET}
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
