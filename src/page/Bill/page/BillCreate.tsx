@@ -382,7 +382,7 @@ export default function Page_BillCreate() {
           })
         : await billWithRetry_f.postOrder(authContext, data);
 
-      if (res.status === "success") {
+      if (res.success) {
         navigate(orderID ? `/bill/detail/${orderID}` : "/bill");
         return;
       }
@@ -413,8 +413,8 @@ export default function Page_BillCreate() {
         productType: [productType_e.merchandise, productType_e.another],
       })
       .then((res) => {
-        if (res.status === "success" && res.result !== undefined) {
-          setListOption(res.result);
+        if (res.success && res.data !== undefined) {
+          setListOption(res.data);
         } else {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
@@ -440,8 +440,8 @@ export default function Page_BillCreate() {
       .then((res) => {
         if (!active) return;
 
-        if (res.status === "success") {
-          const order = res.result?.find((item) => item.id === orderID);
+        if (res.success) {
+          const order = res.data?.find((item) => item.id === orderID);
           if (order) {
             setOrderToForm(order);
           } else {
@@ -492,8 +492,8 @@ export default function Page_BillCreate() {
       .then((res) => {
         if (!active) return;
 
-        if (res.status === "success" && res.result !== undefined) {
-          const discounts = res.result.discounts || [];
+        if (res.success && res.data !== undefined) {
+          const discounts = res.data.discounts || [];
           setCustomerDiscounts(discounts);
           setState((prev) => ({
             ...prev,

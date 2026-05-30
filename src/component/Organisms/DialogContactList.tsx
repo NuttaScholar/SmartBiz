@@ -70,8 +70,8 @@ const DialogContactList: React.FC<myProps> = (props) => {
           size: pageSize,
         })
         .then((val) => {
-          if (val.result) {
-            props.onChange?.(append ? [...props.list, ...val.result] : val.result);
+          if (val.data) {
+            props.onChange?.(append ? [...props.list, ...val.data] : val.data);
             setPageIndex(index);
             setHasMore(val.hasMore ?? false);
           } else if (val.errCode) {
@@ -117,8 +117,8 @@ const DialogContactList: React.FC<myProps> = (props) => {
     contactWithRetry_f
       .del(authContext, data)
       .then((res) => {
-        if (res.status === "success") {
-          res.result && props.onChange(res.result);
+        if (res.success) {
+          res.data && props.onChange(res.data);
         } else {
           res.errCode && alert(ErrorString(res.errCode));
         }

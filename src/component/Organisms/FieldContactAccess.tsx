@@ -45,9 +45,9 @@ const FieldContactAccess: React.FC<MyProps> = (props) => {
     contactWithRetry_f
       .get(AuthContext)
       .then((val) => {
-        if (val.result) {
-          props.onOpenList?.(val.result);
-          setList(val.result);
+        if (val.data) {
+          props.onOpenList?.(val.data);
+          setList(val.data);
           setOpen(dialog_e.contactList);
         } else if (val.errCode) {
           alert(ErrorString(val.errCode));

@@ -44,9 +44,9 @@ const YearyTransaction: React.FC = () => {
     while (!finish) {
       try {
         const res = await accessWithRetry_f.get(authContext, condition);
-        if (res.result?.length) {
+        if (res.data?.length) {
           console.log(res);
-          const statement: statement_t[] = res.result;
+          const statement: statement_t[] = res.data;
           if (_month > 1) {
             _month--;
           }
@@ -88,12 +88,12 @@ const YearyTransaction: React.FC = () => {
           Bucket: spitUrl[0],
           Key: spitUrl[1],
         });
-        if (res.status !== "success" || res.result === undefined) {
+        if (!res.success || res.data === undefined) {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
           alert("ไม่สามารถโหลดรูปภาพได้");
         } else {
-          data = { ...value, bill: res.result.url };
+          data = { ...value, bill: res.data.url };
         }
       } catch (err) {
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;

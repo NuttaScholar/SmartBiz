@@ -67,8 +67,8 @@ const DialogFormContact: React.FC<myProps> = (props) => {
       contactWithRetry_f
         .put(authContext, form)
         .then((val) => {
-          if (val.result) {            
-            props.onClose(val.result);
+          if (val.data) {            
+            props.onClose(val.data);
           } else if (val.errCode) {
             alert(ErrorString(val.errCode));
           }
@@ -82,8 +82,8 @@ const DialogFormContact: React.FC<myProps> = (props) => {
       contactWithRetry_f
         .post(authContext, form)
         .then((val) => {
-          if (val.result) {
-            props.onClose(val.result);
+          if (val.data) {
+            props.onClose(val.data);
           } else if (val.errCode) {
             alert(ErrorString(val.errCode));
           }

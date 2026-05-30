@@ -1,5 +1,4 @@
-import Contact_f from "../../../API/AccountService/Contact";
-import { ContactSearchParams_t } from "../../../API/AccountService/Contact";
+import Contact_f, { ContactSearchParams_t } from "../../../API/AccountService/Contact";
 import { ContactForm_t, ContactInfo_t } from "../../../API/AccountService/type";
 import Login_f from "../../../API/LoginService/Login";
 import { contactInfo_t } from "../../../component/Molecules/ContactInfo";
@@ -7,70 +6,69 @@ import { AuthContext_t } from "../../../context/AuthContext";
 import { errorCode_e } from "../../../enum";
 
 interface resApiWithRetry_t {
-    result?: any;
-    status: "success" | "error"
+    data?: any;
+    success: boolean;
     errCode?: errorCode_e;
+    message?: string;
 }
 interface resContactWithRetry_t extends resApiWithRetry_t {
-    result?: ContactInfo_t[];
+    data?: ContactInfo_t[];
     index?: number;
     size?: number;
     total?: number;
     hasMore?: boolean;
 }
+
+function normalizeContactData(response: Awaited<ReturnType<typeof Contact_f.get>>): resContactWithRetry_t {
+    if (!response.success) {
+        return {
+            success: false,
+            errCode: response.errCode,
+            message: response.message,
+        };
+    }
+
+    if (Array.isArray(response.data)) {
+        return {
+            success: true,
+            data: response.data,
+        };
+    }
+
+    return {
+        success: true,
+        data: response.data?.contacts ?? [],
+        index: response.data?.index,
+        size: response.data?.size,
+        total: response.data?.total,
+        hasMore: response.data?.hasMore,
+    };
+}
+
 async function contactWithRetry(context: AuthContext_t, func: (token: string, data: any) => Promise<resApiWithRetry_t>, data: any) {
     if (!context.auth) {
         throw new Error("apiWithRetry_f must be used within an AuthProvider");
     }
-    try {
-        const putContactRes = await func(context.auth.token, data);
-        if (putContactRes.status === "success") {
-            const list = await get(context);
-            const result: resApiWithRetry_t = { status: "success", result: list.result }
-            return result;
-        }
 
-        if (putContactRes.errCode === errorCode_e.TokenExpiredError) {
-            const tokenRes = await Login_f.getToken();
-            if (tokenRes.status === "success" && tokenRes.result) {
-                const retryRes = await func(tokenRes.result.token, data);
-                context.setAuth(tokenRes.result);
-                if (retryRes.status === "success") {
-                    const list = await get(context);
-                    const result: resApiWithRetry_t = { status: "success", result: list.result }
-                    return result;
-                } else if (retryRes.errCode) {
-                    const result: resApiWithRetry_t = { status: "error", errCode: tokenRes.errCode };
-                    return result;
-                } else {
-                    throw new Error("Server Error");
-                }
-            } else if (tokenRes.errCode) {
-                const result: resApiWithRetry_t = { status: "error", errCode: tokenRes.errCode };
-                return result;
-            } else {
-                throw new Error("Server Error");
-            }
-        } else if (putContactRes.errCode) {
-            const result: resApiWithRetry_t = { status: "error", errCode: putContactRes.errCode };
-            return result;
-        } else {
-            throw new Error("Server Error");
-        }
-
-    } catch (err) {
-        throw new Error(`${err}`);
+    const firstRes = await func(context.auth.token, data);
+    if (firstRes.success) {
+        return get(context);
     }
-}
-function toContactResult(response: resContactWithRetry_t): resContactWithRetry_t {
-    return {
-        status: "success",
-        result: response.result,
-        index: response.index,
-        size: response.size,
-        total: response.total,
-        hasMore: response.hasMore,
-    };
+
+    if (firstRes.errCode === errorCode_e.TokenExpiredError) {
+        const tokenRes = await Login_f.getToken();
+        if (tokenRes.success && tokenRes.data) {
+            const retryRes = await func(tokenRes.data.token, data);
+            context.setAuth(tokenRes.data);
+            if (retryRes.success) {
+                return get(context);
+            }
+            return { success: false, errCode: retryRes.errCode, message: retryRes.message };
+        }
+        return { success: false, errCode: tokenRes.errCode, message: tokenRes.message };
+    }
+
+    return { success: false, errCode: firstRes.errCode, message: firstRes.message };
 }
 
 export async function get(
@@ -80,68 +78,35 @@ export async function get(
     if (!context.auth) {
         throw new Error("apiWithRetry_f must be used within an AuthProvider");
     }
-    try {
-        const contactRes = await Contact_f.get(context.auth.token, keyword);
-        if (contactRes.status === "success" && contactRes.result) {
-            return toContactResult(contactRes);
-        }
 
-        if (contactRes.errCode === errorCode_e.TokenExpiredError) {
-            const tokenRes = await Login_f.getToken();
-            if (tokenRes.status === "success" && tokenRes.result) {
-                const retryRes = await Contact_f.get(tokenRes.result.token, keyword);
-                context.setAuth(tokenRes.result);
-                if (retryRes.status === "success" && retryRes.result) {
-                    return toContactResult(retryRes);
-                } else if (retryRes.errCode) {
-                    const result: resContactWithRetry_t = { status: "error", errCode: retryRes.errCode }
-                    return result;
-                } else {
-                    throw new Error("Server Error");
-                }
-            } else if (tokenRes.errCode) {
-                const result: resContactWithRetry_t = { status: "error", errCode: tokenRes.errCode }
-                return result;
-            } else {
-                throw new Error("Server Error");
-            }
-        } else if (contactRes.errCode) {
-            const result: resContactWithRetry_t = { status: "error", errCode: contactRes.errCode };
-            return result;
-        } else {
-            throw new Error("Server Error");
-        }
-
-    } catch (err) {
-        throw new Error(`${err}`);
+    const contactRes = await Contact_f.get(context.auth.token, keyword);
+    if (contactRes.success) {
+        return normalizeContactData(contactRes);
     }
+
+    if (contactRes.errCode === errorCode_e.TokenExpiredError) {
+        const tokenRes = await Login_f.getToken();
+        if (tokenRes.success && tokenRes.data) {
+            const retryRes = await Contact_f.get(tokenRes.data.token, keyword);
+            context.setAuth(tokenRes.data);
+            return normalizeContactData(retryRes);
+        }
+        return { success: false, errCode: tokenRes.errCode, message: tokenRes.message };
+    }
+
+    return { success: false, errCode: contactRes.errCode, message: contactRes.message };
 }
 
 export async function post(context: AuthContext_t, data: ContactForm_t): Promise<resContactWithRetry_t> {
-    try {
-        const res: resContactWithRetry_t = await contactWithRetry(context, Contact_f.post, data);
-        return res;
-    } catch (err) {
-        throw err;
-    }
+    return contactWithRetry(context, Contact_f.post, data);
 }
 
 export async function put(context: AuthContext_t, data: ContactForm_t): Promise<resContactWithRetry_t> {
-    try {
-        const res: resContactWithRetry_t = await contactWithRetry(context, Contact_f.put, data);
-        return res;
-    } catch (err) {
-        throw err;
-    }
+    return contactWithRetry(context, Contact_f.put, data);
 }
 
 export async function del(context: AuthContext_t, data: contactInfo_t): Promise<resContactWithRetry_t> {
-    try {
-        const res: resContactWithRetry_t = await contactWithRetry(context, Contact_f.del, data);
-        return res;
-    } catch (err) {
-        throw err;
-    }
+    return contactWithRetry(context, Contact_f.del, data);
 }
 
 const contactWithRetry_f = {
@@ -151,4 +116,4 @@ const contactWithRetry_f = {
     del
 }
 
-export default contactWithRetry_f; 
+export default contactWithRetry_f;

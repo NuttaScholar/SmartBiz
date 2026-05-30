@@ -86,7 +86,7 @@ const DialogFormTransaction: React.FC = () => {
       accessWithRetry_f
         .put(authContext, newData)
         .then((res) => {
-          if (res.status !== "success") {
+          if (!res.success) {
             if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
             alert("ไม่สามารถแก้ไขรายการได้");
@@ -113,7 +113,7 @@ const DialogFormTransaction: React.FC = () => {
       accessWithRetry_f
         .post(authContext, newData)
         .then((res) => {
-          if (res.status !== "success") {
+          if (!res.success) {
             if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
             alert("ไม่สามารถเพิ่มรายการได้");
@@ -141,7 +141,7 @@ const DialogFormTransaction: React.FC = () => {
       accessWithRetry_f
         .del(authContext, state.transitionForm.id)
         .then((res) => {
-          if (res.status !== "success") {
+          if (!res.success) {
             if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
             alert("ไม่สามารถลบรายการได้");

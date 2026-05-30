@@ -37,7 +37,7 @@ const Page_SetPass: React.FC = () => {
       const data: EditPassFrom_t = { newPass: newPass, oldPass: oldPass };
       User_f.putPass(auth.token, data)
         .then((data) => {
-          if (data.status === "success") {
+          if (data.success) {
             alert("แก้ไข Password สำเร็จ");
           } else {
             if (redirectToLoginOnAuthError(navigate, data.errCode)) return;

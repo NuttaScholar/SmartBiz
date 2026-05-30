@@ -70,7 +70,7 @@ export default function Page_BillSetDiscount() {
     billWithRetry_f
       .putDiscounts(authContext, { customerID: selectedCustomerID, discounts })
       .then((res) => {
-        if (res.status === "success") {
+        if (res.success) {
           alert("บันทึกสำเร็จ");
         } else {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
@@ -167,8 +167,8 @@ export default function Page_BillSetDiscount() {
         productType: [productType_e.merchandise, productType_e.another],
       })
       .then((res) => {
-        if (res.status === "success" && res.result !== undefined) {
-          setListOption(res.result);
+        if (res.success && res.data !== undefined) {
+          setListOption(res.data);
         } else {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
@@ -197,10 +197,10 @@ export default function Page_BillSetDiscount() {
       .then((res) => {
         if (!active) return;
 
-        if (res.status === "success" && res.result !== undefined) {
+        if (res.success && res.data !== undefined) {
           setState((prev) => ({
             ...prev,
-            merchList: res.result?.discounts.map(toDiscountProduct) || [],
+            merchList: res.data?.discounts.map(toDiscountProduct) || [],
           }));
         } else if (res.errCode === errorCode_e.NotFoundError) {
           setState((prev) => ({ ...prev, merchList: [] }));

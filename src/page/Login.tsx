@@ -51,9 +51,9 @@ const Page_Login: React.FC = () => {
           .postLogin(data)
           .then((data) => {
             console.log("success", data);
-            if (data.status === "success" && data.result) {
-              setAuth(data.result);
-              navigate(getRedirectPath(location.state, data.result.role), {
+            if (data.success && data.data) {
+              setAuth(data.data);
+              navigate(getRedirectPath(location.state, data.data.role), {
                 replace: true,
               });
             }else {
@@ -75,9 +75,9 @@ const Page_Login: React.FC = () => {
   // Use Effect ***************
   React.useEffect(() => {
     Login_f.getToken().then((data) => {
-      if (data.status === "success" && data.result) {
-        setAuth(data.result);
-        navigate(getRedirectPath(location.state, data.result.role), {
+      if (data.success && data.data) {
+        setAuth(data.data);
+        navigate(getRedirectPath(location.state, data.data.role), {
           replace: true,
         });
       }

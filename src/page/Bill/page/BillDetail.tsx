@@ -142,7 +142,7 @@ const Page_OrderDetail: React.FC = () => {
     setIsUpdatingStatus(true);
     try {
       const res = await billWithRetry_f.nextStep(authContext, orderID);
-      if (res.status === "success") {
+      if (res.success) {
         navigate("/bill");
         return;
       }
@@ -172,7 +172,7 @@ const Page_OrderDetail: React.FC = () => {
           : billWithRetry_f.markBillingAsDebt;
         const res = await updateStatus(authContext, orderID);
 
-        if (res.status === "success") {
+        if (res.success) {
           navigate("/bill");
           return;
         }
@@ -203,7 +203,7 @@ const Page_OrderDetail: React.FC = () => {
 
     try {
       const res = await billWithRetry_f.delOrder(authContext, orderID);
-      if (res.status === "success") {
+      if (res.success) {
         navigate("/bill");
         return;
       }
@@ -256,8 +256,8 @@ const Page_OrderDetail: React.FC = () => {
         });
         if (!active) return;
 
-        if (res.status === "success") {
-          setOrder(res.result?.find((item) => item.id === orderID));
+        if (res.success) {
+          setOrder(res.data?.find((item) => item.id === orderID));
         } else {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 

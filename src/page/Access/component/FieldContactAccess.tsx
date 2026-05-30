@@ -36,8 +36,8 @@ const FieldContactAccess: React.FC<MyProps> = (props) => {
     contactWithRetry_f
       .get(AuthContext)
       .then((val) => {
-        if (val.result) {
-          props.onOpenList?.(val.result);          
+        if (val.data) {
+          props.onOpenList?.(val.data);          
         } else if (val.errCode) {
           if (redirectToLoginOnAuthError(navigate, val.errCode)) return;
 

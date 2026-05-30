@@ -90,13 +90,13 @@ const TebleLog: React.FC<myProps> = (props) => {
     storageWithRetry_f
       .getImg(auth, { Bucket: spitUrl[0], Key: spitUrl[1] })
       .then((res) => {
-        if(res.status !== "success" || res.result === undefined){
+        if(!res.success || res.data === undefined){
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
           alert("ไม่สามารถโหลดรูปภาพได้");
           return;
         }
-        setImg(res.result.url);
+        setImg(res.data.url);
         setOpen(true);
       })
       .catch((err) => {
@@ -118,9 +118,9 @@ const TebleLog: React.FC<myProps> = (props) => {
       .getLog(auth, data)
       .then((res) => {
         console.log("Get log:", res);
-        if (res.status === "success" && res.result !== undefined) {
-          setRow(res.result.logs);
-          setTotalRows(res.result.total);
+        if (res.success && res.data !== undefined) {
+          setRow(res.data.logs);
+          setTotalRows(res.data.total);
         } else {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 

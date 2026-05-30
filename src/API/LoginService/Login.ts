@@ -22,6 +22,7 @@ export async function getToken(
         );
         return res.data as responstLogin_t<"getToken">;
     } catch (err) {
+        console.error("Error during getToken:", err);
         throw err;
     }
 }

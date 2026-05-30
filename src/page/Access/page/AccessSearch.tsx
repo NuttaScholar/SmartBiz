@@ -48,9 +48,9 @@ const Page_AccessSearch: React.FC = () => {
       accessWithRetry_f
         .get(authContext, form)
         .then((res) => {
-          if (res.result) {
-            console.log("Search Result:", res.result);
-            setState({ ...state, transaction: res.result });
+          if (res.data) {
+            console.log("Search Result:", res.data);
+            setState({ ...state, transaction: res.data });
           } else if (res.errCode) {
             if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
@@ -92,12 +92,12 @@ const Page_AccessSearch: React.FC = () => {
           Bucket: spitUrl[0],
           Key: spitUrl[1],
         });
-        if (res.status !== "success" || res.result === undefined) {
+        if (!res.success || res.data === undefined) {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
           alert("ไม่สามารถโหลดรูปภาพได้");
         } else {
-          data = { ...value, bill: res.result.url };
+          data = { ...value, bill: res.data.url };
         }
       } catch (err) {
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;

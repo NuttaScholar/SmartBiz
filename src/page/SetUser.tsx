@@ -35,8 +35,8 @@ const Page_SetUser: React.FC = () => {
   // Local Function **************
   const refreshTokenOrRedirect = async () => {
     const resToken = await Login_f.getToken();
-    if (resToken.status === "success" && resToken.result?.token) {
-      setToken(resToken.result.token);
+    if (resToken.success && resToken.data?.token) {
+      setToken(resToken.data.token);
       return true;
     }
 
@@ -50,8 +50,8 @@ const Page_SetUser: React.FC = () => {
   const onSearch = async (keyword: string) => {
     try {
       const resUser = await User_f.get(token, keyword);
-      if (resUser.status === "success") {
-        setList(resUser.result || []);
+      if (resUser.success) {
+        setList(resUser.data || []);
       } else if (resUser.errCode === errorCode_e.TokenExpiredError) {
         await refreshTokenOrRedirect();
       } else if (redirectToLoginOnAuthError(navigate, resUser.errCode)) {
@@ -69,10 +69,10 @@ const Page_SetUser: React.FC = () => {
   const onAdd = async (val: RegistFrom_t) => {
     try {
       const resUser = await User_f.post(token, val);
-      if (resUser.status === "success") {
+      if (resUser.success) {
         const resGet = await User_f.get(token);
-        if (resGet.status === "success" && resGet.result) {
-          setList(resGet.result);
+        if (resGet.success && resGet.data) {
+          setList(resGet.data);
           setOpenAdd(false);
         } else {
           if (redirectToLoginOnAuthError(navigate, resGet.errCode)) return;
@@ -97,10 +97,10 @@ const Page_SetUser: React.FC = () => {
   const onEdit = async (val: EditUserFrom_t) => {
     try {
       const resPut = await User_f.put(token, val);
-      if (resPut.status === "success") {
+      if (resPut.success) {
         const resGet = await User_f.get(token);
-        if (resGet.status === "success" && resGet.result) {
-          setList(resGet.result);
+        if (resGet.success && resGet.data) {
+          setList(resGet.data);
           setOpenEdit(false);
         } else {
           if (redirectToLoginOnAuthError(navigate, resGet.errCode)) return;
@@ -126,10 +126,10 @@ const Page_SetUser: React.FC = () => {
   const onDel = async () => {
     try {
       const resDel = await User_f.del(token, targetID);
-      if (resDel.status === "success") {
+      if (resDel.success) {
         const resGet = await User_f.get(token);
-        if (resGet.status === "success" && resGet.result) {
-          setList(resGet.result);
+        if (resGet.success && resGet.data) {
+          setList(resGet.data);
           setOpenDel(false);
         } else {
           if (redirectToLoginOnAuthError(navigate, resGet.errCode)) return;
@@ -156,13 +156,13 @@ const Page_SetUser: React.FC = () => {
     try {
       const resLogin = await Login_f.getToken();
       console.log(resLogin);
-      if (resLogin.status === "error" || !resLogin.result?.token) {
+      if (!resLogin.success || !resLogin.data?.token) {
         redirectToLogin(navigate);
       } else {
-        const resUser = await User_f.get(resLogin.result?.token);
-        setToken(resLogin.result?.token);
-        if (resUser.status === "success" && resUser.result) {
-          setList(resUser.result);
+        const resUser = await User_f.get(resLogin.data?.token);
+        setToken(resLogin.data?.token);
+        if (resUser.success && resUser.data) {
+          setList(resUser.data);
           console.log(resUser);
         } else {
           if (redirectToLoginOnAuthError(navigate, resUser.errCode)) return;

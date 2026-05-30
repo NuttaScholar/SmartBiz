@@ -73,7 +73,7 @@ const DialogFormProduct: React.FC<myProps> = () => {
         console.log("Edit Product", file);
         const newData: formProduct_t = { ...data, img: file };
         const result = await stockWithRetry_f.putProduct(authContext, newData);
-        if (result.status === "success") {
+        if (result.success) {
           setState({
             ...state,
             dialogOpen: stockDialog_e.none,
@@ -92,7 +92,7 @@ const DialogFormProduct: React.FC<myProps> = () => {
         // Add
         const newData: formProduct_t = { ...data, img: file };
         const result = await stockWithRetry_f.postProduct(authContext, newData);
-        if (result.status === "success") {
+        if (result.success) {
           setState({
             ...state,
             dialogOpen: stockDialog_e.none,
@@ -126,7 +126,7 @@ const DialogFormProduct: React.FC<myProps> = () => {
           authContext,
           state.productForm.id
         );
-        if (resProduct.status === "success") {
+        if (resProduct.success) {
           console.log("ลบรายการสำเร็จ");
           setState({
             ...state,

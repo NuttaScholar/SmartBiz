@@ -65,33 +65,40 @@ export type responst_t<
   | "none"
 > = T extends "getTransaction"
   ? {
-    status: "success" | "error";
-    result?: statement_t[];
+    success: boolean;
+    data?: statement_t[];
     errCode?: errorCode_e;
+    message?: string;
   }
   :T extends "getTransDetail"
   ? {
-    status: "success" | "error";
-    result?: TransitionForm_t;
+    success: boolean;
+    data?: TransitionForm_t;
     errCode?: errorCode_e;
+    message?: string;
   }
   : T extends "getContact"
   ? {
-    status: "success" | "error";
-    result?: ContactInfo_t[];
-    index?: number;
-    size?: number;
-    total?: number;
-    hasMore?: boolean;
+    success: boolean;
+    data?: ContactInfo_t[] | {
+      contacts: ContactInfo_t[];
+      index: number;
+      size: number;
+      total: number;
+      hasMore: boolean;
+    };
     errCode?: errorCode_e;
+    message?: string;
   }
   : T extends "getWallet"
   ? {
-    status: "success" | "error";
-    result?: number;
+    success: boolean;
+    data?: number;
     errCode?: errorCode_e;
-  }  
+    message?: string;
+  }
   : {
-    status: "success" | "error";
+    success: boolean;
     errCode?: errorCode_e;
+    message?: string;
   }

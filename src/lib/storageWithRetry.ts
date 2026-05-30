@@ -4,7 +4,7 @@ import { AuthContext_t } from "../context/AuthContext";
 import ApiWithRetry, { resApiWithRetry_t } from "./apiWithRetry";
 
 interface resPostImgWithRetry_t extends resApiWithRetry_t {
-    result?: {url: string;};
+    data?: {url: string;};
 }
 
 export async function postImg(context: AuthContext_t, data: FormData): Promise<resPostImgWithRetry_t> {

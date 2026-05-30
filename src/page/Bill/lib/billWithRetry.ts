@@ -13,19 +13,19 @@ import { billStatus_e } from "../../../enum";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
 interface resOrdersWithRetry_t extends resApiWithRetry_t {
-    result?: orderInfo_t[];
+    data?: orderInfo_t[];
 }
 
 interface resOrderStatusWithRetry_t extends resApiWithRetry_t {
-    result?: billStatus_e;
+    data?: billStatus_e;
 }
 
 interface resOrderStatusCountsWithRetry_t extends resApiWithRetry_t {
-    result?: orderStatusCount_t[];
+    data?: orderStatusCount_t[];
 }
 
 interface resDiscountWithRetry_t extends resApiWithRetry_t {
-    result?: discount_t;
+    data?: discount_t;
 }
 
 export async function searchOrders(context: AuthContext_t, condition?: searchOrderForm_t): Promise<resOrdersWithRetry_t> {

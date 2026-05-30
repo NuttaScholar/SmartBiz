@@ -114,8 +114,8 @@ const StockListHeader: React.FC<myProps> = (props) => {
     stockWithRetry_f
       .getProduct(authContext, query)
       .then((res) => {
-        if (res.status === "success" && res.result !== undefined) {
-          res.result && setState({ ...state, productList: res.result.products, status: res.result.status });
+        if (res.success && res.data !== undefined) {
+          res.data && setState({ ...state, productList: res.data.products, status: res.data.status });
         } else {
           if (redirectToLoginOnAuthError(nevigate, res.errCode)) return;
 

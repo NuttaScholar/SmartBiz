@@ -5,19 +5,19 @@ import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
 
 interface resProductWithRetry_t extends resApiWithRetry_t {
-    result?: productRes_t;
+    data?: productRes_t;
 }
 interface resStockWithRetry_t extends resApiWithRetry_t {
-    result?: productInfo_t[];
+    data?: productInfo_t[];
 }
 interface resStatusWithRetry_t extends resApiWithRetry_t {
-    result?: stockStatus_t;
+    data?: stockStatus_t;
 }
 interface resStockOutWithRetry_t extends resApiWithRetry_t {
-    result?: stockForm_t[];
+    data?: stockForm_t[];
 }
 interface resLogWithRetry_t extends resApiWithRetry_t {
-    result?: logRes_t;
+    data?: logRes_t;
 }
 
 export async function getProduct(context: AuthContext_t, condition?: queryProduct_t): Promise<resProductWithRetry_t> {

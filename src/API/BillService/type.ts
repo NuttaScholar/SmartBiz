@@ -87,42 +87,42 @@ export type responst_t<
   | "none"
 > = T extends "getOrders"
   ? {
-    status: "success" | "error";
-    result?: orderInfo_t[];
+    success: boolean;
+    data?: orderInfo_t[];
     errCode?: errorCode_e;
     message?: string;
   }
   : T extends "getOrderStatusCounts"
   ? {
-    status: "success" | "error";
-    result?: orderStatusCount_t[];
+    success: boolean;
+    data?: orderStatusCount_t[];
     errCode?: errorCode_e;
     message?: string;
   }
   : T extends "getOrderStatus"
   ? {
-    status: "success" | "error";
-    result?: billStatus_e;
+    success: boolean;
+    data?: billStatus_e;
     errCode?: errorCode_e;
     message?: string;
   }
   : T extends "getDiscount"
   ? {
-    status: "success" | "error";
-    result?: discount_t;
+    success: boolean;
+    data?: discount_t;
     errCode?: errorCode_e;
     message?: string;
   }
   : T extends "deleteOrder"
   ? {
-    status: "success" | "error";
-    result?: deleted_t;
+    success: boolean;
+    data?: deleted_t;
     errCode?: errorCode_e;
     message?: string;
   }
   : {
-    status: "success" | "error";
-    result?: order_t | discount_t;
+    success: boolean;
+    data?: order_t | discount_t;
     errCode?: errorCode_e;
     message?: string;
   }

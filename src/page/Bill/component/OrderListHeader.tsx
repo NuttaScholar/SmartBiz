@@ -64,8 +64,8 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       if (!keyword) {
         const res = await billWithRetry_f.getOrderStatusCounts(authContext);
         const countByStatus = new Map<billStatus_e, number>();
-        if (res.status === "success") {
-          res.result?.forEach((item) => countByStatus.set(item.status, item.count));
+        if (res.success) {
+          res.data?.forEach((item) => countByStatus.set(item.status, item.count));
         } else if (redirectToLoginOnAuthError(navigate, res.errCode)) {
           return emptyStatusCountList();
         }
@@ -85,13 +85,13 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       ]);
 
       const orderMap = new Map<string, orderInfo_t>();
-      if (customerRes.status === "success") {
-        customerRes.result?.forEach((order) => orderMap.set(order.id, order));
+      if (customerRes.success) {
+        customerRes.data?.forEach((order) => orderMap.set(order.id, order));
       } else if (redirectToLoginOnAuthError(navigate, customerRes.errCode)) {
         return emptyStatusCountList();
       }
-      if (orderRes.status === "success") {
-        orderRes.result?.forEach((order) => orderMap.set(order.id, order));
+      if (orderRes.success) {
+        orderRes.data?.forEach((order) => orderMap.set(order.id, order));
       } else if (redirectToLoginOnAuthError(navigate, orderRes.errCode)) {
         return emptyStatusCountList();
       }
@@ -109,7 +109,7 @@ const OrderListHeader: React.FC<myProps> = (props) => {
         const res = await billWithRetry_f.getOrdersByStatus(authContext, status);
         if (redirectToLoginOnAuthError(navigate, res.errCode)) return [];
 
-        return res.status === "success" ? res.result ?? [] : [];
+        return res.success ? res.data ?? [] : [];
       }
 
       const [customerRes, orderRes] = await Promise.all([
@@ -124,13 +124,13 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       ]);
 
       const orderMap = new Map<string, orderInfo_t>();
-      if (customerRes.status === "success") {
-        customerRes.result?.forEach((order) => orderMap.set(order.id, order));
+      if (customerRes.success) {
+        customerRes.data?.forEach((order) => orderMap.set(order.id, order));
       } else if (redirectToLoginOnAuthError(navigate, customerRes.errCode)) {
         return [];
       }
-      if (orderRes.status === "success") {
-        orderRes.result?.forEach((order) => orderMap.set(order.id, order));
+      if (orderRes.success) {
+        orderRes.data?.forEach((order) => orderMap.set(order.id, order));
       } else if (redirectToLoginOnAuthError(navigate, orderRes.errCode)) {
         return [];
       }

@@ -32,19 +32,13 @@ function authHeader(token: string) {
 }
 
 function toResponse<T>(data: billApiResponse_t<T>) {
-    if (data.success) {
-        return {
-            status: "success" as const,
-            result: data.data,
+    return data.success
+        ? { success: true, data: data.data, message: data.message }
+        : {
+            success: false,
+            errCode: data.errCode ?? errorCode_e.UnknownError,
             message: data.message,
         };
-    }
-
-    return {
-        status: "error" as const,
-        errCode: data.errCode ?? errorCode_e.UnknownError,
-        message: data.message,
-    };
 }
 
 function toErrorResponse(err: unknown) {
@@ -54,7 +48,7 @@ function toErrorResponse(err: unknown) {
     }
 
     return {
-        status: "error" as const,
+        success: false,
         errCode: errorCode_e.UnknownError,
         message: `${err}`,
     };

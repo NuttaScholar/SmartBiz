@@ -17,8 +17,8 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
     };
     try {
       const res = await accessWithRetry_f.get(authContext, condition);
-      if (res.result?.length) {
-        trans.push(...res.result);
+      if (res.data?.length) {
+        trans.push(...res.data);
         cnt++;
         if (_month > 1) {
           _month--;
@@ -43,13 +43,13 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
   }
   try {
     const wallet = await accessWithRetry_f.getWallet(authContext);
-    if (wallet.result!== undefined) {      
+    if (wallet.data!== undefined) {      
       setState({
         ...state,
         transaction: trans,
         hasMore: _month > 1,
         month: _month,
-        totalMoney: wallet.result,
+        totalMoney: wallet.data,
       });
     }
     return;

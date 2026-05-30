@@ -8,11 +8,11 @@ export async function initPage(authContext: AuthContext_t): Promise<Auth_t> {
     if (authContext.auth === undefined) {
         try {
             const resLogin = await Login_f.getToken();
-            if (resLogin.status === "error" && resLogin.errCode) {
+            if (!resLogin.success && resLogin.errCode) {
                 throw ErrorString(resLogin.errCode);  
-            } else if(resLogin.result!== undefined){
-                authContext.setAuth(resLogin.result);
-                return resLogin.result as Auth_t;
+            } else if(resLogin.data!== undefined){
+                authContext.setAuth(resLogin.data);
+                return resLogin.data as Auth_t;
             }else{
                 console.error("Error during initPage:", resLogin);
                 throw ErrorString(errorCode_e.UnknownError);

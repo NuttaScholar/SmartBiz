@@ -79,11 +79,11 @@ export default function Page_StockIn() {
     stockWithRetry_f
       .postStockIn(authContext, data)
       .then((res) => {
-        if (res.status === "success") {
+        if (res.success) {
+          if (res.data?.length) {
+            alert(`พบปัญหา! ไม่สามารถดำเนินการบางรายการได้`);
+          }
           nevigate("/stock");
-        } else if (res.status === "warning") {
-          alert(`พบปัญหา! ไม่สามารถตัดสต็อกรายการต่อไปนี้ได้\n${res.result?.map((item) => `ID: ${item.productID}, Amount: ${item.amount}`).join("\n")}
-          `);
         } else {
           if (redirectToLoginOnAuthError(nevigate, res.errCode)) return;
 
@@ -119,9 +119,9 @@ export default function Page_StockIn() {
     stockWithRetry_f
         .getStock(authContext)
         .then((res) => {
-          if (res.status === "success" && res.result !== undefined) {
-            console.log("Stock List", res.result);
-            res.result && setListOption(res.result);
+          if (res.success && res.data !== undefined) {
+            console.log("Stock List", res.data);
+            res.data && setListOption(res.data);
           } else {
             if (redirectToLoginOnAuthError(nevigate, res.errCode)) return;
 

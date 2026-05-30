@@ -108,8 +108,8 @@ export default function Page_BillPreview() {
       .then((res) => {
         if (!active) return;
 
-        if (res.status === "success") {
-          setOrder(res.result?.find((item) => item.id === orderID));
+        if (res.success) {
+          setOrder(res.data?.find((item) => item.id === orderID));
         } else {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
@@ -154,9 +154,9 @@ export default function Page_BillPreview() {
       .then((res) => {
         if (!active) return;
 
-        if (res.status === "success") {
+        if (res.success) {
           setContact(
-            res.result?.find((item) => item.codeName === order.customerID),
+            res.data?.find((item) => item.codeName === order.customerID),
           );
         } else {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
