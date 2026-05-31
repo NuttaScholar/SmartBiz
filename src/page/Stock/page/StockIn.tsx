@@ -96,7 +96,6 @@ export default function Page_StockIn() {
         if (redirectToLoginOnThrownAuthError(nevigate, err)) return;
 
         alert(`เกิดข้อผิดพลาด`);
-        console.log("postStockOutError", err);
       });
   };
   const onAdd = (form: FormAddProduce_t) => {
@@ -120,7 +119,6 @@ export default function Page_StockIn() {
         .getStock(authContext)
         .then((res) => {
           if (res.success && res.data !== undefined) {
-            console.log("Stock List", res.data);
             res.data && setListOption(res.data);
           } else {
             if (redirectToLoginOnAuthError(nevigate, res.errCode)) return;

@@ -117,7 +117,6 @@ const TebleLog: React.FC<myProps> = (props) => {
     stockWithRetry_f
       .getLog(auth, data)
       .then((res) => {
-        console.log("Get log:", res);
         if (res.success && res.data !== undefined) {
           setRow(res.data.logs);
           setTotalRows(res.data.total);

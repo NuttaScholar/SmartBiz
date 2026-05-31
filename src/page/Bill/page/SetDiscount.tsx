@@ -83,8 +83,8 @@ export default function Page_BillSetDiscount() {
       .catch((err) => {
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
-        alert("Error");
-        console.log("putDiscountsError", err);
+        console.log(err);
+        alert("Error: ไม่สามารถบันทึกส่วนลดได้");
       })
       .finally(() => {
         setIsSaving(false);
@@ -102,7 +102,6 @@ export default function Page_BillSetDiscount() {
       img:
         listOption?.find((item) => item.id === form.product?.code)?.img || "",
     };
-    console.log("add", product);
     if (
       product.priceAfterDiscount === undefined ||
       product.price === undefined
@@ -139,7 +138,6 @@ export default function Page_BillSetDiscount() {
     if (del) {
       onDelete(value.id);
     } else {
-      console.log("view", value);
     }
   };
   const toDiscountProduct = (discount: discountItem_t): productInfo_t => {
@@ -216,7 +214,7 @@ export default function Page_BillSetDiscount() {
         if (!active) return;
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
-        alert("Error");
+        alert("Error: ไม่สามารถโหลดส่วนลดได้");
         console.log("getDiscountsError", err);
       });
 

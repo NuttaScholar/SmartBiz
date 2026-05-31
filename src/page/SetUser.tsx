@@ -58,7 +58,6 @@ const Page_SetUser: React.FC = () => {
         return;
       } else {
         alert("รับรายการ User ล้มเหลว");
-        console.log("errCode", resUser.errCode);
       }
     } catch (err) {
       if (redirectToLoginOnThrownAuthError(navigate, err)) return;
@@ -78,7 +77,6 @@ const Page_SetUser: React.FC = () => {
           if (redirectToLoginOnAuthError(navigate, resGet.errCode)) return;
 
           alert("รับรายการ User ล้มเหลว");
-          console.log("errCode", resGet.errCode);
         }
       } else if (resUser.errCode === errorCode_e.TokenExpiredError) {
         await refreshTokenOrRedirect();
@@ -86,7 +84,6 @@ const Page_SetUser: React.FC = () => {
         return;
       } else {
         alert("สร้างบัญชี User ล้มเหลว");
-        console.log("errCode", resUser.errCode);
       }
     } catch (err) {
       if (redirectToLoginOnThrownAuthError(navigate, err)) return;
@@ -106,16 +103,13 @@ const Page_SetUser: React.FC = () => {
           if (redirectToLoginOnAuthError(navigate, resGet.errCode)) return;
 
           alert("รับรายการ User ล้มเหลว");
-          console.log("errCode", resGet.errCode);
         }
       } else if (resPut.errCode === errorCode_e.TokenExpiredError) {
-        console.log("get Token");
         await refreshTokenOrRedirect();
       } else if (redirectToLoginOnAuthError(navigate, resPut.errCode)) {
         return;
       } else {
         alert("แก้ไข User ล้มเหลว");
-        console.log("errCode", resPut.errCode);
       }
     } catch (err) {
       if (redirectToLoginOnThrownAuthError(navigate, err)) return;
@@ -135,16 +129,13 @@ const Page_SetUser: React.FC = () => {
           if (redirectToLoginOnAuthError(navigate, resGet.errCode)) return;
 
           alert("รับรายการ User ล้มเหลว");
-          console.log("errCode", resGet.errCode);
         }
       } else if (resDel.errCode === errorCode_e.TokenExpiredError) {
-        console.log("get Token");
         await refreshTokenOrRedirect();
       } else if (redirectToLoginOnAuthError(navigate, resDel.errCode)) {
         return;
       } else {
         alert("ลบ User ล้มเหลว");
-        console.log("errCode", resDel.errCode);
       }
     } catch (err) {
       if (redirectToLoginOnThrownAuthError(navigate, err)) return;
@@ -155,7 +146,6 @@ const Page_SetUser: React.FC = () => {
   const initPage = async () => {
     try {
       const resLogin = await Login_f.getToken();
-      console.log(resLogin);
       if (!resLogin.success || !resLogin.data?.token) {
         redirectToLogin(navigate);
       } else {
@@ -163,7 +153,6 @@ const Page_SetUser: React.FC = () => {
         setToken(resLogin.data?.token);
         if (resUser.success && resUser.data) {
           setList(resUser.data);
-          console.log(resUser);
         } else {
           if (redirectToLoginOnAuthError(navigate, resUser.errCode)) return;
 
@@ -178,7 +167,6 @@ const Page_SetUser: React.FC = () => {
   };
   // Use Effect **************
   React.useEffect(() => {
-    console.log("get user!");
     initPage();
   }, []);
   return (

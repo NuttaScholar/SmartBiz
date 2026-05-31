@@ -164,7 +164,6 @@ const OrderListHeader: React.FC<myProps> = (props) => {
     }
 
     fetchOrders().catch((err) => {
-      console.log("fetchOrders err", err);
       if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
       if (isActive) {

@@ -58,8 +58,6 @@ export default function Page_StockOut() {
     }
   };
   const onSave = () => {
-    console.log("discription", state.billForm);
-    console.log("list", state.productList);
     if (
       state.billForm?.description === undefined ||
       state.billForm.description === ""
@@ -123,7 +121,6 @@ export default function Page_StockOut() {
       .getStock(authContext)
       .then((res) => {
         if (res.success && res.data !== undefined) {
-          console.log("Stock List", res.data);
           res.data && setListOption(res.data);
         } else {
           if (redirectToLoginOnAuthError(nevigate, res.errCode)) return;

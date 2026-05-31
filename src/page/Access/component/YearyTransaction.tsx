@@ -36,7 +36,6 @@ const YearyTransaction: React.FC = () => {
   const fetchTrans = async () => {
     let finish = false;
     let _month = state.month;
-    console.log(_month);
     const condition: SearchTransForm_t = {
       from: new Date(state.yearSelect, _month - 1, 1),
       to: new Date(state.yearSelect, _month, 0),
@@ -45,7 +44,6 @@ const YearyTransaction: React.FC = () => {
       try {
         const res = await accessWithRetry_f.get(authContext, condition);
         if (res.data?.length) {
-          console.log(res);
           const statement: statement_t[] = res.data;
           if (_month > 1) {
             _month--;
@@ -102,7 +100,6 @@ const YearyTransaction: React.FC = () => {
         alert("ไม่สามารถโหลดรูปภาพได้");
       }
     }
-    console.log(data);
     setState({
       ...state,
       transitionForm: data,

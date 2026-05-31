@@ -85,7 +85,6 @@ const DialogFormContact: React.FC<myProps> = (props) => {
         .catch((err) => {
           if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
-          console.log(err);
           alert("Error: " + err.message);
         });
     } else {
@@ -104,7 +103,6 @@ const DialogFormContact: React.FC<myProps> = (props) => {
         .catch((err) => {
           if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
-          console.log(err);
           alert(err.message);
         });
     }

@@ -6,8 +6,6 @@ import { EditPassFrom_t } from "../API/LoginService/type";
 import React from "react";
 import { useAuth } from "../hooks/useAuth";
 import * as User_f from "../API/LoginService/User";
-import { ErrorString } from "../function/Enum";
-import { errorCode_e } from "../enum";
 import {
   redirectToLogin,
   redirectToLoginOnAuthError,
@@ -43,14 +41,12 @@ const Page_SetPass: React.FC = () => {
             if (redirectToLoginOnAuthError(navigate, data.errCode)) return;
 
             alert("แก้ไข Password ไม่สำเร็จ");
-            console.log(ErrorString(data.errCode || errorCode_e.UnknownError));
           }
         })
         .catch((err) => {
           if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
           alert("แก้ไข Password ไม่สำเร็จ");
-          console.log(err);
         });
     } else {
       alert("New Password ไม่ตรงกับ Confirm Password");

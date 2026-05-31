@@ -43,7 +43,6 @@ const SpeedDial_Bill: React.FC = () => {
 
   // Local function **************************
   const speedDialHandler = (index: number) => {
-    console.log(`SpeedDial: ${index}`);
     const selectedMenu = menuList[index];
 
     switch (selectedMenu?.text) {

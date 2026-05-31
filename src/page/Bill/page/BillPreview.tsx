@@ -142,7 +142,6 @@ export default function Page_BillPreview() {
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         alert("เกิดข้อผิดพลาด");
-        console.log("getPreviewOrderError", err);
         setOrder(undefined);
         setContact(undefined);
       })
@@ -177,7 +176,6 @@ export default function Page_BillPreview() {
         } else {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
-          console.log("getPreviewContactError", res.errCode);
           setContact(undefined);
         }
       })
@@ -186,7 +184,6 @@ export default function Page_BillPreview() {
 
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
-        console.log("getPreviewContactError", err);
         setContact(undefined);
       });
 

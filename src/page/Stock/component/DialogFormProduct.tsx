@@ -70,7 +70,6 @@ const DialogFormProduct: React.FC<myProps> = () => {
     try {
       if (state.productForm) {
         // Edit
-        console.log("Edit Product", file);
         const newData: formProduct_t = { ...data, img: file };
         const result = await stockWithRetry_f.putProduct(authContext, newData);
         if (result.success) {
@@ -127,7 +126,6 @@ const DialogFormProduct: React.FC<myProps> = () => {
           state.productForm.id
         );
         if (resProduct.success) {
-          console.log("ลบรายการสำเร็จ");
           setState({
             ...state,
             dialogOpen: stockDialog_e.none,
@@ -140,7 +138,6 @@ const DialogFormProduct: React.FC<myProps> = () => {
           alert(
             `เกิดข้อผิดพลาด ${ErrorString(resProduct.errCode || errorCode_e.UnknownError)}`
           );
-          console.log("StockError");
         }
       }
     } catch (err) {

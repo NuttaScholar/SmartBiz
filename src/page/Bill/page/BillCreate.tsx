@@ -394,7 +394,6 @@ export default function Page_BillCreate() {
       if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
       alert("เกิดข้อผิดพลาด");
-      console.log(orderID ? "putOrderError" : "postOrderError", err);
     } finally {
       setIsSaving(false);
     }
@@ -424,7 +423,6 @@ export default function Page_BillCreate() {
       .catch((err) => {
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
-        console.log("getStockError", err);
         navigate("/login", { replace: true });
       });
   }, [authContext, navigate]);
@@ -461,7 +459,6 @@ export default function Page_BillCreate() {
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         alert("เกิดข้อผิดพลาด");
-        console.log("getOrderForEditError", err);
         navigate("/bill");
       })
       .finally(() => {
@@ -519,7 +516,6 @@ export default function Page_BillCreate() {
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         alert("เกิดข้อผิดพลาด");
-        console.log("getDiscountsError", err);
       });
 
     return () => {

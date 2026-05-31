@@ -50,7 +50,6 @@ const Page_Login: React.FC = () => {
         login_F
           .postLogin(data)
           .then((data) => {
-            console.log("success", data);
             if (data.success && data.data) {
               setAuth(data.data);
               navigate(getRedirectPath(location.state, data.data.role), {

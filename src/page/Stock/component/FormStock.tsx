@@ -73,7 +73,6 @@ const FormStock: React.FC<myProps> = (props) => {
     });
     setForm(undefined);
     setClear(clear + 1);
-    console.log("Add Product", form);
   };
   const onChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [event.target.name]: event.target.value } as Form_t);

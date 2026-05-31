@@ -154,7 +154,6 @@ const Page_OrderDetail: React.FC = () => {
       if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
       alert("เกิดข้อผิดพลาด");
-      console.log("nextStepError", err);
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -184,7 +183,6 @@ const Page_OrderDetail: React.FC = () => {
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         alert("เกิดข้อผิดพลาด");
-        console.log("updateBillingStatusError", err);
       } finally {
         setIsUpdatingStatus(false);
       }
@@ -215,7 +213,6 @@ const Page_OrderDetail: React.FC = () => {
       if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
       alert("เกิดข้อผิดพลาด");
-      console.log("delOrderError", err);
     }
   }, [authContext, navigate, orderID]);
 
@@ -270,7 +267,6 @@ const Page_OrderDetail: React.FC = () => {
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
         alert("เกิดข้อผิดพลาด");
-        console.log("getOrderDetailError", err);
         setOrder(undefined);
       } finally {
         if (active) {

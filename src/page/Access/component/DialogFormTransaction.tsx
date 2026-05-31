@@ -80,7 +80,6 @@ const DialogFormTransaction: React.FC = () => {
       img: file,
       bill: file===null?"":undefined,
     };
-    console.log(newData);
     if (state.transitionForm?.id !== undefined) {
       // Edit      
       accessWithRetry_f
@@ -100,13 +99,11 @@ const DialogFormTransaction: React.FC = () => {
             fieldContact: undefined,
             refaceTrans: state.refaceTrans + 1,
           });
-          console.log(state.refaceTrans);
         })
         .catch((err) => {
           if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
           alert("ไม่สามารถแก้ไขรายการได้");
-          console.log(err);
         });
     } else {
       // Add
@@ -132,7 +129,6 @@ const DialogFormTransaction: React.FC = () => {
           if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
           alert("ไม่สามารถเพิ่มรายการได้");
-          console.log(err);
         });
     }
   };
@@ -160,7 +156,6 @@ const DialogFormTransaction: React.FC = () => {
           if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
           alert("ไม่สามารถลบรายการได้");
-          console.log(err);
         });
     }
   };

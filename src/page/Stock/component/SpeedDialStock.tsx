@@ -32,7 +32,6 @@ const MenuList: menuList_t[] = [
 const SpeedDial_Stock: React.FC = () => {
   const { state, setState } = useStockContext();
   const speedDialHandler = (index: number) => {
-    console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
         setState({

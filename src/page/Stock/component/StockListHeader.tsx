@@ -54,7 +54,6 @@ const StockListHeader: React.FC<myProps> = (props) => {
     }
   };
   const onSearch = (value: string) => {
-    console.log(value);
     setName(value);
     switch (state.filter) {
       case stockFilter_e.stock:

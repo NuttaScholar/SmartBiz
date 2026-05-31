@@ -49,7 +49,6 @@ const Page_AccessSearch: React.FC = () => {
         .get(authContext, form)
         .then((res) => {
           if (res.data) {
-            console.log("Search Result:", res.data);
             setState({ ...state, transaction: res.data });
           } else if (res.errCode) {
             if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
@@ -66,7 +65,6 @@ const Page_AccessSearch: React.FC = () => {
     }
   };
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    console.log("handleSubmit");
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries((formData as any).entries());
@@ -79,7 +77,6 @@ const Page_AccessSearch: React.FC = () => {
       to: new Date(tyear, tmonth - 1, tday),
       ...rest,
     };
-    console.log("Search Data:", data);
     setForm(data);
     searchHandler(data);
   };
@@ -106,7 +103,6 @@ const Page_AccessSearch: React.FC = () => {
         alert("ไม่สามารถโหลดรูปภาพได้");
       }
     }
-    console.log(data);
     setState({
       ...state,
       transitionForm: data,

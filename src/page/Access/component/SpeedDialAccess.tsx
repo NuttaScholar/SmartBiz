@@ -33,7 +33,6 @@ const SpeedDial_Access: React.FC = () => {
   const { state, setState } = useAccess();
 
   const speedDialHandler = (index: number) => {
-    console.log(`SpeedDial: ${index}`);
     switch (index) {
       case 0:
         setState({ ...state, expanded: !state.expanded });
