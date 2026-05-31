@@ -34,6 +34,7 @@ export interface ReceiptData {
 
 interface Props {
   data: ReceiptData;
+  documentTitle?: string;
 }
 
 const currencyFormat = new Intl.NumberFormat("th-TH", {
@@ -45,7 +46,7 @@ function formatDiscountPercent(value?: number) {
   return value === undefined ? "-" : `${value.toFixed(2)}%`;
 }
 
-const ReceiptPreview: React.FC<Props> = ({ data }) => {
+const ReceiptPreview: React.FC<Props> = ({ data, documentTitle = "ใบสั่งซื้อ" }) => {
   const subtotal = data.items.reduce(
     (sum, item) => sum + (item.total ?? item.qty * item.price),
     0,
@@ -73,7 +74,7 @@ const ReceiptPreview: React.FC<Props> = ({ data }) => {
       >
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            ใบสั่งซื้อ
+            {documentTitle}
           </Typography>
           <Typography color="text.secondary">Order Summary</Typography>
         </Box>

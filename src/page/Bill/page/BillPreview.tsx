@@ -18,7 +18,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate, useParams } from "react-router-dom";
 import { orderInfo_t } from "../../../API/BillService/type";
 import { ErrorString } from "../../../function/Enum";
-import { errorCode_e } from "../../../enum";
+import { billStatus_e, errorCode_e } from "../../../enum";
 import contactWithRetry_f from "../../Access/lib/contactWithRetry";
 import { ContactInfo_t } from "../../../API/AccountService/type";
 import {
@@ -35,6 +35,21 @@ const dateFormat = new Intl.DateTimeFormat("th-TH", {
 function formatDate(value?: Date | string) {
   const date = value ? new Date(value) : undefined;
   return date && !Number.isNaN(date.getTime()) ? dateFormat.format(date) : "-";
+}
+
+function getBillDocumentTitle(status?: billStatus_e) {
+  switch (status) {
+    case billStatus_e.shipping:
+    case billStatus_e.recording:
+      return "ใบส่งของ";
+    case billStatus_e.waitingPayment:
+      return "ใบแจ้งหนี้";
+    case billStatus_e.completed:
+      return "ใบเสร็จรับเงิน";
+    case billStatus_e.preparing:
+    default:
+      return "ใบสั่งซื้อ";
+  }
 }
 
 function toReceiptData(order: orderInfo_t, contact?: ContactInfo_t): ReceiptData {
@@ -79,6 +94,7 @@ export default function Page_BillPreview() {
     () => (order ? toReceiptData(order, contact) : undefined),
     [contact, order],
   );
+  const documentTitle = getBillDocumentTitle(order?.status);
 
   const handlePrint = () => {
     window.print();
@@ -201,7 +217,7 @@ export default function Page_BillPreview() {
           >
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                ตัวอย่างใบสั่งซื้อ
+                ตัวอย่าง{documentTitle}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 {receiptData ? `เลขที่: ${receiptData.orderNumber}` : "Bill Preview"}
@@ -258,7 +274,9 @@ export default function Page_BillPreview() {
               ไม่พบข้อมูลคำสั่งซื้อ
             </Typography>
           )}
-          {receiptData && <ReceiptPreview data={receiptData} />}
+          {receiptData && (
+            <ReceiptPreview data={receiptData} documentTitle={documentTitle} />
+          )}
         </Paper>
       </Box>
     </Box>
