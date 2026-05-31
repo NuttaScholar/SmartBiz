@@ -18,10 +18,7 @@ export async function getToken(
 ): Promise<responstLogin_t<"getToken">> {
     try {
         const res = await axios_login.get(
-            "/token",
-            {
-                validateStatus: (status) => status < 500,
-            }
+            "/token",            
         );
         return res.data as responstLogin_t<"getToken">;
     } catch (err) {

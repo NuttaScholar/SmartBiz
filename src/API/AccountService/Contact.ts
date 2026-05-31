@@ -1,6 +1,6 @@
-import axios from "axios";
 import { ContactForm_t, responst_t } from "./type";
 import { contactInfo_t } from "../../component/Molecules/ContactInfo";
+import { axios_account } from "../../lib/axios";
 
 export type ContactSearchParams_t = {
   id?: string;
@@ -28,9 +28,8 @@ export async function get(
   params?: string | ContactSearchParams_t,
 ): Promise<responst_t<"getContact">> {
   try {
-    const res = await axios.get(
-      `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/contact${toContactQuery(params)}`, {
+    const res = await axios_account.get(
+      `/contact${toContactQuery(params)}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -42,9 +41,8 @@ export async function get(
 }
 export async function post(token: string, data: ContactForm_t): Promise<responst_t<"none">> {
   try {
-    const res = await axios.post(
-      `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/contact`, data, {
+    const res = await axios_account.post(
+      `/contact`, data, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -57,9 +55,8 @@ export async function post(token: string, data: ContactForm_t): Promise<responst
 }
 export async function put(token: string, data: ContactForm_t): Promise<responst_t<"none">> {
   try {
-    const res = await axios.put(
-      `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/contact`, data, {
+    const res = await axios_account.put(
+      `/contact`, data, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -73,9 +70,8 @@ export async function put(token: string, data: ContactForm_t): Promise<responst_
 export async function del(token: string, data: contactInfo_t): Promise<responst_t<"none">> {
   console.log(data);
   try {
-    const res = await axios.delete(
-      `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_ACCESS
-      }/contact?id=${data.codeName}`, {
+    const res = await axios_account.delete(
+      `/contact?id=${data.codeName}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
