@@ -21,6 +21,8 @@ import { billDialog_e } from "../context/BillContext";
 //*********************************************
 interface myProps {
   hideFieldPrice?: boolean;
+  hideFieldAmount?: boolean;
+  priceField?: "price" | "priceAfterDiscount";
   onSubmit?: (data: productInfo_t) => void;
 }
 //*********************************************
@@ -49,6 +51,8 @@ const DialogBillEdit: React.FC<myProps> = (props) => {
       defaultValue={info}
       onSubmit={props.onSubmit}
       hideFieldPrice={props.hideFieldPrice}
+      hideFieldAmount={props.hideFieldAmount}
+      priceField={props.priceField}
     />
   );
 };

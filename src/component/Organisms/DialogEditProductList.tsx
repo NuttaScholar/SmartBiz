@@ -32,7 +32,9 @@ type form_t = {
 //*********************************************
 interface myProps {
   open: boolean;
+  hideFieldAmount?: boolean;
   hideFieldPrice?: boolean;
+  priceField?: "price" | "priceAfterDiscount";
   defaultValue?: productInfo_t;
   onSubmit?: (data: productInfo_t) => void;
   onClose?: () => void;
@@ -58,11 +60,15 @@ const DialogEditProductList: React.FC<myProps> = (props) => {
     const formJson = Object.fromEntries((formData as any).entries());
     const data = formJson as form_t;
 
-    const amount = Number(data.amount);
-    const price = data.price !== undefined ? Number(data.price) : info.price;
+    const priceField = props.priceField || "price";
+    const amount = data.amount !== undefined ? Number(data.amount) : info.amount;
+    const price = data.price !== undefined ? Number(data.price) : undefined;
     let total: number | undefined = undefined;
-    if (info.total !== undefined) {
-      const basePrice = info.priceAfterDiscount ?? info.price;
+    if (info.total !== undefined && amount !== undefined) {
+      const basePrice =
+        priceField === "priceAfterDiscount"
+          ? price
+          : info.priceAfterDiscount ?? price ?? info.price;
       if (basePrice !== undefined) {
         total = amount * basePrice;
       }
@@ -70,7 +76,11 @@ const DialogEditProductList: React.FC<myProps> = (props) => {
     const newData: productInfo_t = {
       ...info,
       amount: amount,
-      price: price,
+      price: priceField === "price" ? price ?? info.price : info.price,
+      priceAfterDiscount:
+        priceField === "priceAfterDiscount"
+          ? price ?? info.priceAfterDiscount
+          : info.priceAfterDiscount,
       total: total,
     };
     console.log(newData);
@@ -90,19 +100,26 @@ const DialogEditProductList: React.FC<myProps> = (props) => {
           noValidate
           sx={{ mt: 1, gap: 1, display: "flex", flexDirection: "row" }}
         >
-          <FieldText
-            label="Amount"
-            defauleValue={info?.amount?.toString()}
-            required
-            name="amount"
-            type="number"
-            minWidth="100px"
-            hideField
-          />
-          {props.hideFieldPrice !== true && (
+          {!props.hideFieldAmount && (
+            <FieldText
+              label="Amount"
+              defauleValue={info?.amount?.toString()}
+              required
+              name="amount"
+              type="number"
+              minWidth="100px"
+              hideField
+            />
+          )}
+          {!props.hideFieldPrice && (
             <FieldText
               label="Price"
-              defauleValue={info?.price?.toString()}
+              defauleValue={
+                (props.priceField === "priceAfterDiscount"
+                  ? info?.priceAfterDiscount
+                  : info?.price
+                )?.toString()
+              }
               required
               name="price"
               type="number"

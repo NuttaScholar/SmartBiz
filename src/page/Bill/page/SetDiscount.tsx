@@ -16,6 +16,8 @@ import { useAuth } from "../../../hooks/useAuth";
 import { ErrorString } from "../../../function/Enum";
 import billWithRetry_f from "../lib/billWithRetry";
 import { discountItem_t } from "../../../API/BillService/type";
+import DialogBillEdit from "../component/DialogBillEdit";
+import { billDialog_e } from "../context/BillContext";
 import {
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
@@ -135,10 +137,44 @@ export default function Page_BillSetDiscount() {
     });
   };
   const onClickProduct = (del: boolean, value: productInfo_t) => {
+    const index = state.merchList?.findIndex((item) => item.id === value.id);
+    if (index === undefined || index < 0) return;
+
     if (del) {
       onDelete(value.id);
     } else {
+      setState({
+        ...state,
+        dialogOpen: billDialog_e.editForm,
+        indexList: index,
+      });
     }
+  };
+  const onSubmitEdit = (data: productInfo_t) => {
+    const price = Number(data.price ?? 0);
+    const priceAfterDiscount = Number(data.priceAfterDiscount);
+
+    if (
+      !Number.isFinite(priceAfterDiscount) ||
+      priceAfterDiscount < 0 ||
+      priceAfterDiscount >= price
+    ) {
+      alert("ราคาหลังหักส่วนลดต้องน้อยกว่าราคาปกติ");
+      return;
+    }
+
+    const newData: productInfo_t = {
+      ...data,
+      percentDiscount: ((price - priceAfterDiscount) / price) * 100,
+    };
+
+    setState((prev) => ({
+      ...prev,
+      dialogOpen: billDialog_e.none,
+      merchList: prev.merchList?.map((item, index) =>
+        index === prev.indexList ? newData : item,
+      ),
+    }));
   };
   const toDiscountProduct = (discount: discountItem_t): productInfo_t => {
     const product = listOption.find((item) => item.id === discount.productID);
@@ -273,6 +309,11 @@ export default function Page_BillSetDiscount() {
         />
         <MerchList variant="deleteable" onClick={onClickProduct} />
       </Box>
+      <DialogBillEdit
+        hideFieldAmount
+        priceField="priceAfterDiscount"
+        onSubmit={onSubmitEdit}
+      />
     </BillContext.Provider>
   );
 }
