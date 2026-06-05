@@ -30,7 +30,7 @@ interface MyProps {
 //  Function
 /**************************************************** */
 const FieldDuration: React.FC<MyProps> = (props) => {
-  let buffer: { to: dayjs.Dayjs | null, from: dayjs.Dayjs | null } = {from: null, to: null}
+  const buffer: { to: dayjs.Dayjs | null, from: dayjs.Dayjs | null } = {from: null, to: null}
 
   const fromChangeHandler = (value: dayjs.Dayjs | null) => {
     console.log(value?.format("DD/MM/YYYY"));

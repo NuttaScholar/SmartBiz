@@ -57,7 +57,7 @@ const DialogEditProductList: React.FC<myProps> = (props) => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const formJson = Object.fromEntries((formData as any).entries());
+    const formJson = Object.fromEntries(formData.entries());
     const data = formJson as form_t;
 
     const priceField = props.priceField || "price";

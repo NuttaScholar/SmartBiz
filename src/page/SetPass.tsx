@@ -24,7 +24,7 @@ const Page_SetPass: React.FC = () => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    let formJson = Object.fromEntries((formData as any).entries());
+    const formJson = Object.fromEntries(formData.entries());
     const { confirmPass, newPass, oldPass } = formJson as form_t;
     if (!auth?.token) {
       redirectToLogin(navigate);

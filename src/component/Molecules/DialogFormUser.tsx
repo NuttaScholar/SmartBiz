@@ -63,7 +63,7 @@ const DialogFormUser: React.FC<myProps> = (props) => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    let formJson = Object.fromEntries((formData as any).entries());
+    const formJson = Object.fromEntries((formData as any).entries());
 
     if (props.defaultValue?._id) {
       const form: EditUserFrom_t = {

@@ -9,7 +9,7 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
   let finish = false;
   let _month = 12;
   let cnt = 0;
-  let trans: statement_t[] = [];
+  const trans: statement_t[] = [];
   while (!finish) {
     const condition: SearchTransForm_t = {
       from: new Date(state.yearSelect, _month - 1, 1),

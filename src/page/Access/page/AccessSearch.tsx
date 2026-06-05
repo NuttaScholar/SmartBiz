@@ -67,7 +67,7 @@ const Page_AccessSearch: React.FC = () => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    let formJson = Object.fromEntries((formData as any).entries());
+    const formJson = Object.fromEntries(formData.entries()) as Record<string, string>;
 
     const { duration_From, duration_To, ...rest } = formJson;
     const [fday, fmonth, fyear] = duration_From.split("/").map(Number);

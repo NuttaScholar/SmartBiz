@@ -23,13 +23,9 @@ const Transition = React.forwardRef(function Transition(
   return <Slide direction="up" ref={ref} {...props} />;
 });
 //*********************************************
-// Interface
-//*********************************************
-interface myProps {}
-//*********************************************
 // Component
 //*********************************************
-const DialogHistory: React.FC<myProps> = () => {
+const DialogHistory: React.FC = () => {
   const { state, setState } = useStockContext();
   const onClose = () => {
     setState({

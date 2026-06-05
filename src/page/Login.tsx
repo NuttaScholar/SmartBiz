@@ -64,8 +64,11 @@ const Page_Login: React.FC = () => {
           })
           .catch((err) => {
             console.log("error", err);
+            resolve({
+              type: "CredentialsSignin",
+              error: "Invalid credentials.",
+            });
           });
-      } else {
       }
     });
 

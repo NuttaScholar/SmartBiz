@@ -216,7 +216,7 @@ const ProductList: React.FC = () => {
       const data = await mockAPI.getProducts();
       setProducts(data);
       setError(null);
-    } catch (err) {
+    } catch {
       setError('เกิดข้อผิดพลาดในการโหลดข้อมูล');
     } finally {
       setLoading(false);
@@ -245,7 +245,7 @@ const ProductList: React.FC = () => {
         default:
           break;
       }
-    } catch (err) {
+    } catch {
       setError('เกิดข้อผิดพลาดในการดำเนินการ');
     }
   };

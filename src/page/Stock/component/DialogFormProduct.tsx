@@ -46,14 +46,9 @@ const Transition = React.forwardRef(function Transition(
 });
 
 //*********************************************
-// Interface
-//*********************************************
-interface myProps {
-}
-//*********************************************
 // Component
 //*********************************************
-const DialogFormProduct: React.FC<myProps> = () => {
+const DialogFormProduct: React.FC = () => {
   // Hook *********************
   const authContext = useAuth();
   const navigate = useNavigate();

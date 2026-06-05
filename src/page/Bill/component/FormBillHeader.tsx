@@ -18,13 +18,9 @@ import { useBillContext } from "../hooks/useBillContex";
 //*********************************************
 
 //*********************************************
-// Interface
-//*********************************************
-interface myProps {}
-//*********************************************
 // Component
 //*********************************************
-const FormBillHeader: React.FC<myProps> = () => {
+const FormBillHeader: React.FC = () => {
   // Hook *********************
   const { state, setState } = useBillContext();
   // Local Variable *****************

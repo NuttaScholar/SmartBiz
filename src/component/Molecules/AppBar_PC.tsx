@@ -34,7 +34,7 @@ interface myProps {
 //*********************************************
 const AppBar_PC: React.FC<myProps> = (props) => {
   /* Local Variable*/
-  let select = props.value ?? 0; //  ถ้า props.value เป็น undefine หรือ Null ให้ select = 0
+  const select = props.value ?? 0; //  ถ้า props.value เป็น undefine หรือ Null ให้ select = 0
   const navigate = useNavigate();
 
   /* Local Function*/
