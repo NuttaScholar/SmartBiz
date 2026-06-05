@@ -24,7 +24,7 @@ const Menu_st: React.CSSProperties = {
   width: 250,
 };
 
-const BootstrapInput = styled(InputBase)(() => ({
+const bootstrapInput = styled(InputBase)(() => ({
   "& .MuiInputBase-input": {
     fontSize: "24px",
     padding: "16px 32px 0px 16px",
@@ -73,7 +73,7 @@ const YearSelector_Mobile: React.FC<myProps> = (props) => {
         <Select
           value={value.toString()}
           onChange={handleChange}
-          input={<BootstrapInput />}
+          input={React.createElement(bootstrapInput)}
           MenuProps={{
             PaperProps: {
               style: Menu_st,

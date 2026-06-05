@@ -1,14 +1,6 @@
-// src/context/AuthContext.tsx
-import { createContext, useState, ReactNode } from "react";
+import { useState, ReactNode } from "react";
 import { Auth_t } from "../API/LoginService/type";
-
-export type AuthContext_t = {
-  auth?: Auth_t;
-  setAuth: (auth: Auth_t) => void;
-};
-
-export const AuthContext = createContext<AuthContext_t|undefined>(undefined);
-AuthContext.displayName = "AuthContext";
+import { AuthContext } from "./AuthContextCore";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [auth, setAuth] = useState<Auth_t>();

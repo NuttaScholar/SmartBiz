@@ -1,6 +1,6 @@
 import Login_f from "../API/LoginService/Login";
 import { Auth_t } from "../API/LoginService/type";
-import { AuthContext_t } from "../context/AuthContext";
+import { AuthContext_t } from "../context/AuthContextCore";
 import { errorCode_e } from "../enum";
 import { ErrorString } from "../function/Enum";
 

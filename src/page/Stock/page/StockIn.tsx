@@ -133,7 +133,7 @@ export default function Page_StockIn() {
 
           console.log(err);
         });
-  }, []);
+  }, [authContext, nevigate]);
   // Render **********************************
   return (
     <StockContext.Provider value={{ state, setState }}>

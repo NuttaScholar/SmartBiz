@@ -14,15 +14,6 @@ import { stockDialog_e } from "../context/StockContext";
 //*********************************************
 
 //*********************************************
-// Variable
-//*********************************************
-const MenuList: menuList_t[] = [
-  { text: "Create", icon: <AddIcon /> },
-  { text: "Stock In", icon: <DownloadIcon />, path: "/stock/in" },
-  { text: "Stock Out", icon: <UploadIcon />, path: "/stock/out" },
-  { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
-];
-//*********************************************
 // Interface
 //*********************************************
 
@@ -31,6 +22,15 @@ const MenuList: menuList_t[] = [
 //*********************************************
 const SpeedDial_Stock: React.FC = () => {
   const { state, setState } = useStockContext();
+  const menuList = React.useMemo<menuList_t[]>(
+    () => [
+      { text: "Create", icon: <AddIcon /> },
+      { text: "Stock In", icon: <DownloadIcon />, path: "/stock/in" },
+      { text: "Stock Out", icon: <UploadIcon />, path: "/stock/out" },
+      { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
+    ],
+    [],
+  );
   const speedDialHandler = (index: number) => {
     switch (index) {
       case 0:
@@ -53,7 +53,7 @@ const SpeedDial_Stock: React.FC = () => {
     <>
       {state.dialogOpen === stockDialog_e.none && (
         <MySpeedDial
-          menuList={MenuList}
+          menuList={menuList}
           icon={<MoreVertIcon />}
           onClick={speedDialHandler}
         />

@@ -114,6 +114,9 @@ const YearyTransaction: React.FC = () => {
 
       console.log(err);
     });
+    // This initializes the yearly transaction list only for these explicit reload triggers.
+    // Adding the whole Access state would rerun after the state updates made by initTrans.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.yearSelect, state.refaceTrans]);
   return (
     <Box sx={{ width: "100%" }}>

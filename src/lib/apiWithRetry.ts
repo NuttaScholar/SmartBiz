@@ -1,5 +1,5 @@
 import Login_f from "../API/LoginService/Login";
-import { AuthContext_t } from "../context/AuthContext";
+import { AuthContext_t } from "../context/AuthContextCore";
 import { errorCode_e } from "../enum";
 import { initPage } from "./initPage";
 

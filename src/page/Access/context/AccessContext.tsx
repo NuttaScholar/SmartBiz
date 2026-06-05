@@ -1,5 +1,5 @@
 // src/context/AuthContext.tsx
-import { createContext } from "react";
+import { createContext, Dispatch, SetStateAction } from "react";
 import { ContactInfo_t, statement_t, TransitionForm_t } from "../../../API/AccountService/type";
 
 export enum accessDialog_e {
@@ -28,7 +28,7 @@ export type access_t = {
 };
 export type AccessContext_t = {
   state: access_t;
-  setState: (state: access_t) => void;
+  setState: Dispatch<SetStateAction<access_t>>;
 };
 export const AccessDefaultState: access_t = {
   contactList: [],

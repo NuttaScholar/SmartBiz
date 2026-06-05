@@ -1,9 +1,7 @@
 import React, { useMemo } from "react";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
-import {
-  productType_e,
-} from "../../../component/Organisms/CardProduct";
+import { productType_e } from "../../../enum";
 import { productInfo_t } from "../../../API/StockService/type";
 import DialogEditProductList from "../../../component/Organisms/DialogEditProductList";
 

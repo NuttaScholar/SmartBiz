@@ -143,7 +143,7 @@ const Page_SetUser: React.FC = () => {
       console.log(err);
     }
   };
-  const initPage = async () => {
+  const initPage = React.useCallback(async () => {
     try {
       const resLogin = await Login_f.getToken();
       if (!resLogin.success || !resLogin.data?.token) {
@@ -164,11 +164,11 @@ const Page_SetUser: React.FC = () => {
 
       console.log(err);
     }
-  };
+  }, [navigate]);
   // Use Effect **************
   React.useEffect(() => {
     initPage();
-  }, []);
+  }, [initPage]);
   return (
     <>
       <HeaderDialog_Search

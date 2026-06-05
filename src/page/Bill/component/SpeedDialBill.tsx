@@ -15,14 +15,6 @@ import { role_e } from "../../../enum";
 //*********************************************
 
 //*********************************************
-// Variable
-//*********************************************
-const AdminMenuList: menuList_t[] = [
-  { text: "Create", icon: <AddIcon />, path: "/bill/create" },
-  { text: "Discount", icon: <PercentIcon />, path: "/bill/discount" },
-  { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
-];
-//*********************************************
 // Interface
 //*********************************************
 
@@ -33,12 +25,20 @@ const SpeedDial_Bill: React.FC = () => {
   // Hook ************************************
   const { state, setState } = useBillContext();
   const { auth } = useAuth();
+  const adminMenuList = React.useMemo<menuList_t[]>(
+    () => [
+      { text: "Create", icon: <AddIcon />, path: "/bill/create" },
+      { text: "Discount", icon: <PercentIcon />, path: "/bill/discount" },
+      { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
+    ],
+    [],
+  );
   const menuList = React.useMemo(
     () =>
       auth?.role === role_e.admin
-        ? AdminMenuList
-        : AdminMenuList.filter((menu) => menu.text !== "Discount"),
-    [auth?.role]
+        ? adminMenuList
+        : adminMenuList.filter((menu) => menu.text !== "Discount"),
+    [adminMenuList, auth?.role]
   );
 
   // Local function **************************

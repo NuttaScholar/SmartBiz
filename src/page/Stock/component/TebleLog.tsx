@@ -131,7 +131,7 @@ const TebleLog: React.FC<myProps> = (props) => {
 
         console.error("Get log error:", err);
       });
-  }, [tab, props.productID, page, rowsPerPage]);
+  }, [auth, navigate, tab, props.productID, page, rowsPerPage]);
   // UI  ************************************
   return (
     <>

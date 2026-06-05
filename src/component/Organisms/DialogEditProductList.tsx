@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { productInfo_t } from "../../API/StockService/type";
-import { productType_e } from "./CardProduct";
+import { productType_e } from "../../enum";
 import FieldText from "../Molecules/FieldText";
 
 //*********************************************

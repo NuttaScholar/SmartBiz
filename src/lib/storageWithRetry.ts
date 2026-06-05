@@ -1,6 +1,6 @@
 import Storage_f from "../API/StorageService/Storage";
 import { endPoint_t } from "../API/StorageService/type";
-import { AuthContext_t } from "../context/AuthContext";
+import { AuthContext_t } from "../context/AuthContextCore";
 import ApiWithRetry, { resApiWithRetry_t } from "./apiWithRetry";
 
 interface resPostImgWithRetry_t extends resApiWithRetry_t {

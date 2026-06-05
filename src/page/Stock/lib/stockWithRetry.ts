@@ -1,6 +1,6 @@
 import Stock_f from "../../../API/StockService/Stock";
 import { formProduct_t, logReq_t, logRes_t, productInfo_t, productRes_t, queryProduct_t, stockForm_t, stockInForm_t, stockOutForm_t, stockReq_t, stockStatus_t } from "../../../API/StockService/type";
-import { AuthContext_t } from "../../../context/AuthContext";
+import { AuthContext_t } from "../../../context/AuthContextCore";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
 

@@ -2,7 +2,7 @@ import Contact_f, { ContactSearchParams_t } from "../../../API/AccountService/Co
 import { ContactForm_t, ContactInfo_t } from "../../../API/AccountService/type";
 import Login_f from "../../../API/LoginService/Login";
 import { contactInfo_t } from "../../../component/Molecules/ContactInfo";
-import { AuthContext_t } from "../../../context/AuthContext";
+import { AuthContext_t } from "../../../context/AuthContextCore";
 import { errorCode_e } from "../../../enum";
 
 interface resApiWithRetry_t {

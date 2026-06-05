@@ -15,14 +15,6 @@ import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 //*********************************************
 
 //*********************************************
-// Variable
-//*********************************************
-const MenuList: menuList_t[] = [
-  { text: "Add", icon: <AddIcon /> },
-  { text: "Search", icon: <SearchIcon />, path: "/access/search" },
-  { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
-];
-//*********************************************
 // Interface
 //*********************************************
 
@@ -31,6 +23,14 @@ const MenuList: menuList_t[] = [
 //*********************************************
 const SpeedDial_Access: React.FC = () => {
   const { state, setState } = useAccess();
+  const menuList = useMemo<menuList_t[]>(
+    () => [
+      { text: "Add", icon: <AddIcon /> },
+      { text: "Search", icon: <SearchIcon />, path: "/access/search" },
+      { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
+    ],
+    [],
+  );
 
   const speedDialHandler = (index: number) => {
     switch (index) {
@@ -59,11 +59,11 @@ const SpeedDial_Access: React.FC = () => {
 
   const list: menuList_t[] = useMemo(() => {
     if (state.expanded) {
-      return [{ text: "Unfold Less", icon: <UnfoldLessIcon /> }, ...MenuList];
+      return [{ text: "Unfold Less", icon: <UnfoldLessIcon /> }, ...menuList];
     } else {
-      return [{ text: "Unfold More", icon: <UnfoldMoreIcon /> }, ...MenuList];
+      return [{ text: "Unfold More", icon: <UnfoldMoreIcon /> }, ...menuList];
     }
-  }, [state.expanded]);
+  }, [menuList, state.expanded]);
   return (
     <>
       {state.open === accessDialog_e.none && (

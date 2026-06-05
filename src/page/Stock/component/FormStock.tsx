@@ -2,13 +2,12 @@ import React, { useMemo, useState } from "react";
 import { Box, Button } from "@mui/material";
 import FieldText from "../../../component/Molecules/FieldText";
 import { useStockContext } from "../hooks/useStockContex";
-import { productType_e } from "../../../component/Organisms/CardProduct";
+import { productType_e, stockStatus_e } from "../../../enum";
 import Field from "../../../component/Atoms/Field";
 import FieldAutoComplete, {
   Option_t,
 } from "../../../component/Molecules/FieldAutoComplete";
 import { productInfo_t } from "../../../API/StockService/type";
-import { stockStatus_e } from "../../../enum";
 
 //*********************************************
 // Type

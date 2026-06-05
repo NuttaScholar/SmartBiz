@@ -111,6 +111,9 @@ const DialogContactList: React.FC<myProps> = (props) => {
     setPageIndex(0);
     setHasMore(true);
     loadContacts(0, false);
+    // This effect intentionally reloads only when the dialog opens.
+    // `loadContacts` also changes with pagination/loading state and would otherwise retrigger the initial load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.open]);
 
   const onDelContacat = async (data: contactInfo_t) => {

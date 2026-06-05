@@ -8,16 +8,14 @@ import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
 import { useNavigate, useParams } from "react-router-dom";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
-import CardProduct, {
-  productType_e,
-} from "../../../component/Organisms/CardProduct";
+import CardProduct from "../../../component/Organisms/CardProduct";
 import CardOrder from "../../../component/Organisms/CardOrder";
 import DialogQuestion from "../../../component/Organisms/DialogQuestion";
 import Field from "../../../component/Atoms/Field";
 import MySpeedDial from "../../../component/Molecules/MySpeedDial";
 import { menuList_t } from "../../../component/Molecules/ButtonOption";
 import { orderInfo_t } from "../../../API/BillService/type";
-import { billStatus_e, errorCode_e, stockStatus_e } from "../../../enum";
+import { billStatus_e, errorCode_e, productType_e, stockStatus_e } from "../../../enum";
 import { useAuth } from "../../../hooks/useAuth";
 import { ErrorString } from "../../../function/Enum";
 import billWithRetry_f from "../lib/billWithRetry";

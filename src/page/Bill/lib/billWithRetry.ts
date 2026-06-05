@@ -8,7 +8,7 @@ import {
     updateDiscountForm_t,
     updateOrderForm_t,
 } from "../../../API/BillService/type";
-import { AuthContext_t } from "../../../context/AuthContext";
+import { AuthContext_t } from "../../../context/AuthContextCore";
 import { billStatus_e } from "../../../enum";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 

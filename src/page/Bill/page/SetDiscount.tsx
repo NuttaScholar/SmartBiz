@@ -176,7 +176,7 @@ export default function Page_BillSetDiscount() {
       ),
     }));
   };
-  const toDiscountProduct = (discount: discountItem_t): productInfo_t => {
+  const toDiscountProduct = React.useCallback((discount: discountItem_t): productInfo_t => {
     const product = listOption.find((item) => item.id === discount.productID);
     const price = product?.price || 0;
     const discountPercent = Number(discount.discountPercent);
@@ -193,7 +193,7 @@ export default function Page_BillSetDiscount() {
       status: product?.status || stockStatus_e.normal,
       img: product?.img || "",
     };
-  };
+  }, [listOption]);
   // Use Effect ******************************
   React.useEffect(() => {
     stockWithRetry_f
@@ -257,7 +257,7 @@ export default function Page_BillSetDiscount() {
     return () => {
       active = false;
     };
-  }, [authContext, navigate, selectedCustomerID, listOption]);
+  }, [authContext, navigate, selectedCustomerID, toDiscountProduct]);
   // Render **********************************
   return (
     <BillContext.Provider value={{ state, setState }}>

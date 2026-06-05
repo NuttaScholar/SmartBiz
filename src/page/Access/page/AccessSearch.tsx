@@ -43,13 +43,13 @@ const Page_AccessSearch: React.FC = () => {
   const [contact, SetContact] = React.useState<string>("");
   const [form, setForm] = React.useState<SearchTransForm_t>();
   // Local Function ***********
-  const searchHandler = (form: SearchTransForm_t) => {
+  const searchHandler = React.useCallback((form: SearchTransForm_t) => {
     if (form !== undefined) {
       accessWithRetry_f
         .get(authContext, form)
         .then((res) => {
           if (res.data) {
-            setState({ ...state, transaction: res.data });
+            setState((prev) => ({ ...prev, transaction: res.data ?? [] }));
           } else if (res.errCode) {
             if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
@@ -63,7 +63,7 @@ const Page_AccessSearch: React.FC = () => {
           alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
         });
     }
-  };
+  }, [authContext, navigate]);
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -118,7 +118,7 @@ const Page_AccessSearch: React.FC = () => {
       console.error("Error during initPage:", err);
     });
     form && searchHandler(form);
-  }, [state.refaceTrans]);
+  }, [authContext, form, navigate, searchHandler, state.refaceTrans]);
   return (
     <AccessContext.Provider value={{ state, setState }}>
       <HeaderDialog label="ค้นหา" onClick={() => navigate("/access")} />

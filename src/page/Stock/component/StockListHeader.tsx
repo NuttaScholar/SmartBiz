@@ -1,13 +1,12 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import TabBox from "../../../component/Atoms/TabBox";
-import { productType_e } from "../../../component/Organisms/CardProduct";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockFilter_e } from "../context/StockContext";
 import FieldSearch from "../../../component/Molecules/FieldSearch";
 import { queryProduct_t } from "../../../API/StockService/type";
 import stockWithRetry_f from "../lib/stockWithRetry";
-import { stockStatus_e } from "../../../enum";
+import { productType_e, stockStatus_e } from "../../../enum";
 import { ErrorString } from "../../../function/Enum";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -83,7 +82,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
         break;
     }
   };
-  const reloadList = () => {
+  const reloadList = React.useCallback(() => {
     let query: queryProduct_t = { type: productType_e.material, name: name };
     switch (state.filter) {
       case stockFilter_e.another:
@@ -114,7 +113,8 @@ const StockListHeader: React.FC<myProps> = (props) => {
       .getProduct(authContext, query)
       .then((res) => {
         if (res.success && res.data !== undefined) {
-          res.data && setState({ ...state, productList: res.data.products, status: res.data.status });
+          const data = res.data;
+          setState((prev) => ({ ...prev, productList: data.products, status: data.status }));
         } else {
           if (redirectToLoginOnAuthError(nevigate, res.errCode)) return;
 
@@ -126,7 +126,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
 
         console.log(err);
       });
-  };
+  }, [authContext, name, nevigate, setState, state.filter]);
   // Effect **********************************
   React.useEffect(() => {
     switch (state.filter) {
@@ -148,7 +148,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
         break;
     }
     reloadList();
-  }, [state.filter, state.reface]);
+  }, [reloadList, state.filter, state.reface]);
   return (
     <Box
       sx={{

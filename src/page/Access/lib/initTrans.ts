@@ -1,6 +1,6 @@
 import { SearchTransForm_t, statement_t } from "../../../API/AccountService/type";
 import { AccessContext_t } from "../context/AccessContext";
-import { AuthContext_t } from "../../../context/AuthContext";
+import { AuthContext_t } from "../../../context/AuthContextCore";
 import accessWithRetry_f from "./accessWithRetry";
 
 export const initTrans = async (authContext: AuthContext_t, accessContext: AccessContext_t):Promise<void> => {

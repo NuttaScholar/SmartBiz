@@ -1,6 +1,6 @@
 import Access_f from "../../../API/AccountService/Account";
 import { SearchTransForm_t, statement_t, TransitionForm_t } from "../../../API/AccountService/type";
-import { AuthContext_t } from "../../../context/AuthContext";
+import { AuthContext_t } from "../../../context/AuthContextCore";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
 interface resStatementWithRetry_t extends resApiWithRetry_t {

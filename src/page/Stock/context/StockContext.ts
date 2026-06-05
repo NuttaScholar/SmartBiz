@@ -1,5 +1,5 @@
 // src/context/AuthContext.tsx
-import { createContext } from "react";
+import { createContext, Dispatch, SetStateAction } from "react";
 import { productInfo_t, stockStatus_t } from "../../../API/StockService/type";
 
 export enum stockFilter_e {
@@ -35,7 +35,7 @@ export type stock_t = {
 };
 export type StockContext_t = {
   state: stock_t;
-  setState: (state: stock_t) => void;
+  setState: Dispatch<SetStateAction<stock_t>>;
 };
 export const StockDefaultState: stock_t = {
   filter: stockFilter_e.stock,

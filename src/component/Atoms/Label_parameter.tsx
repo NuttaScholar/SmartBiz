@@ -6,7 +6,7 @@ import { SxProps, Theme } from "@mui/material";
 //**********************************************
 // Style
 //**********************************************
-const Field: SxProps<Theme> = {
+const fieldStyle: SxProps<Theme> = {
   display: "flex",
   alignItems: "center",
 };
@@ -37,7 +37,7 @@ const Label_parameter: React.FC<myProps> = (props) => {
           props.gap === undefined ? "space-between" : "flex-start",
         gap: props.gap,
         width: props.width,
-        ...Field,
+        ...fieldStyle,
       }}
     >
       <Typography

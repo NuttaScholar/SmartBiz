@@ -13,14 +13,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import ClearIcon from "@mui/icons-material/Clear";
 import { productInfo_t } from "../../API/StockService/type";
 import { stockStatus_e } from "../../enum";
-/**************************************************** */
-//  Type
-/**************************************************** */
-export enum productType_e {
-  merchandise,
-  material,
-  another,
-}
 
 /**************************************************** */
 //  Interface
