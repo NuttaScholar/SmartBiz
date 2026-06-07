@@ -98,42 +98,72 @@ npm run dev
 
 ## การรันแบบ Production ด้วย Docker
 
-1. Build frontend
+Production deploy ใช้ชุดไฟล์ในโฟลเดอร์ `deploy/` ซึ่งจะแนบแยกไว้เป็น Assets ในหน้า Releases บน GitHub ชุดนี้ใช้ Docker image ที่ build ไว้แล้ว เช่น `nuttascholar/smartbiz_web:1.0` จึงไม่ต้อง clone source code หรือรัน `npm run build` บนเครื่อง production
 
-```bash
-npm run build
+1. ดาวน์โหลด Assets สำหรับ deploy จากหน้า GitHub Releases แล้วแตกไฟล์ให้ได้โฟลเดอร์ `deploy/`
+
+2. สร้างไฟล์ config จาก template และแก้ค่าให้ตรงกับเครื่องหรือ server ที่ deploy
+
+```powershell
+Copy-Item deploy\.env.example deploy\.env
+notepad deploy\.env
 ```
 
-2. เปิดทุก service รวมถึง Nginx ที่เสิร์ฟไฟล์จาก `dist`
+ค่าที่ควรตรวจเป็นพิเศษ:
 
-```bash
-docker compose up -d
+- `WEB_IMAGE` - tag ของ frontend image เช่น `nuttascholar/smartbiz_web:1.0`
+- `VITE_HOST` และ `VITE_PORT_*` - ต้องตรงกับค่าที่ใช้ตอน build frontend image เพราะ Vite compile ค่าเหล่านี้เข้า static files แล้ว
+- `MINIO_ENDPOINT` - ต้องเป็น IP ของเครื่อง ไม่สามารถใช้ domain name อย่าง localhost ได้
+- `SECRET`, `MONGO_PASSWORD`, `MINIO_PASSWORD` - ควรเปลี่ยนก่อนใช้งาน production จริง
+
+3. เริ่มระบบด้วย Docker Compose ของชุด deploy
+
+```powershell
+docker compose --env-file deploy\.env -f deploy\compose.yml up -d
 ```
 
-3. เปิดเว็บที่ `http://localhost:3030`
+4. เปิดเว็บตามค่าใน `.env` ค่าเริ่มต้นคือ `http://localhost:3030`
 
-คำสั่งดูสถานะ container:
+Service อื่นที่เปิดตามค่าเริ่มต้น:
 
-```bash
-docker compose ps
+- Mongo Express: `http://localhost:8082`
+- MinIO API: `http://localhost:9000`
+- MinIO Console: `http://localhost:9001`
+- Account Service: `http://localhost:3000`
+- Login Service: `http://localhost:3001`
+- Storage Service: `http://localhost:3002`
+- Stock Service: `http://localhost:3003`
+- Bill Service: `http://localhost:3004`
+
+ตรวจสถานะ container:
+
+```powershell
+docker compose --env-file deploy\.env -f deploy\compose.yml ps
 ```
 
-คำสั่งดู log:
+ดู log:
 
-```bash
-docker compose logs -f
+```powershell
+docker compose --env-file deploy\.env -f deploy\compose.yml logs -f
 ```
 
-คำสั่งหยุดระบบ:
+อัปเดต image หลังแก้ tag ใน `deploy/.env`:
 
-```bash
-docker compose down
+```powershell
+docker compose --env-file deploy\.env -f deploy\compose.yml pull
+docker compose --env-file deploy\.env -f deploy\compose.yml up -d
 ```
 
-ถ้าต้องการลบ volume ฐานข้อมูลและไฟล์ที่เก็บไว้ด้วย:
+หยุดระบบโดยยังเก็บ volume ข้อมูลไว้:
 
-```bash
-docker compose down -v
+```powershell
+docker compose --env-file deploy\.env -f deploy\compose.yml down
+```
+
+ถ้าต้องการลบ volume ฐานข้อมูลและไฟล์ storage ด้วย:
+
+```powershell
+docker compose --env-file deploy\.env -f deploy\compose.yml down -v
 ```
 
 ## คำสั่งทดสอบ
