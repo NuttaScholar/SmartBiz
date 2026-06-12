@@ -5,6 +5,7 @@ import {
   Button,
   Paper,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
@@ -40,6 +41,7 @@ const Page_Login: React.FC = () => {
   const { setAuth } = useAuth();
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [showPass, setShowPass] = React.useState(false);
   // Local Function ***********
   const signIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -123,11 +125,20 @@ const Page_Login: React.FC = () => {
           <TextField
             name="password"
             label="รหัสผ่าน"
-            type="password"
+            type={showPass ? "text" : "password"}
             autoComplete="current-password"
             fullWidth
             required
           />
+          <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Typography>Show Password</Typography>
+            <Switch
+              value={showPass}
+              onChange={(__, check) => {
+                setShowPass(check);
+              }}
+            />
+          </Box>
           <Button
             type="submit"
             variant="contained"
