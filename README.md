@@ -98,35 +98,67 @@ npm run dev
 
 ## การรันแบบ Production ด้วย Docker
 
-Production deploy ใช้ชุดไฟล์ในโฟลเดอร์ `deploy/` ซึ่งจะแนบแยกไว้เป็น Assets ในหน้า Releases บน GitHub ชุดนี้ใช้ Docker image ที่ build ไว้แล้ว เช่น `nuttascholar/smartbiz_web:1.0` จึงไม่ต้อง clone source code หรือรัน `npm run build` บนเครื่อง production
+Production deploy ใช้ชุดไฟล์ Release asset `SmartBizV0_3` ที่จะแนบไว้ในหน้า GitHub Releases เมื่อแตกไฟล์แล้วจะได้โครงสร้างหลักดังนี้:
 
-1. ดาวน์โหลด Assets สำหรับ deploy จากหน้า GitHub Releases แล้วแตกไฟล์ให้ได้โฟลเดอร์ `deploy/`
+```text
+SmartBizV0_3/
+  App/
+    docker-compose.yml
+    .env
+    nginx.conf
+    templates/
+    dist/
+  CreateWeb/
+    .env.production
+    package.json
+    package-lock.json
+    src/
+    public/
+    Dockerfile
+    nginx.conf
+    templates/
+```
 
-2. สร้างไฟล์ config จาก template และแก้ค่าให้ตรงกับเครื่องหรือ server ที่ deploy
+โฟลเดอร์ `App` คือชุดสำหรับรันระบบจริงด้วย Docker Compose ส่วน `CreateWeb` คือชุด source frontend สำหรับ build `dist` ใหม่เมื่อเปลี่ยนค่า endpoint เช่น `VITE_HOST`
+
+1. ดาวน์โหลด Release asset จากหน้า GitHub Releases แล้วแตกไฟล์ เช่น:
+
+```text
+E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3
+```
+
+2. แก้ค่า config ใน `App\.env` ให้ตรงกับเครื่องหรือ server ที่ deploy
 
 ```powershell
-Copy-Item deploy\.env.example deploy\.env
-notepad deploy\.env
+notepad E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App\.env
 ```
 
 ค่าที่ควรตรวจเป็นพิเศษ:
 
-- `WEB_IMAGE` - tag ของ frontend image เช่น `nuttascholar/smartbiz_web:1.0`
-- `VITE_HOST` - ถ้าต้องการให้เครื่องอื่นในวง LAN ใช้งานได้ด้วย ให้เปลี่ยนเป็น IP ของเครื่องที่รัน service
-- `MINIO_ENDPOINT` - ต้องเป็น IP ของเครื่อง ไม่สามารถใช้ domain name อย่าง localhost ได้
-- `SECRET`, `MONGO_PASSWORD`, `MINIO_PASSWORD` - ควรเปลี่ยนก่อนใช้งาน production จริง
+- `VITE_HOST` - host หรือ IP ที่ browser ของผู้ใช้จะเรียก backend services
+- `VITE_PORT` - port ของ frontend web เช่น `3030`
+- `VITE_PORT_ACCESS`, `VITE_PORT_LOGIN`, `VITE_PORT_STORE`, `VITE_PORT_STOCK`, `VITE_PORT_BILL`, `VITE_PORT_MINIO` - port ที่เปิดออกจาก Docker Compose
+- `MINIO_ENDPOINT` - host หรือ IP ที่ backend ใช้ติดต่อ MinIO
+- `SECRET`, `MINIO_USER`, `MINIO_PASSWORD` - ควรเปลี่ยนก่อนใช้งาน production จริง
 
-3. เริ่มระบบด้วย Docker Compose ของชุด deploy
+หมายเหตุ: frontend ใน `App\dist` ถูก build มากับค่า `VITE_*` แล้ว ถ้าเปลี่ยน `VITE_HOST` หรือ `VITE_PORT_*` หลังแตกไฟล์ ควร build frontend ใหม่จาก `CreateWeb` แล้วคัดลอก `dist` กลับไปที่ `App`
+
+3. เริ่มระบบจากโฟลเดอร์ `App`
 
 ```powershell
-docker compose --env-file deploy/.env -f deploy/compose.yml up -d --build
+cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
+docker compose --env-file .env -f docker-compose.yml up -d
 ```
 
-4. เปิดเว็บตามค่าใน `.env` ค่าเริ่มต้นคือ `http://localhost:3030`
+4. เปิดเว็บตามค่าใน `App\.env` ค่าเริ่มต้นคือ:
+
+```text
+http://localhost:3030
+```
 
 Service อื่นที่เปิดตามค่าเริ่มต้น:
 
-- Mongo Express: `http://localhost:8082`
+- Mongo Express: `http://localhost:8081`
 - MinIO API: `http://localhost:9000`
 - MinIO Console: `http://localhost:9001`
 - Account Service: `http://localhost:3000`
@@ -138,32 +170,62 @@ Service อื่นที่เปิดตามค่าเริ่มต้
 ตรวจสถานะ container:
 
 ```powershell
-docker compose --env-file deploy\.env -f deploy\compose.yml ps
+cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
+docker compose --env-file .env -f docker-compose.yml ps
 ```
 
 ดู log:
 
 ```powershell
-docker compose --env-file deploy\.env -f deploy\compose.yml logs -f
-```
-
-อัปเดต image หลังแก้ tag ใน `deploy/.env`:
-
-```powershell
-docker compose --env-file deploy\.env -f deploy\compose.yml pull
-docker compose --env-file deploy\.env -f deploy\compose.yml up -d
+cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
+docker compose --env-file .env -f docker-compose.yml logs -f
 ```
 
 หยุดระบบโดยยังเก็บ volume ข้อมูลไว้:
 
 ```powershell
-docker compose --env-file deploy\.env -f deploy\compose.yml down
+cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
+docker compose --env-file .env -f docker-compose.yml down
 ```
 
 ถ้าต้องการลบ volume ฐานข้อมูลและไฟล์ storage ด้วย:
 
 ```powershell
-docker compose --env-file deploy\.env -f deploy\compose.yml down -v
+cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
+docker compose --env-file .env -f docker-compose.yml down -v
+```
+
+### Build Frontend ใหม่จาก CreateWeb
+
+ใช้ขั้นตอนนี้เมื่อมีการเปลี่ยนค่า endpoint ของ frontend เช่น `VITE_HOST` หรือ port ของ service ต่าง ๆ
+
+1. แก้ค่าใน `CreateWeb\.env.production` ให้ตรงกับ `App\.env`
+
+```powershell
+notepad E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\CreateWeb\.env.production
+```
+
+2. Build frontend ใหม่
+
+```powershell
+cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\CreateWeb
+npm ci
+npm run build
+```
+
+3. คัดลอกผลลัพธ์ `dist` ไปให้ `App` ใช้งาน
+
+```powershell
+$release = "E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3"
+Remove-Item "$release\App\dist" -Recurse -Force
+Copy-Item "$release\CreateWeb\dist" "$release\App\dist" -Recurse
+```
+
+4. Restart web container
+
+```powershell
+cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
+docker compose --env-file .env -f docker-compose.yml up -d web
 ```
 
 ## คำสั่งทดสอบ
