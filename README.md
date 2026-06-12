@@ -112,14 +112,14 @@ notepad deploy\.env
 ค่าที่ควรตรวจเป็นพิเศษ:
 
 - `WEB_IMAGE` - tag ของ frontend image เช่น `nuttascholar/smartbiz_web:1.0`
-- `VITE_HOST` และ `VITE_PORT_*` - ต้องตรงกับค่าที่ใช้ตอน build frontend image เพราะ Vite compile ค่าเหล่านี้เข้า static files แล้ว
+- `VITE_HOST` - ถ้าต้องการให้เครื่องอื่นในวง LAN ใช้งานได้ด้วย ให้เปลี่ยนเป็น IP ของเครื่องที่รัน service
 - `MINIO_ENDPOINT` - ต้องเป็น IP ของเครื่อง ไม่สามารถใช้ domain name อย่าง localhost ได้
 - `SECRET`, `MONGO_PASSWORD`, `MINIO_PASSWORD` - ควรเปลี่ยนก่อนใช้งาน production จริง
 
 3. เริ่มระบบด้วย Docker Compose ของชุด deploy
 
 ```powershell
-docker compose --env-file deploy\.env -f deploy\compose.yml up -d
+docker compose --env-file deploy/.env -f deploy/compose.yml up -d --build
 ```
 
 4. เปิดเว็บตามค่าใน `.env` ค่าเริ่มต้นคือ `http://localhost:3030`
