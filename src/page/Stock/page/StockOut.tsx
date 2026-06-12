@@ -37,6 +37,20 @@ export default function Page_StockOut() {
   const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
 
   // Local function **************************
+  const getStockAmount = (productID: string) => {
+    return listOption.find((item) => item.id === productID)?.amount || 0;
+  };
+  const validateStockAmount = (product: productInfo_t) => {
+    const stockAmount = getStockAmount(product.id);
+    const amount = product.amount || 0;
+
+    if (amount > stockAmount) {
+      alert(`จำนวนสินค้า ${product.name || product.id} มีในสต็อกเพียง ${stockAmount}`);
+      return false;
+    }
+
+    return true;
+  };
   const onEdit = (del: boolean, value: productInfo_t) => {
     if (state.productList !== undefined) {
       const index = state.productList.findIndex((item) => item.id === value.id);
@@ -69,6 +83,10 @@ export default function Page_StockOut() {
       alert("กรุณาเพิ่มสินค้าที่ต้องการตัดสต็อก");
       return;
     }
+    if (!state.productList.every(validateStockAmount)) {
+      return;
+    }
+
     const list: stockForm_t[] = state.productList.map((item) => ({
       productID: item.id,
       amount: item.amount || 0,
@@ -102,14 +120,29 @@ export default function Page_StockOut() {
       });
   };
   const onAdd = (form: FormAddProduce_t) => {
+    const productID = form.product?.code || "";
+    const product = listOption?.find((item) => item.id === productID);
+    const amount = form.amount !== undefined ? Number(form.amount) : undefined;
+    const isDuplicate = state.productList?.some((item) => item.id === productID);
+
+    if (isDuplicate) {
+      alert("รายการสินค้านี้ถูกเพิ่มแล้ว");
+      return;
+    }
+
     const newList: productInfo_t = {
-      id: form.product?.code || "",
+      id: productID,
       name: form.product?.value || "",
-      amount: form.amount !== undefined ? Number(form.amount) : undefined,
+      amount,
       type: productType_e.merchandise,
       status: stockStatus_e.normal,
-      img: listOption?.find((item) => item.id === form.product?.code)?.img || "",
+      img: product?.img || "",
     };
+
+    if (!validateStockAmount(newList)) {
+      return;
+    }
+
     setState({
       ...state,
       productList: [...(state.productList || []), newList],
@@ -166,7 +199,7 @@ export default function Page_StockOut() {
         <AddProductForm list={listOption} hideFieldPrice onAdd={onAdd} />
         <StockList variant="deleteable" onClick={onEdit} />
       </Box>
-      <DialogStockEdit type="out" />
+      <DialogStockEdit type="out" listOption={listOption} />
     </StockContext.Provider>
   );
 }

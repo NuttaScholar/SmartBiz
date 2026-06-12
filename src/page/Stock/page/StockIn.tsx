@@ -99,14 +99,22 @@ export default function Page_StockIn() {
       });
   };
   const onAdd = (form: FormAddProduce_t) => {
+    const productID = form.product?.code || "";
+    const isDuplicate = state.productList?.some((item) => item.id === productID);
+
+    if (isDuplicate) {
+      alert("รายการสินค้านี้ถูกเพิ่มแล้ว");
+      return;
+    }
+
     const newList: productInfo_t = {
-      id: form.product?.code || "",
+      id: productID,
       name: form.product?.value || "",
       amount: form.amount !== undefined ? Number(form.amount) : undefined,
       price: form.price ? Number(form.price) : 0,
       type: productType_e.merchandise,
       status: stockStatus_e.normal,
-      img: listOption?.find((item) => item.id === form.product?.code)?.img || "",          
+      img: listOption?.find((item) => item.id === productID)?.img || "",
     };
     setState({
       ...state,

@@ -21,6 +21,7 @@ import DialogEditProductList from "../../../component/Organisms/DialogEditProduc
 //*********************************************
 interface myProps {
   type: "in" | "out";
+  listOption?: productInfo_t[];
 }
 //*********************************************
 // Component
@@ -46,6 +47,17 @@ const DialogStockEdit: React.FC<myProps> = (props) => {
   }, [state.productList, state.indexList]);
   // Local Function ***********
   const handleSubmit = (val :productInfo_t) => {    
+    if (props.type === "out") {
+      const stockAmount =
+        props.listOption?.find((item) => item.id === val.id)?.amount || 0;
+      const amount = val.amount || 0;
+
+      if (amount > stockAmount) {
+        alert(`จำนวนสินค้า ${val.name || val.id} มีในสต็อกเพียง ${stockAmount}`);
+        return;
+      }
+    }
+
     setState({
       ...state,
       dialogOpen: stockDialog_e.none,
