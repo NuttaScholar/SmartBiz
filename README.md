@@ -138,7 +138,7 @@ notepad E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App\.env
 - `VITE_HOST` - host หรือ IP ที่ browser ของผู้ใช้จะเรียก backend services
 - `VITE_PORT` - port ของ frontend web เช่น `3030`
 - `VITE_PORT_ACCESS`, `VITE_PORT_LOGIN`, `VITE_PORT_STORE`, `VITE_PORT_STOCK`, `VITE_PORT_BILL`, `VITE_PORT_MINIO` - port ที่เปิดออกจาก Docker Compose
-- `MINIO_ENDPOINT` - host หรือ IP ที่ backend ใช้ติดต่อ MinIO
+- `MINIO_ENDPOINT` - IP  ที่ backend ใช้ติดต่อ MinIO
 - `SECRET`, `MINIO_USER`, `MINIO_PASSWORD` - ควรเปลี่ยนก่อนใช้งาน production จริง
 
 หมายเหตุ: frontend ใน `App\dist` ถูก build มากับค่า `VITE_*` แล้ว ถ้าเปลี่ยน `VITE_HOST` หรือ `VITE_PORT_*` หลังแตกไฟล์ ควร build frontend ใหม่จาก `CreateWeb` แล้วคัดลอก `dist` กลับไปที่ `App`
