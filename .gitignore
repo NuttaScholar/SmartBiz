@@ -24,6 +24,9 @@ lerna-debug.log*
 /workflow*.md
 /workflows*.md
 
+# Local release notes
+/NewRelease/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
