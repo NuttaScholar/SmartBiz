@@ -42,7 +42,6 @@ SmartBiz เป็นเว็บแอปสำหรับทดลองพ�
 ### สิ่งที่ต้องมี
 
 - Node.js 20 ขึ้นไป
-- npm
 - Docker Desktop
 - Git
 
@@ -130,23 +129,23 @@ E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3
 2. แก้ค่า config ใน `App\.env` ให้ตรงกับเครื่องหรือ server ที่ deploy
 
 ```powershell
-notepad E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App\.env
+notepad ./App/.env
 ```
 
 ค่าที่ควรตรวจเป็นพิเศษ:
 
 - `VITE_HOST` - host หรือ IP ที่ browser ของผู้ใช้จะเรียก backend services
 - `VITE_PORT` - port ของ frontend web เช่น `3030`
-- `VITE_PORT_ACCESS`, `VITE_PORT_LOGIN`, `VITE_PORT_STORE`, `VITE_PORT_STOCK`, `VITE_PORT_BILL`, `VITE_PORT_MINIO` - port ที่เปิดออกจาก Docker Compose
+- `VITE_PORT_ACCESS`, `VITE_PORT_LOGIN`, `VITE_PORT_STORE`, `VITE_PORT_STOCK`, `VITE_PORT_BILL`, `VITE_PORT_MINIO`, `MONGO_EXPRESS_PORT`, `MINIO_CONSOLE_PORT` - port ที่เปิดออกจาก Docker Compose
 - `MINIO_ENDPOINT` - IP  ที่ backend ใช้ติดต่อ MinIO
-- `SECRET`, `MINIO_USER`, `MINIO_PASSWORD` - ควรเปลี่ยนก่อนใช้งาน production จริง
+- `SECRET`, `MINIO_USER`, `MINIO_PASSWORD`, `MONGO_EXPRESS_USERNAME`, `MONGO_EXPRESS_PASSWORD` - ควรเปลี่ยนก่อนใช้งาน production จริง
 
 หมายเหตุ: frontend ใน `App\dist` ถูก build มากับค่า `VITE_*` แล้ว ถ้าเปลี่ยน `VITE_HOST` หรือ `VITE_PORT_*` หลังแตกไฟล์ ควร build frontend ใหม่จาก `CreateWeb` แล้วคัดลอก `dist` กลับไปที่ `App`
 
 3. เริ่มระบบจากโฟลเดอร์ `App`
 
 ```powershell
-cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
+cd App
 docker compose --env-file .env -f docker-compose.yml up -d
 ```
 
@@ -155,7 +154,12 @@ docker compose --env-file .env -f docker-compose.yml up -d
 ```text
 http://localhost:3030
 ```
-
+ 
+5. เข้าสู่ระบบด้วยบัญชีเริ่มต้น
+```text
+Username: admin@default.com 
+Password: Default
+```
 Service อื่นที่เปิดตามค่าเริ่มต้น:
 
 - Mongo Express: `http://localhost:8081`
@@ -170,28 +174,24 @@ Service อื่นที่เปิดตามค่าเริ่มต้
 ตรวจสถานะ container:
 
 ```powershell
-cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
 docker compose --env-file .env -f docker-compose.yml ps
 ```
 
 ดู log:
 
 ```powershell
-cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
 docker compose --env-file .env -f docker-compose.yml logs -f
 ```
 
 หยุดระบบโดยยังเก็บ volume ข้อมูลไว้:
 
 ```powershell
-cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
 docker compose --env-file .env -f docker-compose.yml down
 ```
 
 ถ้าต้องการลบ volume ฐานข้อมูลและไฟล์ storage ด้วย:
 
 ```powershell
-cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
 docker compose --env-file .env -f docker-compose.yml down -v
 ```
 
@@ -202,13 +202,13 @@ docker compose --env-file .env -f docker-compose.yml down -v
 1. แก้ค่าใน `CreateWeb\.env.production` ให้ตรงกับ `App\.env`
 
 ```powershell
-notepad E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\CreateWeb\.env.production
+cd CreateWeb
+notepad .env.production
 ```
 
 2. Build frontend ใหม่
 
 ```powershell
-cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\CreateWeb
 npm ci
 npm run build
 ```
@@ -216,16 +216,15 @@ npm run build
 3. คัดลอกผลลัพธ์ `dist` ไปให้ `App` ใช้งาน
 
 ```powershell
-$release = "E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3"
-Remove-Item "$release\App\dist" -Recurse -Force
-Copy-Item "$release\CreateWeb\dist" "$release\App\dist" -Recurse
+Remove-Item "../App/dist" -Recurse -Force
+Copy-Item "dist" "../App/dist" -Recurse
 ```
 
 4. Restart web container
 
 ```powershell
-cd E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3\App
-docker compose --env-file .env -f docker-compose.yml up -d web
+cd ../App
+docker compose --env-file .env -f docker-compose.yml up -d
 ```
 
 ## คำสั่งทดสอบ

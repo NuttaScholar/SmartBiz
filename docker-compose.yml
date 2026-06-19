@@ -33,8 +33,8 @@ services:
     image: minio/minio
     container_name: minio
     ports:
-      - "9000:9000" # API
-      - "9001:9001" # Console
+      - ${VITE_PORT_MINIO}:9000 # API
+      - ${MINIO_CONSOLE_PORT}:9001 # Console
     environment:
       MINIO_ROOT_USER: ${MINIO_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
@@ -65,7 +65,7 @@ services:
       PORT: 3000
       DB_URL: mongodb://root:example@mongo:27017/Account?authSource=admin
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
-      MINIO_PORT: 9000
+      MINIO_PORT: ${VITE_PORT_MINIO}
       MINIO_USE_SSL: false
       MINIO_USER: ${MINIO_USER}
       MINIO_PASSWORD: ${MINIO_PASSWORD}
@@ -103,7 +103,7 @@ services:
       PORT: 3003
       DB_URL: mongodb://root:example@mongo:27017/Stock?authSource=admin
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
-      MINIO_PORT: 9000
+      MINIO_PORT: ${VITE_PORT_MINIO}
       MINIO_USE_SSL: false
       MINIO_USER: ${MINIO_USER}
       MINIO_PASSWORD: ${MINIO_PASSWORD}
@@ -147,7 +147,7 @@ services:
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3002
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
-      MINIO_PORT: 9000
+      MINIO_PORT: ${VITE_PORT_MINIO}
       MINIO_USE_SSL: false
       MINIO_USER: ${MINIO_USER}
       MINIO_PASSWORD: ${MINIO_PASSWORD}
