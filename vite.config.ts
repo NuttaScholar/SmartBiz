@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { resolve } from 'node:path'
 //import fs from 'fs'
 
 // https://vite.dev/config/
@@ -15,5 +16,13 @@ export default defineConfig({
   },
   preview: {
     port: 3030,
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        demo: resolve(__dirname, 'demo/index.html'),
+      },
+    },
   },
 })

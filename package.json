@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:demo": "vite --config vite.demo.config.ts",
     "build": "tsc -b && vite build",
+    "build:demo": "tsc -b && vite build --config vite.demo.config.ts",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:demo": "vite preview --config vite.demo.config.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
