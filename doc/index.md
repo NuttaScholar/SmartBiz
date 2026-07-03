@@ -4,7 +4,7 @@
 
 ## ภาพรวมโปรเจค
 
-SmartBiz เป็น Web Application สำหรับงานธุรกิจขนาดเล็ก พัฒนาด้วย React + Vite ฝั่ง frontend และแยก backend เป็นหลาย Express/TypeScript service ได้แก่ login/user, account, storage, stock และ bill/order
+SmartBiz เป็น Web Application สำหรับงานธุรกิจขนาดเล็ก พัฒนาด้วย React + Vite ฝั่ง frontend และแยก backend เป็นหลาย Express/TypeScript service ได้แก่ login/user, account, storage, stock และ bill/order โดยมีทั้งโหมดแอปหลักและโหมด demo ผ่าน Vite config แยก
 
 ฟีเจอร์หลักที่พบจากโค้ด:
 
@@ -12,6 +12,7 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 - ระบบบัญชีรายรับรายจ่าย พร้อม contact, transaction, wallet และแนบรูปบิล
 - ระบบสต็อกสินค้า/วัตถุดิบ พร้อม product, stock in/out, log และรูปสินค้า
 - ระบบบิล/คำสั่งซื้อ พร้อม workflow สถานะ order และส่วนลดรายลูกค้า
+- ระบบ demo frontend แยก entrypoint สำหรับทดลอง UI/flow
 - ระบบจัดเก็บรูปภาพผ่าน MinIO
 
 สถาปัตยกรรมโดยรวมคือ frontend เรียก backend ผ่าน `src/API/*` และ backend service ตรวจ JWT จาก `Service_Login` ผ่าน header `Authorization: Bearer <token>`
@@ -35,19 +36,22 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 
 | Path | หน้าที่ |
 | --- | --- |
+| `.dockerignore` | กำหนดไฟล์ที่ไม่ต้องส่งเข้า Docker build context ของ frontend |
 | `.gitignore` | กำหนดไฟล์และโฟลเดอร์ที่ไม่ต้อง track เช่น dependency, build output, log, local workflow note และไฟล์ local |
 | `.env` | ค่า environment สำหรับรันระบบ เช่น host, port, secret และค่าการเชื่อมต่อ service/storage โดยไม่ควรเปิดเผยค่าจริง |
 | `README.md` | เอกสารแนะนำโปรเจคและการติดตั้งเบื้องต้น |
 | `LICENSE` | เงื่อนไข license ของโปรเจค |
-| `package.json` | package หลักของ frontend ระบุ script `dev`, `build`, `lint`, `preview` และ dependency ของ React/Vite/MUI |
+| `Dockerfile` | build image frontend โดย build React/Vite แล้ว serve ผ่าน Nginx |
+| `package.json` | package หลักของ frontend ระบุ script `dev`, `dev:demo`, `build`, `build:demo`, `lint`, `preview`, `preview:demo` และ dependency ของ React/Vite/MUI |
 | `package-lock.json` | lock dependency ของ frontend |
 | `index.html` | HTML entrypoint ของ Vite ที่ mount React app |
-| `vite.config.ts` | ตั้งค่า Vite ใช้ React plugin, dev server port `3030`, preview port `8080` |
+| `vite.config.ts` | ตั้งค่า Vite ใช้ React plugin, dev server/preview port `3030` และ build หลาย entrypoint ได้แก่ `index.html` กับ `demo/index.html` |
+| `vite.demo.config.ts` | ตั้งค่า Vite สำหรับโหมด demo โดย rewrite `/` ไป `demo/index.html` และใช้ port `4030` |
 | `tsconfig.json` | TypeScript project references ของ frontend |
 | `tsconfig.app.json` | TypeScript config สำหรับ source ฝั่ง browser/app |
 | `tsconfig.node.json` | TypeScript config สำหรับไฟล์ config ที่รันบน Node เช่น Vite config |
 | `eslint.config.js` | ตั้งค่า ESLint สำหรับตรวจคุณภาพโค้ด frontend |
-| `docker-compose.yml` | ประกอบระบบ container ได้แก่ MongoDB, mongo-express, MinIO, account/login/stock/storage service และ Nginx web |
+| `docker-compose.yml` | ประกอบระบบ container ได้แก่ MongoDB, mongo-express, MinIO, account/login/stock/bill/storage service และ Nginx web |
 | `nginx.conf` | config หลักของ Nginx container |
 | `templates/default.conf.template` | server block template สำหรับ serve React SPA และ fallback ไป `index.html` |
 | `index.md` | รายงานภาพรวมโครงสร้างโปรเจคฉบับนี้ |
@@ -58,6 +62,7 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 | --- | --- |
 | `.github/` | โฟลเดอร์สำหรับ GitHub workflow/config ปัจจุบันไม่พบไฟล์ที่ไม่ถูก ignore ภายใน |
 | `cert/` | เก็บ certificate/key สำหรับเปิด HTTPS ใน Vite dev server หากเปิดใช้ |
+| `demo/` | HTML entrypoint สำหรับ demo build/preview |
 | `public/` | static assets ที่ Vite serve ตรง เช่น `vite.svg` |
 | `src/` | source code frontend React |
 | `ServerService/` | source code backend service ย่อยทั้งหมด |
@@ -80,6 +85,7 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 | `src/lib/` | utility กลาง เช่น axios instances, retry wrapper, local storage helper, calculate helper และ init page |
 | `src/function/` | helper function/enum legacy เช่น `Enum.ts`, `Window.tsx` |
 | `src/dataSet/` | dataset ฝั่ง frontend เช่นรายการ contact |
+| `src/demo/` | source สำหรับ demo entrypoint เช่น `main.tsx` และ stylesheet เฉพาะ demo |
 
 ## Frontend API Layer: `src/API/`
 
@@ -147,6 +153,7 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 | --- | --- |
 | `Bill.tsx` | หน้าหลักรายการบิล/order |
 | `page/BillCreate.tsx` | หน้าสร้างหรือแก้ไขบิล |
+| `page/BillDetail.tsx` | หน้ารายละเอียดบิลตาม `orderID` |
 | `page/BillPreview.tsx` | หน้าพรีวิวบิล |
 | `page/SetDiscount.tsx` | หน้าตั้งค่าส่วนลดรายลูกค้า |
 | `context/BillContext.ts` | state/context ของระบบบิล |
@@ -170,11 +177,13 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 
 ## Backend: `ServerService/`
 
-Backend แยกเป็น service ย่อยแบบ distributed monolith แต่ละ service มี `package.json`, `package-lock.json`, `Dockerfile`, `tsconfig.json`, `karma.conf.js` และบาง service มี `webpack.config.js`
+Backend แยกเป็น service ย่อยแบบ distributed monolith แต่ละ service มี `package.json`, `package-lock.json`, `Dockerfile`, `tsconfig.json`, `karma.conf.js` และบาง service มี `webpack.config.js` โครงสร้าง service รุ่นใหม่แยกชั้นเป็น `routes`, `controllers`, `services`, `repositories`, `models`, `middlewares`, `utils` และ `database` ชัดเจนขึ้น
 
 ไฟล์ config ที่พบซ้ำใน service:
 
 - `.env` เก็บค่า port, secret, database URL หรือ storage config ของ service นั้น โดยไม่ควรเปิดเผยค่าจริง
+- `.env.example` พบในบาง service เพื่อเป็นตัวอย่างค่า environment ที่ต้องตั้ง
+- `.dockerignore` พบในบาง service เพื่อคุม Docker build context
 - `Dockerfile` ใช้ build image ของ service
 - `package.json` ระบุ dependency และ npm scripts ของ service
 - `package-lock.json` lock dependency ของ service
@@ -188,7 +197,16 @@ Service สำหรับ authentication และ user management
 
 | Path | หน้าที่ |
 | --- | --- |
-| `src/index.ts` | Express server หลัก เชื่อม MongoDB, สร้าง default admin, login/logout, refresh token, CRUD user และเปลี่ยนรหัสผ่าน |
+| `src/index.ts` | Express server หลัก เชื่อม MongoDB, สร้าง default admin และ mount user routes |
+| `src/routes/user.routes.ts` | route สำหรับ health, login/logout, refresh token, CRUD user และเปลี่ยนรหัสผ่าน |
+| `src/controllers/user.controller.ts` | controller รับ request ของ user/auth แล้วเรียก service |
+| `src/services/user.service.ts` | business logic ของ user เช่น login, CRUD user และเปลี่ยนรหัสผ่าน |
+| `src/services/token.service.ts` | logic สร้างและตรวจ token/refresh token |
+| `src/repositories/user.repo.ts` | data access layer ของ user/profile |
+| `src/models/` | Mongoose model/interface ของ profile |
+| `src/middlewares/auth.ts` | middleware ตรวจ JWT access token |
+| `src/database/mongo.ts` | logic เชื่อม MongoDB |
+| `src/config.ts` | อ่านค่าคอนฟิกจาก environment |
 | `src/type.ts` | type ของ request/response/token/user |
 | `src/enum.ts` | enum เช่น role และ error code |
 
@@ -198,10 +216,18 @@ Service สำหรับบัญชี รายรับรายจ่า�
 
 | Path | หน้าที่ |
 | --- | --- |
-| `src/index.ts` | Express server หลักของ account เปิด endpoint contact, transaction, wallet และตรวจสิทธิ์ admin |
+| `src/index.ts` | Express server หลักของ account เชื่อม MongoDB/MinIO และ mount endpoint contact, transaction, wallet |
 | `src/auth.ts` | middleware ตรวจ JWT access token |
+| `src/middlewares/auth.ts` | middleware ตรวจ JWT รุ่นที่ใช้กับ route แบบแยกชั้น |
 | `src/config.ts` | อ่านค่าคอนฟิกจาก environment |
 | `src/models.ts` | Mongoose model ของ contact, transaction และ wallet |
+| `src/models/` | schema/interface แยกไฟล์ของ contact, transaction และ wallet |
+| `src/routes/` | route แยกตาม domain ได้แก่ contact, transaction และ wallet |
+| `src/controllers/` | controller รับ request แล้วเรียก service ของแต่ละ domain |
+| `src/services/` | business logic สำหรับ contact, transaction และ wallet |
+| `src/repositories/` | data access layer สำหรับ contact, transaction และ wallet |
+| `src/database/mongo.ts` | logic เชื่อม MongoDB |
+| `src/utils/` | enum/response helper สำหรับโครงสร้าง service แบบใหม่ |
 | `src/response.ts` | helper สร้าง response success/error |
 | `src/storage.ts` | logic อัปโหลด/ลบรูปบิลผ่าน MinIO |
 | `src/wallet.ts` | logic คำนวณและอัปเดตยอด wallet หลัก |
@@ -214,7 +240,14 @@ Service สำหรับจัดการ MinIO และรูปภาพ�
 
 | Path | หน้าที่ |
 | --- | --- |
-| `src/index.ts` | Express server หลัก เชื่อม MinIO, สร้าง bucket, ออก presigned URL, จัดการ bucket และ upload/delete image |
+| `src/index.ts` | Express server หลัก เชื่อม MinIO, สร้าง bucket และ mount storage routes |
+| `src/routes/storage.routes.ts` | route สำหรับ presigned URL, bucket management และ upload/delete image |
+| `src/controllers/storage.controller.ts` | controller รับ request งาน storage แล้วเรียก service |
+| `src/services/storage.service.ts` | business logic สำหรับ MinIO bucket/image |
+| `src/middlewares/auth.ts` | middleware ตรวจ JWT |
+| `src/middlewares/upload.ts` | middleware รับไฟล์ upload |
+| `src/config.ts` | อ่านค่าคอนฟิกจาก environment |
+| `src/utils/` | enum/response helper |
 | `src/type.ts` | type ของ endpoint, bucket, image และ response |
 | `src/enum.ts` | enum ของ role, error และ transaction type ที่เกี่ยวข้อง |
 
@@ -224,7 +257,18 @@ Service สำหรับสินค้า วัตถุดิบ สต็�
 
 | Path | หน้าที่ |
 | --- | --- |
-| `src/index.ts` | Express server หลัก เชื่อม MongoDB/MinIO, CRUD product, stock in/out, status, log และส่ง transaction ไป Account service เมื่อ stock in |
+| `src/index.ts` | Express server หลัก เชื่อม MongoDB/MinIO และ mount product/stock routes |
+| `src/routes/product.routes.ts` | route สำหรับ CRUD product พร้อม upload รูป |
+| `src/routes/stock.routes.ts` | route สำหรับ stock in/out, log, status และ stock summary |
+| `src/controllers/` | controller ของ product และ stock |
+| `src/services/stock.service.ts` | business logic ของ stock in/out, status และ log |
+| `src/services/storage.service.ts` | logic ติดต่อ MinIO สำหรับรูปสินค้า/หลักฐาน |
+| `src/services/transaction.service.ts` | logic ติดต่อ Account service เพื่อบันทึก transaction ที่เกี่ยวข้อง |
+| `src/repositories/` | data access layer ของ product และ log |
+| `src/models/` | schema/interface ของ product และ stock log |
+| `src/database/mongo.ts` | logic เชื่อม MongoDB |
+| `src/middlewares/` | middleware auth และ upload |
+| `src/config.ts` | อ่านค่าคอนฟิกจาก environment |
 | `src/type.ts` | type ของ product, stock form, stock log, status และ response |
 | `src/enum.ts` | enum ของ product type, stock status, stock log type, transaction type, role และ error |
 
@@ -252,6 +296,8 @@ Service สำหรับบิล/order และส่วนลดราย�
 Endpoint หลักของ Service_Bill:
 
 - `GET /bill/search`
+- `GET /bill/status/count`
+- `GET /bill/product/:productID/usage`
 - `GET /bill/status/:status`
 - `POST /bill`
 - `PUT /bill/:orderID`
@@ -267,12 +313,13 @@ Endpoint หลักของ Service_Bill:
 
 | Path | หน้าที่ |
 | --- | --- |
-| `docker-compose.yml` | รวม container หลักของระบบ: `mongo`, `mongo-express`, `minio`, `service_account`, `service_login`, `service_stock`, `service_storage`, `web` |
+| `docker-compose.yml` | รวม container หลักของระบบ: `mongo`, `mongo-express`, `minio`, `service_account`, `service_login`, `service_stock`, `service_bill`, `service_storage`, `web` |
+| `Dockerfile` | build frontend image จาก Node แล้วคัดลอกผลลัพธ์ไป Nginx |
 | `nginx.conf` | Nginx global config |
 | `templates/default.conf.template` | config สำหรับ serve React SPA และ redirect 404 กลับ `index.html` |
 | `cert/cert.pem`, `cert/key.pem` | certificate/key สำหรับ local HTTPS หากเปิดใช้ |
 
-หมายเหตุ: source ของ `Service_Bill` มีอยู่ในโปรเจคและ frontend มี `VITE_PORT_BILL`/`axios_bill` สำหรับเรียก service แล้ว แต่ `docker-compose.yml` ปัจจุบันยังไม่ได้ประกาศ container `service_bill`
+หมายเหตุ: `docker-compose.yml` ปัจจุบันประกาศ `service_bill` แล้ว โดยใช้ image `nuttascholar/smartbiz_bill:1.2`, port ภายใน `3004`, และ env `VITE_PORT_BILL` สำหรับ expose ไปยัง frontend
 
 ## ความสัมพันธ์ของระบบ
 
@@ -282,7 +329,7 @@ Endpoint หลักของ Service_Bill:
 - Service อื่นตรวจสิทธิ์ผ่าน JWT `Authorization: Bearer <token>`
 - `Service_Account` ใช้ MongoDB สำหรับ contact/transaction/wallet และ MinIO สำหรับรูปบิล
 - `Service_Stock` ใช้ MongoDB สำหรับสินค้า/log, MinIO สำหรับรูปสินค้า/บิล stock in และเรียก `Service_Account` เพื่อบันทึก transaction ค่าใช้จ่ายเมื่อรับสินค้าเข้า
-- `Service_Bill` ใช้ฐาน `Bill` สำหรับ order/discount และอ้างอิง contact จากฐาน `Account`
+- `Service_Bill` ใช้ฐาน `Bill` สำหรับ order/discount, อ้างอิง contact จากฐาน `Account`, อ้างอิง product จากฐาน `Stock` และเปิด API สำหรับนับสถานะ/ตรวจ product usage
 - `Service_Storage` เป็น API กลางสำหรับจัดการ bucket/image บน MinIO
 - `src/page/*/lib/*WithRetry.ts` เป็น wrapper ที่ช่วย refresh token แล้ว retry เมื่อ access token หมดอายุ
 
@@ -292,9 +339,12 @@ Frontend root:
 
 ```bash
 npm run dev
+npm run dev:demo
 npm run build
+npm run build:demo
 npm run lint
 npm run preview
+npm run preview:demo
 ```
 
 Service ย่อย:
@@ -320,7 +370,9 @@ Get-ChildItem -Force
 Get-Content .gitignore
 git ls-files --cached --others --exclude-standard
 Get-Content src\App.tsx
+Get-Content src\lib\axios.ts
+Get-Content docker-compose.yml
 Get-ChildItem ServerService -Directory | Select-Object -ExpandProperty Name
 ```
 
-ผลลัพธ์รายงานนี้อัปเดตจากโครงสร้างปัจจุบัน รวมถึงไฟล์ frontend API ของ `Service_Bill` ที่เพิ่มใหม่ ได้แก่ `src/API/BillService/Bill.ts` และ `src/page/Bill/lib/billWithRetry.ts`
+ผลลัพธ์รายงานนี้อัปเดตจากโครงสร้างปัจจุบัน รวมถึง `service_bill` ใน Docker Compose, demo Vite config, route/frontend page ของ Bill และโครงสร้าง backend service ที่แยกชั้นชัดเจนขึ้น
