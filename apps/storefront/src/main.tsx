@@ -13,34 +13,34 @@ const tasks = [
   "ติดต่อลูกค้าที่นัดรับสินค้า",
 ];
 
-function DemoPage() {
+function StorefrontPage() {
   return (
-    <main className="demo-page">
-      <section className="demo-hero" aria-labelledby="demo-title">
-        <div className="demo-copy">
-          <p className="demo-kicker">SmartBiz / Demo Page</p>
-          <h1 id="demo-title">หน้าทดลองสำหรับพัฒนาแยกจากแอปหลัก</h1>
-          <p className="demo-description">
-            หน้าใหม่นี้มี entry ของตัวเอง ใช้สำหรับลอง UI หรือ feature ใหม่โดยไม่กระทบหน้าเดิมของระบบ
+    <main className="storefront-page">
+      <section className="storefront-hero" aria-labelledby="storefront-title">
+        <div className="storefront-copy">
+          <p className="storefront-kicker">SmartBiz / Storefront</p>
+          <h1 id="storefront-title">หน้าร้านแยกสำหรับพัฒนา Storefront</h1>
+          <p className="storefront-description">
+            app รองนี้มี entry ของตัวเอง ใช้สำหรับพัฒนาหน้าร้านหรือ feature ใหม่โดยไม่กระทบหน้าเดิมของระบบ
           </p>
-          <div className="demo-actions">
-            <a href="/" className="demo-button demo-button-primary">
+          <div className="storefront-actions">
+            <a href="/" className="storefront-button storefront-button-primary">
               กลับหน้าเดิม
             </a>
-            <a href="/demo/" className="demo-button demo-button-secondary">
+            <a href="/storefront/" className="storefront-button storefront-button-secondary">
               รีโหลดหน้านี้
             </a>
           </div>
         </div>
 
-        <div className="demo-panel" aria-label="ภาพรวมวันนี้">
-          <div className="demo-panel-header">
+        <div className="storefront-panel" aria-label="ภาพรวมวันนี้">
+          <div className="storefront-panel-header">
             <span>ภาพรวมวันนี้</span>
             <strong>Live</strong>
           </div>
-          <div className="demo-stats">
+          <div className="storefront-stats">
             {stats.map((item) => (
-              <article className="demo-stat" key={item.label}>
+              <article className="storefront-stat" key={item.label}>
                 <span>{item.label}</span>
                 <strong>{item.value}</strong>
                 <small>{item.unit}</small>
@@ -50,11 +50,11 @@ function DemoPage() {
         </div>
       </section>
 
-      <section className="demo-workspace" aria-label="งานที่ควรทำต่อ">
+      <section className="storefront-workspace" aria-label="งานที่ควรทำต่อ">
         <h2>งานที่ควรทำต่อ</h2>
-        <div className="demo-task-list">
+        <div className="storefront-task-list">
           {tasks.map((task, index) => (
-            <article className="demo-task" key={task}>
+            <article className="storefront-task" key={task}>
               <span>{String(index + 1).padStart(2, "0")}</span>
               <p>{task}</p>
             </article>
@@ -65,4 +65,4 @@ function DemoPage() {
   );
 }
 
-createRoot(document.getElementById("demo-root")!).render(<DemoPage />);
+createRoot(document.getElementById("storefront-root")!).render(<StorefrontPage />);

@@ -4,13 +4,13 @@ import type { Connect } from 'vite'
 import { resolve } from 'node:path'
 //import fs from 'fs'
 
-function useDemoAsHomePage(
+function useStorefrontAsHomePage(
   req: Connect.IncomingMessage,
   _res: Connect.ServerResponse,
   next: Connect.NextFunction,
 ) {
   if (req.url === '/' || req.url === '/index.html') {
-    req.url = '/demo/index.html'
+    req.url = '/apps/storefront/index.html'
   }
   next()
 }
@@ -20,12 +20,12 @@ export default defineConfig({
   plugins: [
     react(),
     {
-      name: 'demo-home-page',
+      name: 'storefront-home-page',
       configureServer(server) {
-        server.middlewares.use(useDemoAsHomePage)
+        server.middlewares.use(useStorefrontAsHomePage)
       },
       configurePreviewServer(server) {
-        server.middlewares.use(useDemoAsHomePage)
+        server.middlewares.use(useStorefrontAsHomePage)
       },
     },
   ],
@@ -43,7 +43,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        demo: resolve(__dirname, 'demo/index.html'),
+        storefront: resolve(__dirname, 'apps/storefront/index.html'),
       },
     },
   },

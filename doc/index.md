@@ -4,7 +4,7 @@
 
 ## ภาพรวมโปรเจค
 
-SmartBiz เป็น Web Application สำหรับงานธุรกิจขนาดเล็ก พัฒนาด้วย React + Vite ฝั่ง frontend และแยก backend เป็นหลาย Express/TypeScript service ได้แก่ login/user, account, storage, stock และ bill/order โดยมีทั้งโหมดแอปหลักและโหมด demo ผ่าน Vite config แยก
+SmartBiz เป็น Web Application สำหรับงานธุรกิจขนาดเล็ก พัฒนาด้วย React + Vite ฝั่ง frontend และแยก backend เป็นหลาย Express/TypeScript service ได้แก่ login/user, account, storage, stock และ bill/order โดยมีทั้งโหมดแอปหลักและ Storefront ผ่าน Vite config แยก
 
 ฟีเจอร์หลักที่พบจากโค้ด:
 
@@ -12,7 +12,7 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 - ระบบบัญชีรายรับรายจ่าย พร้อม contact, transaction, wallet และแนบรูปบิล
 - ระบบสต็อกสินค้า/วัตถุดิบ พร้อม product, stock in/out, log และรูปสินค้า
 - ระบบบิล/คำสั่งซื้อ พร้อม workflow สถานะ order และส่วนลดรายลูกค้า
-- ระบบ demo frontend แยก entrypoint สำหรับทดลอง UI/flow
+- ระบบ Storefront frontend แยก entrypoint สำหรับหน้าร้านหรือ flow เฉพาะ
 - ระบบจัดเก็บรูปภาพผ่าน MinIO
 
 สถาปัตยกรรมโดยรวมคือ frontend เรียก backend ผ่าน `src/API/*` และ backend service ตรวจ JWT จาก `Service_Login` ผ่าน header `Authorization: Bearer <token>`
@@ -42,11 +42,11 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 | `README.md` | เอกสารแนะนำโปรเจคและการติดตั้งเบื้องต้น |
 | `LICENSE` | เงื่อนไข license ของโปรเจค |
 | `Dockerfile` | build image frontend โดย build React/Vite แล้ว serve ผ่าน Nginx |
-| `package.json` | package หลักของ frontend ระบุ script `dev`, `dev:demo`, `build`, `build:demo`, `lint`, `preview`, `preview:demo` และ dependency ของ React/Vite/MUI |
+| `package.json` | package หลักของ frontend ระบุ script `dev`, `dev:storefront`, `build`, `build:storefront`, `lint`, `preview`, `preview:storefront` และ dependency ของ React/Vite/MUI |
 | `package-lock.json` | lock dependency ของ frontend |
 | `index.html` | HTML entrypoint ของ Vite ที่ mount React app |
-| `vite.config.ts` | ตั้งค่า Vite ใช้ React plugin, dev server/preview port `3030` และ build หลาย entrypoint ได้แก่ `index.html` กับ `demo/index.html` |
-| `vite.demo.config.ts` | ตั้งค่า Vite สำหรับโหมด demo โดย rewrite `/` ไป `demo/index.html` และใช้ port `4030` |
+| `vite.config.ts` | ตั้งค่า Vite ใช้ React plugin, dev server/preview port `3030` และ build หลาย entrypoint ได้แก่ `index.html` กับ `apps/storefront/index.html` |
+| `vite.storefront.config.ts` | ตั้งค่า Vite สำหรับ Storefront โดย rewrite `/` ไป `apps/storefront/index.html` และใช้ port `4030` |
 | `tsconfig.json` | TypeScript project references ของ frontend |
 | `tsconfig.app.json` | TypeScript config สำหรับ source ฝั่ง browser/app |
 | `tsconfig.node.json` | TypeScript config สำหรับไฟล์ config ที่รันบน Node เช่น Vite config |
@@ -62,7 +62,7 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 | --- | --- |
 | `.github/` | โฟลเดอร์สำหรับ GitHub workflow/config ปัจจุบันไม่พบไฟล์ที่ไม่ถูก ignore ภายใน |
 | `cert/` | เก็บ certificate/key สำหรับเปิด HTTPS ใน Vite dev server หากเปิดใช้ |
-| `demo/` | HTML entrypoint สำหรับ demo build/preview |
+| `apps/` | โฟลเดอร์รวม app รองที่ใช้ Vite config แยก เช่น `apps/storefront/` |
 | `public/` | static assets ที่ Vite serve ตรง เช่น `vite.svg` |
 | `src/` | source code frontend React |
 | `ServerService/` | source code backend service ย่อยทั้งหมด |
@@ -85,7 +85,16 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 | `src/lib/` | utility กลาง เช่น axios instances, retry wrapper, local storage helper, calculate helper และ init page |
 | `src/function/` | helper function/enum legacy เช่น `Enum.ts`, `Window.tsx` |
 | `src/dataSet/` | dataset ฝั่ง frontend เช่นรายการ contact |
-| `src/demo/` | source สำหรับ demo entrypoint เช่น `main.tsx` และ stylesheet เฉพาะ demo |
+
+## Secondary Apps: `apps/`
+
+โฟลเดอร์นี้ใช้เก็บ app รองที่มี entrypoint และ Vite config แยกจากแอปหลัก เพื่อให้เพิ่ม Storefront, prototype หรือ mini app ใหม่ได้โดยไม่ปนกับ `src/` ของแอปหลัก
+
+| Path | หน้าที่ |
+| --- | --- |
+| `apps/storefront/index.html` | HTML entrypoint ของ Storefront app |
+| `apps/storefront/src/main.tsx` | React entrypoint ของ Storefront app |
+| `apps/storefront/src/style.css` | stylesheet เฉพาะ Storefront app |
 
 ## Frontend API Layer: `src/API/`
 
@@ -339,12 +348,12 @@ Frontend root:
 
 ```bash
 npm run dev
-npm run dev:demo
+npm run dev:storefront
 npm run build
-npm run build:demo
+npm run build:storefront
 npm run lint
 npm run preview
-npm run preview:demo
+npm run preview:storefront
 ```
 
 Service ย่อย:
@@ -375,4 +384,4 @@ Get-Content docker-compose.yml
 Get-ChildItem ServerService -Directory | Select-Object -ExpandProperty Name
 ```
 
-ผลลัพธ์รายงานนี้อัปเดตจากโครงสร้างปัจจุบัน รวมถึง `service_bill` ใน Docker Compose, demo Vite config, route/frontend page ของ Bill และโครงสร้าง backend service ที่แยกชั้นชัดเจนขึ้น
+ผลลัพธ์รายงานนี้อัปเดตจากโครงสร้างปัจจุบัน รวมถึง `service_bill` ใน Docker Compose, Storefront Vite config, route/frontend page ของ Bill และโครงสร้าง backend service ที่แยกชั้นชัดเจนขึ้น

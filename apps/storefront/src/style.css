@@ -21,16 +21,16 @@ a {
   text-decoration: none;
 }
 
-#demo-root {
+#storefront-root {
   min-height: 100vh;
 }
 
-.demo-page {
+.storefront-page {
   min-height: 100vh;
   padding: 32px;
 }
 
-.demo-hero {
+.storefront-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
   gap: 28px;
@@ -45,20 +45,20 @@ a {
   box-shadow: 0 22px 70px rgba(24, 33, 47, 0.12);
 }
 
-.demo-copy {
+.storefront-copy {
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.demo-kicker {
+.storefront-kicker {
   margin: 0 0 12px;
   color: #216869;
   font-size: 0.95rem;
   font-weight: 600;
 }
 
-.demo-copy h1 {
+.storefront-copy h1 {
   max-width: 720px;
   margin: 0;
   color: #162033;
@@ -67,7 +67,7 @@ a {
   line-height: 1.15;
 }
 
-.demo-description {
+.storefront-description {
   max-width: 620px;
   margin: 20px 0 0;
   color: #4d5b6d;
@@ -75,14 +75,14 @@ a {
   line-height: 1.8;
 }
 
-.demo-actions {
+.storefront-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 32px;
 }
 
-.demo-button {
+.storefront-button {
   display: inline-flex;
   min-height: 44px;
   align-items: center;
@@ -92,18 +92,18 @@ a {
   font-weight: 600;
 }
 
-.demo-button-primary {
+.storefront-button-primary {
   background: #216869;
   color: #ffffff;
 }
 
-.demo-button-secondary {
+.storefront-button-secondary {
   border: 1px solid rgba(33, 104, 105, 0.28);
   background: rgba(255, 255, 255, 0.72);
   color: #216869;
 }
 
-.demo-panel {
+.storefront-panel {
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -114,7 +114,7 @@ a {
   backdrop-filter: blur(8px);
 }
 
-.demo-panel-header {
+.storefront-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -122,17 +122,17 @@ a {
   font-size: 0.95rem;
 }
 
-.demo-panel-header strong {
+.storefront-panel-header strong {
   color: #0f8b6f;
   font-size: 0.85rem;
 }
 
-.demo-stats {
+.storefront-stats {
   display: grid;
   gap: 12px;
 }
 
-.demo-stat {
+.storefront-stat {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 4px 14px;
@@ -142,39 +142,39 @@ a {
   background: #f6f8fb;
 }
 
-.demo-stat span {
+.storefront-stat span {
   color: #556274;
 }
 
-.demo-stat strong {
+.storefront-stat strong {
   color: #162033;
   font-size: 1.9rem;
   line-height: 1;
 }
 
-.demo-stat small {
+.storefront-stat small {
   grid-column: 2;
   color: #6b7788;
 }
 
-.demo-workspace {
+.storefront-workspace {
   max-width: 1120px;
   margin: 28px auto 0;
 }
 
-.demo-workspace h2 {
+.storefront-workspace h2 {
   margin: 0 0 14px;
   color: #162033;
   font-size: 1.35rem;
 }
 
-.demo-task-list {
+.storefront-task-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
-.demo-task {
+.storefront-task {
   display: flex;
   min-height: 92px;
   gap: 14px;
@@ -185,32 +185,32 @@ a {
   background: #ffffff;
 }
 
-.demo-task span {
+.storefront-task span {
   color: #0f8b6f;
   font-weight: 700;
 }
 
-.demo-task p {
+.storefront-task p {
   margin: 0;
   color: #334155;
   line-height: 1.6;
 }
 
 @media (max-width: 820px) {
-  .demo-page {
+  .storefront-page {
     padding: 18px;
   }
 
-  .demo-hero {
+  .storefront-hero {
     grid-template-columns: 1fr;
     padding: 28px;
   }
 
-  .demo-copy h1 {
+  .storefront-copy h1 {
     font-size: 2.1rem;
   }
 
-  .demo-task-list {
+  .storefront-task-list {
     grid-template-columns: 1fr;
   }
 }
