@@ -1,9 +1,10 @@
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider, createTheme } from "@mui/material";
+import { ThemeProvider } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { AuthProvider } from "./context/AuthContext";
+import theme from "./theme";
 import "./App.css";
 import "@fontsource/kanit/300.css";
 import "@fontsource/kanit/400.css";
@@ -34,28 +35,6 @@ const Page_StockOut = lazy(() => import("./page/Stock/page/StockOut"));
 const PageDemo = lazy(() => import("./page/test"));
 
 
-//*********************************************
-// Set Theme
-//*********************************************
-const theme = createTheme({
-  palette: {
-    primary: {
-      light: "#3393dc",
-      main: "#0078D4",
-      dark: "#005494",
-      contrastText: "#fff",
-    },
-    secondary: {
-      light: "#e6f2ff",
-      main: "#E0EFFF",
-      dark: "#CCDEF0",
-      contrastText: "#000",
-    },
-  },
-  typography: {
-    fontFamily: "Kanit, Roboto",
-  },
-});
 //*********************************************
 // Main Function
 //*********************************************
