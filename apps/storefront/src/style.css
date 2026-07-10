@@ -165,14 +165,18 @@ img {
 .summary-section {
   position: sticky;
   top: 92px;
+  max-height: calc(100vh - 116px);
 }
 
 .cart-summary {
   display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   gap: 16px;
+  max-height: calc(100vh - 116px);
+  overflow: hidden;
   border: 1px solid rgba(0, 120, 212, 0.18);
   border-radius: 8px;
-  padding: 18px;
+  padding: 16px;
   background: #ffffff;
   box-shadow: 0 16px 42px rgba(24, 33, 47, 0.08);
 }
@@ -182,6 +186,16 @@ img {
   min-height: 88px;
   place-items: center;
   text-align: center;
+}
+
+.cart-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.cart-list.MuiList-root {
+  padding-right: 8px;
 }
 
 .cart-row {
@@ -195,7 +209,13 @@ img {
 }
 
 .mobile-cart {
+  max-height: 100dvh;
+  overflow: hidden;
   padding: 16px;
+}
+
+.mobile-cart .cart-summary {
+  max-height: calc(100dvh - 32px);
 }
 
 .empty-state,

@@ -69,7 +69,7 @@ export function CartSummary({
           ยังไม่มีสินค้าในคำสั่งซื้อ
         </Typography>
       ) : (
-        <List disablePadding>
+        <List disablePadding className="cart-list">
           {cartRows.map((row) => (
             <ListItem key={row.productID} disableGutters className="cart-row">
               <ListItemText
