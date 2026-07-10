@@ -107,6 +107,16 @@ export function ProductPage() {
       isSubmitting={isSubmitting}
     />
   );
+  const drawerCartPanel = (
+    <CartSummary
+      products={products}
+      cart={cart}
+      onConfirm={confirmOrder}
+      onRemove={removeLine}
+      isSubmitting={isSubmitting}
+      onClose={() => setIsDrawerOpen(false)}
+    />
+  );
 
   return (
     <StorefrontLayout>
@@ -192,7 +202,7 @@ export function ProductPage() {
         </Box>
       </Container>
       <Drawer anchor="bottom" open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
-        <Box className="mobile-cart">{cartPanel}</Box>
+        <Box className="mobile-cart">{drawerCartPanel}</Box>
       </Drawer>
     </StorefrontLayout>
   );

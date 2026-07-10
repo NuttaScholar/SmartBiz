@@ -1,8 +1,20 @@
-import { Badge, Box, Button, Divider, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import type { CartItem, StorefrontProduct } from '../type';
-import { formatMoney } from '../lib/format';
+import {
+  Badge,
+  Box,
+  Button,
+  Divider,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  Stack,
+  Typography,
+} from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import type { CartItem, StorefrontProduct } from "../type";
+import { formatMoney } from "../lib/format";
 
 export function CartSummary({
   products,
@@ -10,12 +22,14 @@ export function CartSummary({
   onConfirm,
   onRemove,
   isSubmitting,
+  onClose,
 }: {
   products: StorefrontProduct[];
   cart: CartItem[];
   onConfirm: () => void;
   onRemove: (productID: string) => void;
   isSubmitting: boolean;
+  onClose?: () => void;
 }) {
   const cartRows = cart
     .map((item) => {
@@ -33,10 +47,21 @@ export function CartSummary({
   return (
     <Box className="cart-summary">
       <Stack direction="row" alignItems="center" justifyContent="space-between">
+        {onClose && (
+          <IconButton
+            aria-label="Close cart summary"
+            onClick={onClose}
+            size="small"
+          >
+            <ArrowBackIosNewIcon />
+          </IconButton>
+        )}
         <Typography variant="h6">สรุปคำสั่งซื้อ</Typography>
-        <Badge badgeContent={cartRows.length} color="primary">
-          <ShoppingCartIcon />
-        </Badge>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Badge badgeContent={cartRows.length} color="primary">
+            <ShoppingCartIcon />
+          </Badge>
+        </Stack>
       </Stack>
       <Divider />
       {cartRows.length === 0 ? (
@@ -52,8 +77,14 @@ export function CartSummary({
                 secondary={`${row.quantity} x ${formatMoney(row.product.priceAfterDiscount)}`}
               />
               <Stack alignItems="flex-end" spacing={0.5}>
-                <Typography fontWeight={600}>{formatMoney(row.total)}</Typography>
-                <Button size="small" color="inherit" onClick={() => onRemove(row.productID)}>
+                <Typography fontWeight={600}>
+                  {formatMoney(row.total)}
+                </Typography>
+                <Button
+                  size="small"
+                  color="inherit"
+                  onClick={() => onRemove(row.productID)}
+                >
                   ลบ
                 </Button>
               </Stack>
