@@ -9,7 +9,13 @@ function useStorefrontAsHomePage(
   _res: Connect.ServerResponse,
   next: Connect.NextFunction,
 ) {
-  if (req.url === '/' || req.url === '/index.html') {
+  const pathname = req.url?.split('?')[0]
+  if (
+    pathname === '/' ||
+    pathname === '/index.html' ||
+    pathname === '/storefront' ||
+    pathname?.startsWith('/storefront/')
+  ) {
     req.url = '/apps/storefront/index.html'
   }
   next()
