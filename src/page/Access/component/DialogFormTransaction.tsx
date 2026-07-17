@@ -190,7 +190,7 @@ const DialogFormTransaction: React.FC = () => {
         <HeaderDialog
           label={state.transitionForm ? "แก้ไขรายการ" : "เพิ่มรายการ"}
           onClick={onClose}
-          position="fixed"
+          position="sticky"
         >
           {state.transitionForm && !state.transitionForm.readonly && (
             <Box
@@ -214,7 +214,7 @@ const DialogFormTransaction: React.FC = () => {
             flexDirection: "column",
             width: "100%",
             alignItems: "center",
-            my: "72px",
+            my: "16px",
             gap: "8px",
           }}
         >

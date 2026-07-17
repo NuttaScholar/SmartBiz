@@ -1,14 +1,16 @@
 import { Box, Chip, Container, Paper, Stack, Typography } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { OrderDetailDialog } from '../component/OrderDetailDialog';
 import { StorefrontLayout } from '../component/StorefrontLayout';
 import { useStorefrontSession } from '../hooks/useStorefrontSession';
 import { formatMoney, statusColor, statusLabel } from '../lib/format';
 import { getStoredOrders } from '../lib/orderStorage';
+import type { StorefrontOrder } from '../type';
 
 export function OrderHistoryPage() {
   const { customerToken } = useStorefrontSession();
-  const navigate = useNavigate();
   const orders = getStoredOrders(customerToken);
+  const [selectedOrder, setSelectedOrder] = useState<StorefrontOrder | null>(null);
 
   return (
     <StorefrontLayout>
@@ -25,7 +27,7 @@ export function OrderHistoryPage() {
               key={order.id}
               variant="outlined"
               className="order-row"
-              onClick={() => navigate(`/storefront/${customerToken}/orders/${order.id}`)}
+              onClick={() => setSelectedOrder(order)}
             >
               <Stack spacing={0.5}>
                 <Typography variant="h6">{order.id}</Typography>
@@ -43,6 +45,8 @@ export function OrderHistoryPage() {
           ))}
         </Stack>
       </Container>
+
+      <OrderDetailDialog order={selectedOrder} onClose={() => setSelectedOrder(null)} />
     </StorefrontLayout>
   );
 }
