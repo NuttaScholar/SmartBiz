@@ -82,7 +82,9 @@ export function OrderSummary({ id, date, status }: OrderSummaryProps) {
         <Chip label={statusLabel(status)} color={statusColor(status)} />
       </Stack>
 
-      <StatusStepper statusStepList={ORDER_STATUS_STEPS} status={status} />
+      {status !== orderStatus_e.Cancelled && (
+        <StatusStepper statusStepList={ORDER_STATUS_STEPS} status={status} />
+      )}
     </Paper>
   );
 }

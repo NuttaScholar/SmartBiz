@@ -29,6 +29,12 @@ export type StorefrontOrder = {
   date: string;
   status: orderStatus_e;
   totalAmount: number;
+  confirmationEvidence?: {
+    fileName: string;
+    mimeType: string;
+    dataUrl: string;
+    updatedAt: string;
+  };
   items: Array<{
     productID: string;
     name: string;

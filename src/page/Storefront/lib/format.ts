@@ -22,6 +22,8 @@ export function statusLabel(status: orderStatus_e) {
       return "เตรียมจัดส่ง";
     case orderStatus_e.Completed:
       return "จัดส่งสำเร็จ";
+    case orderStatus_e.Cancelled:
+      return "ยกเลิกคำสั่งซื้อ";
     default:
       return "ไม่ทราบสถานะ";
   }
@@ -29,6 +31,8 @@ export function statusLabel(status: orderStatus_e) {
 
 export function statusColor(status: orderStatus_e) {
   switch (status) {
+    case orderStatus_e.Cancelled:
+      return "default";
     case orderStatus_e.Completed:
       return "success";
     case orderStatus_e.PaymentNotified:

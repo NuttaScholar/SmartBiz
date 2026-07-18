@@ -4,13 +4,22 @@ import { OrderDetailDialog } from '../component/OrderDetailDialog';
 import { StorefrontLayout } from '../component/StorefrontLayout';
 import { useStorefrontSession } from '../hooks/useStorefrontSession';
 import { formatMoney, statusColor, statusLabel } from '../lib/format';
-import { getStoredOrders } from '../lib/orderStorage';
+import { getStoredOrders, saveStoredOrders } from '../lib/orderStorage';
 import type { StorefrontOrder } from '../type';
 
 export function OrderHistoryPage() {
   const { customerToken } = useStorefrontSession();
-  const orders = getStoredOrders(customerToken);
+  const [orders, setOrders] = useState(() => getStoredOrders(customerToken));
   const [selectedOrder, setSelectedOrder] = useState<StorefrontOrder | null>(null);
+
+  function updateOrder(nextOrder: StorefrontOrder) {
+    const nextOrders = orders.map((order) =>
+      order.id === nextOrder.id ? nextOrder : order,
+    );
+    saveStoredOrders(customerToken, nextOrders);
+    setOrders(nextOrders);
+    setSelectedOrder(nextOrder);
+  }
 
   return (
     <StorefrontLayout>
@@ -46,7 +55,11 @@ export function OrderHistoryPage() {
         </Stack>
       </Container>
 
-      <OrderDetailDialog order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+      <OrderDetailDialog
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        onOrderChange={updateOrder}
+      />
     </StorefrontLayout>
   );
 }

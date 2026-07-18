@@ -48,6 +48,7 @@ export enum orderStatus_e {
   PrepareProduct = 3,
   PrepareShipment = 4,
   Completed = 5,
+  Cancelled = 6,
 }
 export enum errorCode_e {
   UnknownError, // ไม่สามารถระบุสาเหตุได้

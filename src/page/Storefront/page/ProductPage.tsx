@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { orderStatus_e } from '../../../enum';
 import theme from '../../../theme';
 import { CartSummary } from '../component/CartSummary';
+import { OrderDetailDialog } from '../component/OrderDetailDialog';
 import { ProductCard } from '../component/ProductCard';
 import { StorefrontLayout } from '../component/StorefrontLayout';
 import { mockProducts } from '../data/mockData';
@@ -22,6 +23,7 @@ export function ProductPage() {
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [createdOrder, setCreatedOrder] = React.useState<StorefrontOrder>();
+  const [detailOrder, setDetailOrder] = React.useState<StorefrontOrder | null>(null);
 
   const products = mockProducts;
   const filteredProducts = React.useMemo(() => {
@@ -92,10 +94,20 @@ export function ProductPage() {
       const nextOrders = [nextOrder, ...getStoredOrders(customerToken)];
       saveStoredOrders(customerToken, nextOrders);
       setCreatedOrder(nextOrder);
+      setDetailOrder(nextOrder);
       setCart([]);
       setIsSubmitting(false);
       setIsDrawerOpen(false);
     }, 450);
+  }
+
+  function updateOrder(nextOrder: StorefrontOrder) {
+    const nextOrders = getStoredOrders(customerToken).map((order) =>
+      order.id === nextOrder.id ? nextOrder : order,
+    );
+    saveStoredOrders(customerToken, nextOrders);
+    setDetailOrder(nextOrder);
+    setCreatedOrder((current) => current?.id === nextOrder.id ? nextOrder : current);
   }
 
   const cartPanel = (
@@ -146,7 +158,7 @@ export function ProductPage() {
 
               {createdOrder && (
                 <Alert
-                  severity="success"
+                  severity={createdOrder.status === orderStatus_e.Cancelled ? "info" : "success"}
                   action={
                     <Button
                       color="inherit"
@@ -157,7 +169,9 @@ export function ProductPage() {
                     </Button>
                   }
                 >
-                  ยืนยันคำสั่งซื้อ {createdOrder.id} สำเร็จ
+                  {createdOrder.status === orderStatus_e.Cancelled
+                    ? `ยกเลิกคำสั่งซื้อ ${createdOrder.id} แล้ว`
+                    : `ยืนยันคำสั่งซื้อ ${createdOrder.id} สำเร็จ`}
                 </Alert>
               )}
 
@@ -204,6 +218,11 @@ export function ProductPage() {
       <Drawer anchor="bottom" open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
         <Box className="mobile-cart">{drawerCartPanel}</Box>
       </Drawer>
+      <OrderDetailDialog
+        order={detailOrder}
+        onClose={() => setDetailOrder(null)}
+        onOrderChange={updateOrder}
+      />
     </StorefrontLayout>
   );
 }
