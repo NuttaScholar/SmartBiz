@@ -3,7 +3,7 @@ import { Alert, Badge, Box, Button, Container, Drawer, IconButton, InputAdornmen
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { useNavigate } from 'react-router-dom';
-import { billStatus_e } from '../../../enum';
+import { orderStatus_e } from '../../../enum';
 import theme from '../../../theme';
 import { CartSummary } from '../component/CartSummary';
 import { ProductCard } from '../component/ProductCard';
@@ -85,7 +85,7 @@ export function ProductPage() {
         id: `SO-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
         customerID: session.customerID,
         date: new Date().toISOString(),
-        status: billStatus_e.PrepareProduct,
+        status: orderStatus_e.Submitted,
         totalAmount: orderItems.reduce((sum, item) => sum + item.priceAfterDiscount * item.quantity, 0),
         items: orderItems,
       };
@@ -151,7 +151,7 @@ export function ProductPage() {
                     <Button
                       color="inherit"
                       size="small"
-                      onClick={() => navigate(`/storefront/${customerToken}/orders/${createdOrder.id}`)}
+                      onClick={() => navigate(`/storefront/${customerToken}/orders`)}
                     >
                       ดูสถานะ
                     </Button>

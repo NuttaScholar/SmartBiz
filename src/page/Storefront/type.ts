@@ -1,4 +1,4 @@
-import { billStatus_e, stockStatus_e } from '../../enum';
+import { orderStatus_e, stockStatus_e } from '../../enum';
 
 export type StorefrontProduct = {
   id: string;
@@ -27,7 +27,7 @@ export type StorefrontOrder = {
   id: string;
   customerID: string;
   date: string;
-  status: billStatus_e;
+  status: orderStatus_e;
   totalAmount: number;
   items: Array<{
     productID: string;

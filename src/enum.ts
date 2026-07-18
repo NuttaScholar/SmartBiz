@@ -41,6 +41,14 @@ export enum billStatus_e{
   WaitingPayment = 3,
   Completed = 4,
 }
+export enum orderStatus_e {
+  Submitted = 0,
+  PaymentNotified = 1,
+  PaymentConfirmed = 2,
+  PrepareProduct = 3,
+  PrepareShipment = 4,
+  Completed = 5,
+}
 export enum errorCode_e {
   UnknownError, // ไม่สามารถระบุสาเหตุได้
   InUseError, // ยังถูกใช้งานอยู่

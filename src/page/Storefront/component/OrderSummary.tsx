@@ -9,7 +9,7 @@ import {
   StatusStepper,
   type StatusStep,
 } from "../../../component/Molecules/StatusStepper";
-import { billStatus_e } from "../../../enum";
+import { orderStatus_e } from "../../../enum";
 import { statusColor, statusLabel } from "../lib/format";
 import type { StorefrontOrder } from "../type";
 
@@ -21,36 +21,34 @@ type OrderSummaryProps = Pick<StorefrontOrder, "id" | "date" | "status">;
 //*************************************************
 // Constants
 //*************************************************
-const ORDER_SUBMITTED_STATUS = -1;
-
 const ORDER_STATUS_STEPS = [
   {
-    value: ORDER_SUBMITTED_STATUS,
+    value: orderStatus_e.Submitted,
     label: "ส่งคำสั่งซื้อ",
     Icon: SendIcon,
   },
   {
-    value: billStatus_e.WaitingPayment,
+    value: orderStatus_e.PaymentNotified,
     label: "แจ้งชำระเงิน",
     Icon: PaymentsIcon,
   },
   {
-    value: billStatus_e.Billing,
+    value: orderStatus_e.PaymentConfirmed,
     label: "ยืนยันการชำระเงิน",
     Icon: VerifiedIcon,
   },
   {
-    value: billStatus_e.PrepareProduct,
+    value: orderStatus_e.PrepareProduct,
     label: "เตรียมสินค้า",
     Icon: Inventory2Icon,
   },
   {
-    value: billStatus_e.PrepareShipment,
+    value: orderStatus_e.PrepareShipment,
     label: "เตรียมจัดส่ง",
     Icon: LocalShippingIcon,
   },
   {
-    value: billStatus_e.Completed,
+    value: orderStatus_e.Completed,
     label: "จัดส่งสำเร็จ",
     Icon: CheckCircleIcon,
   },

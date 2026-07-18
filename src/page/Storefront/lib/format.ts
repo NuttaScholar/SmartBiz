@@ -1,4 +1,4 @@
-import { billStatus_e, stockStatus_e } from '../../../enum';
+import { orderStatus_e, stockStatus_e } from '../../../enum';
 import type { StorefrontProduct } from '../type';
 
 export function formatMoney(value: number) {
@@ -8,30 +8,32 @@ export function formatMoney(value: number) {
   });
 }
 
-export function statusLabel(status: billStatus_e) {
+export function statusLabel(status: orderStatus_e) {
   switch (status) {
-    case billStatus_e.PrepareProduct:
+    case orderStatus_e.Submitted:
+      return "ส่งคำสั่งซื้อ";
+    case orderStatus_e.PaymentNotified:
+      return "แจ้งชำระเงิน";
+    case orderStatus_e.PaymentConfirmed:
+      return "ยืนยันการชำระเงิน";
+    case orderStatus_e.PrepareProduct:
       return "เตรียมสินค้า";
-    case billStatus_e.PrepareShipment:
+    case orderStatus_e.PrepareShipment:
       return "เตรียมจัดส่ง";
-    case billStatus_e.Billing:
-      return "ออกบิล";
-    case billStatus_e.WaitingPayment:
-      return "รอชำระเงิน";
-    case billStatus_e.Completed:
-      return "สำเร็จ";
+    case orderStatus_e.Completed:
+      return "จัดส่งสำเร็จ";
     default:
       return "ไม่ทราบสถานะ";
   }
 }
 
-export function statusColor(status: billStatus_e) {
+export function statusColor(status: orderStatus_e) {
   switch (status) {
-    case billStatus_e.Completed:
+    case orderStatus_e.Completed:
       return "success";
-    case billStatus_e.WaitingPayment:
+    case orderStatus_e.PaymentNotified:
       return "error";
-    case billStatus_e.Billing:
+    case orderStatus_e.PaymentConfirmed:
       return "info";
     default:
       return "warning";
