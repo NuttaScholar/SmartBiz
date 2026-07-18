@@ -161,7 +161,7 @@ img {
 
 .summary-section {
   position: sticky;
-  top: 92px;
+  top: 32px;
   max-height: calc(100vh - 116px);
 }
 
