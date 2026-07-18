@@ -1,14 +1,15 @@
 import React from 'react';
-import { Alert, AppBar, Box, Button, CircularProgress, Container, Stack, Toolbar, Typography } from '@mui/material';
+import { Alert, BottomNavigation, BottomNavigationAction, Box, CircularProgress, Container, Paper, Typography } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
-import LocalMallIcon from '@mui/icons-material/LocalMall';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useStorefrontSession } from '../hooks/useStorefrontSession';
 
 export function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const { customerToken, session, isLoading, error } = useStorefrontSession();
+  const location = useLocation();
   const navigate = useNavigate();
+  const currentPage = location.pathname.endsWith('/orders') ? 'orders' : 'products';
 
   if (isLoading) {
     return (
@@ -29,40 +30,29 @@ export function StorefrontLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <Box className="storefront-shell">
-      <AppBar position="sticky" elevation={0} color="inherit" className="storefront-appbar">
-        <Toolbar className="storefront-toolbar">
-          <Stack direction="row" spacing={1.25} alignItems="center">
-            <Box className="storefront-logo">
-              <LocalMallIcon fontSize="small" />
-            </Box>
-            <Box>
-              <Typography variant="h6" className="storefront-brand">
-                SmartBiz Storefront
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {session.customerName}
-              </Typography>
-            </Box>
-          </Stack>
-          <Stack direction="row" spacing={1}>
-            <Button
-              startIcon={<Inventory2Icon />}
-              onClick={() => navigate(`/storefront/${customerToken}`)}
-              size="small"
-            >
-              สินค้า
-            </Button>
-            <Button
-              startIcon={<HistoryIcon />}
-              onClick={() => navigate(`/storefront/${customerToken}/orders`)}
-              size="small"
-            >
-              ประวัติ
-            </Button>
-          </Stack>
-        </Toolbar>
-      </AppBar>
       {children}
+      <Paper className="storefront-bottom-navigation" elevation={8}>
+        <BottomNavigation
+          showLabels
+          value={currentPage}
+          onChange={(_, value: 'products' | 'orders') => {
+            navigate(value === 'orders'
+              ? `/storefront/${customerToken}/orders`
+              : `/storefront/${customerToken}`);
+          }}
+        >
+          <BottomNavigationAction
+            label="สินค้า"
+            value="products"
+            icon={<Inventory2Icon />}
+          />
+          <BottomNavigationAction
+            label="ประวัติ"
+            value="orders"
+            icon={<HistoryIcon />}
+          />
+        </BottomNavigation>
+      </Paper>
     </Box>
   );
 }

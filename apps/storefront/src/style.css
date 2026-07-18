@@ -27,35 +27,32 @@ img {
 
 .storefront-shell {
   min-height: 100vh;
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
   background:
     linear-gradient(180deg, #e6f2ff 0, rgba(230, 242, 255, 0) 280px),
     #f6f8fb;
 }
 
-.storefront-appbar {
-  border-bottom: 1px solid rgba(0, 120, 212, 0.16);
+.storefront-bottom-navigation {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1100;
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid rgba(0, 120, 212, 0.16);
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(10px);
 }
 
-.storefront-toolbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
+.storefront-bottom-navigation .MuiBottomNavigation-root {
+  width: 100%;
+  background: transparent;
 }
 
-.storefront-logo {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-  border-radius: 8px;
-  background: #0078d4;
-  color: #ffffff;
-}
-
-.storefront-brand {
-  line-height: 1.1;
+.storefront-bottom-navigation .MuiBottomNavigationAction-root {
+  flex: 1 1 0;
+  max-width: none;
 }
 
 .storefront-content {
@@ -289,17 +286,6 @@ img {
     grid-template-columns: 1fr;
   }
 
-  .storefront-toolbar {
-    align-items: flex-start;
-    padding-top: 8px;
-    padding-bottom: 8px;
-  }
-
-  .storefront-toolbar .MuiButton-root {
-    min-width: 0;
-    padding-right: 8px;
-    padding-left: 8px;
-  }
 }
 
 @media (max-width: 640px) {
