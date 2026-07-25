@@ -2,10 +2,7 @@ import ContactRepo from "../repositories/contact.repo";
 import StorefrontAccessRepo from "../repositories/storefront-access.repo";
 import type { CustomerLink } from "../type";
 import AppError from "../utils/app-error";
-import {
-  generateCustomerToken,
-  hashCustomerToken,
-} from "../utils/customer-token";
+import { generateCustomerToken } from "../utils/customer-token";
 
 export default class CustomerLinkService {
   constructor(
@@ -38,9 +35,24 @@ export default class CustomerLinkService {
       customerID: contact.codeName,
       customerName: contact.billName,
       token,
-      tokenHash: await hashCustomerToken(token),
     });
     return this.toCustomerLink(contact.codeName, contact.billName, token);
+  }
+
+  async getCustomerLink(customerID: unknown): Promise<CustomerLink> {
+    const normalizedCustomerID = this.requireCustomerID(customerID);
+    const access = await this.accessRepo.findByCustomerIDWithToken(
+      normalizedCustomerID,
+    );
+    if (!access) {
+      throw new AppError("Customer link not found", 404);
+    }
+
+    return this.toCustomerLink(
+      access.customerID,
+      access.customerName,
+      access.token,
+    );
   }
 
   async rotateCustomerToken(customerID: unknown): Promise<CustomerLink> {
@@ -57,7 +69,6 @@ export default class CustomerLinkService {
       contact.codeName,
       contact.billName,
       token,
-      await hashCustomerToken(token),
     );
     if (!updated) {
       throw new AppError("Customer link not found", 404);

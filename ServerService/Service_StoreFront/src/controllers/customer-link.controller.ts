@@ -6,6 +6,24 @@ import { success } from "../utils/response";
 export default class CustomerLinkController {
   constructor(private readonly service: CustomerLinkService) {}
 
+  getCustomerLink = async (
+    request: AuthRequest,
+    response: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      response.json(
+        success(
+          await this.service.getCustomerLink(
+            request.params.customerID,
+          ),
+        ),
+      );
+    } catch (thrown) {
+      next(thrown);
+    }
+  };
+
   createCustomerLink = async (
     request: AuthRequest,
     response: Response,

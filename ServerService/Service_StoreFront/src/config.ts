@@ -33,3 +33,13 @@ export const SERVICE_BILL_URL =
   process.env.SERVICE_BILL_URL || "http://localhost:3004";
 export const SERVICE_STOCK_URL =
   process.env.SERVICE_STOCK_URL || "http://localhost:3003";
+
+export const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "localhost";
+export const MINIO_PORT = Number(process.env.MINIO_PORT || 9000);
+export const MINIO_USE_SSL =
+  (process.env.MINIO_USE_SSL || "false") === "true";
+export const MINIO_USER = requireEnv("MINIO_USER");
+export const MINIO_PASSWORD = requireEnv("MINIO_PASSWORD");
+export const PAYMENT_EVIDENCE_BUCKET =
+  process.env.PAYMENT_EVIDENCE_BUCKET || "storefront-payment";
+export const EVIDENCE_URL_EXPIRY_SECONDS = 15 * 60;

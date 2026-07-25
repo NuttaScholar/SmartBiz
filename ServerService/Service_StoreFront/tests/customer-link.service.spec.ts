@@ -17,6 +17,13 @@ describe("CustomerLinkService", () => {
       findByCustomerID: jasmine
         .createSpy("findByCustomerID")
         .and.resolveTo(linkExists ? { customerID: "CUST-001" } : null),
+      findByCustomerIDWithToken: jasmine
+        .createSpy("findByCustomerIDWithToken")
+        .and.resolveTo(linkExists ? {
+          customerID: "CUST-001",
+          customerName: "Customer One",
+          token: generatedToken,
+        } : null),
       create: jasmine.createSpy("create").and.resolveTo({}),
       rotateToken: jasmine
         .createSpy("rotateToken")
@@ -40,7 +47,6 @@ describe("CustomerLinkService", () => {
       customerID: "CUST-001",
       customerName: "Customer One",
       token: generatedToken,
-      tokenHash: jasmine.stringMatching(/^[a-f0-9]{64}$/),
     });
     expect(result).toEqual({
       customerID: "CUST-001",
@@ -58,6 +64,28 @@ describe("CustomerLinkService", () => {
     expect(accessRepo.create).not.toHaveBeenCalled();
   });
 
+  it("returns an existing customer token to an admin", async () => {
+    const { service, accessRepo } = createService(true, true);
+
+    const result = await service.getCustomerLink(" CUST-001 ");
+
+    expect(accessRepo.findByCustomerIDWithToken)
+      .toHaveBeenCalledWith("CUST-001");
+    expect(result).toEqual({
+      customerID: "CUST-001",
+      customerName: "Customer One",
+      token: generatedToken,
+      path: `/storefront/${generatedToken}`,
+    });
+  });
+
+  it("rejects token lookup when the customer link does not exist", async () => {
+    const { service } = createService();
+
+    await expectAsync(service.getCustomerLink("CUST-001"))
+      .toBeRejectedWithError("Customer link not found");
+  });
+
   it("requires rotation when a customer link already exists", async () => {
     const { service, accessRepo } = createService(true, true);
 
@@ -68,7 +96,7 @@ describe("CustomerLinkService", () => {
     expect(accessRepo.create).not.toHaveBeenCalled();
   });
 
-  it("rotates a token and invalidates the previous token hash", async () => {
+  it("rotates a token by customerID and replaces the previous token", async () => {
     const { service, accessRepo } = createService();
 
     const result = await service.rotateCustomerToken("CUST-001");
@@ -77,7 +105,6 @@ describe("CustomerLinkService", () => {
       "CUST-001",
       "Customer One",
       generatedToken,
-      jasmine.stringMatching(/^[a-f0-9]{64}$/),
     );
     expect(result.token).toBe(generatedToken);
   });

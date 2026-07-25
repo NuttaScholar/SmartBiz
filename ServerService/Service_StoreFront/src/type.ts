@@ -57,6 +57,13 @@ export interface ConfirmationEvidence {
   updatedAt: Date;
 }
 
+export interface StoredConfirmationEvidence {
+  fileName: string;
+  mimeType: string;
+  objectKey: string;
+  updatedAt: Date;
+}
+
 export interface StorefrontOrder {
   id: string;
   customerID: string;

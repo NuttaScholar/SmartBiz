@@ -37,8 +37,8 @@ API แบ่งการยืนยันสิทธิ์เป็นสอ�
 
 ทุก endpoint ตรวจ customer token จาก path โดย service จะ:
 
-1. trim token และคำนวณ SHA-256
-2. ค้นหา `StorefrontAccess.tokenHash`
+1. trim token จาก URL
+2. ค้นหา `StorefrontAccess.token`
 3. ตรวจ `isActive = true`
 
 token ไม่มีวันหมดอายุ และจะใช้ไม่ได้เมื่อ Admin rotate token หรือกำหนด
@@ -148,6 +148,9 @@ Stock
 StoreFront
 ├── storefrontaccesses
 └── storefrontorders
+
+MinIO
+└── storefront-payment (private)
 ```
 
 ### Stock.products
@@ -175,7 +178,6 @@ StoreFront
   "customerID": "CUST-001",
   "customerName": "Customer One",
   "token": "64-character-random-token",
-  "tokenHash": "<sha256-hex>",
   "isActive": true,
   "productDiscounts": [
     {
@@ -190,11 +192,9 @@ indexes:
 
 - unique index ที่ `customerID` เพื่อให้ลูกค้าหนึ่งรายมีหนึ่งลิงก์
 - unique index ที่ `token`
-- unique index ที่ `tokenHash`
 
-`token` และ `tokenHash` ถูกกำหนด `select: false` จึงไม่ติดมากับ query
-ทั่วไป การตรวจลิงก์ใช้ `tokenHash` ส่วน raw token ถูกส่งให้ Admin ใน response
-ตอนสร้างหรือ rotate เท่านั้น
+`token` ถูกกำหนด `select: false` จึงไม่ติดมากับ query ทั่วไป แต่ยังสามารถ
+ใช้เป็นเงื่อนไขค้นหาเพื่อตรวจ Customer Link ได้
 
 ไม่มี field `expiresAt` เนื่องจาก Customer Link ไม่มีวันหมดอายุ
 
@@ -222,7 +222,7 @@ indexes:
   "confirmationEvidence": {
     "fileName": "proof.png",
     "mimeType": "image/png",
-    "dataUrl": "data:image/png;base64,...",
+    "objectKey": "SO-260725-3A7F910C/1784952000000-a1b2c3d4.png",
     "updatedAt": "2026-07-25T03:00:00.000Z"
   },
   "createdAt": "2026-07-25T03:00:00.000Z",
@@ -232,6 +232,10 @@ indexes:
 
 รายการสินค้าภายใน order เป็น snapshot ของชื่อ รูป ราคา และส่วนลด ณ เวลาสั่ง
 เพื่อให้ประวัติ order ไม่เปลี่ยนเมื่อแก้สินค้าในฐาน Stock ภายหลัง
+
+ไฟล์หลักฐานไม่ได้เก็บเป็น Base64 ใน MongoDB โดย MongoDB เก็บเฉพาะ
+`objectKey` และ metadata ส่วน binary file เก็บใน MinIO bucket
+`storefront-payment`
 
 indexes:
 
@@ -283,8 +287,8 @@ body:
 2. ค้นหา `Account.contact.codeName == customerID`
 3. ใช้ `billName` เป็นชื่อลูกค้า
 4. สร้าง token แบบ cryptographically secure ขนาด 256 บิต
-5. บันทึก `customerID`, `customerName`, `token`, `tokenHash` และ
-   `isActive = true` ใน StoreFront
+5. บันทึก `customerID`, `customerName`, `token` และ `isActive = true`
+   ใน StoreFront
 6. token ไม่มีวันหมดอายุ
 
 token ที่ได้เป็น hexadecimal string ความยาว 64 ตัวอักษร เหมาะสำหรับใช้เป็น
@@ -308,6 +312,40 @@ response `201 Created`:
 ถ้าไม่มี Contact จะตอบ `404` และถ้าลูกค้ามี link อยู่แล้วจะตอบ `409`
 พร้อมแนะนำให้ใช้ rotate endpoint
 
+### Get Customer Link (Admin)
+
+```http
+GET /storefront/admin/customer-links/:customerID
+Authorization: Bearer <adminAccessToken>
+```
+
+ตัวอย่าง:
+
+```http
+GET /storefront/admin/customer-links/CUST-001
+```
+
+endpoint นี้อนุญาตเฉพาะ Admin และใช้ `customerID` ค้นข้อมูลใน
+`StoreFront.storefrontaccesses` โดย repository ระบุ `.select("+token")`
+เพื่ออ่าน field `token` ซึ่งถูกซ่อนจาก query ปกติ
+
+response:
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "customerID": "CUST-001",
+    "customerName": "Customer One",
+    "token": "0123456789abcdef...",
+    "path": "/storefront/0123456789abcdef..."
+  }
+}
+```
+
+ถ้าไม่มี Customer Link จะตอบ `404 Customer link not found`
+
 ### Rotate Customer Token (Admin)
 
 ```http
@@ -321,9 +359,10 @@ Authorization: Bearer <adminAccessToken>
 PATCH /storefront/admin/customer-links/CUST-001/token
 ```
 
-ระบบตรวจ Contact อีกครั้ง จากนั้นสร้าง token ใหม่และแทนที่ `token` กับ
-`tokenHash` ใน document เดิมแบบ atomic ข้อมูลส่วนลดและ order ไม่ถูกลบ
-token เก่าจะใช้เข้า Storefront ไม่ได้ทันที
+ระบบใช้ `customerID` จาก path เพียงค่าเดียวในการค้นหา Customer Link โดยไม่
+ต้องส่ง token เก่า จากนั้นตรวจ Contact อีกครั้ง สร้าง token ใหม่และแทนที่
+`token` ใน document เดิมแบบ atomic ข้อมูลส่วนลดและ order ไม่ถูกลบ token เก่า
+จะใช้เข้า Storefront ไม่ได้ทันที
 
 response มีรูปแบบเดียวกับ Create Customer Link และ raw token ใหม่จะถูกส่ง
 ใน response ครั้งนี้
@@ -466,6 +505,29 @@ body:
 - upload สำเร็จจะเปลี่ยนสถานะเป็น `PaymentNotified`
 - Express JSON limit ตั้งไว้ที่ 3 MB เพื่อรองรับ base64 overhead
 
+ขั้นตอนจัดเก็บ:
+
+1. API decode `dataUrl` เป็น binary
+2. upload binary ไป MinIO bucket `storefront-payment`
+3. bucket ใช้ private policy แบบเดียวกับ bucket `bill` ของ Service_Stock
+4. MongoDB เก็บเฉพาะ `fileName`, `mimeType`, `objectKey` และ `updatedAt`
+5. เมื่อแทนไฟล์ ระบบอัปเดต MongoDB ก่อนแล้วลบ object เดิม
+
+เมื่ออ่าน order API จะสร้าง MinIO presigned GET URL อายุ 15 นาที และส่งใน
+field `confirmationEvidence.dataUrl` เพื่อให้ contract ของหน้า Storefront
+ยังใช้งานได้:
+
+```json
+{
+  "confirmationEvidence": {
+    "fileName": "proof.png",
+    "mimeType": "image/png",
+    "dataUrl": "http://localhost:9000/storefront-payment/...?X-Amz-Signature=...",
+    "updatedAt": "2026-07-25T03:00:00.000Z"
+  }
+}
+```
+
 ### Cancel Order
 
 ```http
@@ -484,6 +546,12 @@ SECRET=NuttaScholar
 MONGO_URI_ACCOUNT=mongodb://root:example@localhost:27017/Account?authSource=admin
 MONGO_URI_STOCK=mongodb://root:example@localhost:27017/Stock?authSource=admin
 MONGO_URI_STOREFRONT=mongodb://root:example@localhost:27017/StoreFront?authSource=admin
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_USER=admin
+MINIO_PASSWORD=StrongPass123!
+PAYMENT_EVIDENCE_BUCKET=storefront-payment
 ```
 
 ตัวแปร `SERVICE_ACCOUNT_URL`, `SERVICE_BILL_URL` และ `SERVICE_STOCK_URL`
@@ -505,5 +573,5 @@ npm test
 ```text
 npm run typecheck: pass
 npm run build: pass
-npm test: pass, 12 specs
+npm test: pass, 15 specs
 ```

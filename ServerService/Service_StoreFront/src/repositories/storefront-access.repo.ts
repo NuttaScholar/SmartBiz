@@ -6,9 +6,9 @@ export default class StorefrontAccessRepo {
     private readonly model: Model<StorefrontAccessDocument>,
   ) {}
 
-  findActiveByTokenHash(tokenHash: string) {
+  findActiveByToken(token: string) {
     return this.model.findOne({
-      tokenHash,
+      token,
       isActive: true,
     });
   }
@@ -17,11 +17,14 @@ export default class StorefrontAccessRepo {
     return this.model.findOne({ customerID });
   }
 
+  findByCustomerIDWithToken(customerID: string) {
+    return this.model.findOne({ customerID }).select("+token");
+  }
+
   create(data: {
     customerID: string;
     customerName: string;
     token: string;
-    tokenHash: string;
   }) {
     return this.model.create({
       ...data,
@@ -34,7 +37,6 @@ export default class StorefrontAccessRepo {
     customerID: string,
     customerName: string,
     token: string,
-    tokenHash: string,
   ) {
     return this.model.findOneAndUpdate(
       { customerID },
@@ -42,7 +44,6 @@ export default class StorefrontAccessRepo {
         $set: {
           customerName,
           token,
-          tokenHash,
           isActive: true,
         },
       },

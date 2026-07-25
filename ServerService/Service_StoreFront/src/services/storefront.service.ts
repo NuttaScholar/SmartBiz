@@ -10,9 +10,9 @@ import type {
   StorefrontOrder,
   StorefrontOrderItem,
   StorefrontProduct,
+  StoredConfirmationEvidence,
 } from "../type";
 import AppError from "../utils/app-error";
-import { hashCustomerToken } from "../utils/customer-token";
 import { orderStatus_e, stockStatus_e } from "../utils/enum";
 
 const MAX_EVIDENCE_BYTES = 2 * 1024 * 1024;
@@ -24,11 +24,29 @@ const ACCEPTED_EVIDENCE_TYPES = new Set([
   "image/webp",
 ]);
 
+export interface EvidenceStorage {
+  uploadEvidence(
+    data: Uint8Array,
+    orderID: string,
+    fileName: string,
+    mimeType: string,
+  ): Promise<string>;
+  getEvidenceUrl(objectKey: string): Promise<string>;
+  removeEvidence(objectKey: string): Promise<void>;
+}
+
+interface ParsedEvidence {
+  fileName: string;
+  mimeType: string;
+  data: Uint8Array;
+}
+
 export default class StorefrontService {
   constructor(
     private readonly accessRepo: StorefrontAccessRepo,
     private readonly productRepo: ProductRepo,
     private readonly orderRepo: StorefrontOrderRepo,
+    private readonly evidenceStorage: EvidenceStorage,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
@@ -53,7 +71,7 @@ export default class StorefrontService {
   async getOrders(token: string): Promise<StorefrontOrder[]> {
     const access = await this.authenticate(token);
     const orders = await this.orderRepo.listByCustomer(access.customerID);
-    return orders.map((order) => this.mapOrder(order));
+    return Promise.all(orders.map((order) => this.mapOrder(order)));
   }
 
   async getOrder(token: string, orderID: string): Promise<StorefrontOrder> {
@@ -133,21 +151,60 @@ export default class StorefrontService {
     input: unknown,
   ): Promise<StorefrontOrder> {
     const access = await this.authenticate(token);
-    const evidence = this.parseEvidence(input);
-    const updated = await this.orderRepo.updateEvidence(
+    const normalizedOrderID = this.requireText(orderID, "orderID");
+    const currentOrder = await this.orderRepo.findByCustomerAndOrder(
       access.customerID,
-      this.requireText(orderID, "orderID"),
-      evidence,
+      normalizedOrderID,
     );
-    if (updated) {
-      return this.mapOrder(updated);
+    if (!currentOrder) {
+      throw new AppError("Order not found", 404);
+    }
+    if (
+      currentOrder.status !== orderStatus_e.Submitted &&
+      currentOrder.status !== orderStatus_e.PaymentNotified
+    ) {
+      throw new AppError(
+        "Evidence can only be updated before payment confirmation",
+        409,
+      );
     }
 
-    await this.assertOrderExists(access.customerID, orderID);
-    throw new AppError(
-      "Evidence can only be updated before payment confirmation",
-      409,
+    const parsedEvidence = this.parseEvidence(input);
+    const objectKey = await this.evidenceStorage.uploadEvidence(
+      parsedEvidence.data,
+      normalizedOrderID,
+      parsedEvidence.fileName,
+      parsedEvidence.mimeType,
     );
+    const evidence: StoredConfirmationEvidence = {
+      fileName: parsedEvidence.fileName,
+      mimeType: parsedEvidence.mimeType,
+      objectKey,
+      updatedAt: this.now(),
+    };
+
+    try {
+      const updated = await this.orderRepo.updateEvidence(
+        access.customerID,
+        normalizedOrderID,
+        evidence,
+      );
+      if (!updated) {
+        throw new AppError(
+          "Evidence can only be updated before payment confirmation",
+          409,
+        );
+      }
+
+      const previousKey = currentOrder.confirmationEvidence?.objectKey;
+      if (previousKey && previousKey !== objectKey) {
+        await this.removeEvidenceSafely(previousKey);
+      }
+      return this.mapOrder(updated);
+    } catch (thrown) {
+      await this.removeEvidenceSafely(objectKey);
+      throw thrown;
+    }
   }
 
   async cancelOrder(
@@ -171,8 +228,7 @@ export default class StorefrontService {
     token: string,
   ): Promise<StorefrontAccessDocument> {
     const normalizedToken = this.requireText(token, "customerToken");
-    const tokenHash = await hashCustomerToken(normalizedToken);
-    const access = await this.accessRepo.findActiveByTokenHash(tokenHash);
+    const access = await this.accessRepo.findActiveByToken(normalizedToken);
     if (!access) {
       throw new AppError("Customer link is invalid", 401);
     }
@@ -203,22 +259,35 @@ export default class StorefrontService {
     };
   }
 
-  private mapOrder(order: {
+  private async mapOrder(order: {
     orderID: string;
     customerID: string;
     createdAt: Date;
     status: orderStatus_e;
     totalAmount: number;
-    confirmationEvidence?: ConfirmationEvidence;
+    confirmationEvidence?: StoredConfirmationEvidence;
     items: StorefrontOrderItem[];
-  }): StorefrontOrder {
+  }): Promise<StorefrontOrder> {
+    const storedEvidence = order.confirmationEvidence;
+    const confirmationEvidence: ConfirmationEvidence | undefined =
+      storedEvidence
+        ? {
+            fileName: storedEvidence.fileName,
+            mimeType: storedEvidence.mimeType,
+            dataUrl: await this.evidenceStorage.getEvidenceUrl(
+              storedEvidence.objectKey,
+            ),
+            updatedAt: storedEvidence.updatedAt,
+          }
+        : undefined;
+
     return {
       id: order.orderID,
       customerID: order.customerID,
       date: order.createdAt,
       status: order.status,
       totalAmount: order.totalAmount,
-      confirmationEvidence: order.confirmationEvidence,
+      confirmationEvidence,
       items: order.items,
     };
   }
@@ -247,7 +316,7 @@ export default class StorefrontService {
     });
   }
 
-  private parseEvidence(input: unknown): ConfirmationEvidence {
+  private parseEvidence(input: unknown): ParsedEvidence {
     const value = input as Record<string, unknown>;
     const fileName = this.requireText(value?.fileName, "fileName");
     const mimeType = this.requireText(value?.mimeType, "mimeType")
@@ -262,18 +331,18 @@ export default class StorefrontService {
     if (!match || match[1].toLowerCase() !== mimeType) {
       throw new AppError("dataUrl does not match mimeType", 400);
     }
-    const base64 = match[2].replace(/\s/g, "");
-    const paddingLength = base64.endsWith("==")
-      ? 2
-      : base64.endsWith("=")
-        ? 1
-        : 0;
-    const byteLength = Math.floor(base64.length * 3 / 4) - paddingLength;
-    if (byteLength === 0 || byteLength > MAX_EVIDENCE_BYTES) {
+    let data: Uint8Array;
+    try {
+      const binary = globalThis.atob(match[2].replace(/\s/g, ""));
+      data = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    } catch {
+      throw new AppError("Evidence dataUrl is not valid base64", 400);
+    }
+    if (data.byteLength === 0 || data.byteLength > MAX_EVIDENCE_BYTES) {
       throw new AppError("Evidence must not exceed 2 MB", 413);
     }
 
-    return { fileName, mimeType, dataUrl, updatedAt: this.now() };
+    return { fileName, mimeType, data };
   }
 
   private async assertOrderExists(
@@ -298,6 +367,14 @@ export default class StorefrontService {
 
   private roundMoney(value: number): number {
     return Math.round((value + Number.EPSILON) * 100) / 100;
+  }
+
+  private async removeEvidenceSafely(objectKey: string): Promise<void> {
+    try {
+      await this.evidenceStorage.removeEvidence(objectKey);
+    } catch (error) {
+      console.error(`Failed to remove evidence ${objectKey}`, error);
+    }
   }
 
   private generateOrderID(): string {

@@ -29,12 +29,6 @@ export const StorefrontAccessSchema =
         type: String,
         required: true,
         unique: true,
-        select: false,
-      },
-      tokenHash: {
-        type: String,
-        required: true,
-        unique: true,
         index: true,
         select: false,
       },

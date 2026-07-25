@@ -24,8 +24,8 @@ describe("StorefrontService", () => {
       price: 100,
     };
     const accessRepo = {
-      findActiveByTokenHash: jasmine
-        .createSpy("findActiveByTokenHash")
+      findActiveByToken: jasmine
+        .createSpy("findActiveByToken")
         .and.resolveTo(accessExists ? access : null),
     };
     const productRepo = {
@@ -47,14 +47,33 @@ describe("StorefrontService", () => {
       updateEvidence: jasmine.createSpy("updateEvidence"),
       cancelSubmitted: jasmine.createSpy("cancelSubmitted"),
     };
+    const evidenceStorage = {
+      uploadEvidence: jasmine
+        .createSpy("uploadEvidence")
+        .and.resolveTo("SO-001/new-evidence.png"),
+      getEvidenceUrl: jasmine
+        .createSpy("getEvidenceUrl")
+        .and.callFake((key: string) =>
+          Promise.resolve(`https://minio.example/${key}?signed=true`)),
+      removeEvidence: jasmine
+        .createSpy("removeEvidence")
+        .and.resolveTo(undefined),
+    };
     const service = new StorefrontService(
       accessRepo as any,
       productRepo as any,
       orderRepo as any,
+      evidenceStorage,
       () => fixedNow,
     );
 
-    return { service, accessRepo, productRepo, orderRepo };
+    return {
+      service,
+      accessRepo,
+      productRepo,
+      orderRepo,
+      evidenceStorage,
+    };
   }
 
   it("returns a session for an active customer link", async () => {
@@ -62,9 +81,7 @@ describe("StorefrontService", () => {
 
     const session = await service.getSession(token);
 
-    expect(accessRepo.findActiveByTokenHash).toHaveBeenCalledWith(
-      jasmine.stringMatching(/^[a-f0-9]{64}$/),
-    );
+    expect(accessRepo.findActiveByToken).toHaveBeenCalledWith(token);
     expect(session).toEqual({
       customerID: "CUST-001",
       customerName: "Customer One",
@@ -135,9 +152,17 @@ describe("StorefrontService", () => {
   });
 
   it("uploads evidence and advances the order to PaymentNotified", async () => {
-    const { service, orderRepo } = createService();
+    const { service, orderRepo, evidenceStorage } = createService();
+    orderRepo.findByCustomerAndOrder.and.resolveTo({
+      orderID: "SO-001",
+      customerID: "CUST-001",
+      status: orderStatus_e.Submitted,
+      totalAmount: 90,
+      items: [],
+      createdAt: fixedNow,
+    });
     orderRepo.updateEvidence.and.callFake(
-      (_customerID: string, orderID: string, evidence: unknown) =>
+      (_customerID: string, orderID: string, evidence: any) =>
         Promise.resolve({
           orderID,
           customerID: "CUST-001",
@@ -156,14 +181,63 @@ describe("StorefrontService", () => {
     });
 
     expect(updated.status).toBe(orderStatus_e.PaymentNotified);
+    expect(updated.confirmationEvidence?.dataUrl).toBe(
+      "https://minio.example/SO-001/new-evidence.png?signed=true",
+    );
+    expect(evidenceStorage.uploadEvidence).toHaveBeenCalledWith(
+      jasmine.any(Uint8Array),
+      "SO-001",
+      "proof.png",
+      "image/png",
+    );
     expect(orderRepo.updateEvidence).toHaveBeenCalledWith(
       "CUST-001",
       "SO-001",
       jasmine.objectContaining({
         fileName: "proof.png",
         mimeType: "image/png",
+        objectKey: "SO-001/new-evidence.png",
         updatedAt: fixedNow,
       }),
     );
+  });
+
+  it("removes the previous private evidence after replacement", async () => {
+    const { service, orderRepo, evidenceStorage } = createService();
+    orderRepo.findByCustomerAndOrder.and.resolveTo({
+      orderID: "SO-001",
+      customerID: "CUST-001",
+      status: orderStatus_e.PaymentNotified,
+      totalAmount: 90,
+      items: [],
+      confirmationEvidence: {
+        fileName: "old.png",
+        mimeType: "image/png",
+        objectKey: "SO-001/old-evidence.png",
+        updatedAt: fixedNow,
+      },
+      createdAt: fixedNow,
+    });
+    orderRepo.updateEvidence.and.callFake(
+      (_customerID: string, orderID: string, evidence: any) =>
+        Promise.resolve({
+          orderID,
+          customerID: "CUST-001",
+          status: orderStatus_e.PaymentNotified,
+          totalAmount: 90,
+          items: [],
+          confirmationEvidence: evidence,
+          createdAt: fixedNow,
+        }),
+    );
+
+    await service.updateEvidence(token, "SO-001", {
+      fileName: "new.png",
+      mimeType: "image/png",
+      dataUrl: "data:image/png;base64,YQ==",
+    });
+
+    expect(evidenceStorage.removeEvidence)
+      .toHaveBeenCalledWith("SO-001/old-evidence.png");
   });
 });

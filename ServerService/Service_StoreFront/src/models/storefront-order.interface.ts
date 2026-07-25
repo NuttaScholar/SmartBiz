@@ -1,6 +1,6 @@
 import type { Document } from "mongoose";
 import type {
-  ConfirmationEvidence,
+  StoredConfirmationEvidence,
   StorefrontOrderItem,
 } from "../type";
 import type { orderStatus_e } from "../utils/enum";
@@ -11,7 +11,7 @@ export interface StorefrontOrderDocument extends Document {
   status: orderStatus_e;
   items: StorefrontOrderItem[];
   totalAmount: number;
-  confirmationEvidence?: ConfirmationEvidence;
+  confirmationEvidence?: StoredConfirmationEvidence;
   createdAt: Date;
   updatedAt: Date;
 }

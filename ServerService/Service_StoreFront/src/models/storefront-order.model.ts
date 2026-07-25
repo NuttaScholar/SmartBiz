@@ -24,7 +24,7 @@ const ConfirmationEvidenceSchema = new Schema(
   {
     fileName: { type: String, required: true },
     mimeType: { type: String, required: true },
-    dataUrl: { type: String, required: true },
+    objectKey: { type: String, required: true },
     updatedAt: { type: Date, required: true },
   },
   { _id: false },

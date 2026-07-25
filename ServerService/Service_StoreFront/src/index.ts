@@ -29,11 +29,14 @@ import healthRoutes from "./routes/health.routes";
 import customerLinkRoutes from "./routes/customer-link.routes";
 import storefrontRoutes from "./routes/storefront.routes";
 import CustomerLinkService from "./services/customer-link.service";
+import EvidenceStorageService from "./services/evidence-storage.service";
 import HealthService from "./services/health.service";
 import StorefrontService from "./services/storefront.service";
 
 async function startServer(): Promise<void> {
   const databases = await connectDB();
+  const evidenceStorage = new EvidenceStorageService();
+  await evidenceStorage.initPrivateBucket();
   const app = express();
 
   app.disable("x-powered-by");
@@ -70,6 +73,7 @@ async function startServer(): Promise<void> {
       new StorefrontAccessRepo(accessModel),
       new ProductRepo(productModel),
       new StorefrontOrderRepo(orderModel),
+      evidenceStorage,
     ),
   );
   const customerLinkController = new CustomerLinkController(

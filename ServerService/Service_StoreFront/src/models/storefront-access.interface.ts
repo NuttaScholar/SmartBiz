@@ -9,7 +9,6 @@ export interface StorefrontAccessDocument extends Document {
   customerID: string;
   customerName: string;
   token: string;
-  tokenHash: string;
   isActive: boolean;
   productDiscounts: ProductDiscount[];
   createdAt: Date;

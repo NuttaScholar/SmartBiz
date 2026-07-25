@@ -12,6 +12,7 @@ export default function customerLinkRoutes(
 
   router.use(authMiddleware, adminMiddleware);
   router.post("/", controller.createCustomerLink);
+  router.get("/:customerID", controller.getCustomerLink);
   router.patch(
     "/:customerID/token",
     controller.rotateCustomerToken,

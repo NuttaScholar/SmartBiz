@@ -1,7 +1,7 @@
 import type { Model } from "mongoose";
 import type { StorefrontOrderDocument } from "../models/storefront-order.interface";
 import type {
-  ConfirmationEvidence,
+  StoredConfirmationEvidence,
   StorefrontOrderItem,
 } from "../type";
 import { orderStatus_e } from "../utils/enum";
@@ -34,7 +34,7 @@ export default class StorefrontOrderRepo {
   updateEvidence(
     customerID: string,
     orderID: string,
-    evidence: ConfirmationEvidence,
+    evidence: StoredConfirmationEvidence,
   ) {
     return this.model.findOneAndUpdate(
       {
