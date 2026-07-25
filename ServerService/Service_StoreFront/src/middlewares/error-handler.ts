@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import AppError from "../utils/app-error";
 import { error } from "../utils/response";
 
 export function notFoundHandler(
@@ -16,9 +17,11 @@ export function errorHandler(
   response: Response,
   _next: NextFunction,
 ): void {
-  const message =
-    thrown instanceof Error ? thrown.message : "Something went wrong";
+  const message = thrown instanceof Error
+    ? thrown.message
+    : "Something went wrong";
+  const status = thrown instanceof AppError ? thrown.status : 500;
 
   console.error(thrown);
-  response.status(500).json(error(message, 500));
+  response.status(status).json(error(message, status));
 }

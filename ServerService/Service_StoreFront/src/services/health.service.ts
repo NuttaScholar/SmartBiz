@@ -16,6 +16,7 @@ export default class HealthService {
 
   getSnapshot(): HealthSnapshot {
     const databaseStates: Record<DatabaseName, boolean> = {
+      Account: this.isConnected("Account"),
       Stock: this.isConnected("Stock"),
       StoreFront: this.isConnected("StoreFront"),
     };

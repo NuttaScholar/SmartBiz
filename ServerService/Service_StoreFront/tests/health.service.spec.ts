@@ -7,6 +7,7 @@ function createConnections(
 ): ReadonlyMap<DatabaseName, Connection> {
   const connection = { readyState } as Connection;
   return new Map<DatabaseName, Connection>([
+    ["Account", connection],
     ["Stock", connection],
     ["StoreFront", connection],
   ]);
@@ -22,6 +23,7 @@ describe("HealthService", () => {
     expect(snapshot.status).toBe("ok");
     expect(snapshot.uptimeSeconds).toBe(12);
     expect(snapshot.databases).toEqual({
+      Account: true,
       Stock: true,
       StoreFront: true,
     });

@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import type { Secret } from "jsonwebtoken";
 
 dotenv.config();
 
@@ -21,7 +22,9 @@ function readPort(): number {
 }
 
 export const PORT = readPort();
+export const JWT_SECRET = requireEnv("SECRET") as Secret;
 export const WEB_HOST = requireEnv("WEB_HOST");
+export const MONGO_URI_ACCOUNT = requireEnv("MONGO_URI_ACCOUNT");
 export const MONGO_URI_STOCK = requireEnv("MONGO_URI_STOCK");
 export const MONGO_URI_STOREFRONT = requireEnv("MONGO_URI_STOREFRONT");
 export const SERVICE_ACCOUNT_URL =

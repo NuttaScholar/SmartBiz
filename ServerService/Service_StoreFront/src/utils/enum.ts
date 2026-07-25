@@ -10,6 +10,16 @@ export enum stockStatus_e {
   stockOut,
 }
 
+export enum orderStatus_e {
+  Submitted,
+  PaymentNotified,
+  PaymentConfirmed,
+  PrepareProduct,
+  PrepareShipment,
+  Completed,
+  Cancelled,
+}
+
 export enum stockLogType_e {
   in,
   out,
