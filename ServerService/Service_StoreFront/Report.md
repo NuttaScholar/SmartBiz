@@ -554,9 +554,9 @@ MINIO_PASSWORD=StrongPass123!
 PAYMENT_EVIDENCE_BUCKET=storefront-payment
 ```
 
-ตัวแปร `SERVICE_ACCOUNT_URL`, `SERVICE_BILL_URL` และ `SERVICE_STOCK_URL`
-ยังคงรองรับไว้ใน config สำหรับ integration ภายในในอนาคต แต่ API ชุดนี้อ่าน
-Account, Stock และ StoreFront ผ่าน MongoDB โดยตรง
+ตัวแปร `SERVICE_BILL_URL` ยังคงรองรับไว้ใน config สำหรับ integration กับ
+Service_Bill ในอนาคต แต่ API ชุดนี้ยังอ่าน Account, Stock และ StoreFront
+ผ่าน MongoDB โดยตรง
 
 ## Run And Test
 

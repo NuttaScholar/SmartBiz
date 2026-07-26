@@ -27,12 +27,8 @@ export const WEB_HOST = requireEnv("WEB_HOST");
 export const MONGO_URI_ACCOUNT = requireEnv("MONGO_URI_ACCOUNT");
 export const MONGO_URI_STOCK = requireEnv("MONGO_URI_STOCK");
 export const MONGO_URI_STOREFRONT = requireEnv("MONGO_URI_STOREFRONT");
-export const SERVICE_ACCOUNT_URL =
-  process.env.SERVICE_ACCOUNT_URL || "http://localhost:3000";
 export const SERVICE_BILL_URL =
   process.env.SERVICE_BILL_URL || "http://localhost:3004";
-export const SERVICE_STOCK_URL =
-  process.env.SERVICE_STOCK_URL || "http://localhost:3003";
 
 export const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "localhost";
 export const MINIO_PORT = Number(process.env.MINIO_PORT || 9000);

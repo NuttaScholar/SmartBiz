@@ -159,6 +159,34 @@ services:
     depends_on:
       - minio
 
+  service_storefront:
+    container_name: service_storefront
+    image: nuttascholar/smartbiz_storefront:1.0
+    environment:
+      SECRET: ${SECRET}
+      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
+      PORT: 3005
+      MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
+      MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin
+      MONGO_URI_STOREFRONT: mongodb://root:example@mongo:27017/StoreFront?authSource=admin
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PORT: ${VITE_PORT_MINIO}
+      MINIO_USE_SSL: false
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      PAYMENT_EVIDENCE_BUCKET: storefront-payment
+      SERVICE_BILL_URL: http://service_bill:3004
+      TZ: Asia/Bangkok
+    networks:
+      private:
+        ipv4_address: 192.168.110.95
+    ports:
+      - ${VITE_PORT_STOREFRONT:-3005}:3005
+    depends_on:
+      - mongo
+      - minio
+      - service_bill
+
   web:
     container_name: web
     image: nginx
