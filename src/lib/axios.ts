@@ -37,3 +37,8 @@ export const axios_bill = axios.create({
     withCredentials: true,
     validateStatus: acceptClientErrorStatus,
 });
+
+export const axios_storefront = axios.create({
+    baseURL: `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_STOREFRONT}`,
+    validateStatus: acceptClientErrorStatus,
+});

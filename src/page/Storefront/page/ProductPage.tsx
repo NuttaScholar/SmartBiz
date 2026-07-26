@@ -1,18 +1,28 @@
 import React from 'react';
-import { Alert, Badge, Box, Button, Container, Drawer, IconButton, InputAdornment, Paper, Stack, TextField, Typography, useMediaQuery } from '@mui/material';
+import { Alert, Badge, Box, Button, CircularProgress, Container, Drawer, IconButton, InputAdornment, Paper, Stack, TextField, Typography, useMediaQuery } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { useNavigate } from 'react-router-dom';
+import {
+  cancelStorefrontOrder,
+  createStorefrontOrder,
+  getStorefrontErrorMessage,
+  getStorefrontProducts,
+  uploadStorefrontEvidence,
+} from '../../../API/StorefrontService/Storefront';
 import { orderStatus_e } from '../../../enum';
 import theme from '../../../theme';
 import { CartSummary } from '../component/CartSummary';
 import { OrderDetailDialog } from '../component/OrderDetailDialog';
 import { ProductCard } from '../component/ProductCard';
 import { StorefrontLayout } from '../component/StorefrontLayout';
-import { mockProducts } from '../data/mockData';
 import { useStorefrontSession } from '../hooks/useStorefrontSession';
-import { getStoredOrders, saveStoredOrders } from '../lib/orderStorage';
-import type { CartItem, StorefrontOrder, StorefrontProduct } from '../type';
+import type {
+  CartItem,
+  StorefrontOrder,
+  StorefrontOrderEvidence,
+  StorefrontProduct,
+} from '../type';
 
 export function ProductPage() {
   const { customerToken, session } = useStorefrontSession();
@@ -22,10 +32,34 @@ export function ProductPage() {
   const [cart, setCart] = React.useState<CartItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isLoadingProducts, setIsLoadingProducts] = React.useState(true);
+  const [requestError, setRequestError] = React.useState("");
+  const [products, setProducts] = React.useState<StorefrontProduct[]>([]);
   const [createdOrder, setCreatedOrder] = React.useState<StorefrontOrder>();
   const [detailOrder, setDetailOrder] = React.useState<StorefrontOrder | null>(null);
 
-  const products = mockProducts;
+  React.useEffect(() => {
+    if (!session) return;
+
+    const controller = new AbortController();
+    setIsLoadingProducts(true);
+    setRequestError("");
+    getStorefrontProducts(customerToken, controller.signal)
+      .then(setProducts)
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          setRequestError(getStorefrontErrorMessage(error));
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoadingProducts(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [customerToken, session]);
+
   const filteredProducts = React.useMemo(() => {
     const text = query.trim().toLowerCase();
     if (!text) return products;
@@ -63,51 +97,44 @@ export function ProductPage() {
     setCart((current) => current.filter((item) => item.productID !== productID));
   }
 
-  function confirmOrder() {
+  async function confirmOrder() {
     if (!session || cart.length === 0) return;
     setIsSubmitting(true);
+    setRequestError("");
 
-    window.setTimeout(() => {
-      const orderItems = cart.flatMap((item) => {
-        const product = products.find((value) => value.id === item.productID);
-        if (!product) return [];
-        return [
-          {
-            productID: product.id,
-            name: product.name,
-            quantity: item.quantity,
-            priceOriginal: product.price,
-            discountPercent: product.percentDiscount,
-            priceAfterDiscount: product.priceAfterDiscount,
-            img: product.img,
-          },
-        ];
-      });
-      const nextOrder: StorefrontOrder = {
-        id: `SO-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${String(Date.now()).slice(-4)}`,
-        customerID: session.customerID,
-        date: new Date().toISOString(),
-        status: orderStatus_e.Submitted,
-        totalAmount: orderItems.reduce((sum, item) => sum + item.priceAfterDiscount * item.quantity, 0),
-        items: orderItems,
-      };
-      const nextOrders = [nextOrder, ...getStoredOrders(customerToken)];
-      saveStoredOrders(customerToken, nextOrders);
+    try {
+      const nextOrder = await createStorefrontOrder(customerToken, cart);
       setCreatedOrder(nextOrder);
       setDetailOrder(nextOrder);
       setCart([]);
-      setIsSubmitting(false);
       setIsDrawerOpen(false);
-    }, 450);
+    } catch (error) {
+      setRequestError(getStorefrontErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  function updateOrder(nextOrder: StorefrontOrder) {
-    const nextOrders = getStoredOrders(customerToken).map((order) =>
-      order.id === nextOrder.id ? nextOrder : order,
-    );
-    saveStoredOrders(customerToken, nextOrders);
+  function updateVisibleOrder(nextOrder: StorefrontOrder) {
     setDetailOrder(nextOrder);
     setCreatedOrder((current) => current?.id === nextOrder.id ? nextOrder : current);
+  }
+
+  async function uploadEvidence(
+    orderID: string,
+    evidence: StorefrontOrderEvidence,
+  ) {
+    const nextOrder = await uploadStorefrontEvidence(
+      customerToken,
+      orderID,
+      evidence,
+    );
+    updateVisibleOrder(nextOrder);
+  }
+
+  async function cancelOrder(orderID: string) {
+    const nextOrder = await cancelStorefrontOrder(customerToken, orderID);
+    updateVisibleOrder(nextOrder);
   }
 
   const cartPanel = (
@@ -175,6 +202,8 @@ export function ProductPage() {
                 </Alert>
               )}
 
+              {requestError && <Alert severity="error">{requestError}</Alert>}
+
               <TextField
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -192,19 +221,26 @@ export function ProductPage() {
                 }}
               />
 
-              <Box className="product-grid">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    quantity={cart.find((item) => item.productID === product.id)?.quantity ?? 0}
-                    onAdd={() => addToCart(product)}
-                    onRemove={() => removeOne(product.id)}
-                  />
-                ))}
-              </Box>
+              {isLoadingProducts ? (
+                <Box className="storefront-center">
+                  <CircularProgress />
+                  <Typography color="text.secondary">กำลังโหลดสินค้า</Typography>
+                </Box>
+              ) : (
+                <Box className="product-grid">
+                  {filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      quantity={cart.find((item) => item.productID === product.id)?.quantity ?? 0}
+                      onAdd={() => addToCart(product)}
+                      onRemove={() => removeOne(product.id)}
+                    />
+                  ))}
+                </Box>
+              )}
 
-              {filteredProducts.length === 0 && (
+              {!isLoadingProducts && filteredProducts.length === 0 && (
                 <Paper variant="outlined" className="empty-state">
                   <Typography color="text.secondary">ไม่พบสินค้าที่ตรงกับคำค้นหา</Typography>
                 </Paper>
@@ -221,7 +257,8 @@ export function ProductPage() {
       <OrderDetailDialog
         order={detailOrder}
         onClose={() => setDetailOrder(null)}
-        onOrderChange={updateOrder}
+        onEvidenceUpload={uploadEvidence}
+        onCancelOrder={cancelOrder}
       />
     </StorefrontLayout>
   );

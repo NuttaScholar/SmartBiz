@@ -1,24 +1,64 @@
-import { Box, Chip, Container, Paper, Stack, Typography } from '@mui/material';
-import { useState } from 'react';
+import { Alert, Box, Chip, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
+import {
+  cancelStorefrontOrder,
+  getStorefrontErrorMessage,
+  getStorefrontOrders,
+  uploadStorefrontEvidence,
+} from '../../../API/StorefrontService/Storefront';
 import { OrderDetailDialog } from '../component/OrderDetailDialog';
 import { StorefrontLayout } from '../component/StorefrontLayout';
 import { useStorefrontSession } from '../hooks/useStorefrontSession';
 import { formatMoney, statusColor, statusLabel } from '../lib/format';
-import { getStoredOrders, saveStoredOrders } from '../lib/orderStorage';
-import type { StorefrontOrder } from '../type';
+import type { StorefrontOrder, StorefrontOrderEvidence } from '../type';
 
 export function OrderHistoryPage() {
-  const { customerToken } = useStorefrontSession();
-  const [orders, setOrders] = useState(() => getStoredOrders(customerToken));
+  const { customerToken, session } = useStorefrontSession();
+  const [orders, setOrders] = useState<StorefrontOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<StorefrontOrder | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!session) return;
+
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError("");
+    getStorefrontOrders(customerToken, controller.signal)
+      .then(setOrders)
+      .catch((requestError: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(getStorefrontErrorMessage(requestError));
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [customerToken, session]);
 
   function updateOrder(nextOrder: StorefrontOrder) {
-    const nextOrders = orders.map((order) =>
-      order.id === nextOrder.id ? nextOrder : order,
+    setOrders((current) =>
+      current.map((order) => order.id === nextOrder.id ? nextOrder : order),
     );
-    saveStoredOrders(customerToken, nextOrders);
-    setOrders(nextOrders);
     setSelectedOrder(nextOrder);
+  }
+
+  async function uploadEvidence(
+    orderID: string,
+    evidence: StorefrontOrderEvidence,
+  ) {
+    updateOrder(
+      await uploadStorefrontEvidence(customerToken, orderID, evidence),
+    );
+  }
+
+  async function cancelOrder(orderID: string) {
+    updateOrder(await cancelStorefrontOrder(customerToken, orderID));
   }
 
   return (
@@ -30,8 +70,15 @@ export function OrderHistoryPage() {
             <Typography color="text.secondary">ดูรายการย้อนหลังและสถานะล่าสุดของคำสั่งซื้อ</Typography>
           </Box>
         </Box>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {isLoading && (
+          <Box className="storefront-center">
+            <CircularProgress />
+            <Typography color="text.secondary">กำลังโหลดคำสั่งซื้อ</Typography>
+          </Box>
+        )}
         <Stack spacing={1.5}>
-          {orders.map((order) => (
+          {!isLoading && orders.map((order) => (
             <Paper
               key={order.id}
               variant="outlined"
@@ -52,13 +99,19 @@ export function OrderHistoryPage() {
               </Stack>
             </Paper>
           ))}
+          {!isLoading && !error && orders.length === 0 && (
+            <Paper variant="outlined" className="empty-state">
+              <Typography color="text.secondary">ยังไม่มีประวัติคำสั่งซื้อ</Typography>
+            </Paper>
+          )}
         </Stack>
       </Container>
 
       <OrderDetailDialog
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
-        onOrderChange={updateOrder}
+        onEvidenceUpload={uploadEvidence}
+        onCancelOrder={cancelOrder}
       />
     </StorefrontLayout>
   );

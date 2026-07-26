@@ -23,6 +23,12 @@ export type CartItem = {
   quantity: number;
 };
 
+export type StorefrontOrderEvidence = {
+  fileName: string;
+  mimeType: string;
+  dataUrl: string;
+};
+
 export type StorefrontOrder = {
   id: string;
   customerID: string;
@@ -30,9 +36,9 @@ export type StorefrontOrder = {
   status: orderStatus_e;
   totalAmount: number;
   confirmationEvidence?: {
-    fileName: string;
-    mimeType: string;
-    dataUrl: string;
+    fileName: StorefrontOrderEvidence["fileName"];
+    mimeType: StorefrontOrderEvidence["mimeType"];
+    dataUrl: StorefrontOrderEvidence["dataUrl"];
     updatedAt: string;
   };
   items: Array<{

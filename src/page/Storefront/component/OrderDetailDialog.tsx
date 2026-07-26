@@ -12,11 +12,15 @@ import {
   Typography,
 } from "@mui/material";
 import type { TransitionProps } from "@mui/material/transitions";
-import { forwardRef, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import type { ChangeEvent, ReactElement, Ref } from "react";
+import { getStorefrontErrorMessage } from "../../../API/StorefrontService/Storefront";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import { orderStatus_e } from "../../../enum";
-import type { StorefrontOrder } from "../type";
+import type {
+  StorefrontOrder,
+  StorefrontOrderEvidence,
+} from "../type";
 import { OrderItems } from "./OrderItems";
 import { OrderSummary } from "./OrderSummary";
 
@@ -26,20 +30,28 @@ import { OrderSummary } from "./OrderSummary";
 type OrderDetailDialogProps = {
   order: StorefrontOrder | null;
   onClose: () => void;
-  onOrderChange?: (order: StorefrontOrder) => void;
+  onEvidenceUpload?: (
+    orderID: string,
+    evidence: StorefrontOrderEvidence,
+  ) => Promise<void>;
+  onCancelOrder?: (orderID: string) => Promise<void>;
 };
 
 type OrderEvidenceProps = {
   order: StorefrontOrder;
-  onChange?: (order: StorefrontOrder) => void;
+  onUpload?: (
+    orderID: string,
+    evidence: StorefrontOrderEvidence,
+  ) => Promise<void>;
 };
 
 const MAX_EVIDENCE_SIZE = 2 * 1024 * 1024;
 
-function OrderEvidence({ order, onChange }: OrderEvidenceProps) {
+function OrderEvidence({ order, onUpload }: OrderEvidenceProps) {
   const [error, setError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const evidence = order.confirmationEvidence;
-  const canEdit = Boolean(onChange) && (
+  const canEdit = Boolean(onUpload) && (
     order.status === orderStatus_e.Submitted
     || order.status === orderStatus_e.PaymentNotified
   );
@@ -47,7 +59,7 @@ function OrderEvidence({ order, onChange }: OrderEvidenceProps) {
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file || !onChange) return;
+    if (!file || !onUpload) return;
 
     if (file.size > MAX_EVIDENCE_SIZE) {
       setError("ไฟล์ต้องมีขนาดไม่เกิน 2 MB");
@@ -55,18 +67,21 @@ function OrderEvidence({ order, onChange }: OrderEvidenceProps) {
     }
 
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       if (typeof reader.result !== "string") return;
       setError("");
-      onChange({
-        ...order,
-        confirmationEvidence: {
+      setIsUploading(true);
+      try {
+        await onUpload(order.id, {
           fileName: file.name,
           mimeType: file.type,
           dataUrl: reader.result,
-          updatedAt: new Date().toISOString(),
-        },
-      });
+        });
+      } catch (uploadError) {
+        setError(getStorefrontErrorMessage(uploadError));
+      } finally {
+        setIsUploading(false);
+      }
     };
     reader.onerror = () => setError("ไม่สามารถอ่านไฟล์หลักฐานได้");
     reader.readAsDataURL(file);
@@ -121,8 +136,17 @@ function OrderEvidence({ order, onChange }: OrderEvidenceProps) {
         )}
 
         {canEdit && (
-          <Button component="label" variant="contained" startIcon={<UploadFileIcon />}>
-            {evidence ? "เปลี่ยนไฟล์หลักฐาน" : "เพิ่มไฟล์หลักฐาน"}
+          <Button
+            component="label"
+            variant="contained"
+            startIcon={<UploadFileIcon />}
+            disabled={isUploading}
+          >
+            {isUploading
+              ? "กำลังอัปโหลด"
+              : evidence
+                ? "เปลี่ยนไฟล์หลักฐาน"
+                : "เพิ่มไฟล์หลักฐาน"}
             <input
               hidden
               type="file"
@@ -152,17 +176,34 @@ const Transition = forwardRef(function Transition(
 export function OrderDetailDialog({
   order,
   onClose,
-  onOrderChange,
+  onEvidenceUpload,
+  onCancelOrder,
 }: OrderDetailDialogProps) {
-  function cancelOrder() {
-    if (!order || !onOrderChange) return;
+  const [actionError, setActionError] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  useEffect(() => {
+    setActionError("");
+    setIsCancelling(false);
+  }, [order?.id]);
+
+  async function handleCancelOrder() {
+    if (!order || !onCancelOrder) return;
 
     const isConfirmed = window.confirm(
       `ยืนยันการยกเลิกคำสั่งซื้อ ${order.id} หรือไม่`,
     );
     if (!isConfirmed) return;
 
-    onOrderChange({ ...order, status: orderStatus_e.Cancelled });
+    setActionError("");
+    setIsCancelling(true);
+    try {
+      await onCancelOrder(order.id);
+    } catch (cancelError) {
+      setActionError(getStorefrontErrorMessage(cancelError));
+    } finally {
+      setIsCancelling(false);
+    }
   }
 
   return (
@@ -188,16 +229,22 @@ export function OrderDetailDialog({
               status={order.status}
             />
             <OrderItems items={order.items} totalAmount={order.totalAmount} />
-            <OrderEvidence order={order} onChange={onOrderChange} />
-            {order.status === orderStatus_e.Submitted && onOrderChange && (
+            <OrderEvidence
+              key={order.id}
+              order={order}
+              onUpload={onEvidenceUpload}
+            />
+            {actionError && <Alert severity="error">{actionError}</Alert>}
+            {order.status === orderStatus_e.Submitted && onCancelOrder && (
               <Button
                 color="error"
                 variant="outlined"
                 size="large"
                 startIcon={<CancelIcon />}
-                onClick={cancelOrder}
+                onClick={handleCancelOrder}
+                disabled={isCancelling}
               >
-                ยกเลิกคำสั่งซื้อ
+                {isCancelling ? "กำลังยกเลิก" : "ยกเลิกคำสั่งซื้อ"}
               </Button>
             )}
           </Stack>

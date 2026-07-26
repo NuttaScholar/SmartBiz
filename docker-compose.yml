@@ -181,7 +181,7 @@ services:
       private:
         ipv4_address: 192.168.110.95
     ports:
-      - ${VITE_PORT_STOREFRONT:-3005}:3005
+      - ${VITE_PORT_STOREFRONT}:3005
     depends_on:
       - mongo
       - minio
