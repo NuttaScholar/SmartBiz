@@ -21,6 +21,10 @@ export default class StorefrontAccessRepo {
     return this.model.findOne({ customerID }).select("+token");
   }
 
+  listCustomerLinks() {
+    return this.model.find({}).sort({ customerName: 1, customerID: 1 });
+  }
+
   create(data: {
     customerID: string;
     customerName: string;
@@ -47,6 +51,20 @@ export default class StorefrontAccessRepo {
           isActive: true,
         },
       },
+      { new: true, runValidators: true },
+    );
+  }
+
+  updateDiscounts(
+    customerID: string,
+    productDiscounts: Array<{
+      productID: string;
+      discountPercent: number;
+    }>,
+  ) {
+    return this.model.findOneAndUpdate(
+      { customerID },
+      { $set: { productDiscounts } },
       { new: true, runValidators: true },
     );
   }

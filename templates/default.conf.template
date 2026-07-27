@@ -5,6 +5,16 @@ server {
 
     #access_log  /var/log/nginx/host.access.log  main;
 
+    location = /storefront {
+        root   /usr/share/nginx/html;
+        try_files /apps/storefront/index.html =404;
+    }
+
+    location ^~ /storefront/ {
+        root   /usr/share/nginx/html;
+        try_files $uri /apps/storefront/index.html;
+    }
+
     location / {
         root   /usr/share/nginx/html;
         index  index.html index.htm;

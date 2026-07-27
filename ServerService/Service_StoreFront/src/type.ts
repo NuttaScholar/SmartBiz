@@ -86,3 +86,21 @@ export interface CustomerLink {
   token: string;
   path: string;
 }
+
+export interface CustomerLinkSummary {
+  customerID: string;
+  customerName: string;
+  isActive: boolean;
+  productDiscounts: Array<{
+    productID: string;
+    discountPercent: number;
+  }>;
+}
+
+export interface CustomerDiscountSettings {
+  customerID: string;
+  discounts: Array<{
+    productID: string;
+    discountPercent: number;
+  }>;
+}

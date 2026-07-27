@@ -312,6 +312,16 @@ response `201 Created`:
 ถ้าไม่มี Contact จะตอบ `404` และถ้าลูกค้ามี link อยู่แล้วจะตอบ `409`
 พร้อมแนะนำให้ใช้ rotate endpoint
 
+### List Customer Links (Admin)
+
+```http
+GET /storefront/admin/customer-links
+Authorization: Bearer <adminAccessToken>
+```
+
+คืนรายชื่อลูกค้าที่มีข้อมูลใน `StoreFront.storefrontaccesses` พร้อมสถานะและ
+รายการส่วนลดสินค้า โดยไม่ส่ง raw token ใน list response
+
 ### Get Customer Link (Admin)
 
 ```http
@@ -366,6 +376,31 @@ PATCH /storefront/admin/customer-links/CUST-001/token
 
 response มีรูปแบบเดียวกับ Create Customer Link และ raw token ใหม่จะถูกส่ง
 ใน response ครั้งนี้
+
+### Manage Customer Discounts (Admin)
+
+```http
+GET /storefront/admin/customer-links/:customerID/discounts
+PUT /storefront/admin/customer-links/:customerID/discounts
+Authorization: Bearer <adminAccessToken>
+Content-Type: application/json
+```
+
+body สำหรับ `PUT`:
+
+```json
+{
+  "discounts": [
+    {
+      "productID": "PRODUCT-001",
+      "discountPercent": 10
+    }
+  ]
+}
+```
+
+ระบบตรวจ `productID` ซ้ำและบังคับ `discountPercent` ให้อยู่ระหว่าง 0 ถึง 100
+ก่อนแทนที่รายการ `productDiscounts` ของลูกค้า
 
 ### Validate Customer Session
 

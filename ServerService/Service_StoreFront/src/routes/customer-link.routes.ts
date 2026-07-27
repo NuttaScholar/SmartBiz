@@ -11,7 +11,16 @@ export default function customerLinkRoutes(
   const router = Router();
 
   router.use(authMiddleware, adminMiddleware);
+  router.get("/", controller.listCustomerLinks);
   router.post("/", controller.createCustomerLink);
+  router.get(
+    "/:customerID/discounts",
+    controller.getCustomerDiscounts,
+  );
+  router.put(
+    "/:customerID/discounts",
+    controller.updateCustomerDiscounts,
+  );
   router.get("/:customerID", controller.getCustomerLink);
   router.patch(
     "/:customerID/token",

@@ -3,7 +3,7 @@ import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import WidgetsIcon from "@mui/icons-material/Widgets";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
@@ -22,7 +22,7 @@ import * as Login_f from "../../API/LoginService/Login";
 //************************************************
 export enum pageApp_e {
   access,
-  lone,
+  customer,
   bill,
   stock,
   logger,
@@ -40,7 +40,7 @@ const pagesList_admin: menuList_t[] = [
     icon: <AccountBalanceWalletIcon />,
     path: "/access",
   },
-  { text: "กู้ยืม", icon: <AccountBalanceIcon />, path: "/cadit" },
+  { text: "ลูกค้า", icon: <PeopleAltIcon />, path: "/customer" },
   { text: "ออกบิล", icon: <ReceiptLongIcon />, path: "/bill" },
   { text: "สต็อก", icon: <WidgetsIcon />, path: "/stock" },
   { text: "บันทึกเวลา", icon: <AssignmentIndIcon />, path: "/checkIn" },
@@ -98,7 +98,9 @@ const AppBar_c: React.FC<myProps> = (props) => {
       break;
   }
   const index = menuList_AppBar.findIndex(
-    (val) => val.path === location.pathname
+    (val) =>
+      val.path === location.pathname
+      || (val.path && location.pathname.startsWith(`${val.path}/`)),
   );
   // XML Code *****************
   return (

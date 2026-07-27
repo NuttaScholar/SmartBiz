@@ -24,7 +24,13 @@ const Page_BillOrderDetail = lazy(
 );
 const Page_BillSetDiscount = lazy(() => import("./page/Bill/page/SetDiscount"));
 const Page_BillPreview = lazy(() => import("./page/Bill/page/BillPreview"));
-const Page_Cadit = lazy(() => import("./page/Cadit"));
+const Page_Customer = lazy(() => import("./page/Customer/Customer"));
+const Page_CustomerCreate = lazy(
+  () => import("./page/Customer/page/CustomerCreate"),
+);
+const Page_CustomerDiscount = lazy(
+  () => import("./page/Customer/page/CustomerDiscount"),
+);
 const Page_CheckIn = lazy(() => import("./page/CheckIn"));
 const Page_NotFound = lazy(() => import("./page/NotFound"));
 const Page_SetUser = lazy(() => import("./page/SetUser"));
@@ -64,7 +70,18 @@ function App() {
                 <Route path="preview" element={<Page_BillPreview />} />
                 <Route path="preview/:orderID" element={<Page_BillPreview />} />
               </Route>
-              <Route path="/cadit" element={<Page_Cadit />} />
+              <Route path="/customer">
+                <Route index element={<Page_Customer />} />
+                <Route path="create" element={<Page_CustomerCreate />} />
+                <Route
+                  path="create/:customerID"
+                  element={<Page_CustomerCreate />}
+                />
+                <Route
+                  path=":customerID/discount"
+                  element={<Page_CustomerDiscount />}
+                />
+              </Route>
               <Route path="/checkIn" element={<Page_CheckIn />} />
               <Route path="/stock">
                 <Route index element={<Page_Stock />} />

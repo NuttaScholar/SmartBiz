@@ -15,6 +15,30 @@ type StorefrontApiResponse<T> = {
   status?: number;
 };
 
+export type CustomerLink = {
+  customerID: string;
+  customerName: string;
+  token: string;
+  path: string;
+};
+
+export type StorefrontProductDiscount = {
+  productID: string;
+  discountPercent: number;
+};
+
+export type CustomerLinkSummary = {
+  customerID: string;
+  customerName: string;
+  isActive: boolean;
+  productDiscounts: StorefrontProductDiscount[];
+};
+
+export type CustomerDiscountSettings = {
+  customerID: string;
+  discounts: StorefrontProductDiscount[];
+};
+
 export class StorefrontApiError extends Error {
   constructor(
     message: string,
@@ -29,14 +53,17 @@ function pathSegment(value: string): string {
   return encodeURIComponent(value);
 }
 
-function unwrap<T>(response: StorefrontApiResponse<T>): T {
+function unwrap<T>(
+  response: StorefrontApiResponse<T>,
+  httpStatus?: number,
+): T {
   if (response.success && response.data !== undefined) {
     return response.data;
   }
 
   throw new StorefrontApiError(
     response.message || "ไม่สามารถเชื่อมต่อบริการหน้าร้านได้",
-    response.status,
+    response.status || httpStatus,
   );
 }
 
@@ -54,10 +81,14 @@ function toApiError(error: unknown): never {
 }
 
 async function request<T>(
-  operation: () => Promise<{ data: StorefrontApiResponse<T> }>,
+  operation: () => Promise<{
+    data: StorefrontApiResponse<T>;
+    status: number;
+  }>,
 ): Promise<T> {
   try {
-    return unwrap((await operation()).data);
+    const response = await operation();
+    return unwrap(response.data, response.status);
   } catch (error) {
     return toApiError(error);
   }
@@ -137,6 +168,89 @@ export function cancelStorefrontOrder(
   return request(() =>
     axios_storefront.delete(
       `/storefront/${pathSegment(customerToken)}/orders/${pathSegment(orderID)}`,
+    ),
+  );
+}
+
+function adminAuth(accessToken: string) {
+  return {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+}
+
+export function getCustomerLink(
+  accessToken: string,
+  customerID: string,
+): Promise<CustomerLink> {
+  return request(() =>
+    axios_storefront.get(
+      `/storefront/admin/customer-links/${pathSegment(customerID)}`,
+      adminAuth(accessToken),
+    ),
+  );
+}
+
+export function listCustomerLinks(
+  accessToken: string,
+): Promise<CustomerLinkSummary[]> {
+  return request(() =>
+    axios_storefront.get(
+      "/storefront/admin/customer-links",
+      adminAuth(accessToken),
+    ),
+  );
+}
+
+export function createCustomerLink(
+  accessToken: string,
+  customerID: string,
+): Promise<CustomerLink> {
+  return request(() =>
+    axios_storefront.post(
+      "/storefront/admin/customer-links",
+      { customerID },
+      adminAuth(accessToken),
+    ),
+  );
+}
+
+export function rotateCustomerToken(
+  accessToken: string,
+  customerID: string,
+): Promise<CustomerLink> {
+  return request(() =>
+    axios_storefront.patch(
+      `/storefront/admin/customer-links/${pathSegment(customerID)}/token`,
+      undefined,
+      adminAuth(accessToken),
+    ),
+  );
+}
+
+export function getCustomerDiscounts(
+  accessToken: string,
+  customerID: string,
+): Promise<CustomerDiscountSettings> {
+  return request(() =>
+    axios_storefront.get(
+      `/storefront/admin/customer-links/${pathSegment(customerID)}/discounts`,
+      adminAuth(accessToken),
+    ),
+  );
+}
+
+export function updateCustomerDiscounts(
+  accessToken: string,
+  customerID: string,
+  discounts: StorefrontProductDiscount[],
+): Promise<CustomerDiscountSettings> {
+  return request(() =>
+    axios_storefront.put(
+      `/storefront/admin/customer-links/${pathSegment(customerID)}/discounts`,
+      { discounts },
+      adminAuth(accessToken),
     ),
   );
 }

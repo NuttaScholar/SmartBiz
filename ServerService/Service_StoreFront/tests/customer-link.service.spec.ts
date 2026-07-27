@@ -13,21 +13,42 @@ describe("CustomerLinkService", () => {
         .createSpy("findByCodeName")
         .and.resolveTo(contactExists ? contact : null),
     };
+    const existingAccess = {
+      customerID: "CUST-001",
+      customerName: "Customer One",
+      token: generatedToken,
+      isActive: true,
+      productDiscounts: [
+        { productID: "P-001", discountPercent: 10 },
+      ],
+    };
     const accessRepo = {
       findByCustomerID: jasmine
         .createSpy("findByCustomerID")
-        .and.resolveTo(linkExists ? { customerID: "CUST-001" } : null),
+        .and.resolveTo(linkExists ? existingAccess : null),
       findByCustomerIDWithToken: jasmine
         .createSpy("findByCustomerIDWithToken")
-        .and.resolveTo(linkExists ? {
-          customerID: "CUST-001",
-          customerName: "Customer One",
-          token: generatedToken,
-        } : null),
+        .and.resolveTo(linkExists ? existingAccess : null),
+      listCustomerLinks: jasmine
+        .createSpy("listCustomerLinks")
+        .and.resolveTo(linkExists ? [existingAccess] : []),
       create: jasmine.createSpy("create").and.resolveTo({}),
       rotateToken: jasmine
         .createSpy("rotateToken")
         .and.resolveTo({ customerID: "CUST-001" }),
+      updateDiscounts: jasmine
+        .createSpy("updateDiscounts")
+        .and.callFake(
+          async (
+            customerID: string,
+            productDiscounts: Array<{
+              productID: string;
+              discountPercent: number;
+            }>,
+          ) => linkExists
+            ? { ...existingAccess, customerID, productDiscounts }
+            : null,
+        ),
     };
     const service = new CustomerLinkService(
       contactRepo as any,
@@ -77,6 +98,60 @@ describe("CustomerLinkService", () => {
       token: generatedToken,
       path: `/storefront/${generatedToken}`,
     });
+  });
+
+  it("lists customers that have storefront access", async () => {
+    const { service } = createService(true, true);
+
+    await expectAsync(service.listCustomerLinks()).toBeResolvedTo([
+      {
+        customerID: "CUST-001",
+        customerName: "Customer One",
+        isActive: true,
+        productDiscounts: [
+          { productID: "P-001", discountPercent: 10 },
+        ],
+      },
+    ]);
+  });
+
+  it("returns and updates storefront discounts", async () => {
+    const { service, accessRepo } = createService(true, true);
+
+    await expectAsync(service.getCustomerDiscounts("CUST-001"))
+      .toBeResolvedTo({
+        customerID: "CUST-001",
+        discounts: [
+          { productID: "P-001", discountPercent: 10 },
+        ],
+      });
+
+    await expectAsync(
+      service.updateCustomerDiscounts("CUST-001", [
+        { productID: "P-002", discountPercent: 15 },
+      ]),
+    ).toBeResolvedTo({
+      customerID: "CUST-001",
+      discounts: [
+        { productID: "P-002", discountPercent: 15 },
+      ],
+    });
+    expect(accessRepo.updateDiscounts).toHaveBeenCalledWith(
+      "CUST-001",
+      [{ productID: "P-002", discountPercent: 15 }],
+    );
+  });
+
+  it("rejects duplicate products in storefront discounts", async () => {
+    const { service, accessRepo } = createService(true, true);
+
+    await expectAsync(
+      service.updateCustomerDiscounts("CUST-001", [
+        { productID: "P-001", discountPercent: 10 },
+        { productID: "P-001", discountPercent: 20 },
+      ]),
+    ).toBeRejectedWithError("Duplicate product P-001");
+    expect(accessRepo.updateDiscounts).not.toHaveBeenCalled();
   });
 
   it("rejects token lookup when the customer link does not exist", async () => {
