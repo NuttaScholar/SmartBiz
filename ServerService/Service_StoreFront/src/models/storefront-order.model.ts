@@ -65,6 +65,8 @@ export const StorefrontOrderSchema =
         type: ConfirmationEvidenceSchema,
         required: false,
       },
+      paymentConfirmedAt: { type: Date, required: false },
+      paymentConfirmedBy: { type: String, required: false },
     },
     { timestamps: true },
   );

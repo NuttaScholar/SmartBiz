@@ -31,6 +31,10 @@ export default class StorefrontOrderRepo {
     return this.model.findOne({ customerID, orderID });
   }
 
+  findByOrderID(orderID: string) {
+    return this.model.findOne({ orderID });
+  }
+
   updateEvidence(
     customerID: string,
     orderID: string,
@@ -61,6 +65,24 @@ export default class StorefrontOrderRepo {
     return this.model.findOneAndUpdate(
       { customerID, orderID, status: orderStatus_e.Submitted },
       { $set: { status: orderStatus_e.Cancelled } },
+      { new: true, runValidators: true },
+    );
+  }
+
+  confirmPayment(
+    orderID: string,
+    paymentConfirmedBy: string,
+    paymentConfirmedAt: Date,
+  ) {
+    return this.model.findOneAndUpdate(
+      { orderID, status: orderStatus_e.PaymentNotified },
+      {
+        $set: {
+          status: orderStatus_e.PaymentConfirmed,
+          paymentConfirmedBy,
+          paymentConfirmedAt,
+        },
+      },
       { new: true, runValidators: true },
     );
   }

@@ -29,6 +29,13 @@ export const MONGO_URI_STOCK = requireEnv("MONGO_URI_STOCK");
 export const MONGO_URI_STOREFRONT = requireEnv("MONGO_URI_STOREFRONT");
 export const SERVICE_BILL_URL =
   process.env.SERVICE_BILL_URL || "http://localhost:3004";
+const configuredBillTimeout = Number(
+  process.env.BILL_REQUEST_TIMEOUT_MS || 10_000,
+);
+if (!Number.isFinite(configuredBillTimeout) || configuredBillTimeout <= 0) {
+  throw new Error("BILL_REQUEST_TIMEOUT_MS must be a positive number");
+}
+export const BILL_REQUEST_TIMEOUT_MS = configuredBillTimeout;
 
 export const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "localhost";
 export const MINIO_PORT = Number(process.env.MINIO_PORT || 9000);

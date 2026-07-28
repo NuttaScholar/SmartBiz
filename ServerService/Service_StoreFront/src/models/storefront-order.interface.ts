@@ -12,6 +12,8 @@ export interface StorefrontOrderDocument extends Document {
   items: StorefrontOrderItem[];
   totalAmount: number;
   confirmationEvidence?: StoredConfirmationEvidence;
+  paymentConfirmedAt?: Date;
+  paymentConfirmedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }

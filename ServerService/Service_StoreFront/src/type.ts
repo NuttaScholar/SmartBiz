@@ -74,6 +74,14 @@ export interface StorefrontOrder {
   items: StorefrontOrderItem[];
 }
 
+export interface PaymentConfirmationResult {
+  orderID: string;
+  billOrderID: string;
+  status: orderStatus_e.PaymentConfirmed;
+  paymentConfirmedAt?: Date;
+  paymentConfirmedBy?: string;
+}
+
 export interface tokenPackage_t {
   username: string;
   role: role_e;

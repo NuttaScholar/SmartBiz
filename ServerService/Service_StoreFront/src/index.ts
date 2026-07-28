@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import { PORT, WEB_HOST } from "./config";
 import CustomerLinkController from "./controllers/customer-link.controller";
+import AdminOrderController from "./controllers/admin-order.controller";
 import HealthController from "./controllers/health.controller";
 import StorefrontController from "./controllers/storefront.controller";
 import {
@@ -27,8 +28,11 @@ import StorefrontAccessRepo from "./repositories/storefront-access.repo";
 import StorefrontOrderRepo from "./repositories/storefront-order.repo";
 import healthRoutes from "./routes/health.routes";
 import customerLinkRoutes from "./routes/customer-link.routes";
+import adminOrderRoutes from "./routes/admin-order.routes";
 import storefrontRoutes from "./routes/storefront.routes";
 import CustomerLinkService from "./services/customer-link.service";
+import AdminOrderService from "./services/admin-order.service";
+import BillClientService from "./services/bill-client.service";
 import EvidenceStorageService from "./services/evidence-storage.service";
 import HealthService from "./services/health.service";
 import StorefrontService from "./services/storefront.service";
@@ -82,10 +86,20 @@ async function startServer(): Promise<void> {
       new StorefrontAccessRepo(accessModel),
     ),
   );
+  const adminOrderController = new AdminOrderController(
+    new AdminOrderService(
+      new StorefrontOrderRepo(orderModel),
+      new BillClientService(),
+    ),
+  );
   app.use("/health", healthRoutes(healthController));
   app.use(
     "/storefront/admin/customer-links",
     customerLinkRoutes(customerLinkController),
+  );
+  app.use(
+    "/storefront/admin/orders",
+    adminOrderRoutes(adminOrderController),
   );
   app.use("/storefront", storefrontRoutes(storefrontController));
 

@@ -593,6 +593,41 @@ PAYMENT_EVIDENCE_BUCKET=storefront-payment
 Service_Bill ในอนาคต แต่ API ชุดนี้ยังอ่าน Account, Stock และ StoreFront
 ผ่าน MongoDB โดยตรง
 
+### Admin Confirm Payment
+
+```http
+PATCH /storefront/admin/orders/:orderID/payment-confirmation
+Authorization: Bearer <admin-access-token>
+```
+
+ไม่ต้องส่ง request body โดย API จะรับเฉพาะออเดอร์สถานะ
+`PaymentNotified` แล้วส่ง `POST /bill` ไปยัง Service_Bill พร้อม JWT เดิมของ
+Admin และใช้ `orderID` เดียวกับ StoreFront เพื่อให้ retry ได้โดยไม่สร้างซ้ำ
+
+เมื่อ Service_Bill สร้างออเดอร์สำเร็จ API จะเปลี่ยนสถานะเป็น
+`PaymentConfirmed` พร้อมบันทึก `paymentConfirmedAt` และ
+`paymentConfirmedBy` หาก Service_Bill ปฏิเสธคำขอ สถานะ StoreFront
+จะไม่เปลี่ยน
+
+response:
+
+```json
+{
+  "success": true,
+  "message": "Payment confirmed and Bill order created",
+  "data": {
+    "orderID": "SO-260728-ABCDEF01",
+    "billOrderID": "SO-260728-ABCDEF01",
+    "status": 2,
+    "paymentConfirmedAt": "2026-07-28T04:00:00.000Z",
+    "paymentConfirmedBy": "admin"
+  }
+}
+```
+
+เพิ่ม `BILL_REQUEST_TIMEOUT_MS` เพื่อกำหนด timeout ที่เรียก Service_Bill
+(ค่าเริ่มต้น 10000 ms)
+
 ## Run And Test
 
 ```bash
