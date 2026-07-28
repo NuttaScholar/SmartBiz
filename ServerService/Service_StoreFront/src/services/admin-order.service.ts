@@ -14,16 +14,11 @@ export default class AdminOrderService {
   async confirmPayment(
     orderID: unknown,
     confirmedBy: unknown,
-    authorization: unknown,
   ): Promise<PaymentConfirmationResult> {
     const normalizedOrderID = this.requireText(orderID, "orderID");
     const normalizedConfirmedBy = this.requireText(
       confirmedBy,
       "admin username",
-    );
-    const normalizedAuthorization = this.requireText(
-      authorization,
-      "Authorization header",
     );
     const order = await this.orderRepo.findByOrderID(normalizedOrderID);
     if (!order) {
@@ -53,7 +48,6 @@ export default class AdminOrderService {
         items: order.items,
         totalAmount: order.totalAmount,
       },
-      normalizedAuthorization,
     );
     const confirmedAt = this.now();
     const updated = await this.orderRepo.confirmPayment(

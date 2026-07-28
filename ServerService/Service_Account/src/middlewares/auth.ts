@@ -1,1 +1,7 @@
-export { AuthMiddleware, AuthRequest } from "../auth";
+export {
+  AuthMiddleware,
+  AuthRequest,
+  getPrincipalName,
+  hasServiceScope,
+  isUserWithRole,
+} from "../auth";

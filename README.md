@@ -64,6 +64,7 @@ npm install
 
 ```env
 SECRET="NuttaScholar"
+SERVICE_AUTH_SECRET="<random-secret-at-least-32-characters>"
 
 VITE_HOST=localhost
 VITE_PORT=3030

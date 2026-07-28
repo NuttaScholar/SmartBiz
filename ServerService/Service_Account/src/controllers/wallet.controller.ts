@@ -1,6 +1,10 @@
 import { Response } from "express";
 import { Model } from "mongoose";
-import { AuthRequest } from "../middlewares/auth";
+import {
+  AuthRequest,
+  hasServiceScope,
+  isUserWithRole,
+} from "../middlewares/auth";
 import { WalletDocument } from "../models/wallet.interface";
 import { errorCode_e, role_e } from "../utils/enum";
 import { error, success } from "../utils/response";
@@ -26,7 +30,10 @@ export default class WalletController {
 }
 
 function requireAdmin(req: AuthRequest, res: Response) {
-  if (req.authData?.role === role_e.admin) return true;
+  if (
+    isUserWithRole(req, [role_e.admin])
+    || hasServiceScope(req, "account.wallet.read")
+  ) return true;
 
   res.status(403).json(error<"none">(errorCode_e.PermissionDeniedError, "You do not have permission to access this resource"));
   return false;

@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios";
 import { BILL_REQUEST_TIMEOUT_MS, SERVICE_BILL_URL } from "../config";
 import type { StorefrontOrderItem } from "../type";
 import AppError from "../utils/app-error";
+import { createServiceToken } from "../utils/service-token";
 
 export interface CreateBillOrderInput {
   orderID: string;
@@ -34,7 +35,6 @@ interface BillSearchOrder {
 export interface BillGateway {
   createOrder(
     input: CreateBillOrderInput,
-    authorization: string,
   ): Promise<CreatedBillOrder>;
 }
 
@@ -43,8 +43,11 @@ export default class BillClientService implements BillGateway {
 
   async createOrder(
     input: CreateBillOrderInput,
-    authorization: string,
   ): Promise<CreatedBillOrder> {
+    const authorization = `Bearer ${createServiceToken(
+      "service_bill",
+      ["bill.order.create", "bill.order.read"],
+    )}`;
     try {
       const response = await axios.post<BillApiResponse<{ orderID: string }>>(
         `${this.baseUrl}/bill`,

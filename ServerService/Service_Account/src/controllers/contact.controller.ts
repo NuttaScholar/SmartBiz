@@ -2,7 +2,11 @@ import { Response } from "express";
 import { Model } from "mongoose";
 import { ContactDocument } from "../models/contact.interface";
 import { TransactionDocument } from "../models/transaction.interface";
-import { AuthRequest } from "../middlewares/auth";
+import {
+  AuthRequest,
+  hasServiceScope,
+  isUserWithRole,
+} from "../middlewares/auth";
 import { ContactForm_t } from "../type";
 import { errorCode_e, role_e } from "../utils/enum";
 import { error, success } from "../utils/response";
@@ -20,7 +24,7 @@ export default class ContactController {
 
   async createContact(req: AuthRequest, res: Response) {
     try {
-      if (!requireContactEditor(req, res)) return;
+      if (!requireContactEditor(req, res, "account.contact.write")) return;
 
       await this.service.createContact(req.body as ContactForm_t);
       return res.json(success<"none">());
@@ -31,7 +35,7 @@ export default class ContactController {
 
   async searchContacts(req: AuthRequest, res: Response) {
     try {
-      if (!requireContactEditor(req, res)) return;
+      if (!requireContactEditor(req, res, "account.contact.read")) return;
 
       const { id, index, size } = req.query;
       const result = await this.service.searchContacts(
@@ -58,7 +62,7 @@ export default class ContactController {
 
   async updateContact(req: AuthRequest, res: Response) {
     try {
-      if (!requireContactEditor(req, res)) return;
+      if (!requireContactEditor(req, res, "account.contact.write")) return;
 
       await this.service.updateContact(req.body as ContactForm_t);
       return res.json(success<"none">());
@@ -69,7 +73,7 @@ export default class ContactController {
 
   async deleteContact(req: AuthRequest, res: Response) {
     try {
-      if (!requireAdmin(req, res)) return;
+      if (!requireAdmin(req, res, "account.contact.delete")) return;
 
       await this.service.deleteContact(req.query.id as string);
       return res.json(success<"none">());
@@ -79,17 +83,24 @@ export default class ContactController {
   }
 }
 
-function requireAdmin(req: AuthRequest, res: Response) {
-  if (req.authData?.role === role_e.admin) return true;
+function requireAdmin(req: AuthRequest, res: Response, scope: string) {
+  if (
+    isUserWithRole(req, [role_e.admin])
+    || hasServiceScope(req, scope)
+  ) return true;
 
   res.status(403).json(error<"none">(errorCode_e.PermissionDeniedError, "You do not have permission to access this resource"));
   return false;
 }
 
-function requireContactEditor(req: AuthRequest, res: Response) {
+function requireContactEditor(
+  req: AuthRequest,
+  res: Response,
+  scope: string,
+) {
   if (
-    req.authData?.role === role_e.admin ||
-    req.authData?.role === role_e.cashier
+    isUserWithRole(req, [role_e.admin, role_e.cashier])
+    || hasServiceScope(req, scope)
   ) {
     return true;
   }

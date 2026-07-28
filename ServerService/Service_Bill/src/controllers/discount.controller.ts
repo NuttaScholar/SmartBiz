@@ -4,7 +4,11 @@ import { errorCode_e, role_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { DiscountDocument } from "../models/discount.interface";
 import { ContactDocument } from "../models/contact.interface";
-import { AuthRequest } from "../middlewares/auth";
+import {
+  AuthRequest,
+  hasServiceScope,
+  isUserWithRole,
+} from "../middlewares/auth";
 
 export default class DiscountController {
   private service: DiscountService;
@@ -41,7 +45,10 @@ export default class DiscountController {
 }
 
 function ensureAdmin(req: AuthRequest, res: Response) {
-  if (req.authData?.role === role_e.admin) return true;
+  if (
+    isUserWithRole(req, [role_e.admin])
+    || hasServiceScope(req, "bill.discount.write")
+  ) return true;
 
   res.status(403).json({
     success: false,
@@ -53,8 +60,8 @@ function ensureAdmin(req: AuthRequest, res: Response) {
 
 function ensureDiscountReader(req: AuthRequest, res: Response) {
   if (
-    req.authData?.role === role_e.admin ||
-    req.authData?.role === role_e.cashier
+    isUserWithRole(req, [role_e.admin, role_e.cashier])
+    || hasServiceScope(req, "bill.discount.read")
   ) {
     return true;
   }

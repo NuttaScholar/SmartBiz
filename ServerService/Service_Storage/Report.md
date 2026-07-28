@@ -181,6 +181,7 @@ product
 ```env
 PORT=3002
 SECRET=NuttaScholar
+SERVICE_AUTH_SECRET=<random-secret-at-least-32-characters>
 WEB_HOST=http://localhost:3030
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9000

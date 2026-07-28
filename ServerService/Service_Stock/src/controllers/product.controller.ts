@@ -2,7 +2,11 @@ import { Response } from "express";
 import { Model } from "mongoose";
 import { LogDocument } from "../models/log.interface";
 import { ProductDocument } from "../models/product.interface";
-import { AuthRequest } from "../middlewares/auth";
+import {
+  AuthRequest,
+  hasServiceScope,
+  isUserWithRole,
+} from "../middlewares/auth";
 import StockService from "../services/stock.service";
 import StorageService from "../services/storage.service";
 import { productInfo_t } from "../type";
@@ -17,7 +21,7 @@ export default class ProductController {
 
   async createProduct(req: AuthRequest, res: Response) {
     try {
-      this.ensureAdmin(req);
+      this.ensureAdmin(req, "stock.product.write");
       await this.service.createProduct(req.body as productInfo_t, req.file);
       return res.json({ success: true });
     } catch (err: any) {
@@ -27,7 +31,7 @@ export default class ProductController {
 
   async updateProduct(req: AuthRequest, res: Response) {
     try {
-      this.ensureAdmin(req);
+      this.ensureAdmin(req, "stock.product.write");
       await this.service.updateProduct(req.body as productInfo_t, req.file);
       return res.json({ success: true });
     } catch (err: any) {
@@ -37,7 +41,7 @@ export default class ProductController {
 
   async getProducts(req: AuthRequest, res: Response) {
     try {
-      this.ensureStockReader(req);
+      this.ensureStockReader(req, "stock.product.read");
       const { type, name, status } = req.query;
       const result = await this.service.getProducts(type as string, name as string, status as string);
       return res.json({ success: true, data: result });
@@ -48,24 +52,27 @@ export default class ProductController {
 
   async deleteProduct(req: AuthRequest, res: Response) {
     try {
-      this.ensureAdmin(req);
-      await this.service.deleteProduct(req.query.id as string, req.headers.authorization);
+      this.ensureAdmin(req, "stock.product.delete");
+      await this.service.deleteProduct(req.query.id as string);
       return res.json({ success: true });
     } catch (err: any) {
       return handleError(res, err);
     }
   }
 
-  private ensureAdmin(req: AuthRequest) {
-    if (req.authData?.role !== role_e.admin) {
+  private ensureAdmin(req: AuthRequest, scope: string) {
+    if (
+      !isUserWithRole(req, [role_e.admin])
+      && !hasServiceScope(req, scope)
+    ) {
       throw { code: errorCode_e.PermissionDeniedError, message: "Permission denied" };
     }
   }
 
-  private ensureStockReader(req: AuthRequest) {
+  private ensureStockReader(req: AuthRequest, scope: string) {
     if (
-      req.authData?.role !== role_e.admin &&
-      req.authData?.role !== role_e.cashier
+      !isUserWithRole(req, [role_e.admin, role_e.cashier])
+      && !hasServiceScope(req, scope)
     ) {
       throw { code: errorCode_e.PermissionDeniedError, message: "Permission denied" };
     }

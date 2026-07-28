@@ -43,7 +43,10 @@ export type orderStatusCount_t = {
 }
 
 export type tokenPackage_t = {
-  username: string;
-  role: role_e;
-  type: "accessToken" | "refreshToken";
+  username?: string;
+  role?: role_e;
+  type: "accessToken" | "refreshToken" | "serviceToken";
+  service?: string;
+  sub?: string;
+  scopes?: string[];
 }

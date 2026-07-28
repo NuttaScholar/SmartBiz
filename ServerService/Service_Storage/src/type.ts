@@ -1,9 +1,12 @@
 import { errorCode_e, role_e } from "./utils/enum";
 
 export type tokenPackage_t = {
-  username: string;
-  role: role_e;
-  type: "accessToken" | "refreshToken";
+  username?: string;
+  role?: role_e;
+  type: "accessToken" | "refreshToken" | "serviceToken";
+  service?: string;
+  sub?: string;
+  scopes?: string[];
 }
 export type endPoint_t = { Bucket?: string; Key?: string }
 export type setBucket_t = { Bucket?: string; Private?: boolean }

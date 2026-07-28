@@ -203,6 +203,7 @@ Response:
 ```env
 PORT=3000
 SECRET=NuttaScholar
+SERVICE_AUTH_SECRET=<random-secret-at-least-32-characters>
 WEB_HOST=http://localhost:3030
 DB_URL=mongodb://root:example@localhost:27017/Account?authSource=admin
 MINIO_ENDPOINT=localhost

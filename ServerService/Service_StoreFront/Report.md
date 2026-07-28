@@ -578,6 +578,7 @@ endpoint นี้เป็น soft cancel ไม่ลบ document และท
 WEB_HOST=http://localhost:4030
 PORT=3005
 SECRET=NuttaScholar
+SERVICE_AUTH_SECRET=<random-secret-at-least-32-characters>
 MONGO_URI_ACCOUNT=mongodb://root:example@localhost:27017/Account?authSource=admin
 MONGO_URI_STOCK=mongodb://root:example@localhost:27017/Stock?authSource=admin
 MONGO_URI_STOREFRONT=mongodb://root:example@localhost:27017/StoreFront?authSource=admin

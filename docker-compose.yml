@@ -58,9 +58,10 @@ services:
 
   service_account:
     container_name: service_account
-    image: nuttascholar/smartbiz_account:2.3
+    image: nuttascholar/smartbiz_account:2.4
     environment:
       SECRET: ${SECRET}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3000
       DB_URL: mongodb://root:example@mongo:27017/Account?authSource=admin
@@ -96,9 +97,10 @@ services:
 
   service_stock:
     container_name: service_stock
-    image: nuttascholar/smartbiz_stock:1.3
+    image: nuttascholar/smartbiz_stock:1.4
     environment:
       SECRET: ${SECRET}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3003
       DB_URL: mongodb://root:example@mongo:27017/Stock?authSource=admin
@@ -121,9 +123,10 @@ services:
 
   service_bill:
     container_name: service_bill
-    image: nuttascholar/smartbiz_bill:1.2
+    image: nuttascholar/smartbiz_bill:1.3
     environment:
       SECRET: ${SECRET}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3004
       MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
@@ -141,9 +144,10 @@ services:
 
   service_storage:
     container_name: service_storage
-    image: nuttascholar/smartbiz_storage:1.1
+    image: nuttascholar/smartbiz_storage:1.2
     environment:
       SECRET: ${SECRET}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3002
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
@@ -161,9 +165,10 @@ services:
 
   service_storefront:
     container_name: service_storefront
-    image: nuttascholar/smartbiz_storefront:1.0
+    image: nuttascholar/smartbiz_storefront:1.1
     environment:
       SECRET: ${SECRET}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3005
       MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin

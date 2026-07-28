@@ -1,6 +1,10 @@
 import { Response } from "express";
 import StorageService from "../services/storage.service";
-import { AuthRequest } from "../middlewares/auth";
+import {
+  AuthRequest,
+  hasServiceScope,
+  isUserWithRole,
+} from "../middlewares/auth";
 import { errorCode_e, role_e } from "../utils/enum";
 
 export default class StorageController {
@@ -8,7 +12,7 @@ export default class StorageController {
 
   async presignedPut(req: AuthRequest, res: Response) {
     try {
-      if (!ensureAdmin(req, res)) return;
+      if (!ensureAdmin(req, res, "storage.object.write")) return;
       const { Bucket, Key } = req.query;
       const url = await this.service.presignedPut(Bucket as string | undefined, Key as string | undefined);
       return res.json({ success: true, data: { url } });
@@ -19,7 +23,7 @@ export default class StorageController {
 
   async presignedGet(req: AuthRequest, res: Response) {
     try {
-      if (!ensureAdmin(req, res)) return;
+      if (!ensureAdmin(req, res, "storage.object.read")) return;
       const { Bucket, Key } = req.query;
       const url = await this.service.presignedGet(Bucket as string | undefined, Key as string | undefined);
       return res.json({ success: true, data: { url } });
@@ -30,7 +34,7 @@ export default class StorageController {
 
   async createBucket(req: AuthRequest, res: Response) {
     try {
-      if (!ensureAdmin(req, res)) return;
+      if (!ensureAdmin(req, res, "storage.bucket.manage")) return;
       const { Bucket, Private } = req.body;
       await this.service.createBucket(Bucket, Private || false);
       return res.json({ success: true });
@@ -41,7 +45,7 @@ export default class StorageController {
 
   async updateBucket(req: AuthRequest, res: Response) {
     try {
-      if (!ensureAdmin(req, res)) return;
+      if (!ensureAdmin(req, res, "storage.bucket.manage")) return;
       const { Bucket, Private } = req.body;
       await this.service.updateBucket(Bucket, Private);
       return res.json({ success: true });
@@ -52,7 +56,7 @@ export default class StorageController {
 
   async deleteBucket(req: AuthRequest, res: Response) {
     try {
-      if (!ensureAdmin(req, res)) return;
+      if (!ensureAdmin(req, res, "storage.bucket.manage")) return;
       const { Bucket } = req.body;
       await this.service.deleteBucket(Bucket);
       return res.json({ success: true });
@@ -63,7 +67,7 @@ export default class StorageController {
 
   async uploadImage(req: AuthRequest, res: Response) {
     try {
-      if (!ensureAdmin(req, res)) return;
+      if (!ensureAdmin(req, res, "storage.object.write")) return;
       const { Bucket, Key, height, width } = req.body;
       if (!req.file?.buffer) {
         throw { code: errorCode_e.InvalidInputError };
@@ -84,7 +88,7 @@ export default class StorageController {
 
   async deleteImage(req: AuthRequest, res: Response) {
     try {
-      if (!ensureAdmin(req, res)) return;
+      if (!ensureAdmin(req, res, "storage.object.delete")) return;
       const { Bucket, Key } = req.query;
       await this.service.removeImage(Bucket as string | undefined, Key as string | undefined);
       return res.json({ success: true });
@@ -94,8 +98,15 @@ export default class StorageController {
   }
 }
 
-function ensureAdmin(req: AuthRequest, res: Response) {
-  if (req.authData?.role === role_e.admin) {
+function ensureAdmin(
+  req: AuthRequest,
+  res: Response,
+  serviceScope: string,
+) {
+  if (
+    isUserWithRole(req, [role_e.admin])
+    || hasServiceScope(req, serviceScope)
+  ) {
     return true;
   }
 

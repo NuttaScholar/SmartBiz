@@ -1,6 +1,10 @@
 import { Response } from "express";
 import { Model } from "mongoose";
-import { AuthRequest } from "../middlewares/auth";
+import {
+  AuthRequest,
+  hasServiceScope,
+  isUserWithRole,
+} from "../middlewares/auth";
 import { TransactionDocument } from "../models/transaction.interface";
 import { WalletDocument } from "../models/wallet.interface";
 import { TransitionForm_t } from "../type";
@@ -20,7 +24,7 @@ export default class TransactionController {
 
   async createTransaction(req: AuthRequest, res: Response) {
     try {
-      if (!requireAdmin(req, res)) return;
+      if (!requireAdmin(req, res, "account.transaction.create")) return;
 
       await this.service.createTransaction(req.body as TransitionForm_t, req.file);
       return res.json(success<"none">());
@@ -31,7 +35,7 @@ export default class TransactionController {
 
   async getTransactionDetail(req: AuthRequest, res: Response) {
     try {
-      if (!requireAdmin(req, res)) return;
+      if (!requireAdmin(req, res, "account.transaction.read")) return;
 
       const result = await this.service.getTransactionDetail(req.query.id as string);
       return res.json(success<"getTransDetail">(result));
@@ -42,7 +46,7 @@ export default class TransactionController {
 
   async searchTransactions(req: AuthRequest, res: Response) {
     try {
-      if (!requireAdmin(req, res)) return;
+      if (!requireAdmin(req, res, "account.transaction.read")) return;
 
       const { from, to, who, topic, type } = req.query;
       const result = await this.service.searchTransactions({
@@ -60,7 +64,7 @@ export default class TransactionController {
 
   async updateTransaction(req: AuthRequest, res: Response) {
     try {
-      if (!requireAdmin(req, res)) return;
+      if (!requireAdmin(req, res, "account.transaction.update")) return;
 
       await this.service.updateTransaction(
         req.query.id as string,
@@ -75,7 +79,7 @@ export default class TransactionController {
 
   async deleteTransaction(req: AuthRequest, res: Response) {
     try {
-      if (!requireAdmin(req, res)) return;
+      if (!requireAdmin(req, res, "account.transaction.delete")) return;
 
       await this.service.deleteTransaction(req.query.id as string);
       return res.json(success<"none">());
@@ -85,8 +89,11 @@ export default class TransactionController {
   }
 }
 
-function requireAdmin(req: AuthRequest, res: Response) {
-  if (req.authData?.role === role_e.admin) return true;
+function requireAdmin(req: AuthRequest, res: Response, scope: string) {
+  if (
+    isUserWithRole(req, [role_e.admin])
+    || hasServiceScope(req, scope)
+  ) return true;
 
   res.status(403).json(error<"none">(errorCode_e.PermissionDeniedError, "You do not have permission to access this resource"));
   return false;

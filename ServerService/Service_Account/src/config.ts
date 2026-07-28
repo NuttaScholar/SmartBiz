@@ -3,8 +3,28 @@ import type { Secret } from "jsonwebtoken";
 
 dotenv.config();
 
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+function readServiceAuthSecret(): Secret {
+  const value = requireEnv("SERVICE_AUTH_SECRET");
+  if (value.length < 32) {
+    throw new Error("SERVICE_AUTH_SECRET must be at least 32 characters");
+  }
+  if (value === process.env.SECRET) {
+    throw new Error("SERVICE_AUTH_SECRET must differ from SECRET");
+  }
+  return value as Secret;
+}
+
 export const PORT = Number(process.env.PORT || 3000);
 export const JWT_SECRET = process.env.SECRET as Secret;
+export const SERVICE_AUTH_SECRET = readServiceAuthSecret();
 export const WEB_HOST = process.env.WEB_HOST as string;
 
 export const BILL_BUCKET = "bill";

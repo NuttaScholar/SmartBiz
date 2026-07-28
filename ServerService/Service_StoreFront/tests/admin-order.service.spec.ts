@@ -3,7 +3,6 @@ import { orderStatus_e } from "../src/utils/enum";
 
 describe("AdminOrderService", () => {
   const fixedNow = new Date("2026-07-28T04:00:00.000Z");
-  const authorization = "Bearer admin-token";
   const paymentNotifiedOrder = {
     orderID: "SO-260728-ABCDEF01",
     customerID: "CUST-001",
@@ -64,7 +63,6 @@ describe("AdminOrderService", () => {
     const result = await service.confirmPayment(
       paymentNotifiedOrder.orderID,
       "admin",
-      authorization,
     );
 
     expect(billGateway.createOrder).toHaveBeenCalledWith(
@@ -74,7 +72,6 @@ describe("AdminOrderService", () => {
         items: paymentNotifiedOrder.items,
         totalAmount: 180,
       },
-      authorization,
     );
     expect(orderRepo.confirmPayment).toHaveBeenCalledWith(
       paymentNotifiedOrder.orderID,
@@ -99,7 +96,6 @@ describe("AdminOrderService", () => {
     await expectAsync(service.confirmPayment(
       paymentNotifiedOrder.orderID,
       "admin",
-      authorization,
     )).toBeRejectedWithError("Insufficient stock");
     expect(orderRepo.confirmPayment).not.toHaveBeenCalled();
   });
@@ -113,7 +109,6 @@ describe("AdminOrderService", () => {
     await expectAsync(service.confirmPayment(
       paymentNotifiedOrder.orderID,
       "admin",
-      authorization,
     )).toBeRejectedWithError(
       "Only an order with payment evidence can be confirmed",
     );
@@ -133,7 +128,6 @@ describe("AdminOrderService", () => {
     const result = await service.confirmPayment(
       paymentNotifiedOrder.orderID,
       "second-admin",
-      authorization,
     );
 
     expect(result.paymentConfirmedAt).toEqual(confirmedAt);

@@ -82,9 +82,12 @@ export type TransitionForm_t = {
 };
 export type errList_t = stockForm_t[];
 export type tokenPackage_t = {
-  username: string;
-  role: role_e;
-  type: "accessToken" | "refreshToken";
+  username?: string;
+  role?: role_e;
+  type: "accessToken" | "refreshToken" | "serviceToken";
+  service?: string;
+  sub?: string;
+  scopes?: string[];
 }
 export type responst_t<
   T extends

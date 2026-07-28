@@ -423,6 +423,7 @@ notes:
 ```env
 PORT=3004
 SECRET=NuttaScholar
+SERVICE_AUTH_SECRET=<random-secret-at-least-32-characters>
 MONGO_URI_ACCOUNT=mongodb://root:example@localhost:27017/Account?authSource=admin
 MONGO_URI_BILL=mongodb://root:example@localhost:27017/Bill?authSource=admin
 MONGO_URI_STOCK=mongodb://root:example@localhost:27017/Stock?authSource=admin

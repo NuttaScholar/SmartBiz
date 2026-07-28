@@ -3,11 +3,12 @@ import { SERVICE_ACCOUNT_URL } from "../config";
 import { errorCode_e, transactionType_e } from "../utils/enum";
 import { responst_t, stockForm_t, TransitionForm_t } from "../type";
 import ProductRepo from "../repositories/product.repo";
+import { createServiceToken } from "../utils/service-token";
 
 export default class TransactionService {
   constructor(private productRepo: ProductRepo) {}
 
-  async postStockIn(token: string, list: stockForm_t[], bill: string, who?: string): Promise<responst_t<"none">> {
+  async postStockIn(list: stockForm_t[], bill: string, who?: string): Promise<responst_t<"none">> {
     try {
       let amount = 0;
       let description = "";
@@ -32,8 +33,12 @@ export default class TransactionService {
         readonly: true,
       };
 
+      const serviceToken = createServiceToken(
+        "service_account",
+        ["account.transaction.create"],
+      );
       const response = await axios.post(`${SERVICE_ACCOUNT_URL}/transaction`, data, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${serviceToken}` },
       });
 
       return response.data;

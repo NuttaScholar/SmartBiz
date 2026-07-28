@@ -9,6 +9,7 @@ import { logInfo_t, logRes_t, productInfo_t, productRes_t, stockForm_t, stockOut
 import { errorCode_e, productType_e, stockLogType_e, stockStatus_e } from "../utils/enum";
 import StorageService from "./storage.service";
 import TransactionService from "./transaction.service";
+import { createServiceToken } from "../utils/service-token";
 
 type ProductUsageResponse = {
   success: boolean;
@@ -80,12 +81,12 @@ export default class StockService {
     return { products, status: stockStatus };
   }
 
-  async deleteProduct(id?: string, token?: string) {
+  async deleteProduct(id?: string) {
     if (!id) {
       throw { code: errorCode_e.InvalidInputError, message: "id is required" };
     }
 
-    await this.ensureProductIsNotUsedInOrders(id, token);
+    await this.ensureProductIsNotUsedInOrders(id);
 
     const product = await this.productRepo.findById(id);
     if (product?.img) {
@@ -95,7 +96,7 @@ export default class StockService {
     await this.productRepo.deleteById(id);
   }
 
-  async stockIn(token: string, productsText?: string, who?: string, file?: Express.Multer.File) {
+  async stockIn(productsText?: string, who?: string, file?: Express.Multer.File) {
     if (!file || !productsText) {
       throw { code: errorCode_e.InvalidInputError, message: "products and bill image are required" };
     }
@@ -108,7 +109,7 @@ export default class StockService {
       .padStart(2, "0")}`;
     const uploadedBill = await this.storageService.uploadImage(file.buffer, BILL_BUCKET, imgKey);
 
-    const transactionRes = await this.transactionService.postStockIn(token, products, uploadedBill.url, who);
+    const transactionRes = await this.transactionService.postStockIn(products, uploadedBill.url, who);
     if (!transactionRes.success) {
       throw { code: transactionRes.errCode || errorCode_e.UnknownError, message: "Create transaction failed" };
     }
@@ -239,17 +240,17 @@ export default class StockService {
     return [...new Set(parsedTypes)] as productType_e[];
   }
 
-  private async ensureProductIsNotUsedInOrders(productID: string, token?: string) {
-    if (!token) {
-      throw { code: errorCode_e.UnauthorizedError, message: "Authorization token is required" };
-    }
-
+  private async ensureProductIsNotUsedInOrders(productID: string) {
     try {
+      const serviceToken = createServiceToken(
+        "service_bill",
+        ["bill.product-usage.read"],
+      );
       const response = await axios.get<ProductUsageResponse>(
         `${SERVICE_BILL_URL.replace(/\/$/, "")}/bill/product/${encodeURIComponent(productID)}/usage`,
         {
           headers: {
-            Authorization: token,
+            Authorization: `Bearer ${serviceToken}`,
           },
         },
       );

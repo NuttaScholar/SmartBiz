@@ -1,6 +1,5 @@
 import BillRepo from "../repositories/bill.repo";
 import axios from "axios";
-import { SERVICE_ACCOUNT_URL } from "../config";
 import { errorCode_e, OrderStatus, productType_e, stockStatus_e, transactionType_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { OrderDocument, OrderItem } from "../models/order.interface";
@@ -9,6 +8,11 @@ import { ContactDocument } from "../models/contact.interface";
 import { orderInfo_t, orderItemInfo_t, orderStatusCount_t, productInfo_t } from "../type";
 import ProductRepo from "../repositories/product.repo";
 import { ProductDocument } from "../models/product.interface";
+
+type ServiceTokenFactory = (
+  audience: string,
+  scopes: string[],
+) => string;
 
 type OrderUpdateInput = Partial<Pick<OrderDocument, "customerID" | "items" | "totalAmount">>;
 type StockChange = {
@@ -37,7 +41,11 @@ export default class BillService {
   constructor(
     OrderModel: Model<OrderDocument>,
     ContactModel: Model<ContactDocument>,
-    ProductModel: Model<ProductDocument>
+    ProductModel: Model<ProductDocument>,
+    private readonly serviceTokenFactory: ServiceTokenFactory = () => {
+      throw new Error("Service token factory is not configured");
+    },
+    private readonly serviceAccountUrl = "http://localhost:3000",
   ) {
     this.repo = new BillRepo(OrderModel);
     this.contactRepo = new ContactRepo(ContactModel);
@@ -181,7 +189,7 @@ export default class BillService {
    * เลื่อนไปยังสถานะถัดไปตาม WORKFLOW
    * ถ้า status ปัจจุบันไม่อยู่ใน workflow หรืออยู่ขั้นสุดท้ายแล้ว → โยน error
    */
-  async moveToNextStep(orderID: string, authorization?: string) {
+  async moveToNextStep(orderID: string) {
     const order = await this.repo.getOrder(orderID);
     if (!order) {
       throw { code: errorCode_e.NotFoundError, message: "Order not found" };
@@ -219,7 +227,7 @@ export default class BillService {
 
     const nextStatus = WORKFLOW[currentIndex + 1];
     if (nextStatus === OrderStatus.Completed) {
-      return this.completeOrderWithIncome(order, authorization);
+      return this.completeOrderWithIncome(order);
     }
 
     return this.repo.updateStatus(orderID, nextStatus);
@@ -228,7 +236,7 @@ export default class BillService {
    * เลือกเส้นทาง “จัดการบิล → รายรับ”
    * แนะนำให้อนุญาตเฉพาะเมื่ออยู่ในสถานะ Billing
    */
-  async markAsIncome(orderID: string, authorization?: string) {
+  async markAsIncome(orderID: string) {
     const order = await this.repo.getOrder(orderID);
     if (!order) {
       throw { code: errorCode_e.NotFoundError, message: "Order not found" };
@@ -242,7 +250,7 @@ export default class BillService {
       };
     }
 
-    return this.completeOrderWithIncome(order, authorization);
+    return this.completeOrderWithIncome(order);
   }
   /**
    * เลือกเส้นทาง “จัดการบิล → ลูกหนี้”
@@ -276,7 +284,7 @@ export default class BillService {
     return order.status;
   }
 
-  private async completeOrderWithIncome(order: OrderDocument, authorization?: string) {
+  private async completeOrderWithIncome(order: OrderDocument) {
     const previousStatus = order.status;
     const completedOrder = await this.repo.updateStatus(order.orderID, OrderStatus.Completed);
     if (!completedOrder) {
@@ -287,7 +295,7 @@ export default class BillService {
     }
 
     try {
-      await this.createIncomeTransaction(completedOrder, authorization);
+      await this.createIncomeTransaction(completedOrder);
       return completedOrder;
     } catch (error) {
       await this.repo.updateStatus(order.orderID, previousStatus);
@@ -295,22 +303,19 @@ export default class BillService {
     }
   }
 
-  private async createIncomeTransaction(order: OrderDocument, authorization?: string) {
+  private async createIncomeTransaction(order: OrderDocument) {
     const merchandiseTotal = await this.getMerchandiseTotal(order.items);
     if (!merchandiseTotal.hasMerchandise) {
       return;
     }
 
-    if (!authorization) {
-      throw {
-        code: errorCode_e.UnauthorizedError,
-        message: "Authorization header missing"
-      };
-    }
-
     try {
+      const serviceToken = this.serviceTokenFactory(
+        "service_account",
+        ["account.transaction.create"],
+      );
       const response = await axios.post<AccountApiResponse>(
-        `${SERVICE_ACCOUNT_URL.replace(/\/$/, "")}/transaction`,
+        `${this.serviceAccountUrl.replace(/\/$/, "")}/transaction`,
         {
           date: new Date().toISOString(),
           topic: `ยอดขาย`,
@@ -323,7 +328,7 @@ export default class BillService {
         },
         {
           headers: {
-            Authorization: authorization,
+            Authorization: `Bearer ${serviceToken}`,
             "Content-Type": "application/json"
           }
         }

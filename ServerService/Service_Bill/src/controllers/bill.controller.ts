@@ -5,7 +5,13 @@ import { Model } from "mongoose";
 import { OrderDocument } from "../models/order.interface";
 import { ContactDocument } from "../models/contact.interface";
 import { ProductDocument } from "../models/product.interface";
-import { AuthRequest } from "../middlewares/auth";
+import {
+  AuthRequest,
+  hasServiceScope,
+  isUserWithRole,
+} from "../middlewares/auth";
+import { SERVICE_ACCOUNT_URL } from "../config";
+import { createServiceToken } from "../utils/service-token";
 
 export default class BillController {
   private service: BillService;
@@ -15,12 +21,18 @@ export default class BillController {
     ContactModel: Model<ContactDocument>,
     ProductModel: Model<ProductDocument>
   ) {
-    this.service = new BillService(OrderModel, ContactModel, ProductModel);
+    this.service = new BillService(
+      OrderModel,
+      ContactModel,
+      ProductModel,
+      createServiceToken,
+      SERVICE_ACCOUNT_URL,
+    );
   }
 
   async searchOrders(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.order.read")) return;
       const { customerID, orderID, status } = req.query;
       const data = await this.service.searchOrders(
         customerID as string,
@@ -35,7 +47,7 @@ export default class BillController {
 
   async countOrdersByStatus(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.order.read")) return;
       const { customerID, orderID } = req.query;
       const data = await this.service.countOrdersByStatus(
         customerID as string,
@@ -49,7 +61,7 @@ export default class BillController {
 
   async getProductUsage(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.product-usage.read")) return;
       const { productID } = req.params;
       const data = await this.service.getProductUsage(productID);
       return res.json({ success: true, data });
@@ -60,7 +72,7 @@ export default class BillController {
 
   async getOrdersByStatus(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.order.read")) return;
       const status = Number(req.params.status);
       const data = await this.service.getOrdersByStatus(status);
       return res.json({ success: true, data });
@@ -71,7 +83,7 @@ export default class BillController {
 
   async createOrder(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.order.create")) return;
       const data = await this.service.createOrder(req.body);
       return res.json({ success: true, data });
     } catch (err: any) {
@@ -81,7 +93,7 @@ export default class BillController {
 
   async updateOrder(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.order.update")) return;
       const { orderID } = req.params;
       const data = await this.service.updateOrder(orderID, req.body);
       return res.json({ success: true, data });
@@ -92,7 +104,7 @@ export default class BillController {
 
   async deleteOrder(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.order.delete")) return;
       const { orderID } = req.params;
       const data = await this.service.deleteOrder(orderID);
       return res.json({ success: true, data });
@@ -103,9 +115,9 @@ export default class BillController {
 
   async moveToNextStep(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.order.advance")) return;
       const { orderID } = req.params;
-      const data = await this.service.moveToNextStep(orderID, req.headers.authorization);
+      const data = await this.service.moveToNextStep(orderID);
       return res.json({ success: true, data });
     } catch (err: any) {
       return handleError(res, err);
@@ -114,9 +126,9 @@ export default class BillController {
 
   async markAsIncome(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.order.advance")) return;
       const { orderID } = req.params;
-      const data = await this.service.markAsIncome(orderID, req.headers.authorization);
+      const data = await this.service.markAsIncome(orderID);
       return res.json({ success: true, data });
     } catch (err: any) {
       return handleError(res, err);
@@ -125,7 +137,7 @@ export default class BillController {
 
   async markAsDebt(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.order.advance")) return;
       const { orderID } = req.params;
       const data = await this.service.markAsDebt(orderID);
       return res.json({ success: true, data });
@@ -136,7 +148,7 @@ export default class BillController {
 
   async getStatus(req: AuthRequest, res: Response) {
     try {
-      if (!ensureBillUser(req, res)) return;
+      if (!ensureBillUser(req, res, "bill.order.status.read")) return;
       const { orderID } = req.params;
       const data = await this.service.getStatus(orderID);
       return res.json({ success: true, data });
@@ -146,10 +158,14 @@ export default class BillController {
   }
 }
 
-function ensureBillUser(req: AuthRequest, res: Response) {
+function ensureBillUser(
+  req: AuthRequest,
+  res: Response,
+  serviceScope: string,
+) {
   if (
-    req.authData?.role === role_e.admin ||
-    req.authData?.role === role_e.cashier
+    isUserWithRole(req, [role_e.admin, role_e.cashier])
+    || hasServiceScope(req, serviceScope)
   ) {
     return true;
   }
