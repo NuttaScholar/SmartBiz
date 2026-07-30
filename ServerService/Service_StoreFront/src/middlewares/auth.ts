@@ -4,6 +4,7 @@ import type { JwtPayload } from "jsonwebtoken";
 import { JWT_SECRET, SERVICE_AUTH_SECRET } from "../config";
 import type { tokenPackage_t } from "../type";
 import { errorCode_e, role_e } from "../utils/enum";
+import { logRequestFailure } from "./error-handler";
 
 export interface AuthRequest extends Request {
   authData?: tokenPackage_t;
@@ -89,6 +90,13 @@ export function authMiddleware(
 ): void {
   const [scheme, token] = request.headers.authorization?.split(" ") ?? [];
   if (scheme !== "Bearer" || !token) {
+    logRequestFailure(
+      "warn",
+      request,
+      response,
+      401,
+      "Valid Bearer authorization is required",
+    );
     response.status(401).json({
       success: false,
       errCode: errorCode_e.UnauthorizedError,
@@ -99,6 +107,13 @@ export function authMiddleware(
 
   const decoded = decodeToken(token);
   if (!decoded) {
+    logRequestFailure(
+      "warn",
+      request,
+      response,
+      401,
+      "Token expired or invalid",
+    );
     response.status(401).json({
       success: false,
       errCode: errorCode_e.TokenExpiredError,
@@ -121,6 +136,13 @@ export function adminMiddleware(
     return;
   }
 
+  logRequestFailure(
+    "warn",
+    request,
+    response,
+    403,
+    "You do not have permission to access this resource",
+  );
   response.status(403).json({
     success: false,
     errCode: errorCode_e.PermissionDeniedError,
@@ -142,6 +164,13 @@ export function adminOrServiceScope(scope: string) {
       return;
     }
 
+    logRequestFailure(
+      "warn",
+      request,
+      response,
+      403,
+      "You do not have permission to access this resource",
+    );
     response.status(403).json({
       success: false,
       errCode: errorCode_e.PermissionDeniedError,

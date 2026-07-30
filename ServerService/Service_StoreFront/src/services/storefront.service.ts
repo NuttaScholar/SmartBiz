@@ -1,5 +1,6 @@
 import type { StorefrontAccessDocument } from "../models/storefront-access.interface";
 import type { ProductDocument } from "../models/product.interface";
+import DiscountRepo from "../repositories/discount.repo";
 import ProductRepo from "../repositories/product.repo";
 import StorefrontAccessRepo from "../repositories/storefront-access.repo";
 import StorefrontOrderRepo from "../repositories/storefront-order.repo";
@@ -7,6 +8,7 @@ import type {
   ConfirmationEvidence,
   CreateOrderItem,
   CustomerSession,
+  DiscountItem,
   StorefrontOrder,
   StorefrontOrderItem,
   StorefrontProduct,
@@ -45,6 +47,7 @@ export default class StorefrontService {
   constructor(
     private readonly accessRepo: StorefrontAccessRepo,
     private readonly productRepo: ProductRepo,
+    private readonly discountRepo: DiscountRepo,
     private readonly orderRepo: StorefrontOrderRepo,
     private readonly evidenceStorage: EvidenceStorage,
     private readonly now: () => Date = () => new Date(),
@@ -64,8 +67,13 @@ export default class StorefrontService {
     query?: string,
   ): Promise<StorefrontProduct[]> {
     const access = await this.authenticate(token);
-    const products = await this.productRepo.listStorefrontProducts(query);
-    return products.map((product) => this.mapProduct(product, access));
+    const [products, customerDiscount] = await Promise.all([
+      this.productRepo.listStorefrontProducts(query),
+      this.discountRepo.findByCustomerID(access.customerID),
+    ]);
+    const discounts = customerDiscount?.discounts ?? [];
+
+    return products.map((product) => this.mapProduct(product, discounts));
   }
 
   async getOrders(token: string): Promise<StorefrontOrder[]> {
@@ -93,7 +101,11 @@ export default class StorefrontService {
     const access = await this.authenticate(token);
     const items = this.parseCreateItems(input);
     const productIDs = items.map((item) => item.productID);
-    const products = await this.productRepo.findByIds(productIDs);
+    const [products, customerDiscount] = await Promise.all([
+      this.productRepo.findByIds(productIDs),
+      this.discountRepo.findByCustomerID(access.customerID),
+    ]);
+    const discounts = customerDiscount?.discounts ?? [];
     const productByID = new Map(
       products.map((product) => [product.id, product]),
     );
@@ -115,7 +127,7 @@ export default class StorefrontService {
         );
       }
 
-      const storefrontProduct = this.mapProduct(product, access);
+      const storefrontProduct = this.mapProduct(product, discounts);
       return {
         productID: storefrontProduct.id,
         name: storefrontProduct.name,
@@ -237,10 +249,10 @@ export default class StorefrontService {
 
   private mapProduct(
     product: ProductDocument,
-    access: StorefrontAccessDocument,
+    discounts: DiscountItem[],
   ): StorefrontProduct {
     const price = this.roundMoney(Number(product.price ?? 0));
-    const percentDiscount = access.productDiscounts.find(
+    const percentDiscount = discounts.find(
       (discount) => discount.productID === product.id,
     )?.discountPercent ?? 0;
 

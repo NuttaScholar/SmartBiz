@@ -2,21 +2,19 @@ import SaveIcon from "@mui/icons-material/Save";
 import { Box, IconButton } from "@mui/material";
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  getCustomerDiscounts,
-  getStorefrontErrorMessage,
-  StorefrontApiError,
-  updateCustomerDiscounts,
-} from "../../../API/StorefrontService/Storefront";
-import type { StorefrontProductDiscount } from "../../../API/StorefrontService/Storefront";
+import type { discountItem_t } from "../../../API/BillService/type";
 import type { productInfo_t } from "../../../API/StockService/type";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import AddProductForm from "../../../component/Organisms/AddProductForm";
 import type { FormAddProduce_t } from "../../../component/Organisms/AddProductForm";
 import FieldContactAccess from "../../../component/Organisms/FieldContactAccess";
-import { productType_e, stockStatus_e } from "../../../enum";
+import { errorCode_e, productType_e, stockStatus_e } from "../../../enum";
+import { ErrorString } from "../../../function/Enum";
 import { useAuth } from "../../../hooks/useAuth";
-import { redirectToLogin } from "../../../lib/authRedirect";
+import {
+  redirectToLoginOnAuthError,
+  redirectToLoginOnThrownAuthError,
+} from "../../../lib/authRedirect";
 import DialogBillEdit from "../../Bill/component/DialogBillEdit";
 import MerchList from "../../Bill/component/MerchList";
 import {
@@ -25,8 +23,8 @@ import {
   billDialog_e,
 } from "../../Bill/context/BillContext";
 import type { billState_t } from "../../Bill/context/BillContext";
+import billWithRetry_f from "../../Bill/lib/billWithRetry";
 import stockWithRetry_f from "../../Stock/lib/stockWithRetry";
-import { storefrontAdminWithRetry } from "../lib/storefrontAdminWithRetry";
 
 export default function Page_CustomerDiscount() {
   const { customerID = "" } = useParams<{ customerID: string }>();
@@ -43,22 +41,8 @@ export default function Page_CustomerDiscount() {
     React.useState<productInfo_t[]>([]);
   const [isSaving, setIsSaving] = React.useState(false);
 
-  const handleError = React.useCallback(
-    (error: unknown, fallback: string) => {
-      if (
-        error instanceof StorefrontApiError
-        && error.status === 401
-      ) {
-        redirectToLogin(navigate);
-        return;
-      }
-      alert(getStorefrontErrorMessage(error) || fallback);
-    },
-    [navigate],
-  );
-
   const toDiscountProduct = React.useCallback(
-    (discount: StorefrontProductDiscount): productInfo_t => {
+    (discount: discountItem_t): productInfo_t => {
       const product = productOptions.find(
         (item) => item.id === discount.productID,
       );
@@ -88,7 +72,7 @@ export default function Page_CustomerDiscount() {
     let active = true;
     stockWithRetry_f
       .getStock(authContext, {
-        productType: [productType_e.merchandise],
+        productType: [productType_e.merchandise, productType_e.another],
       })
       .then((response) => {
         if (!active) return;
@@ -99,34 +83,55 @@ export default function Page_CustomerDiscount() {
         }
       })
       .catch((error: unknown) => {
-        if (active) handleError(error, "ไม่สามารถโหลดสินค้าได้");
+        if (!active) return;
+        if (redirectToLoginOnThrownAuthError(navigate, error)) return;
+
+        console.error("getStockError", error);
+        alert("ไม่สามารถโหลดสินค้าได้");
       });
 
     return () => {
       active = false;
     };
-  }, [authContext, customerID, handleError, navigate]);
+  }, [authContext, customerID, navigate]);
 
   React.useEffect(() => {
     if (!customerID) return;
 
     let active = true;
-    storefrontAdminWithRetry(authContext, (accessToken) =>
-      getCustomerDiscounts(accessToken, customerID),
-    )
-      .then((settings) => {
+    billWithRetry_f
+      .getDiscounts(authContext, customerID)
+      .then((response) => {
         if (!active) return;
-        setState((current) => ({
-          ...current,
-          billForm: {
-            ...current.billForm,
-            customer: customerID,
-          },
-          merchList: settings.discounts.map(toDiscountProduct),
-        }));
+
+        if (response.success && response.data) {
+          setState((current) => ({
+            ...current,
+            billForm: {
+              ...current.billForm,
+              customer: customerID,
+            },
+            merchList: response.data?.discounts.map(toDiscountProduct) ?? [],
+          }));
+        } else if (response.errCode === errorCode_e.NotFoundError) {
+          setState((current) => ({
+            ...current,
+            merchList: [],
+          }));
+        } else {
+          if (redirectToLoginOnAuthError(navigate, response.errCode)) return;
+
+          alert(
+            `Error: ${ErrorString(response.errCode || errorCode_e.UnknownError)}`,
+          );
+        }
       })
       .catch((error: unknown) => {
-        if (active) handleError(error, "ไม่สามารถโหลดส่วนลดได้");
+        if (!active) return;
+        if (redirectToLoginOnThrownAuthError(navigate, error)) return;
+
+        console.error("getDiscountsError", error);
+        alert("Error: ไม่สามารถโหลดส่วนลดได้");
       });
 
     return () => {
@@ -135,13 +140,13 @@ export default function Page_CustomerDiscount() {
   }, [
     authContext,
     customerID,
-    handleError,
     productOptions.length,
+    navigate,
     toDiscountProduct,
   ]);
 
   async function saveDiscounts() {
-    const discounts: StorefrontProductDiscount[] =
+    const discounts: discountItem_t[] =
       (state.merchList ?? []).map((item) => ({
         productID: item.id,
         discountPercent: Number(item.percentDiscount ?? 0),
@@ -162,16 +167,25 @@ export default function Page_CustomerDiscount() {
 
     setIsSaving(true);
     try {
-      await storefrontAdminWithRetry(authContext, (accessToken) =>
-        updateCustomerDiscounts(
-          accessToken,
-          customerID,
-          discounts,
-        ),
-      );
-      alert("บันทึกส่วนลดสำเร็จ");
+      const response = await billWithRetry_f.putDiscounts(authContext, {
+        customerID,
+        discounts,
+      });
+
+      if (response.success) {
+        alert("บันทึกส่วนลดสำเร็จ");
+      } else {
+        if (redirectToLoginOnAuthError(navigate, response.errCode)) return;
+
+        alert(
+          `Error: ${ErrorString(response.errCode || errorCode_e.UnknownError)}`,
+        );
+      }
     } catch (error) {
-      handleError(error, "ไม่สามารถบันทึกส่วนลดได้");
+      if (redirectToLoginOnThrownAuthError(navigate, error)) return;
+
+      console.error("putDiscountsError", error);
+      alert("Error: ไม่สามารถบันทึกส่วนลดได้");
     } finally {
       setIsSaving(false);
     }

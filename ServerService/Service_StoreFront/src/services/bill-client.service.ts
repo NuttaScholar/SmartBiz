@@ -136,9 +136,14 @@ export default class BillClientService implements BillGateway {
     });
   }
 
-  private toAppError(thrown: unknown): AppError {
+  private toAppError(
+    thrown: unknown,
+    action = "create order",
+  ): AppError {
     if (!(thrown instanceof AxiosError)) {
-      return new AppError("Unable to create order in Bill Service", 502);
+      return thrown instanceof AppError
+        ? thrown
+        : new AppError(`Unable to ${action} in Bill Service`, 502);
     }
     if (thrown.code === "ECONNABORTED") {
       return new AppError("Bill Service request timed out", 504);
@@ -161,8 +166,8 @@ export default class BillClientService implements BillGateway {
 
     return new AppError(
       downstreamMessage
-        ? `Bill Service rejected order: ${downstreamMessage}`
-        : "Unable to create order in Bill Service",
+        ? `Bill Service rejected ${action}: ${downstreamMessage}`
+        : `Unable to ${action} in Bill Service`,
       status,
     );
   }

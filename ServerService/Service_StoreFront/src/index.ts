@@ -14,8 +14,11 @@ import {
   errorHandler,
   notFoundHandler,
 } from "./middlewares/error-handler";
+import requestContext from "./middlewares/request-context";
 import type { ContactDocument } from "./models/contact.interface";
 import { ContactSchema } from "./models/contact.model";
+import type { DiscountDocument } from "./models/discount.interface";
+import { DiscountSchema } from "./models/discount.model";
 import type { ProductDocument } from "./models/product.interface";
 import { ProductSchema } from "./models/product.model";
 import type { StorefrontAccessDocument } from "./models/storefront-access.interface";
@@ -24,6 +27,7 @@ import type { StorefrontOrderDocument } from "./models/storefront-order.interfac
 import { StorefrontOrderSchema } from "./models/storefront-order.model";
 import ProductRepo from "./repositories/product.repo";
 import ContactRepo from "./repositories/contact.repo";
+import DiscountRepo from "./repositories/discount.repo";
 import StorefrontAccessRepo from "./repositories/storefront-access.repo";
 import StorefrontOrderRepo from "./repositories/storefront-order.repo";
 import healthRoutes from "./routes/health.routes";
@@ -48,8 +52,10 @@ async function startServer(): Promise<void> {
     cors({
       origin: WEB_HOST,
       credentials: true,
+      exposedHeaders: ["X-Request-ID"],
     }),
   );
+  app.use(requestContext);
   app.use(express.json({ limit: "3mb" }));
 
   const contactModel = getDB("Account").model<ContactDocument>(
@@ -59,6 +65,11 @@ async function startServer(): Promise<void> {
   const productModel = getDB("Stock").model<ProductDocument>(
     "product",
     ProductSchema,
+  );
+  const discountModel = getDB("Bill").model<DiscountDocument>(
+    "Discount",
+    DiscountSchema,
+    "discounts",
   );
   const accessModel = getDB("StoreFront").model<StorefrontAccessDocument>(
     "StorefrontAccess",
@@ -72,10 +83,13 @@ async function startServer(): Promise<void> {
   const healthController = new HealthController(
     new HealthService(databases),
   );
+  const discountRepo = new DiscountRepo(discountModel);
+  const billClient = new BillClientService();
   const storefrontController = new StorefrontController(
     new StorefrontService(
       new StorefrontAccessRepo(accessModel),
       new ProductRepo(productModel),
+      discountRepo,
       new StorefrontOrderRepo(orderModel),
       evidenceStorage,
     ),
@@ -84,12 +98,13 @@ async function startServer(): Promise<void> {
     new CustomerLinkService(
       new ContactRepo(contactModel),
       new StorefrontAccessRepo(accessModel),
+      discountRepo,
     ),
   );
   const adminOrderController = new AdminOrderController(
     new AdminOrderService(
       new StorefrontOrderRepo(orderModel),
-      new BillClientService(),
+      billClient,
     ),
   );
   app.use("/health", healthRoutes(healthController));

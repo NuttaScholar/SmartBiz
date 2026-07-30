@@ -98,20 +98,14 @@ export interface CustomerLink {
   path: string;
 }
 
+export interface DiscountItem {
+  productID: string;
+  discountPercent: number;
+}
+
 export interface CustomerLinkSummary {
   customerID: string;
   customerName: string;
   isActive: boolean;
-  productDiscounts: Array<{
-    productID: string;
-    discountPercent: number;
-  }>;
-}
-
-export interface CustomerDiscountSettings {
-  customerID: string;
-  discounts: Array<{
-    productID: string;
-    discountPercent: number;
-  }>;
+  productDiscounts: DiscountItem[];
 }

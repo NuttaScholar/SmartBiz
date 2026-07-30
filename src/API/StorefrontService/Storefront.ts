@@ -34,11 +34,6 @@ export type CustomerLinkSummary = {
   productDiscounts: StorefrontProductDiscount[];
 };
 
-export type CustomerDiscountSettings = {
-  customerID: string;
-  discounts: StorefrontProductDiscount[];
-};
-
 export class StorefrontApiError extends Error {
   constructor(
     message: string,
@@ -224,32 +219,6 @@ export function rotateCustomerToken(
     axios_storefront.patch(
       `/storefront/admin/customer-links/${pathSegment(customerID)}/token`,
       undefined,
-      adminAuth(accessToken),
-    ),
-  );
-}
-
-export function getCustomerDiscounts(
-  accessToken: string,
-  customerID: string,
-): Promise<CustomerDiscountSettings> {
-  return request(() =>
-    axios_storefront.get(
-      `/storefront/admin/customer-links/${pathSegment(customerID)}/discounts`,
-      adminAuth(accessToken),
-    ),
-  );
-}
-
-export function updateCustomerDiscounts(
-  accessToken: string,
-  customerID: string,
-  discounts: StorefrontProductDiscount[],
-): Promise<CustomerDiscountSettings> {
-  return request(() =>
-    axios_storefront.put(
-      `/storefront/admin/customer-links/${pathSegment(customerID)}/discounts`,
-      { discounts },
       adminAuth(accessToken),
     ),
   );

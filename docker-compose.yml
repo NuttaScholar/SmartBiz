@@ -172,6 +172,7 @@ services:
       WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
       PORT: 3005
       MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
+      MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin
       MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin
       MONGO_URI_STOREFRONT: mongodb://root:example@mongo:27017/StoreFront?authSource=admin
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}

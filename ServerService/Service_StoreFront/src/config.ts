@@ -37,6 +37,7 @@ export const JWT_SECRET = requireEnv("SECRET") as Secret;
 export const SERVICE_AUTH_SECRET = readServiceAuthSecret();
 export const WEB_HOST = requireEnv("WEB_HOST");
 export const MONGO_URI_ACCOUNT = requireEnv("MONGO_URI_ACCOUNT");
+export const MONGO_URI_BILL = requireEnv("MONGO_URI_BILL");
 export const MONGO_URI_STOCK = requireEnv("MONGO_URI_STOCK");
 export const MONGO_URI_STOREFRONT = requireEnv("MONGO_URI_STOREFRONT");
 export const SERVICE_BILL_URL =

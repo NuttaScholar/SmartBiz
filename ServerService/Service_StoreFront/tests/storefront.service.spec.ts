@@ -9,9 +9,6 @@ describe("StorefrontService", () => {
     const access = {
       customerID: "CUST-001",
       customerName: "Customer One",
-      productDiscounts: [
-        { productID: "P-001", discountPercent: 10 },
-      ],
     };
     const product = {
       id: "P-001",
@@ -35,6 +32,16 @@ describe("StorefrontService", () => {
       findByIds: jasmine
         .createSpy("findByIds")
         .and.resolveTo([product]),
+    };
+    const discountRepo = {
+      findByCustomerID: jasmine
+        .createSpy("findByCustomerID")
+        .and.resolveTo({
+          customerID: "CUST-001",
+          discounts: [
+            { productID: "P-001", discountPercent: 10 },
+          ],
+        }),
     };
     const orderRepo = {
       create: jasmine.createSpy("create").and.callFake((data) =>
@@ -62,6 +69,7 @@ describe("StorefrontService", () => {
     const service = new StorefrontService(
       accessRepo as any,
       productRepo as any,
+      discountRepo as any,
       orderRepo as any,
       evidenceStorage,
       () => fixedNow,
@@ -71,6 +79,7 @@ describe("StorefrontService", () => {
       service,
       accessRepo,
       productRepo,
+      discountRepo,
       orderRepo,
       evidenceStorage,
     };
@@ -97,10 +106,12 @@ describe("StorefrontService", () => {
   });
 
   it("maps customer discounts into storefront products", async () => {
-    const { service } = createService();
+    const { service, discountRepo } = createService();
 
     const products = await service.getProducts(token);
 
+    expect(discountRepo.findByCustomerID)
+      .toHaveBeenCalledWith("CUST-001");
     expect(products[0]).toEqual({
       id: "P-001",
       name: "Product One",
@@ -115,7 +126,7 @@ describe("StorefrontService", () => {
   });
 
   it("creates an order using server-side product prices", async () => {
-    const { service, orderRepo } = createService();
+    const { service, discountRepo, orderRepo } = createService();
 
     const created = await service.createOrder(token, {
       items: [{ productID: "P-001", quantity: 2 }],
@@ -137,6 +148,8 @@ describe("StorefrontService", () => {
         }),
       ],
     }));
+    expect(discountRepo.findByCustomerID)
+      .toHaveBeenCalledWith("CUST-001");
     expect(created.totalAmount).toBe(180);
   });
 

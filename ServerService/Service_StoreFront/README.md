@@ -29,4 +29,15 @@ service and its database connections.
 - `repositories` - data access
 - `routes` - route declarations
 - `services` - business logic
+
+## Logging
+
+- Responses include `X-Request-ID`; a valid incoming request ID is preserved.
+- Expected `400` and `404` responses are not logged as server errors.
+- Authentication/authorization failures (`401`, `403`) and conflicts (`409`)
+  are logged as structured warnings without stack traces.
+- Unexpected failures and `5xx` responses are logged as structured errors with
+  stack traces.
+- Logs include method, path, status, request ID, and authenticated principal,
+  but never include access tokens or customer tokens.
 - `utils` - shared helpers

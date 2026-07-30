@@ -8,6 +8,7 @@ function createConnections(
   const connection = { readyState } as Connection;
   return new Map<DatabaseName, Connection>([
     ["Account", connection],
+    ["Bill", connection],
     ["Stock", connection],
     ["StoreFront", connection],
   ]);
@@ -24,6 +25,7 @@ describe("HealthService", () => {
     expect(snapshot.uptimeSeconds).toBe(12);
     expect(snapshot.databases).toEqual({
       Account: true,
+      Bill: true,
       Stock: true,
       StoreFront: true,
     });

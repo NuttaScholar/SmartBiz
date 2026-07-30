@@ -1,7 +1,7 @@
 import ContactRepo from "../repositories/contact.repo";
+import DiscountRepo from "../repositories/discount.repo";
 import StorefrontAccessRepo from "../repositories/storefront-access.repo";
 import type {
-  CustomerDiscountSettings,
   CustomerLink,
   CustomerLinkSummary,
 } from "../type";
@@ -12,6 +12,7 @@ export default class CustomerLinkService {
   constructor(
     private readonly contactRepo: ContactRepo,
     private readonly accessRepo: StorefrontAccessRepo,
+    private readonly discountRepo: DiscountRepo,
     private readonly createToken: () => string = generateCustomerToken,
   ) {}
 
@@ -45,14 +46,21 @@ export default class CustomerLinkService {
 
   async listCustomerLinks(): Promise<CustomerLinkSummary[]> {
     const accesses = await this.accessRepo.listCustomerLinks();
+    const customerDiscounts = await this.discountRepo.findByCustomerIDs(
+      accesses.map((access) => access.customerID),
+    );
+    const discountsByCustomerID = new Map(
+      customerDiscounts.map((discount) => [
+        discount.customerID,
+        discount.discounts,
+      ]),
+    );
+
     return accesses.map((access) => ({
       customerID: access.customerID,
       customerName: access.customerName,
       isActive: access.isActive,
-      productDiscounts: access.productDiscounts.map((discount) => ({
-        productID: discount.productID,
-        discountPercent: discount.discountPercent,
-      })),
+      productDiscounts: discountsByCustomerID.get(access.customerID) ?? [],
     }));
   }
 
@@ -94,96 +102,11 @@ export default class CustomerLinkService {
     return this.toCustomerLink(contact.codeName, contact.billName, token);
   }
 
-  async getCustomerDiscounts(
-    customerID: unknown,
-  ): Promise<CustomerDiscountSettings> {
-    const normalizedCustomerID = this.requireCustomerID(customerID);
-    const access = await this.accessRepo.findByCustomerID(
-      normalizedCustomerID,
-    );
-    if (!access) {
-      throw new AppError("Customer link not found", 404);
-    }
-
-    return {
-      customerID: access.customerID,
-      discounts: access.productDiscounts.map((discount) => ({
-        productID: discount.productID,
-        discountPercent: discount.discountPercent,
-      })),
-    };
-  }
-
-  async updateCustomerDiscounts(
-    customerID: unknown,
-    input: unknown,
-  ): Promise<CustomerDiscountSettings> {
-    const normalizedCustomerID = this.requireCustomerID(customerID);
-    const discounts = this.parseDiscounts(input);
-    const updated = await this.accessRepo.updateDiscounts(
-      normalizedCustomerID,
-      discounts,
-    );
-    if (!updated) {
-      throw new AppError("Customer link not found", 404);
-    }
-
-    return {
-      customerID: updated.customerID,
-      discounts: updated.productDiscounts.map((discount) => ({
-        productID: discount.productID,
-        discountPercent: discount.discountPercent,
-      })),
-    };
-  }
-
   private requireCustomerID(customerID: unknown): string {
     if (typeof customerID !== "string" || !customerID.trim()) {
       throw new AppError("customerID is required", 400);
     }
     return customerID.trim();
-  }
-
-  private parseDiscounts(input: unknown): Array<{
-    productID: string;
-    discountPercent: number;
-  }> {
-    if (!Array.isArray(input)) {
-      throw new AppError("discounts must be an array", 400);
-    }
-
-    const productIDs = new Set<string>();
-    return input.map((rawDiscount) => {
-      const discount = rawDiscount as {
-        productID?: unknown;
-        discountPercent?: unknown;
-      };
-      if (
-        typeof discount.productID !== "string"
-        || !discount.productID.trim()
-      ) {
-        throw new AppError("productID is required", 400);
-      }
-
-      const productID = discount.productID.trim();
-      const discountPercent = Number(discount.discountPercent);
-      if (
-        !Number.isFinite(discountPercent)
-        || discountPercent < 0
-        || discountPercent > 100
-      ) {
-        throw new AppError(
-          "discountPercent must be between 0 and 100",
-          400,
-        );
-      }
-      if (productIDs.has(productID)) {
-        throw new AppError(`Duplicate product ${productID}`, 400);
-      }
-      productIDs.add(productID);
-
-      return { productID, discountPercent };
-    });
   }
 
   private toCustomerLink(

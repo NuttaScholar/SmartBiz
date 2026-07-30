@@ -22,16 +22,6 @@ export default function customerLinkRoutes(
     controller.createCustomerLink,
   );
   router.get(
-    "/:customerID/discounts",
-    adminOrServiceScope("storefront.customer-link.read"),
-    controller.getCustomerDiscounts,
-  );
-  router.put(
-    "/:customerID/discounts",
-    adminOrServiceScope("storefront.customer-link.manage"),
-    controller.updateCustomerDiscounts,
-  );
-  router.get(
     "/:customerID",
     adminOrServiceScope("storefront.customer-link.read"),
     controller.getCustomerLink,

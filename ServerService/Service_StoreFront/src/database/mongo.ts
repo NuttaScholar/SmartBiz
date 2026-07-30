@@ -1,11 +1,12 @@
 import mongoose from "mongoose";
 import {
   MONGO_URI_ACCOUNT,
+  MONGO_URI_BILL,
   MONGO_URI_STOCK,
   MONGO_URI_STOREFRONT,
 } from "../config";
 
-export type DatabaseName = "Account" | "Stock" | "StoreFront";
+export type DatabaseName = "Account" | "Bill" | "Stock" | "StoreFront";
 
 const connections = new Map<DatabaseName, mongoose.Connection>();
 
@@ -35,6 +36,7 @@ export async function connectDB(): Promise<
 
   const databaseConfigs: Array<[DatabaseName, string]> = [
     ["Account", MONGO_URI_ACCOUNT],
+    ["Bill", MONGO_URI_BILL],
     ["Stock", MONGO_URI_STOCK],
     ["StoreFront", MONGO_URI_STOREFRONT],
   ];

@@ -33,7 +33,6 @@ export default class StorefrontAccessRepo {
     return this.model.create({
       ...data,
       isActive: true,
-      productDiscounts: [],
     });
   }
 
@@ -55,17 +54,4 @@ export default class StorefrontAccessRepo {
     );
   }
 
-  updateDiscounts(
-    customerID: string,
-    productDiscounts: Array<{
-      productID: string;
-      discountPercent: number;
-    }>,
-  ) {
-    return this.model.findOneAndUpdate(
-      { customerID },
-      { $set: { productDiscounts } },
-      { new: true, runValidators: true },
-    );
-  }
 }

@@ -72,41 +72,4 @@ export default class CustomerLinkController {
     }
   };
 
-  getCustomerDiscounts = async (
-    request: AuthRequest,
-    response: Response,
-    next: NextFunction,
-  ): Promise<void> => {
-    try {
-      response.json(
-        success(
-          await this.service.getCustomerDiscounts(
-            request.params.customerID,
-          ),
-        ),
-      );
-    } catch (thrown) {
-      next(thrown);
-    }
-  };
-
-  updateCustomerDiscounts = async (
-    request: AuthRequest,
-    response: Response,
-    next: NextFunction,
-  ): Promise<void> => {
-    try {
-      response.json(
-        success(
-          await this.service.updateCustomerDiscounts(
-            request.params.customerID,
-            request.body?.discounts,
-          ),
-          "Customer discounts updated",
-        ),
-      );
-    } catch (thrown) {
-      next(thrown);
-    }
-  };
 }

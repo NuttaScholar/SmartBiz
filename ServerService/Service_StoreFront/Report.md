@@ -171,20 +171,14 @@ MinIO
 
 ### StoreFront.storefrontaccesses
 
-เก็บ Customer Link และส่วนลดเฉพาะลูกค้า:
+เก็บเฉพาะ Customer Link ไม่เก็บส่วนลดสินค้า:
 
 ```json
 {
   "customerID": "CUST-001",
   "customerName": "Customer One",
   "token": "64-character-random-token",
-  "isActive": true,
-  "productDiscounts": [
-    {
-      "productID": "P-001",
-      "discountPercent": 10
-    }
-  ]
+  "isActive": true
 }
 ```
 
@@ -320,7 +314,7 @@ Authorization: Bearer <adminAccessToken>
 ```
 
 คืนรายชื่อลูกค้าที่มีข้อมูลใน `StoreFront.storefrontaccesses` พร้อมสถานะและ
-รายการส่วนลดสินค้า โดยไม่ส่ง raw token ใน list response
+รายการส่วนลดที่อ่านจาก `Bill.discounts` โดยไม่ส่ง raw token ใน list response
 
 ### Get Customer Link (Admin)
 
@@ -371,36 +365,11 @@ PATCH /storefront/admin/customer-links/CUST-001/token
 
 ระบบใช้ `customerID` จาก path เพียงค่าเดียวในการค้นหา Customer Link โดยไม่
 ต้องส่ง token เก่า จากนั้นตรวจ Contact อีกครั้ง สร้าง token ใหม่และแทนที่
-`token` ใน document เดิมแบบ atomic ข้อมูลส่วนลดและ order ไม่ถูกลบ token เก่า
-จะใช้เข้า Storefront ไม่ได้ทันที
+`token` ใน document เดิมแบบ atomic ข้อมูล order ไม่ถูกลบ token เก่าจะใช้เข้า
+Storefront ไม่ได้ทันที ส่วนลดอยู่ในฐาน `Bill` จึงไม่ถูกแก้ไขโดยการ rotate token
 
 response มีรูปแบบเดียวกับ Create Customer Link และ raw token ใหม่จะถูกส่ง
 ใน response ครั้งนี้
-
-### Manage Customer Discounts (Admin)
-
-```http
-GET /storefront/admin/customer-links/:customerID/discounts
-PUT /storefront/admin/customer-links/:customerID/discounts
-Authorization: Bearer <adminAccessToken>
-Content-Type: application/json
-```
-
-body สำหรับ `PUT`:
-
-```json
-{
-  "discounts": [
-    {
-      "productID": "PRODUCT-001",
-      "discountPercent": 10
-    }
-  ]
-}
-```
-
-ระบบตรวจ `productID` ซ้ำและบังคับ `discountPercent` ให้อยู่ระหว่าง 0 ถึง 100
-ก่อนแทนที่รายการ `productDiscounts` ของลูกค้า
 
 ### Validate Customer Session
 
@@ -455,7 +424,8 @@ response:
 }
 ```
 
-service อ่านราคาและ stock จากฐาน `Stock` แล้วนำส่วนลดของ customer มาคำนวณ
+service อ่านราคาและ stock จากฐาน `Stock` และอ่านส่วนลดของ customer จากฐาน
+`Bill` แล้วนำมาคำนวณ
 `priceAfterDiscount` โดยปัดทศนิยมสองตำแหน่ง
 
 ### Create Order
@@ -580,6 +550,7 @@ PORT=3005
 SECRET=NuttaScholar
 SERVICE_AUTH_SECRET=<random-secret-at-least-32-characters>
 MONGO_URI_ACCOUNT=mongodb://root:example@localhost:27017/Account?authSource=admin
+MONGO_URI_BILL=mongodb://root:example@localhost:27017/Bill?authSource=admin
 MONGO_URI_STOCK=mongodb://root:example@localhost:27017/Stock?authSource=admin
 MONGO_URI_STOREFRONT=mongodb://root:example@localhost:27017/StoreFront?authSource=admin
 MINIO_ENDPOINT=localhost
@@ -590,9 +561,11 @@ MINIO_PASSWORD=StrongPass123!
 PAYMENT_EVIDENCE_BUCKET=storefront-payment
 ```
 
-ตัวแปร `SERVICE_BILL_URL` ยังคงรองรับไว้ใน config สำหรับ integration กับ
-Service_Bill ในอนาคต แต่ API ชุดนี้ยังอ่าน Account, Stock และ StoreFront
-ผ่าน MongoDB โดยตรง
+Service_StoreFront อ่านข้อมูลส่วนลดจาก `Bill.discounts` เท่านั้น และปิด
+`autoCreate`/`autoIndex` ของ read model เพื่อไม่ให้ Mongoose เขียน schema หรือ
+index ลงฐาน Bill Service_StoreFront ไม่มี API สำหรับจัดการส่วนลด การแก้ไข
+ส่วนลดต้องเรียก Service_Bill โดยตรง ส่วนการสร้าง Bill order จะเรียก
+`SERVICE_BILL_URL` ด้วย service token
 
 ### Admin Confirm Payment
 
