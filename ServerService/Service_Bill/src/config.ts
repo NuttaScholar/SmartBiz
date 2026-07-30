@@ -42,3 +42,9 @@ export const MONGO_URI_ACCOUNT = requireEnv("MONGO_URI_ACCOUNT");
 export const MONGO_URI_BILL = requireEnv("MONGO_URI_BILL");
 export const MONGO_URI_STOCK = process.env.MONGO_URI_STOCK || requireEnv("DB_URL");
 export const SERVICE_ACCOUNT_URL = process.env.SERVICE_ACCOUNT_URL || "http://localhost:3000";
+export const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "localhost";
+export const MINIO_PORT = Number(process.env.MINIO_PORT || 9000);
+export const MINIO_USE_SSL =
+  (process.env.MINIO_USE_SSL || "false") === "true";
+export const MINIO_HOST =
+  `${MINIO_USE_SSL ? "https" : "http"}://${MINIO_ENDPOINT}:${MINIO_PORT}`;

@@ -10,7 +10,7 @@ import {
   hasServiceScope,
   isUserWithRole,
 } from "../middlewares/auth";
-import { SERVICE_ACCOUNT_URL } from "../config";
+import { MINIO_HOST, SERVICE_ACCOUNT_URL } from "../config";
 import { createServiceToken } from "../utils/service-token";
 
 export default class BillController {
@@ -27,6 +27,7 @@ export default class BillController {
       ProductModel,
       createServiceToken,
       SERVICE_ACCOUNT_URL,
+      MINIO_HOST,
     );
   }
 

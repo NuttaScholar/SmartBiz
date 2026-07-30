@@ -5,7 +5,10 @@ describe("StorefrontService", () => {
   const token = "customer-secret";
   const fixedNow = new Date("2026-07-25T03:00:00.000Z");
 
-  function createService(accessExists = true) {
+  function createService(
+    accessExists = true,
+    productImg = "product/P-001.jpg",
+  ) {
     const access = {
       customerID: "CUST-001",
       customerName: "Customer One",
@@ -14,7 +17,7 @@ describe("StorefrontService", () => {
       id: "P-001",
       name: "Product One",
       type: 0,
-      img: "https://example.com/product.jpg",
+      img: productImg,
       description: "Description",
       status: stockStatus_e.normal,
       amount: 5,
@@ -72,6 +75,7 @@ describe("StorefrontService", () => {
       discountRepo as any,
       orderRepo as any,
       evidenceStorage,
+      "http://minio.example:9000/",
       () => fixedNow,
     );
 
@@ -115,7 +119,7 @@ describe("StorefrontService", () => {
     expect(products[0]).toEqual({
       id: "P-001",
       name: "Product One",
-      img: "https://example.com/product.jpg",
+      img: "http://minio.example:9000/product/P-001.jpg",
       description: "Description",
       price: 100,
       amount: 5,
@@ -123,6 +127,18 @@ describe("StorefrontService", () => {
       priceAfterDiscount: 90,
       status: stockStatus_e.normal,
     });
+  });
+
+  it("rebases a legacy product image URL onto the configured MinIO host", async () => {
+    const { service } = createService(
+      true,
+      "https://old-minio.example:9000/product/P-001.jpg",
+    );
+
+    const products = await service.getProducts(token);
+
+    expect(products[0].img)
+      .toBe("http://minio.example:9000/product/P-001.jpg");
   });
 
   it("creates an order using server-side product prices", async () => {

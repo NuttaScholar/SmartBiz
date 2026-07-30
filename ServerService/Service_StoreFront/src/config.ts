@@ -54,6 +54,8 @@ export const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "localhost";
 export const MINIO_PORT = Number(process.env.MINIO_PORT || 9000);
 export const MINIO_USE_SSL =
   (process.env.MINIO_USE_SSL || "false") === "true";
+export const MINIO_HOST =
+  `${MINIO_USE_SSL ? "https" : "http"}://${MINIO_ENDPOINT}:${MINIO_PORT}`;
 export const MINIO_USER = requireEnv("MINIO_USER");
 export const MINIO_PASSWORD = requireEnv("MINIO_PASSWORD");
 export const PAYMENT_EVIDENCE_BUCKET =

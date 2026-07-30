@@ -132,6 +132,9 @@ services:
       MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
       MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin
       MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PORT: ${VITE_PORT_MINIO}
+      MINIO_USE_SSL: false
       SERVICE_ACCOUNT_URL: http://service_account:3000
       TZ: Asia/Bangkok
     networks:

@@ -46,6 +46,7 @@ export default class BillService {
       throw new Error("Service token factory is not configured");
     },
     private readonly serviceAccountUrl = "http://localhost:3000",
+    private readonly productImageHost = "http://localhost:9000",
   ) {
     this.repo = new BillRepo(OrderModel);
     this.contactRepo = new ContactRepo(ContactModel);
@@ -422,7 +423,7 @@ export default class BillService {
       id: item.productID,
       type: product?.type ?? productType_e.merchandise,
       name: product?.name ?? item.productID,
-      img: product?.img ?? "",
+      img: this.getProductImageUrl(product?.img),
       status: stockStatus_e.normal,
       price: item.priceOriginal,
       amount: quantity,
@@ -434,6 +435,16 @@ export default class BillService {
     if (product?.description !== undefined) productInfo.description = product.description;
 
     return productInfo;
+  }
+
+  private getProductImageUrl(img?: string): string {
+    if (!img) return "";
+
+    const storagePath = /^https?:\/\//i.test(img)
+      ? new URL(img).pathname.replace(/^\/+/, "")
+      : img.replace(/^\/+/, "");
+
+    return `${this.productImageHost.replace(/\/$/, "")}/${storagePath}`;
   }
 
   private pickOrderUpdate(data: any): OrderUpdateInput {

@@ -50,6 +50,7 @@ export default class StorefrontService {
     private readonly discountRepo: DiscountRepo,
     private readonly orderRepo: StorefrontOrderRepo,
     private readonly evidenceStorage: EvidenceStorage,
+    private readonly productImageHost: string,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
@@ -259,7 +260,7 @@ export default class StorefrontService {
     return {
       id: product.id,
       name: product.name,
-      img: product.img ?? "",
+      img: this.getProductImageUrl(product.img),
       description: product.description ?? "",
       price,
       amount: Math.max(0, Number(product.amount ?? 0)),
@@ -269,6 +270,16 @@ export default class StorefrontService {
       ),
       status: product.status ?? stockStatus_e.stockOut,
     };
+  }
+
+  private getProductImageUrl(img?: string): string {
+    if (!img) return "";
+
+    const storagePath = /^https?:\/\//i.test(img)
+      ? new URL(img).pathname.replace(/^\/+/, "")
+      : img.replace(/^\/+/, "");
+
+    return `${this.productImageHost.replace(/\/$/, "")}/${storagePath}`;
   }
 
   private async mapOrder(order: {

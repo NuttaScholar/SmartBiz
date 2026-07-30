@@ -1,6 +1,6 @@
 import cors from "cors";
 import express from "express";
-import { PORT, WEB_HOST } from "./config";
+import { MINIO_HOST, PORT, WEB_HOST } from "./config";
 import CustomerLinkController from "./controllers/customer-link.controller";
 import AdminOrderController from "./controllers/admin-order.controller";
 import HealthController from "./controllers/health.controller";
@@ -92,6 +92,7 @@ async function startServer(): Promise<void> {
       discountRepo,
       new StorefrontOrderRepo(orderModel),
       evidenceStorage,
+      MINIO_HOST,
     ),
   );
   const customerLinkController = new CustomerLinkController(

@@ -3,7 +3,14 @@ import { errorCode_e, OrderStatus, productType_e, stockStatus_e } from "../src/u
 
 describe("BillService", () => {
   function createService(contactExists = true) {
-    const service = new BillService({} as any, {} as any, {} as any) as any;
+    const service = new BillService(
+      {} as any,
+      {} as any,
+      {} as any,
+      undefined,
+      undefined,
+      "http://minio.example:9000/",
+    ) as any;
     service.contactRepo = {
       findByCodeName: jasmine
         .createSpy("findByCodeName")
@@ -21,8 +28,9 @@ describe("BillService", () => {
         id: "PROD001",
         type: productType_e.merchandise,
         name: "Product One",
-        img: "https://example.com/product-one.jpg",
+        img: "product/PROD001.jpg",
         status: stockStatus_e.normal,
+        amount: 10,
         price: 500,
       }),
       findByIds: jasmine.createSpy("findByIds").and.resolveTo([
@@ -30,11 +38,13 @@ describe("BillService", () => {
           id: "PROD001",
           type: productType_e.merchandise,
           name: "Product One",
-          img: "https://example.com/product-one.jpg",
+          img: "product/PROD001.jpg",
           status: stockStatus_e.normal,
+          amount: 10,
           price: 500,
         },
       ]),
+      updateById: jasmine.createSpy("updateById").and.resolveTo(undefined),
     };
 
     return service;
@@ -105,6 +115,7 @@ describe("BillService", () => {
     expect(result).toEqual([
       {
         id: "ORD001",
+        customerID: "CUST001",
         customer: "Customer One",
         date: createdAt,
         total: 900,
@@ -114,7 +125,7 @@ describe("BillService", () => {
             id: "PROD001",
             type: productType_e.merchandise,
             name: "Product One",
-            img: "https://example.com/product-one.jpg",
+            img: "http://minio.example:9000/product/PROD001.jpg",
             status: stockStatus_e.normal,
             price: 500,
             amount: 2,
@@ -125,6 +136,43 @@ describe("BillService", () => {
         ],
       },
     ]);
+  });
+
+  it("rebases a legacy product image URL onto the configured MinIO host", async () => {
+    const service = createService();
+    service.productRepo.findByIds.and.resolveTo([
+      {
+        id: "PROD001",
+        type: productType_e.merchandise,
+        name: "Product One",
+        img: "https://old-minio.example:9000/product/PROD001.jpg",
+        status: stockStatus_e.normal,
+        price: 500,
+      },
+    ]);
+    service.repo.findByCustomerAndOrder.and.resolveTo([
+      {
+        orderID: "ORD001",
+        customerID: "CUST001",
+        status: OrderStatus.Billing,
+        createdAt: new Date("2026-05-23T10:00:00.000Z"),
+        totalAmount: 450,
+        items: [
+          {
+            productID: "PROD001",
+            quantity: 1,
+            priceOriginal: 500,
+            priceAfterDiscount: 450,
+            discountPercent: 10,
+          },
+        ],
+      },
+    ]);
+
+    const result = await service.searchOrders("CUST001", "ORD001");
+
+    expect(result[0].list[0].img)
+      .toBe("http://minio.example:9000/product/PROD001.jpg");
   });
 
   it("rejects search orders with invalid status", async () => {
