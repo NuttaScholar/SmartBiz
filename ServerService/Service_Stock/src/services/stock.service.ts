@@ -39,10 +39,11 @@ export default class StockService {
   async createProduct(data: productInfo_t, file?: Express.Multer.File) {
     await this.ensureProductIsUnique(data.id, data.name);
 
+    const { img: _requestedImg, ...productData } = data;
     const status = this.resolveStockStatus(Number(data.amount), Number(data.condition));
-    const img = file ? `${MINIO_HOST}/${(await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url}` : undefined;
+    const img = file ? (await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url : undefined;
 
-    await this.productRepo.create({ ...data, status, ...(img ? { img } : {}) });
+    await this.productRepo.create({ ...productData, status, ...(img ? { img } : {}) });
   }
 
   async updateProduct(data: productInfo_t, file?: Express.Multer.File) {
@@ -55,21 +56,22 @@ export default class StockService {
       throw { code: errorCode_e.AlreadyExistsError, message: "Product name already exists" };
     }
 
+    const { img: _requestedImg, ...productData } = data;
     const status = this.resolveStockStatus(Number(product.amount), Number(data.condition));
     if (file) {
       await this.removeProductImage(product.img);
-      const img = `${MINIO_HOST}/${(await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url}`;
-      await this.productRepo.updateById(data.id, { ...data, status, img });
+      const img = (await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url;
+      await this.productRepo.updateById(data.id, { ...productData, status, img });
       return;
     }
 
     if (data.img === "") {
       await this.removeProductImage(product.img);
-      await this.productRepo.updateById(data.id, { ...data, status, img: "" });
+      await this.productRepo.updateById(data.id, { ...productData, status, img: "" });
       return;
     }
 
-    await this.productRepo.updateById(data.id, { ...data, status });
+    await this.productRepo.updateById(data.id, { ...productData, status });
   }
 
   async getProducts(type?: string, name?: string, status?: string): Promise<productRes_t> {
@@ -78,7 +80,7 @@ export default class StockService {
       this.productRepo.getStockStatus(),
     ]);
 
-    return { products, status: stockStatus };
+    return { products: products.map((product) => this.withProductImageUrl(product)), status: stockStatus };
   }
 
   async deleteProduct(id?: string) {
@@ -151,8 +153,26 @@ export default class StockService {
     return this.productRepo.getStockStatus();
   }
 
-  getStock(productType?: string | string[]) {
-    return this.productRepo.listStockProducts(this.parseProductTypes(productType));
+  async getStock(productType?: string | string[]) {
+    const products = await this.productRepo.listStockProducts(this.parseProductTypes(productType));
+    return products.map((product) => this.withProductImageUrl(product));
+  }
+
+  private withProductImageUrl(product: productInfo_t): productInfo_t {
+    if (!product.img) return product;
+
+    return {
+      ...product,
+      img: `${MINIO_HOST.replace(/\/$/, "")}/${this.getStoragePath(product.img)}`,
+    };
+  }
+
+  private getStoragePath(img: string) {
+    if (/^https?:\/\//i.test(img)) {
+      return new URL(img).pathname.replace(/^\/+/, "");
+    }
+
+    return img.replace(/^\/+/, "");
   }
 
   private async ensureProductIsUnique(id: string, name: string) {
