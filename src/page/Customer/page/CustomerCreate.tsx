@@ -1,5 +1,6 @@
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import BlockIcon from "@mui/icons-material/Block";
+import DeleteIcon from "@mui/icons-material/Delete";
 import LaunchIcon from "@mui/icons-material/Launch";
 import KeyIcon from "@mui/icons-material/Key";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
@@ -11,6 +12,7 @@ import {
   CircularProgress,
   Container,
   Divider,
+  IconButton,
   Paper,
   Stack,
   TextField,
@@ -20,6 +22,7 @@ import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   createCustomerLink,
+  deleteCustomerLink,
   disableCustomerLink,
   getCustomerLink,
   getStorefrontErrorMessage,
@@ -48,6 +51,7 @@ export default function Page_CustomerCreate() {
   const [hasCheckedLink, setHasCheckedLink] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const [error, setError] = React.useState("");
   const [message, setMessage] = React.useState("");
   const isCustomerLocked = Boolean(customerIDParam);
@@ -206,12 +210,61 @@ export default function Page_CustomerCreate() {
     }
   }
 
+  async function deleteLink() {
+    const normalizedCustomerID = customerIDParam.trim();
+    if (!normalizedCustomerID) return;
+    if (
+      !window.confirm(
+        `ยืนยันการลบสิทธิ์ Storefront ของลูกค้า ${normalizedCustomerID}? ข้อมูลนี้จะถูกลบถาวร`,
+      )
+    ) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError("");
+    setMessage("");
+    try {
+      await storefrontAdminWithRetry(authContext, (accessToken) =>
+        deleteCustomerLink(accessToken, normalizedCustomerID),
+      );
+      navigate("/customer");
+    } catch (requestError) {
+      handleError(requestError);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <>
       <HeaderDialog
         label="ออก Token ให้ลูกค้า"
         onClick={() => navigate("/customer")}
-      />
+      >
+        {customerIDParam && (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              flexGrow: 1,
+            }}
+          >
+            <IconButton
+              color="inherit"
+              aria-label="ลบสิทธิ์ Storefront"
+              onClick={deleteLink}
+              disabled={isDeleting || isSaving}
+            >
+              {isDeleting ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                <DeleteIcon />
+              )}
+            </IconButton>
+          </Box>
+        )}
+      </HeaderDialog>
       <Container maxWidth="md" sx={{ py: 3, my: "56px" }}>
         <Stack spacing={2}>
           <Box>

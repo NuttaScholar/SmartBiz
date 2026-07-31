@@ -236,3 +236,15 @@ export function disableCustomerLink(
     ),
   );
 }
+
+export function deleteCustomerLink(
+  accessToken: string,
+  customerID: string,
+): Promise<{ customerID: string }> {
+  return request(() =>
+    axios_storefront.delete(
+      `/storefront/admin/customer-links/${pathSegment(customerID)}/permanent`,
+      adminAuth(accessToken),
+    ),
+  );
+}

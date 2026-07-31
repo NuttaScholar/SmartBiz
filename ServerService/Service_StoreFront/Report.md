@@ -371,6 +371,63 @@ Storefront ไม่ได้ทันที ส่วนลดอยู่ใ�
 response มีรูปแบบเดียวกับ Create Customer Link และ raw token ใหม่จะถูกส่ง
 ใน response ครั้งนี้
 
+### Disable Customer Link (Admin)
+
+```http
+DELETE /storefront/admin/customer-links/:customerID
+Authorization: Bearer <adminAccessToken>
+```
+
+ตัวอย่าง:
+
+```http
+DELETE /storefront/admin/customer-links/CUST-001
+```
+
+endpoint นี้เป็น soft disable โดยอัปเดต `isActive = false` ใน document ของ
+`StoreFront.storefrontaccesses` และไม่ได้ลบ document ออกจากฐานข้อมูล token
+เดิมจะเข้า Storefront ไม่ได้ทันที แต่ Admin ยังสามารถ rotate token เพื่อเปิด
+ใช้งาน Customer Link เดิมอีกครั้งได้
+
+### Permanently Delete Customer Link (Admin)
+
+```http
+DELETE /storefront/admin/customer-links/:customerID/permanent
+Authorization: Bearer <adminAccessToken>
+```
+
+ตัวอย่าง:
+
+```http
+DELETE /storefront/admin/customer-links/CUST-001/permanent
+```
+
+endpoint นี้ต้องเป็น Admin หรือ service token ที่มี scope
+`storefront.customer-link.manage` และจะค้นหาด้วย `customerID` แล้วลบ document
+ออกจาก collection `StoreFront.storefrontaccesses` ด้วย `findOneAndDelete`
+โดยตรง หลังลบแล้ว token เดิมจะใช้เข้า Storefront ไม่ได้ และสามารถสร้าง
+Customer Link ใหม่ให้ `customerID` เดิมได้
+
+การลบนี้มีผลเฉพาะ Customer Link ไม่ได้ลบข้อมูลใน
+`StoreFront.storefrontorders` หรือส่วนลดใน `Bill.discounts`
+
+response:
+
+```json
+{
+  "success": true,
+  "message": "Customer link deleted",
+  "data": {
+    "customerID": "CUST-001"
+  }
+}
+```
+
+ถ้าไม่พบ document จะตอบ `404 Customer link not found`
+
+หน้า `CustomerCreate` จะแสดงปุ่ม Delete ที่ `HeaderDialog` เมื่อ URL มี
+`customerIDParam` เมื่อผู้ใช้ยืนยันและลบสำเร็จ ระบบจะกลับไปหน้า `/customer`
+
 ### Validate Customer Session
 
 ```http

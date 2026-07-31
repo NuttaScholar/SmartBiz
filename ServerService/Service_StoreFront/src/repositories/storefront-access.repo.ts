@@ -62,4 +62,8 @@ export default class StorefrontAccessRepo {
     ).select("+token");
   }
 
+  delete(customerID: string) {
+    return this.model.findOneAndDelete({ customerID });
+  }
+
 }

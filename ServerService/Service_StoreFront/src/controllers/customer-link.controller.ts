@@ -91,4 +91,23 @@ export default class CustomerLinkController {
     }
   };
 
+  deleteCustomerLink = async (
+    request: AuthRequest,
+    response: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      response.json(
+        success(
+          await this.service.deleteCustomerLink(
+            request.params.customerID,
+          ),
+          "Customer link deleted",
+        ),
+      );
+    } catch (thrown) {
+      next(thrown);
+    }
+  };
+
 }

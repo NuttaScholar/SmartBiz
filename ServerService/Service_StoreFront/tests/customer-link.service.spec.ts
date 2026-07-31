@@ -36,6 +36,9 @@ describe("CustomerLinkService", () => {
       disable: jasmine
         .createSpy("disable")
         .and.resolveTo(linkExists ? { ...existingAccess, isActive: false } : null),
+      delete: jasmine
+        .createSpy("delete")
+        .and.resolveTo(linkExists ? existingAccess : null),
     };
     const discountRepo = {
       findByCustomerID: jasmine
@@ -167,5 +170,21 @@ describe("CustomerLinkService", () => {
 
     expect(accessRepo.disable).toHaveBeenCalledWith("CUST-001");
     expect(result.isActive).toBeFalse();
+  });
+
+  it("deletes an existing customer link", async () => {
+    const { service, accessRepo } = createService(true, true);
+
+    const result = await service.deleteCustomerLink(" CUST-001 ");
+
+    expect(accessRepo.delete).toHaveBeenCalledWith("CUST-001");
+    expect(result).toEqual({ customerID: "CUST-001" });
+  });
+
+  it("rejects deletion when the customer link does not exist", async () => {
+    const { service } = createService();
+
+    await expectAsync(service.deleteCustomerLink("CUST-001"))
+      .toBeRejectedWithError("Customer link not found");
   });
 });

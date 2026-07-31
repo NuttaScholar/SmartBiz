@@ -118,6 +118,18 @@ export default class CustomerLinkService {
     );
   }
 
+  async deleteCustomerLink(
+    customerID: unknown,
+  ): Promise<{ customerID: string }> {
+    const normalizedCustomerID = this.requireCustomerID(customerID);
+    const deleted = await this.accessRepo.delete(normalizedCustomerID);
+    if (!deleted) {
+      throw new AppError("Customer link not found", 404);
+    }
+
+    return { customerID: deleted.customerID };
+  }
+
   private requireCustomerID(customerID: unknown): string {
     if (typeof customerID !== "string" || !customerID.trim()) {
       throw new AppError("customerID is required", 400);
