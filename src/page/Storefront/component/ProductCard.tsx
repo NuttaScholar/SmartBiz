@@ -30,12 +30,14 @@ export function ProductCard({
         />
       </Box>
       <Box className="product-body">
-        <Typography variant="subtitle1" className="product-title">
-          {product.name}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {product.id}
-        </Typography>
+        <Box className="product-heading">
+          <Typography variant="h5" className="product-title">
+            {product.name}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {product.id}
+          </Typography>
+        </Box>
         <Typography variant="body2" color="text.secondary" className="product-description">
           {product.description}
         </Typography>

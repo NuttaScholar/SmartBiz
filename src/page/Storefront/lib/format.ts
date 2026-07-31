@@ -46,6 +46,6 @@ export function statusColor(status: orderStatus_e) {
 
 export function stockLabel(product: StorefrontProduct) {
   if (product.status === stockStatus_e.stockOut || product.amount <= 0) return "สินค้าหมด";
-  if (product.status === stockStatus_e.stockLow) return "ใกล้หมด";
+  if (product.status === stockStatus_e.stockLow) return `ใกล้หมด ${product.amount}`;
   return `คงคลัง ${product.amount}`;
 }
