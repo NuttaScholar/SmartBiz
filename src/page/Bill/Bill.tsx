@@ -27,7 +27,11 @@ const Page_Bill: React.FC = () => {
     <BillContext.Provider value={{ state, setState }}>
       <AppBar_c>
         <OrderListHeader>
-          <OrderList onClick={onClickOrderList} />
+          <OrderList
+            onClick={
+              state.isPaymentConfirmationTab ? undefined : onClickOrderList
+            }
+          />
         </OrderListHeader>
         <SpeedDial_Bill />
       </AppBar_c>

@@ -22,6 +22,7 @@ interface MyProps {
   value: orderInfo_t;
   onClick?: (value: orderInfo_t) => void;
   maxWidth?: string;
+  statusLabel?: string;
 }
 /**************************************************** */
 //  Function
@@ -128,7 +129,7 @@ const CardOrder: React.FC<MyProps> = (props) => {
                 }}
                 textAlign={"center"}
               >
-                {BillStatusString(props.value.status)}
+                {props.statusLabel || BillStatusString(props.value.status)}
               </Typography>
             </Box>
           </Box>

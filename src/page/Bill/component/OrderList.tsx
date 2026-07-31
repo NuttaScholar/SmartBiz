@@ -29,7 +29,17 @@ const OrderList: React.FC<myProps> = (props) => {
       }}
     >
       {state.orderList?.map((val, index)=>(
-        <CardOrder key={index} value={val} maxWidth="400px" onClick={props.onClick} />
+        <CardOrder
+          key={index}
+          value={val}
+          maxWidth="400px"
+          onClick={props.onClick}
+          statusLabel={
+            state.isPaymentConfirmationTab
+              ? "ยืนยันการชำระเงิน"
+              : undefined
+          }
+        />
       ))}
     </Box>
   );

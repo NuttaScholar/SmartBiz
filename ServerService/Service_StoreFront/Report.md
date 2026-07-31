@@ -632,6 +632,39 @@ index ลงฐาน Bill Service_StoreFront ไม่มี API สำหร�
 
 ### Admin Confirm Payment
 
+รายการที่รอการยืนยันสามารถอ่านได้จาก:
+
+```http
+GET /storefront/admin/orders/payment-confirmations
+Authorization: Bearer <admin-access-token>
+```
+
+endpoint นี้ต้องเป็น Admin หรือ service token ที่มี scope
+`storefront.payment.confirm` และคืนเฉพาะคำสั่งซื้อสถานะ `PaymentNotified`
+เรียงจากใหม่ไปเก่า หน้า Bill ใช้ข้อมูลนี้ใน tab “ยืนยันการชำระเงิน” พร้อม
+badge จำนวนรายการ และรองรับการค้นหาด้วย `customerID` หรือ `orderID`
+
+ตัวอย่าง response:
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": "SO-260728-ABCDEF01",
+      "customerID": "CUST-001",
+      "date": "2026-07-28T04:00:00.000Z",
+      "status": 1,
+      "totalAmount": 180,
+      "items": []
+    }
+  ]
+}
+```
+
+การยืนยันรายการใช้:
+
 ```http
 PATCH /storefront/admin/orders/:orderID/payment-confirmation
 Authorization: Bearer <admin-access-token>

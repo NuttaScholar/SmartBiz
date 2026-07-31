@@ -27,6 +27,10 @@ export default class StorefrontOrderRepo {
     return this.model.find({ customerID }).sort({ createdAt: -1 });
   }
 
+  listByStatus(status: orderStatus_e) {
+    return this.model.find({ status }).sort({ createdAt: -1 });
+  }
+
   findByCustomerAndOrder(customerID: string, orderID: string) {
     return this.model.findOne({ customerID, orderID });
   }

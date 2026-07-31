@@ -7,6 +7,18 @@ import { success } from "../utils/response";
 export default class AdminOrderController {
   constructor(private readonly service: AdminOrderService) {}
 
+  listPaymentConfirmations = async (
+    _request: AuthRequest,
+    response: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      response.json(success(await this.service.listPaymentConfirmations()));
+    } catch (thrown) {
+      next(thrown);
+    }
+  };
+
   confirmPayment = async (
     request: AuthRequest,
     response: Response,

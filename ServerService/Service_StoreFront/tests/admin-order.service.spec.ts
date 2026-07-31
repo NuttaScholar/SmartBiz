@@ -19,6 +19,7 @@ describe("AdminOrderService", () => {
       },
     ],
     totalAmount: 180,
+    createdAt: fixedNow,
   };
 
   function createService(order: {
@@ -31,6 +32,9 @@ describe("AdminOrderService", () => {
     paymentConfirmedBy?: string;
   } = paymentNotifiedOrder) {
     const orderRepo = {
+      listByStatus: jasmine
+        .createSpy("listByStatus")
+        .and.resolveTo([order]),
       findByOrderID: jasmine
         .createSpy("findByOrderID")
         .and.resolveTo(order),
@@ -56,6 +60,23 @@ describe("AdminOrderService", () => {
 
     return { service, orderRepo, billGateway };
   }
+
+  it("lists only orders waiting for payment confirmation", async () => {
+    const { service, orderRepo } = createService();
+
+    const result = await service.listPaymentConfirmations();
+
+    expect(orderRepo.listByStatus)
+      .toHaveBeenCalledWith(orderStatus_e.PaymentNotified);
+    expect(result).toEqual([{
+      id: paymentNotifiedOrder.orderID,
+      customerID: paymentNotifiedOrder.customerID,
+      date: fixedNow,
+      status: orderStatus_e.PaymentNotified,
+      totalAmount: paymentNotifiedOrder.totalAmount,
+      items: paymentNotifiedOrder.items,
+    }]);
+  });
 
   it("creates the Bill order before confirming the payment", async () => {
     const { service, orderRepo, billGateway } = createService();

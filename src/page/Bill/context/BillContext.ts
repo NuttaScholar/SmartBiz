@@ -22,6 +22,7 @@ export type billState_t = {
   billForm?: orderInfoForm_t;
   triger_gotoTop?: number;
   trigger_updateOrderList?: number;
+  isPaymentConfirmationTab?: boolean;
   containerRef?: React.RefObject<HTMLDivElement>;
 };
 export type BillContext_t = {

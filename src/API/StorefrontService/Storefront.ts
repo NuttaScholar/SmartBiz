@@ -199,6 +199,17 @@ export function listCustomerLinks(
   );
 }
 
+export function listPaymentConfirmationOrders(
+  accessToken: string,
+): Promise<StorefrontOrder[]> {
+  return request(() =>
+    axios_storefront.get(
+      "/storefront/admin/orders/payment-confirmations",
+      adminAuth(accessToken),
+    ),
+  );
+}
+
 export function createCustomerLink(
   accessToken: string,
   customerID: string,

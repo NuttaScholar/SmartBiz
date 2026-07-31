@@ -9,9 +9,17 @@ import billWithRetry_f from "../lib/billWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import {
+  redirectToLogin,
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
 } from "../../../lib/authRedirect";
+import {
+  listPaymentConfirmationOrders,
+  StorefrontApiError,
+} from "../../../API/StorefrontService/Storefront";
+import type { StorefrontOrder } from "../../Storefront/type";
+import { storefrontAdminWithRetry } from "../../Customer/lib/storefrontAdminWithRetry";
+import { productType_e, stockStatus_e } from "../../../enum";
 
 const tabStatusList = [
   billStatus_e.PrepareProduct,
@@ -22,9 +30,45 @@ const tabStatusList = [
 ];
 
 const completedTabIndex = tabStatusList.indexOf(billStatus_e.Completed);
+const paymentConfirmationTabIndex = tabStatusList.length;
 
 function emptyStatusCountList() {
-  return tabStatusList.map((_, index) => (index === completedTabIndex ? null : 0));
+  return [
+    ...tabStatusList.map((_, index) =>
+      index === completedTabIndex ? null : 0,
+    ),
+    0,
+  ];
+}
+
+function matchesSearch(order: StorefrontOrder, keyword?: string) {
+  const normalizedKeyword = keyword?.trim().toLowerCase();
+  if (!normalizedKeyword) return true;
+  return order.customerID.toLowerCase().includes(normalizedKeyword)
+    || order.id.toLowerCase().includes(normalizedKeyword);
+}
+
+function toBillOrder(order: StorefrontOrder): orderInfo_t {
+  return {
+    id: order.id,
+    customerID: order.customerID,
+    customer: order.customerID,
+    date: new Date(order.date),
+    total: order.totalAmount,
+    status: billStatus_e.WaitingPayment,
+    list: order.items.map((item) => ({
+      id: item.productID,
+      name: item.name,
+      img: item.img,
+      type: productType_e.merchandise,
+      status: stockStatus_e.normal,
+      price: item.priceOriginal,
+      amount: item.quantity,
+      total: item.priceAfterDiscount * item.quantity,
+      percentDiscount: item.discountPercent,
+      priceAfterDiscount: item.priceAfterDiscount,
+    })),
+  };
 }
 
 //*************************************************
@@ -57,6 +101,17 @@ const OrderListHeader: React.FC<myProps> = (props) => {
     );
   }, []);
 
+  const getPaymentConfirmationOrders = React.useCallback(
+    async (value?: string) => {
+      const orders = await storefrontAdminWithRetry(
+        authContext,
+        listPaymentConfirmationOrders,
+      );
+      return orders.filter((order) => matchesSearch(order, value));
+    },
+    [authContext],
+  );
+
   const updateOrderStatusCounts = React.useCallback(
     async (value?: string) => {
       const keyword = value?.trim();
@@ -70,9 +125,10 @@ const OrderListHeader: React.FC<myProps> = (props) => {
           return emptyStatusCountList();
         }
 
-        return tabStatusList.map((status, index) =>
+        const pendingOrders = await getPaymentConfirmationOrders();
+        return [...tabStatusList.map((status, index) =>
           index === completedTabIndex ? null : countByStatus.get(status) ?? 0,
-        );
+        ), pendingOrders.length];
       }
 
       const [customerRes, orderRes] = await Promise.all([
@@ -96,9 +152,13 @@ const OrderListHeader: React.FC<myProps> = (props) => {
         return emptyStatusCountList();
       }
 
-      return countOrders(Array.from(orderMap.values()));
+      const pendingOrders = await getPaymentConfirmationOrders(keyword);
+      return [
+        ...countOrders(Array.from(orderMap.values())),
+        pendingOrders.length,
+      ];
     },
-    [authContext, countOrders, navigate],
+    [authContext, countOrders, getPaymentConfirmationOrders, navigate],
   );
 
   const updateOrderList = React.useCallback(
@@ -149,8 +209,13 @@ const OrderListHeader: React.FC<myProps> = (props) => {
     const status = tabStatusList[tab];
 
     async function fetchOrders() {
+      const isPaymentConfirmationTab = tab === paymentConfirmationTabIndex;
       const [orders, statusCounts] = await Promise.all([
-        updateOrderList(status, searchValue),
+        isPaymentConfirmationTab
+          ? getPaymentConfirmationOrders(searchValue).then((items) =>
+              items.map(toBillOrder),
+            )
+          : updateOrderList(status, searchValue),
         updateOrderStatusCounts(searchValue),
       ]);
       if (!isActive) return;
@@ -159,23 +224,33 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       setState((prev) => ({
         ...prev,
         filter: tab,
+        isPaymentConfirmationTab,
         orderList: orders,
       }));
     }
 
     fetchOrders().catch((err) => {
+      if (err instanceof StorefrontApiError && err.status === 401) {
+        redirectToLogin(navigate);
+        return;
+      }
       if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
       if (isActive) {
         setStatusCountList(emptyStatusCountList());
-        setState((prev) => ({ ...prev, filter: tab, orderList: [] }));        
+        setState((prev) => ({
+          ...prev,
+          filter: tab,
+          isPaymentConfirmationTab: tab === paymentConfirmationTabIndex,
+          orderList: [],
+        }));
       }
     });
 
     return () => {
       isActive = false;
     };
-  }, [navigate, searchValue, setState, state.trigger_updateOrderList, tab, updateOrderList, updateOrderStatusCounts]);
+  }, [getPaymentConfirmationOrders, navigate, searchValue, setState, state.trigger_updateOrderList, tab, updateOrderList, updateOrderStatusCounts]);
 
   return (
     <Box
@@ -195,7 +270,7 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       />  
       <TabBox
         gotoTop={state.triger_gotoTop}
-        list={["แพ็คสินค้า", "พร้อมจัดส่ง", "จัดการบิล", "รอชำระเงิน", "เสร็จสิ้น"]}
+        list={["แพ็คสินค้า", "พร้อมจัดส่ง", "จัดการบิล", "รอชำระเงิน", "เสร็จสิ้น", "ยืนยันการชำระเงิน"]}
         height="calc(100vh - 200px)"
         alignItems="center"
         onClick={setTab}

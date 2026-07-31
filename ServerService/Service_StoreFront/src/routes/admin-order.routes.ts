@@ -11,6 +11,11 @@ export default function adminOrderRoutes(
   const router = Router();
 
   router.use(authMiddleware);
+  router.get(
+    "/payment-confirmations",
+    adminOrServiceScope("storefront.payment.confirm"),
+    controller.listPaymentConfirmations,
+  );
   router.patch(
     "/:orderID/payment-confirmation",
     adminOrServiceScope("storefront.payment.confirm"),

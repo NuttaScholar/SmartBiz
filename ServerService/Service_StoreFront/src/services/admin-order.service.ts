@@ -1,5 +1,6 @@
 import StorefrontOrderRepo from "../repositories/storefront-order.repo";
 import type { PaymentConfirmationResult } from "../type";
+import type { StorefrontOrder } from "../type";
 import AppError from "../utils/app-error";
 import { orderStatus_e } from "../utils/enum";
 import type { BillGateway } from "./bill-client.service";
@@ -10,6 +11,21 @@ export default class AdminOrderService {
     private readonly billGateway: BillGateway,
     private readonly now: () => Date = () => new Date(),
   ) {}
+
+  async listPaymentConfirmations(): Promise<StorefrontOrder[]> {
+    const orders = await this.orderRepo.listByStatus(
+      orderStatus_e.PaymentNotified,
+    );
+
+    return orders.map((order) => ({
+      id: order.orderID,
+      customerID: order.customerID,
+      date: order.createdAt,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      items: order.items,
+    }));
+  }
 
   async confirmPayment(
     orderID: unknown,
