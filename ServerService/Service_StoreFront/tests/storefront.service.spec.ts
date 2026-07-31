@@ -60,7 +60,11 @@ describe("StorefrontService", () => {
     const evidenceStorage = {
       uploadEvidence: jasmine
         .createSpy("uploadEvidence")
-        .and.resolveTo("SO-001/new-evidence.png"),
+        .and.resolveTo({
+          objectKey: "SO-001/new-evidence.webp",
+          fileName: "proof.webp",
+          mimeType: "image/webp",
+        }),
       getEvidenceUrl: jasmine
         .createSpy("getEvidenceUrl")
         .and.callFake((key: string) =>
@@ -211,7 +215,7 @@ describe("StorefrontService", () => {
 
     expect(updated.status).toBe(orderStatus_e.PaymentNotified);
     expect(updated.confirmationEvidence?.dataUrl).toBe(
-      "https://minio.example/SO-001/new-evidence.png?signed=true",
+      "https://minio.example/SO-001/new-evidence.webp?signed=true",
     );
     expect(evidenceStorage.uploadEvidence).toHaveBeenCalledWith(
       jasmine.any(Uint8Array),
@@ -223,9 +227,9 @@ describe("StorefrontService", () => {
       "CUST-001",
       "SO-001",
       jasmine.objectContaining({
-        fileName: "proof.png",
-        mimeType: "image/png",
-        objectKey: "SO-001/new-evidence.png",
+        fileName: "proof.webp",
+        mimeType: "image/webp",
+        objectKey: "SO-001/new-evidence.webp",
         updatedAt: fixedNow,
       }),
     );

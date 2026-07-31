@@ -38,6 +38,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "minio": "^8.0.7",
-    "mongoose": "^8.13.0"
+    "mongoose": "^8.13.0",
+    "sharp": "^0.34.5"
   }
 }

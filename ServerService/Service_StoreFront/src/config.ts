@@ -61,3 +61,5 @@ export const MINIO_PASSWORD = requireEnv("MINIO_PASSWORD");
 export const PAYMENT_EVIDENCE_BUCKET =
   process.env.PAYMENT_EVIDENCE_BUCKET || "storefront-payment";
 export const EVIDENCE_URL_EXPIRY_SECONDS = 15 * 60;
+export const MAX_EVIDENCE_IMAGE_WIDTH = 720;
+export const MAX_EVIDENCE_IMAGE_HEIGHT = 720;

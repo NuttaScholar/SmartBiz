@@ -563,6 +563,7 @@ body:
 
 - decoded file size ต้องไม่เกิน 2 MB
 - MIME ใน `dataUrl` ต้องตรงกับ `mimeType`
+- ข้อมูลรูปภาพต้องเป็นไฟล์ที่ `sharp` อ่านและแปลงได้ มิฉะนั้นตอบ `400`
 - แก้ไขได้เฉพาะสถานะ `Submitted` หรือ `PaymentNotified`
 - upload สำเร็จจะเปลี่ยนสถานะเป็น `PaymentNotified`
 - Express JSON limit ตั้งไว้ที่ 3 MB เพื่อรองรับ base64 overhead
@@ -570,10 +571,15 @@ body:
 ขั้นตอนจัดเก็บ:
 
 1. API decode `dataUrl` เป็น binary
-2. upload binary ไป MinIO bucket `storefront-payment`
-3. bucket ใช้ private policy แบบเดียวกับ bucket `bill` ของ Service_Stock
-4. MongoDB เก็บเฉพาะ `fileName`, `mimeType`, `objectKey` และ `updatedAt`
-5. เมื่อแทนไฟล์ ระบบอัปเดต MongoDB ก่อนแล้วลบ object เดิม
+2. ถ้าเป็นรูปภาพ ระบบใช้ `sharp` ทำ auto-rotate ตาม EXIF และ resize ให้อยู่ใน
+   กรอบไม่เกิน 720x720 pixel ด้วย `fit: inside` โดยไม่ขยายภาพที่เล็กกว่า
+3. แปลงรูปภาพเป็น WebP ด้วย quality 80 ก่อน upload ส่วน PDF จะคงข้อมูลเดิม
+4. upload binary ไป MinIO bucket `storefront-payment` โดยรูปภาพใช้ extension
+   `.webp` และ `Content-Type: image/webp`
+5. bucket ใช้ private policy แบบเดียวกับ bucket `bill` ของ Service_Stock
+6. MongoDB เก็บเฉพาะ `fileName`, `mimeType`, `objectKey` และ `updatedAt` โดย
+   metadata ของรูปภาพที่เก็บจะเป็นชื่อ `.webp` และ `image/webp`
+7. เมื่อแทนไฟล์ ระบบอัปเดต MongoDB ก่อนแล้วลบ object เดิม
 
 เมื่ออ่าน order API จะสร้าง MinIO presigned GET URL อายุ 15 นาที และส่งใน
 field `confirmationEvidence.dataUrl` เพื่อให้ contract ของหน้า Storefront
@@ -582,8 +588,8 @@ field `confirmationEvidence.dataUrl` เพื่อให้ contract ของ
 ```json
 {
   "confirmationEvidence": {
-    "fileName": "proof.png",
-    "mimeType": "image/png",
+    "fileName": "proof.webp",
+    "mimeType": "image/webp",
     "dataUrl": "http://localhost:9000/storefront-payment/...?X-Amz-Signature=...",
     "updatedAt": "2026-07-25T03:00:00.000Z"
   }

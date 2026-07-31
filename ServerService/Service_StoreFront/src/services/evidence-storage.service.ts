@@ -1,6 +1,9 @@
 import * as minio from "minio";
+import sharp from "sharp";
 import {
   EVIDENCE_URL_EXPIRY_SECONDS,
+  MAX_EVIDENCE_IMAGE_HEIGHT,
+  MAX_EVIDENCE_IMAGE_WIDTH,
   MINIO_ENDPOINT,
   MINIO_PASSWORD,
   MINIO_PORT,
@@ -8,11 +11,18 @@ import {
   MINIO_USER,
   PAYMENT_EVIDENCE_BUCKET,
 } from "../config";
+import AppError from "../utils/app-error";
 
 type BucketPolicy = {
   Version: string;
   Statement: unknown[];
 };
+
+export interface EvidenceUploadResult {
+  objectKey: string;
+  fileName: string;
+  mimeType: string;
+}
 
 export default class EvidenceStorageService {
   private readonly client = new minio.Client({
@@ -49,8 +59,13 @@ export default class EvidenceStorageService {
     orderID: string,
     fileName: string,
     mimeType: string,
-  ): Promise<string> {
-    const extension = this.extensionFor(mimeType);
+  ): Promise<EvidenceUploadResult> {
+    const isImage = mimeType.startsWith("image/");
+    const storedMimeType = isImage ? "image/webp" : mimeType;
+    const storedFileName = isImage
+      ? this.withWebpExtension(fileName)
+      : fileName;
+    const extension = this.extensionFor(storedMimeType);
     const randomBytes = new Uint8Array(16);
     globalThis.crypto.getRandomValues(randomBytes);
     const suffix = Array.from(randomBytes)
@@ -58,7 +73,10 @@ export default class EvidenceStorageService {
       .join("");
     const safeOrderID = orderID.replace(/[^a-z0-9_-]/gi, "_");
     const objectKey = `${safeOrderID}/${Date.now()}-${suffix}.${extension}`;
-    const buffer = Buffer.from(data);
+    const sourceBuffer = Buffer.from(data);
+    const buffer = isImage
+      ? await this.convertImageToWebp(sourceBuffer)
+      : sourceBuffer;
 
     await this.client.putObject(
       PAYMENT_EVIDENCE_BUCKET,
@@ -66,12 +84,16 @@ export default class EvidenceStorageService {
       buffer,
       buffer.length,
       {
-        "Content-Type": mimeType,
-        "Content-Disposition": `inline; filename="${this.safeFileName(fileName)}"`,
+        "Content-Type": storedMimeType,
+        "Content-Disposition": `inline; filename="${this.safeFileName(storedFileName)}"`,
         "Cache-Control": "private, no-store",
       },
     );
-    return objectKey;
+    return {
+      objectKey,
+      fileName: storedFileName,
+      mimeType: storedMimeType,
+    };
   }
 
   getEvidenceUrl(objectKey: string): Promise<string> {
@@ -99,5 +121,27 @@ export default class EvidenceStorageService {
 
   private safeFileName(fileName: string): string {
     return fileName.replace(/["\r\n]/g, "_");
+  }
+
+  private withWebpExtension(fileName: string): string {
+    const replaced = fileName.replace(/\.[^./\\]+$/, ".webp");
+    return replaced === fileName ? `${fileName}.webp` : replaced;
+  }
+
+  private async convertImageToWebp(source: Buffer): Promise<Buffer> {
+    try {
+      return await sharp(source)
+        .rotate()
+        .resize({
+          width: MAX_EVIDENCE_IMAGE_WIDTH,
+          height: MAX_EVIDENCE_IMAGE_HEIGHT,
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 80 })
+        .toBuffer();
+    } catch {
+      throw new AppError("Evidence image data is invalid", 400);
+    }
   }
 }

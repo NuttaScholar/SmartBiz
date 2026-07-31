@@ -32,7 +32,11 @@ export interface EvidenceStorage {
     orderID: string,
     fileName: string,
     mimeType: string,
-  ): Promise<string>;
+  ): Promise<{
+    objectKey: string;
+    fileName: string;
+    mimeType: string;
+  }>;
   getEvidenceUrl(objectKey: string): Promise<string>;
   removeEvidence(objectKey: string): Promise<void>;
 }
@@ -183,16 +187,16 @@ export default class StorefrontService {
     }
 
     const parsedEvidence = this.parseEvidence(input);
-    const objectKey = await this.evidenceStorage.uploadEvidence(
+    const uploadedEvidence = await this.evidenceStorage.uploadEvidence(
       parsedEvidence.data,
       normalizedOrderID,
       parsedEvidence.fileName,
       parsedEvidence.mimeType,
     );
     const evidence: StoredConfirmationEvidence = {
-      fileName: parsedEvidence.fileName,
-      mimeType: parsedEvidence.mimeType,
-      objectKey,
+      fileName: uploadedEvidence.fileName,
+      mimeType: uploadedEvidence.mimeType,
+      objectKey: uploadedEvidence.objectKey,
       updatedAt: this.now(),
     };
 
@@ -210,12 +214,12 @@ export default class StorefrontService {
       }
 
       const previousKey = currentOrder.confirmationEvidence?.objectKey;
-      if (previousKey && previousKey !== objectKey) {
+      if (previousKey && previousKey !== uploadedEvidence.objectKey) {
         await this.removeEvidenceSafely(previousKey);
       }
       return this.mapOrder(updated);
     } catch (thrown) {
-      await this.removeEvidenceSafely(objectKey);
+      await this.removeEvidenceSafely(uploadedEvidence.objectKey);
       throw thrown;
     }
   }
