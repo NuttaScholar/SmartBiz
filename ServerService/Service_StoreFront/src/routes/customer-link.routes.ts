@@ -26,6 +26,11 @@ export default function customerLinkRoutes(
     adminOrServiceScope("storefront.customer-link.read"),
     controller.getCustomerLink,
   );
+  router.delete(
+    "/:customerID",
+    adminOrServiceScope("storefront.customer-link.manage"),
+    controller.disableCustomerLink,
+  );
   router.patch(
     "/:customerID/token",
     adminOrServiceScope("storefront.customer-link.manage"),

@@ -96,6 +96,7 @@ export interface CustomerLink {
   customerName: string;
   token: string;
   path: string;
+  isActive: boolean;
 }
 
 export interface DiscountItem {

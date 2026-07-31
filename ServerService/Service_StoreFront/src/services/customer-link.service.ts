@@ -77,6 +77,7 @@ export default class CustomerLinkService {
       access.customerID,
       access.customerName,
       access.token,
+      access.isActive,
     );
   }
 
@@ -99,7 +100,22 @@ export default class CustomerLinkService {
       throw new AppError("Customer link not found", 404);
     }
 
-    return this.toCustomerLink(contact.codeName, contact.billName, token);
+    return this.toCustomerLink(contact.codeName, contact.billName, token, true);
+  }
+
+  async disableCustomerLink(customerID: unknown): Promise<CustomerLink> {
+    const normalizedCustomerID = this.requireCustomerID(customerID);
+    const updated = await this.accessRepo.disable(normalizedCustomerID);
+    if (!updated) {
+      throw new AppError("Customer link not found", 404);
+    }
+
+    return this.toCustomerLink(
+      updated.customerID,
+      updated.customerName,
+      updated.token,
+      updated.isActive,
+    );
   }
 
   private requireCustomerID(customerID: unknown): string {
@@ -113,12 +129,14 @@ export default class CustomerLinkService {
     customerID: string,
     customerName: string,
     token: string,
+    isActive = true,
   ): CustomerLink {
     return {
       customerID,
       customerName,
       token,
       path: `/storefront/${token}`,
+      isActive,
     };
   }
 }

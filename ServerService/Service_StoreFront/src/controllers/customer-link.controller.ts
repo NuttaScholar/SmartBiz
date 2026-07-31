@@ -72,4 +72,23 @@ export default class CustomerLinkController {
     }
   };
 
+  disableCustomerLink = async (
+    request: AuthRequest,
+    response: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      response.json(
+        success(
+          await this.service.disableCustomerLink(
+            request.params.customerID,
+          ),
+          "Customer link disabled",
+        ),
+      );
+    } catch (thrown) {
+      next(thrown);
+    }
+  };
+
 }

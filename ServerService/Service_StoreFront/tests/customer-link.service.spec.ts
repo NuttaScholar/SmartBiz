@@ -33,6 +33,9 @@ describe("CustomerLinkService", () => {
       rotateToken: jasmine
         .createSpy("rotateToken")
         .and.resolveTo({ customerID: "CUST-001" }),
+      disable: jasmine
+        .createSpy("disable")
+        .and.resolveTo(linkExists ? { ...existingAccess, isActive: false } : null),
     };
     const discountRepo = {
       findByCustomerID: jasmine
@@ -84,6 +87,7 @@ describe("CustomerLinkService", () => {
       customerName: "Customer One",
       token: generatedToken,
       path: `/storefront/${generatedToken}`,
+      isActive: true,
     });
   });
 
@@ -107,6 +111,7 @@ describe("CustomerLinkService", () => {
       customerName: "Customer One",
       token: generatedToken,
       path: `/storefront/${generatedToken}`,
+      isActive: true,
     });
   });
 
@@ -153,5 +158,14 @@ describe("CustomerLinkService", () => {
       generatedToken,
     );
     expect(result.token).toBe(generatedToken);
+  });
+
+  it("disables an existing customer link", async () => {
+    const { service, accessRepo } = createService(true, true);
+
+    const result = await service.disableCustomerLink(" CUST-001 ");
+
+    expect(accessRepo.disable).toHaveBeenCalledWith("CUST-001");
+    expect(result.isActive).toBeFalse();
   });
 });

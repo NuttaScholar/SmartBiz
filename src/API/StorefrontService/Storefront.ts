@@ -20,6 +20,7 @@ export type CustomerLink = {
   customerName: string;
   token: string;
   path: string;
+  isActive: boolean;
 };
 
 export type StorefrontProductDiscount = {
@@ -219,6 +220,18 @@ export function rotateCustomerToken(
     axios_storefront.patch(
       `/storefront/admin/customer-links/${pathSegment(customerID)}/token`,
       undefined,
+      adminAuth(accessToken),
+    ),
+  );
+}
+
+export function disableCustomerLink(
+  accessToken: string,
+  customerID: string,
+): Promise<CustomerLink> {
+  return request(() =>
+    axios_storefront.delete(
+      `/storefront/admin/customer-links/${pathSegment(customerID)}`,
       adminAuth(accessToken),
     ),
   );

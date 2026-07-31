@@ -54,4 +54,12 @@ export default class StorefrontAccessRepo {
     );
   }
 
+  disable(customerID: string) {
+    return this.model.findOneAndUpdate(
+      { customerID },
+      { $set: { isActive: false } },
+      { new: true, runValidators: true },
+    ).select("+token");
+  }
+
 }

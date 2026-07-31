@@ -1,4 +1,5 @@
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import BlockIcon from "@mui/icons-material/Block";
 import LaunchIcon from "@mui/icons-material/Launch";
 import KeyIcon from "@mui/icons-material/Key";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
@@ -19,6 +20,7 @@ import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   createCustomerLink,
+  disableCustomerLink,
   getCustomerLink,
   getStorefrontErrorMessage,
   rotateCustomerToken,
@@ -163,6 +165,34 @@ export default function Page_CustomerCreate() {
     }
   }
 
+  async function disableStorefront() {
+    if (!customerLink || !customerLink.isActive) return;
+    if (
+      !window.confirm(
+        "ยืนยันการปิดใช้งาน Storefront? ลูกค้าจะไม่สามารถเข้าใช้งานผ่านลิงก์ปัจจุบันได้ทันที",
+      )
+    ) {
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const link = await storefrontAdminWithRetry(
+        authContext,
+        (accessToken) =>
+          disableCustomerLink(accessToken, customerLink.customerID),
+      );
+      setCustomerLink(link);
+      setMessage("ปิดใช้งาน Storefront เรียบร้อยแล้ว");
+    } catch (requestError) {
+      handleError(requestError);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function copyLink() {
     if (!customerLink) return;
 
@@ -265,8 +295,12 @@ export default function Page_CustomerCreate() {
                       </Typography>
                     </Box>
                     <Chip
-                      label="เปิดใช้งาน Storefront แล้ว"
-                      color="success"
+                      label={
+                        customerLink.isActive
+                          ? "เปิดใช้งาน Storefront แล้ว"
+                          : "ปิดใช้งาน Storefront แล้ว"
+                      }
+                      color={customerLink.isActive ? "success" : "default"}
                     />
                   </Stack>
 
@@ -286,6 +320,7 @@ export default function Page_CustomerCreate() {
                       variant="contained"
                       startIcon={<ContentCopyIcon />}
                       onClick={copyLink}
+                      disabled={!customerLink.isActive || isSaving}
                     >
                       คัดลอกลิงก์
                     </Button>
@@ -296,6 +331,17 @@ export default function Page_CustomerCreate() {
                       rel="noreferrer"
                       variant="outlined"
                       startIcon={<LaunchIcon />}
+                      aria-disabled={!customerLink.isActive || isSaving}
+                      onClick={(event) => {
+                        if (!customerLink.isActive || isSaving) {
+                          event.preventDefault();
+                        }
+                      }}
+                      sx={
+                        !customerLink.isActive || isSaving
+                          ? { pointerEvents: "none", opacity: 0.5 }
+                          : undefined
+                      }
                     >
                       เปิด Storefront
                     </Button>
@@ -308,11 +354,25 @@ export default function Page_CustomerCreate() {
                     >
                       {isSaving ? "กำลังเปลี่ยน Token" : "Rotate Token"}
                     </Button>
+                    {customerLink.isActive && (
+                      <Button
+                        color="error"
+                        variant="outlined"
+                        startIcon={<BlockIcon />}
+                        onClick={disableStorefront}
+                        disabled={isSaving}
+                      >
+                        {isSaving
+                          ? "กำลังปิดใช้งาน"
+                          : "ปิดใช้งาน Storefront"}
+                      </Button>
+                    )}
                   </Stack>
 
                   <Alert severity="info">
-                    เมื่อ Rotate Token ลิงก์เดิมจะหมดสิทธิ์ทันที
-                    และต้องส่งลิงก์ใหม่ให้ลูกค้า
+                    {customerLink.isActive
+                      ? "เมื่อ Rotate Token ลิงก์เดิมจะหมดสิทธิ์ทันที และต้องส่งลิงก์ใหม่ให้ลูกค้า"
+                      : "Storefront ถูกปิดใช้งาน ลูกค้าจะเข้าใช้งานผ่านลิงก์นี้ไม่ได้ สามารถ Rotate Token เพื่อเปิดใช้งานอีกครั้ง"}
                   </Alert>
                 </Stack>
               )}
