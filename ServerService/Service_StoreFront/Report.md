@@ -161,7 +161,7 @@ MinIO
 | --- | --- | --- |
 | `id` | string | รหัสสินค้า, unique |
 | `name` | string | ชื่อสินค้า |
-| `type` | number | หน้า Storefront เลือกเฉพาะ `merchandise = 0` |
+| `type` | number | หน้า Storefront เลือก `merchandise = 0` และ `another = 2` |
 | `status` | number | `normal = 0`, `stockLow = 1`, `stockOut = 2` |
 | `amount` | number | จำนวนคงเหลือ |
 | `description` | string | รายละเอียด |
@@ -453,7 +453,7 @@ validation:
 - `items` ต้องไม่ว่าง
 - `productID` ห้ามซ้ำใน request เดียวกัน
 - `quantity` ต้องเป็นจำนวนเต็มมากกว่า 0
-- สินค้าต้องเป็น merchandise และมีราคา
+- สินค้าต้องเป็น merchandise หรือ another และมีราคา
 - quantity ต้องไม่เกิน stock ปัจจุบัน
 - frontend ไม่ต้องและไม่ควรส่งราคา/ส่วนลด/ยอดรวม
 - service คำนวณ snapshot และ `totalAmount` จากฐานข้อมูลเท่านั้น

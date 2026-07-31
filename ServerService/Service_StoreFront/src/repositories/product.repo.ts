@@ -11,7 +11,12 @@ export default class ProductRepo {
 
   listStorefrontProducts(query?: string) {
     const filter: Record<string, unknown> = {
-      type: productType_e.merchandise,
+      type: {
+        $in: [
+          productType_e.merchandise,
+          productType_e.another,
+        ],
+      },
       price: { $gte: 0 },
     };
 
@@ -26,7 +31,12 @@ export default class ProductRepo {
   findByIds(productIDs: string[]) {
     return this.model.find({
       id: { $in: productIDs },
-      type: productType_e.merchandise,
+      type: {
+        $in: [
+          productType_e.merchandise,
+          productType_e.another,
+        ],
+      },
       price: { $gte: 0 },
     });
   }
