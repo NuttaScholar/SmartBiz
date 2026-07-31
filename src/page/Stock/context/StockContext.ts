@@ -10,6 +10,8 @@ export enum stockFilter_e {
   materialLow,
   materialOut,
   another,
+  anotherLow,
+  anotherOut,
 }
 export enum stockDialog_e {
   none,

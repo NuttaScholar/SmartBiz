@@ -134,8 +134,8 @@ export default function Page_StockOut() {
       id: productID,
       name: form.product?.value || "",
       amount,
-      type: productType_e.merchandise,
-      status: stockStatus_e.normal,
+      type: product?.type ?? productType_e.merchandise,
+      status: product?.status ?? stockStatus_e.normal,
       img: product?.img || "",
     };
 

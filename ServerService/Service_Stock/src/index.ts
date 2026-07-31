@@ -11,6 +11,7 @@ import productRoutes from "./routes/product.routes";
 import stockRoutes from "./routes/stock.routes";
 import StorageService from "./services/storage.service";
 import { BILL_BUCKET, DEFAULT_BUCKET, PORT, WEB_HOST } from "./config";
+import ProductRepo from "./repositories/product.repo";
 
 const app = express();
 
@@ -29,6 +30,7 @@ async function startServer() {
   const LogModel = db.model<LogDocument>("log", LogSchema);
   const storageService = new StorageService();
 
+  await new ProductRepo(ProductModel).initializeAnotherInventory();
   await storageService.initBucket(DEFAULT_BUCKET, false);
   await storageService.initBucket(BILL_BUCKET, true);
 

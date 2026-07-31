@@ -40,10 +40,18 @@ export default class StockService {
     await this.ensureProductIsUnique(data.id, data.name);
 
     const { img: _requestedImg, ...productData } = data;
-    const status = this.resolveStockStatus(Number(data.amount), Number(data.condition));
+    const amount = this.requireInventoryValue(data.amount, "amount");
+    const condition = this.requireInventoryValue(data.condition, "condition");
+    const status = this.resolveStockStatus(amount, condition);
     const img = file ? (await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url : undefined;
 
-    await this.productRepo.create({ ...productData, status, ...(img ? { img } : {}) });
+    await this.productRepo.create({
+      ...productData,
+      amount,
+      condition,
+      status,
+      ...(img ? { img } : {}),
+    });
   }
 
   async updateProduct(data: productInfo_t, file?: Express.Multer.File) {
@@ -56,8 +64,18 @@ export default class StockService {
       throw { code: errorCode_e.AlreadyExistsError, message: "Product name already exists" };
     }
 
-    const { img: _requestedImg, ...productData } = data;
-    const status = this.resolveStockStatus(Number(product.amount), Number(data.condition));
+    const { img: _requestedImg, ...requestedProductData } = data;
+    const amount = this.requireInventoryValue(
+      product.amount ?? data.amount,
+      "amount",
+    );
+    const condition = this.requireInventoryValue(data.condition, "condition");
+    const productData = {
+      ...requestedProductData,
+      amount,
+      condition,
+    };
+    const status = this.resolveStockStatus(amount, condition);
     if (file) {
       await this.removeProductImage(product.img);
       const img = (await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url;
@@ -198,19 +216,26 @@ export default class StockService {
     for (const item of products) {
       try {
         const product = await this.productRepo.findById(item.productID);
-        if (!product || product.amount === undefined) {
+        if (!product) {
           errors.push(item);
           continue;
         }
 
-        const currentAmount = Number(product.amount);
+        const currentAmount = Number(product.amount ?? 0);
+        if (!Number.isFinite(currentAmount)) {
+          errors.push(item);
+          continue;
+        }
         if (type === stockLogType_e.out && currentAmount < item.amount) {
           errors.push(item);
           continue;
         }
 
         const newAmount = type === stockLogType_e.in ? currentAmount + item.amount : currentAmount - item.amount;
-        const newStatus = this.resolveStockStatus(newAmount, Number(product.condition));
+        const newStatus = this.resolveStockStatus(
+          newAmount,
+          Number(product.condition ?? 0),
+        );
         await this.productRepo.updateById(item.productID, { amount: newAmount, status: newStatus });
 
         logs.push({
@@ -236,8 +261,23 @@ export default class StockService {
     return stockStatus_e.normal;
   }
 
+  private requireInventoryValue(value: unknown, fieldName: string) {
+    const numberValue = Number(value);
+    if (!Number.isFinite(numberValue) || numberValue < 0) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: `${fieldName} must be a non-negative number`,
+      };
+    }
+    return numberValue;
+  }
+
   private parseProductTypes(productType?: string | string[]) {
-    const defaultTypes = [productType_e.merchandise, productType_e.material];
+    const defaultTypes = [
+      productType_e.merchandise,
+      productType_e.material,
+      productType_e.another,
+    ];
     if (productType === undefined) return defaultTypes;
 
     const rawTypes = Array.isArray(productType)

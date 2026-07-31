@@ -52,6 +52,9 @@ export type stockStatus_t = {
   materialTotal: number;
   materialLow: number;
   materialOut: number;
+  anotherTotal: number;
+  anotherLow: number;
+  anotherOut: number;
 }
 export type productRes_t = {
   status: stockStatus_t;

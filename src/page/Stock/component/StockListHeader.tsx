@@ -73,6 +73,9 @@ const StockListHeader: React.FC<myProps> = (props) => {
           reface: state.reface + 1,
         });
         break;
+      case stockFilter_e.another:
+      case stockFilter_e.anotherLow:
+      case stockFilter_e.anotherOut:
       default:
         setState({
           ...state,
@@ -87,6 +90,20 @@ const StockListHeader: React.FC<myProps> = (props) => {
     switch (state.filter) {
       case stockFilter_e.another:
         query.type = productType_e.another;
+        break;
+      case stockFilter_e.anotherLow:
+        query = {
+          type: productType_e.another,
+          name,
+          status: stockStatus_e.stockLow,
+        };
+        break;
+      case stockFilter_e.anotherOut:
+        query = {
+          type: productType_e.another,
+          name,
+          status: stockStatus_e.stockOut,
+        };
         break;
       case stockFilter_e.materialLow:
         query.status = stockStatus_e.stockLow;
@@ -141,6 +158,8 @@ const StockListHeader: React.FC<myProps> = (props) => {
         setTab(1);
         break;
       case stockFilter_e.another:
+      case stockFilter_e.anotherLow:
+      case stockFilter_e.anotherOut:
         setTab(2);
         break;
       default:
@@ -165,7 +184,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
       />
       <TabBox
         gotoTop={state.trigger_gotoTop}
-        list={["สินค้า", "วัตถุดิบ", "สินค้าขายพ่วง"]}
+        list={["สินค้า", "วัตถุดิบ", "สินค้าอื่นๆ"]}
         height="calc(100vh - 150px)"
         alignItems="center"
         onClick={handleTabChange}

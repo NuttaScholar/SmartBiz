@@ -27,6 +27,39 @@ export default class ProductRepo {
     return this.ProductModel.deleteOne({ id });
   }
 
+  initializeAnotherInventory() {
+    return this.ProductModel.updateMany(
+      {
+        type: productType_e.another,
+      },
+      [
+        {
+          $set: {
+            amount: { $ifNull: ["$amount", 0] },
+            condition: { $ifNull: ["$condition", 0] },
+          },
+        },
+        {
+          $set: {
+            status: {
+              $cond: [
+                { $eq: ["$amount", 0] },
+                stockStatus_e.stockOut,
+                {
+                  $cond: [
+                    { $lt: ["$amount", "$condition"] },
+                    stockStatus_e.stockLow,
+                    stockStatus_e.normal,
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+    );
+  }
+
   async search(type?: string, name?: string, status?: string) {
     const filter: Record<string, number> = {};
     if (status) filter.status = Number(status);
@@ -58,6 +91,9 @@ export default class ProductRepo {
       materialOut,
       materialLow,
       materialTotal,
+      anotherOut,
+      anotherLow,
+      anotherTotal,
     ] = await Promise.all([
       this.ProductModel.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.stockOut }),
       this.ProductModel.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.stockLow }),
@@ -65,6 +101,9 @@ export default class ProductRepo {
       this.ProductModel.countDocuments({ type: productType_e.material, status: stockStatus_e.stockOut }),
       this.ProductModel.countDocuments({ type: productType_e.material, status: stockStatus_e.stockLow }),
       this.ProductModel.countDocuments({ type: productType_e.material }),
+      this.ProductModel.countDocuments({ type: productType_e.another, status: stockStatus_e.stockOut }),
+      this.ProductModel.countDocuments({ type: productType_e.another, status: stockStatus_e.stockLow }),
+      this.ProductModel.countDocuments({ type: productType_e.another }),
     ]);
 
     return {
@@ -74,6 +113,9 @@ export default class ProductRepo {
       materialTotal,
       materialLow,
       materialOut,
+      anotherTotal,
+      anotherLow,
+      anotherOut,
     };
   }
 

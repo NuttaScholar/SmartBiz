@@ -61,6 +61,9 @@ export type stockStatus_t = {
   materialTotal: number;
   materialLow: number;
   materialOut: number;
+  anotherTotal: number;
+  anotherLow: number;
+  anotherOut: number;
 }
 export type billInfo_t = {
   id: string;

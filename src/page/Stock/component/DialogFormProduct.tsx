@@ -31,7 +31,7 @@ import {
 const typeList: listSelect_t[] = [
   { label: "สินค้า", value: productType_e.merchandise },
   { label: "วัสถุดิบ", value: productType_e.material },
-  { label: "สินค้าขายพ่วง", value: productType_e.another },
+  { label: "สินค้าอื่นๆ", value: productType_e.another },
 ];
 //*********************************************
 // Transition
@@ -55,6 +55,11 @@ const DialogFormProduct: React.FC = () => {
   const { state, setState } = useStockContext();
   const [type, setType] = useState<number | null>(productType_e.merchandise);
   const [file, setFile] = useState<File | null>();
+  React.useEffect(() => {
+    if (state.dialogOpen === stockDialog_e.productForm) {
+      setType(state.productForm?.type ?? productType_e.merchandise);
+    }
+  }, [state.dialogOpen, state.productForm]);
   // Local Function ***********
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -227,30 +232,26 @@ const DialogFormProduct: React.FC = () => {
             defauleValue={state.productForm?.price?.toString()}
           />
         )}
-        {(type === productType_e.material ||
-          type === productType_e.merchandise) && (
-          <>
-            <FieldText
-              required
-              type="number"
-              label="Amount"
-              name="amount"
-              placeholder="จำนวน"
-              readonly={state.productForm !== undefined}
-              defauleValue={
-                state.productForm && state.productForm.amount?.toString()
-              }
-            />
-            <FieldText
-              required
-              type="number"
-              label="Condition"
-              name="condition"
-              placeholder="เตือนเมื่อสินค้าเหลือน้อยกว่าที่ระบุ"
-              defauleValue={state.productForm?.condition?.toString()}
-            />
-          </>
-        )}
+        <FieldText
+          required
+          type="number"
+          label="Amount"
+          name="amount"
+          placeholder="จำนวน"
+          readonly={
+            state.productForm !== undefined
+            && state.productForm.amount !== undefined
+          }
+          defauleValue={state.productForm?.amount?.toString()}
+        />
+        <FieldText
+          required
+          type="number"
+          label="Condition"
+          name="condition"
+          placeholder="เตือนเมื่อสินค้าเหลือน้อยกว่าที่ระบุ"
+          defauleValue={state.productForm?.condition?.toString()}
+        />
 
         <Box
           sx={{

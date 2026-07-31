@@ -29,7 +29,7 @@ const StockList: React.FC<myProps> = (props) => {
       {state.productList?.map((product, index) => (
         <CardProduct
           key={index}
-          value={{ ...product, img: product.img }}
+          value={product}
           maxWidth="400px"
           variant={props.variant}
           onClick={props.onClick}

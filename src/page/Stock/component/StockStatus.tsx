@@ -32,6 +32,12 @@ const StockStatus: React.FC = () => {
       onClick: () => onClickCard(stockFilter_e.materialOut),
     },
     {
+      label: "สินค้าอื่นๆ หมด",
+      id: stockFilter_e.anotherOut,
+      color_value: "error",
+      onClick: () => onClickCard(stockFilter_e.anotherOut),
+    },
+    {
       label: "สินค้าใกล้หมด",
       id: stockFilter_e.stockLow,
       color_value: "info",
@@ -42,14 +48,33 @@ const StockStatus: React.FC = () => {
       id: stockFilter_e.materialLow,
       color_value: "info",
       onClick: () => onClickCard(stockFilter_e.materialLow),
+    },    
+    {
+      label: "สินค้าอื่นๆ ใกล้หมด",
+      id: stockFilter_e.anotherLow,
+      color_value: "info",
+      onClick: () => onClickCard(stockFilter_e.anotherLow),
     },
   ];
   const stockOut = state.status ? state.status.stockOut : undefined;
   const materialOut = state.status ? state.status.materialOut : undefined;
   const stockLow = state.status ? state.status.stockLow : undefined;
   const materialLow = state.status ? state.status.materialLow : undefined;
+  const anotherOut = state.status ? state.status.anotherOut : undefined;
+  const anotherLow = state.status ? state.status.anotherLow : undefined;
   return (
-    <StatusPanel list={list} state={state.filter} value={[stockOut, materialOut, stockLow, materialLow]}/>
+    <StatusPanel
+      list={list}
+      state={state.filter}
+      value={[
+        stockOut,
+        materialOut,
+        stockLow,
+        materialLow,
+        anotherOut,
+        anotherLow,
+      ]}
+    />
   );
 };    
 

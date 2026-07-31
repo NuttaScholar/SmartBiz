@@ -97,6 +97,10 @@ Error:
 | 1 | `material` |
 | 2 | `another` |
 
+All product types track `amount`, `condition`, and stock status. When the
+service starts, legacy `another` records without inventory fields are
+initialized with zero quantity and an out-of-stock status.
+
 ## Stock Status
 
 | Value | Name |
@@ -155,7 +159,10 @@ Response:
       "stockOut": 0,
       "materialTotal": 1,
       "materialLow": 0,
-      "materialOut": 0
+      "materialOut": 0,
+      "anotherTotal": 1,
+      "anotherLow": 0,
+      "anotherOut": 1
     },
     "products": []
   }
@@ -178,13 +185,16 @@ Before deletion, the service checks `Service_Bill` to ensure the product is not 
 GET /stock?productType=0,1
 ```
 
-`productType` is optional. It accepts a single number, comma-separated numbers, or repeated query values.
+`productType` is optional. It accepts a single number, comma-separated numbers, or repeated query values. When omitted, the response includes `merchandise`, `material`, and `another`.
 
 ### Get Stock Status
 
 ```http
 GET /status
 ```
+
+The status response tracks total, low-stock, and out-of-stock counts for all
+three product types, including `another`.
 
 ### Stock In
 
