@@ -22,6 +22,7 @@ describe("BillService", () => {
       getOrder: jasmine.createSpy("getOrder"),
       updateOrder: jasmine.createSpy("updateOrder").and.callFake((orderID, data) => Promise.resolve({ orderID, ...data })),
       updateStatus: jasmine.createSpy("updateStatus").and.callFake((orderID, status) => Promise.resolve({ orderID, status })),
+      deleteOrder: jasmine.createSpy("deleteOrder").and.resolveTo({ orderID: "ORD001" }),
     };
     service.productRepo = {
       findById: jasmine.createSpy("findById").and.resolveTo({
@@ -72,6 +73,112 @@ describe("BillService", () => {
     expect(service.contactRepo.findByCodeName).toHaveBeenCalledWith("CUST001");
     expect(service.repo.createOrder).toHaveBeenCalledWith(payload);
     expect(result).toEqual(payload);
+  });
+
+  it("deducts stock when creating an order with an another product", async () => {
+    const service = createService();
+    service.productRepo.findById.and.resolveTo({
+      id: "OTHER001",
+      type: productType_e.another,
+      name: "Other Product",
+      status: stockStatus_e.normal,
+      amount: 5,
+      condition: 2,
+      price: 100,
+    });
+    const payload = {
+      customerID: "CUST001",
+      status: OrderStatus.PrepareProduct,
+      items: [
+        {
+          productID: "OTHER001",
+          quantity: 3,
+          priceOriginal: 100,
+          priceAfterDiscount: 100,
+        },
+      ],
+      totalAmount: 300,
+    };
+
+    await service.createOrder(payload);
+
+    expect(service.productRepo.updateById).toHaveBeenCalledWith(
+      "OTHER001",
+      {
+        amount: 2,
+        status: stockStatus_e.normal,
+      },
+    );
+  });
+
+  it("rejects an another product order when stock is insufficient", async () => {
+    const service = createService();
+    service.productRepo.findById.and.resolveTo({
+      id: "OTHER001",
+      type: productType_e.another,
+      name: "Other Product",
+      status: stockStatus_e.normal,
+      amount: 2,
+      condition: 1,
+      price: 100,
+    });
+
+    try {
+      await service.createOrder({
+        customerID: "CUST001",
+        status: OrderStatus.PrepareProduct,
+        items: [
+          {
+            productID: "OTHER001",
+            quantity: 3,
+            priceOriginal: 100,
+            priceAfterDiscount: 100,
+          },
+        ],
+        totalAmount: 300,
+      });
+      fail("Expected createOrder to throw");
+    } catch (err: any) {
+      expect(err.code).toBe(errorCode_e.InvalidStateError);
+      expect(service.repo.createOrder).not.toHaveBeenCalled();
+      expect(service.productRepo.updateById).not.toHaveBeenCalled();
+    }
+  });
+
+  it("restores stock when deleting an order with an another product", async () => {
+    const service = createService();
+    service.repo.getOrder.and.resolveTo({
+      orderID: "ORD001",
+      status: OrderStatus.PrepareProduct,
+      items: [
+        {
+          productID: "OTHER001",
+          quantity: 2,
+          priceOriginal: 100,
+          priceAfterDiscount: 100,
+        },
+      ],
+      totalAmount: 200,
+    });
+    service.productRepo.findById.and.resolveTo({
+      id: "OTHER001",
+      type: productType_e.another,
+      name: "Other Product",
+      status: stockStatus_e.normal,
+      amount: 3,
+      condition: 1,
+      price: 100,
+    });
+
+    await service.deleteOrder("ORD001");
+
+    expect(service.productRepo.updateById).toHaveBeenCalledWith(
+      "OTHER001",
+      {
+        amount: 5,
+        status: stockStatus_e.normal,
+      },
+    );
   });
 
   it("searches orders with optional status", async () => {

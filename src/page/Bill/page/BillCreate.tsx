@@ -106,7 +106,10 @@ function getMaxEditableAmount(
 }
 
 function shouldLimitStock(product: productInfo_t) {
-  return product.type !== productType_e.another;
+  return (
+    product.type === productType_e.merchandise
+    || product.type === productType_e.another
+  );
 }
 
 function createMerchProduct(

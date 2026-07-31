@@ -218,6 +218,13 @@ total validation:
 - values are compared after rounding to 2 decimal places
 - if the calculated total does not match the received `totalAmount`, the API returns `InvalidInputError`
 
+inventory behavior:
+
+- creating an order deducts stock for both `merchandise` and `another`
+- insufficient stock returns `InvalidStateError`
+- updating an order applies only the quantity difference
+- deleting an order before Billing restores its stock
+
 error example:
 
 ```json

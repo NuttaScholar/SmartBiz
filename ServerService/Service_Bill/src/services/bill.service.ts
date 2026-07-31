@@ -648,10 +648,6 @@ export default class BillService {
       };
     }
 
-    if (product.type === productType_e.another) {
-      return false;
-    }
-
     if (product.amount === undefined) {
       throw {
         code: errorCode_e.NotFoundError,

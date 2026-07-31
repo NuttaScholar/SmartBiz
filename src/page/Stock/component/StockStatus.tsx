@@ -69,9 +69,9 @@ const StockStatus: React.FC = () => {
       value={[
         stockOut,
         materialOut,
-        stockLow,
-        materialLow,
         anotherOut,
+        stockLow,
+        materialLow,        
         anotherLow,
       ]}
     />
