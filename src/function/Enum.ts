@@ -24,6 +24,14 @@ export function BillStatusString(data: billStatus_e): string {
             return "Shipping";
         case billStatus_e.waitingPayment:
             return "Unpaid";
+        case billStatus_e.Submitted:
+            return "รอหลักฐาน";
+        case billStatus_e.PaymentNotified:
+            return "ยืนยันการชำระเงิน";
+        case billStatus_e.PaymentConfirmed:
+            return "ยืนยันแล้ว";
+        case billStatus_e.Cancelled:
+            return "ยกเลิก";
         default:
             return "Unknown";
     }

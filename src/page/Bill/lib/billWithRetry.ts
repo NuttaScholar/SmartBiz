@@ -9,7 +9,7 @@ import {
     updateOrderForm_t,
 } from "../../../API/BillService/type";
 import { AuthContext_t } from "../../../context/AuthContextCore";
-import { billStatus_e } from "../../../enum";
+import { billStatus_e, orderSource_e } from "../../../enum";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
 interface resOrdersWithRetry_t extends resApiWithRetry_t {
@@ -37,9 +37,14 @@ export async function searchOrders(context: AuthContext_t, condition?: searchOrd
     }
 }
 
-export async function getOrdersByStatus(context: AuthContext_t, status: billStatus_e): Promise<resOrdersWithRetry_t> {
+export async function getOrdersByStatus(context: AuthContext_t, status: billStatus_e, source?: orderSource_e): Promise<resOrdersWithRetry_t> {
     try {
-        const res: resOrdersWithRetry_t = await ApiWithRetry(context, Bill_f.getOrdersByStatus, status);
+        const res: resOrdersWithRetry_t = await ApiWithRetry(
+            context,
+            (token, input: { status: billStatus_e; source?: orderSource_e }) =>
+                Bill_f.getOrdersByStatus(token, input.status, input.source),
+            { status, source },
+        );
         return res;
     } catch (err) {
         throw err;
@@ -48,7 +53,7 @@ export async function getOrdersByStatus(context: AuthContext_t, status: billStat
 
 export async function getOrderStatusCounts(
     context: AuthContext_t,
-    condition?: Pick<searchOrderForm_t, "customerID" | "orderID">
+    condition?: Pick<searchOrderForm_t, "customerID" | "orderID" | "source">
 ): Promise<resOrderStatusCountsWithRetry_t> {
     try {
         const res: resOrderStatusCountsWithRetry_t = await ApiWithRetry(context, Bill_f.getOrderStatusCounts, condition);

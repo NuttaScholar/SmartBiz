@@ -1,5 +1,5 @@
 import BillService from "../src/services/bill.service";
-import { errorCode_e, OrderStatus, productType_e, stockStatus_e } from "../src/utils/enum";
+import { errorCode_e, OrderSource, OrderStatus, productType_e, stockStatus_e } from "../src/utils/enum";
 
 describe("BillService", () => {
   function createService(contactExists = true) {
@@ -23,6 +23,11 @@ describe("BillService", () => {
       updateOrder: jasmine.createSpy("updateOrder").and.callFake((orderID, data) => Promise.resolve({ orderID, ...data })),
       updateStatus: jasmine.createSpy("updateStatus").and.callFake((orderID, status) => Promise.resolve({ orderID, status })),
       deleteOrder: jasmine.createSpy("deleteOrder").and.resolveTo({ orderID: "ORD001" }),
+      findByStatus: jasmine.createSpy("findByStatus").and.resolveTo([]),
+      findOnlineByCustomer: jasmine.createSpy("findOnlineByCustomer").and.resolveTo([]),
+      updateOnlineEvidence: jasmine.createSpy("updateOnlineEvidence"),
+      cancelOnline: jasmine.createSpy("cancelOnline"),
+      confirmOnlinePayment: jasmine.createSpy("confirmOnlinePayment"),
     };
     service.productRepo = {
       findById: jasmine.createSpy("findById").and.resolveTo({
@@ -71,8 +76,11 @@ describe("BillService", () => {
     const result = await service.createOrder(payload);
 
     expect(service.contactRepo.findByCodeName).toHaveBeenCalledWith("CUST001");
-    expect(service.repo.createOrder).toHaveBeenCalledWith(payload);
-    expect(result).toEqual(payload);
+    expect(service.repo.createOrder).toHaveBeenCalledWith({
+      ...payload,
+      source: OrderSource.Direct,
+    });
+    expect(result).toEqual({ ...payload, source: OrderSource.Direct });
   });
 
   it("deducts stock when creating an order with an another product", async () => {
@@ -189,7 +197,8 @@ describe("BillService", () => {
     expect(service.repo.findByCustomerAndOrder).toHaveBeenCalledWith(
       "CUST001",
       "ORD001",
-      OrderStatus.Billing
+      OrderStatus.Billing,
+      undefined,
     );
     expect(result).toEqual([]);
   });
@@ -202,6 +211,7 @@ describe("BillService", () => {
         orderID: "ORD001",
         customerID: "CUST001",
         status: OrderStatus.Billing,
+        source: OrderSource.Direct,
         createdAt,
         totalAmount: 900,
         items: [
@@ -227,6 +237,7 @@ describe("BillService", () => {
         date: createdAt,
         total: 900,
         status: OrderStatus.Billing,
+        source: OrderSource.Direct,
         list: [
           {
             id: "PROD001",
@@ -383,5 +394,55 @@ describe("BillService", () => {
 
     expect(service.repo.updateStatus).toHaveBeenCalledWith("ORD001", OrderStatus.PrepareShipment);
     expect(result).toEqual({ orderID: "ORD001", status: OrderStatus.PrepareShipment });
+  });
+
+  it("creates an online order centrally in Submitted status", async () => {
+    const service = createService();
+    service.repo.getOrder.and.resolveTo(null);
+    const payload = {
+      orderID: "SO-001",
+      customerID: "CUST001",
+      items: [{
+        productID: "PROD001",
+        quantity: 1,
+        priceOriginal: 500,
+        priceAfterDiscount: 450,
+      }],
+      totalAmount: 450,
+    };
+
+    await service.createOrder(payload, OrderSource.Online);
+
+    expect(service.repo.createOrder).toHaveBeenCalledWith({
+      ...payload,
+      source: OrderSource.Online,
+      status: OrderStatus.Submitted,
+    });
+  });
+
+  it("skips Billing after an online order is ready to ship", async () => {
+    const service = createService();
+    service.createIncomeTransaction = jasmine
+      .createSpy("createIncomeTransaction")
+      .and.resolveTo(undefined);
+    service.repo.getOrder.and.resolveTo({
+      orderID: "SO-001",
+      customerID: "CUST001",
+      source: OrderSource.Online,
+      status: OrderStatus.PrepareShipment,
+      items: [{
+        productID: "PROD001",
+        quantity: 1,
+        priceOriginal: 500,
+        priceAfterDiscount: 450,
+      }],
+    });
+
+    await service.moveToNextStep("SO-001");
+
+    expect(service.repo.updateStatus).toHaveBeenCalledWith(
+      "SO-001",
+      OrderStatus.Completed,
+    );
   });
 });

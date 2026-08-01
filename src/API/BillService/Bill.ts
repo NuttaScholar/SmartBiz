@@ -59,6 +59,7 @@ function orderQuery(condition?: searchOrderForm_t) {
     condition?.customerID && params.append("customerID", condition.customerID);
     condition?.orderID && params.append("orderID", condition.orderID);
     condition?.status !== undefined && params.append("status", String(condition.status));
+    condition?.source && params.append("source", condition.source);
     const query = params.toString();
     return query ? `?${query}` : "";
 }
@@ -77,10 +78,11 @@ export async function searchOrders(
 
 export async function getOrdersByStatus(
     token: string,
-    status: billStatus_e
+    status: billStatus_e,
+    source?: searchOrderForm_t["source"],
 ): Promise<responst_t<"getOrders">> {
     try {
-        const res = await axios_bill.get(`/bill/search${orderQuery({ status })}`, authHeader(token));
+        const res = await axios_bill.get(`/bill/search${orderQuery({ status, source })}`, authHeader(token));
         return toResponse<orderInfo_t[]>(res.data) as responst_t<"getOrders">;
     } catch (err) {
         return toErrorResponse(err) as responst_t<"getOrders">;
@@ -89,7 +91,7 @@ export async function getOrdersByStatus(
 
 export async function getOrderStatusCounts(
     token: string,
-    condition?: Pick<searchOrderForm_t, "customerID" | "orderID">
+    condition?: Pick<searchOrderForm_t, "customerID" | "orderID" | "source">
 ): Promise<responst_t<"getOrderStatusCounts">> {
     try {
         const res = await axios_bill.get(`/bill/status/count${orderQuery(condition)}`, authHeader(token));

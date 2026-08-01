@@ -23,12 +23,20 @@ export enum role_e{
   cashier,
   laber,
 }
-export enum OrderStatus{  
+export enum OrderStatus{
   PrepareProduct = 0,
   PrepareShipment = 1,
   Billing = 2,
   WaitingPayment = 3,
   Completed = 4,
+  Submitted = 5,
+  PaymentNotified = 6,
+  PaymentConfirmed = 7,
+  Cancelled = 8,
+}
+export enum OrderSource {
+  Online = "online",
+  Direct = "direct",
 }
 export enum errorCode_e {
   UnknownError, // ไม่สามารถระบุสาเหตุได้

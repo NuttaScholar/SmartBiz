@@ -46,16 +46,24 @@ describe("StorefrontService", () => {
           ],
         }),
     };
-    const orderRepo = {
-      create: jasmine.createSpy("create").and.callFake((data) =>
-        Promise.resolve({ ...data, createdAt: fixedNow })),
-      listByCustomer: jasmine
-        .createSpy("listByCustomer")
+    const billGateway = {
+      createOrder: jasmine.createSpy("createOrder").and.callFake((data) =>
+        Promise.resolve({
+          ...data,
+          status: orderStatus_e.Submitted,
+          source: "online",
+          createdAt: fixedNow,
+          updatedAt: fixedNow,
+        })),
+      listOnlineOrders: jasmine
+        .createSpy("listOnlineOrders")
         .and.resolveTo([]),
-      findByCustomerAndOrder: jasmine
-        .createSpy("findByCustomerAndOrder"),
       updateEvidence: jasmine.createSpy("updateEvidence"),
-      cancelSubmitted: jasmine.createSpy("cancelSubmitted"),
+      cancelOrder: jasmine.createSpy("cancelOrder"),
+      listPaymentConfirmations: jasmine
+        .createSpy("listPaymentConfirmations")
+        .and.resolveTo([]),
+      confirmPayment: jasmine.createSpy("confirmPayment"),
     };
     const evidenceStorage = {
       uploadEvidence: jasmine
@@ -77,7 +85,7 @@ describe("StorefrontService", () => {
       accessRepo as any,
       productRepo as any,
       discountRepo as any,
-      orderRepo as any,
+      billGateway as any,
       evidenceStorage,
       "http://minio.example:9000/",
       () => fixedNow,
@@ -88,7 +96,7 @@ describe("StorefrontService", () => {
       accessRepo,
       productRepo,
       discountRepo,
-      orderRepo,
+      billGateway,
       evidenceStorage,
     };
   }
@@ -146,7 +154,7 @@ describe("StorefrontService", () => {
   });
 
   it("creates an order using server-side product prices", async () => {
-    const { service, discountRepo, orderRepo } = createService();
+    const { service, discountRepo, billGateway } = createService();
 
     const created = await service.createOrder(token, {
       items: [{ productID: "P-001", quantity: 2 }],
@@ -154,9 +162,8 @@ describe("StorefrontService", () => {
       priceAfterDiscount: 1,
     });
 
-    expect(orderRepo.create).toHaveBeenCalledWith(jasmine.objectContaining({
+    expect(billGateway.createOrder).toHaveBeenCalledWith(jasmine.objectContaining({
       customerID: "CUST-001",
-      status: orderStatus_e.Submitted,
       totalAmount: 180,
       items: [
         jasmine.objectContaining({
@@ -174,27 +181,29 @@ describe("StorefrontService", () => {
   });
 
   it("rejects an order quantity greater than available stock", async () => {
-    const { service, orderRepo } = createService();
+    const { service, billGateway } = createService();
 
     await expectAsync(service.createOrder(token, {
       items: [{ productID: "P-001", quantity: 6 }],
     })).toBeRejectedWithError(
       "Product P-001 has insufficient stock",
     );
-    expect(orderRepo.create).not.toHaveBeenCalled();
+    expect(billGateway.createOrder).not.toHaveBeenCalled();
   });
 
   it("uploads evidence and advances the order to PaymentNotified", async () => {
-    const { service, orderRepo, evidenceStorage } = createService();
-    orderRepo.findByCustomerAndOrder.and.resolveTo({
+    const { service, billGateway, evidenceStorage } = createService();
+    billGateway.listOnlineOrders.and.resolveTo([{
       orderID: "SO-001",
       customerID: "CUST-001",
       status: orderStatus_e.Submitted,
       totalAmount: 90,
       items: [],
       createdAt: fixedNow,
-    });
-    orderRepo.updateEvidence.and.callFake(
+      updatedAt: fixedNow,
+      source: "online",
+    }]);
+    billGateway.updateEvidence.and.callFake(
       (_customerID: string, orderID: string, evidence: any) =>
         Promise.resolve({
           orderID,
@@ -204,6 +213,8 @@ describe("StorefrontService", () => {
           items: [],
           confirmationEvidence: evidence,
           createdAt: fixedNow,
+          updatedAt: fixedNow,
+          source: "online",
         }),
     );
 
@@ -223,7 +234,7 @@ describe("StorefrontService", () => {
       "proof.png",
       "image/png",
     );
-    expect(orderRepo.updateEvidence).toHaveBeenCalledWith(
+    expect(billGateway.updateEvidence).toHaveBeenCalledWith(
       "CUST-001",
       "SO-001",
       jasmine.objectContaining({
@@ -236,8 +247,8 @@ describe("StorefrontService", () => {
   });
 
   it("removes the previous private evidence after replacement", async () => {
-    const { service, orderRepo, evidenceStorage } = createService();
-    orderRepo.findByCustomerAndOrder.and.resolveTo({
+    const { service, billGateway, evidenceStorage } = createService();
+    billGateway.listOnlineOrders.and.resolveTo([{
       orderID: "SO-001",
       customerID: "CUST-001",
       status: orderStatus_e.PaymentNotified,
@@ -250,8 +261,10 @@ describe("StorefrontService", () => {
         updatedAt: fixedNow,
       },
       createdAt: fixedNow,
-    });
-    orderRepo.updateEvidence.and.callFake(
+      updatedAt: fixedNow,
+      source: "online",
+    }]);
+    billGateway.updateEvidence.and.callFake(
       (_customerID: string, orderID: string, evidence: any) =>
         Promise.resolve({
           orderID,
@@ -261,6 +274,8 @@ describe("StorefrontService", () => {
           items: [],
           confirmationEvidence: evidence,
           createdAt: fixedNow,
+          updatedAt: fixedNow,
+          source: "online",
         }),
     );
 

@@ -2,19 +2,15 @@
 import { createContext, Dispatch, SetStateAction } from "react";
 import { orderInfo_t, orderInfoForm_t } from "../../../API/BillService/type";
 import { productInfo_t } from "../../../API/StockService/type";
+import { billStatus_e, orderSource_e } from "../../../enum";
 
-export enum orderStatus_e {
-  prepare,
-  ready2Ship,
-  checkBill,
-}
 export enum billDialog_e{
   none,
   detail,
   editForm,
 }
 export type billState_t = {
-  filter: orderStatus_e;
+  filter: billStatus_e;
   dialogOpen: billDialog_e;
   orderList?: orderInfo_t[];
   merchList?: productInfo_t[];
@@ -23,6 +19,7 @@ export type billState_t = {
   triger_gotoTop?: number;
   trigger_updateOrderList?: number;
   isPaymentConfirmationTab?: boolean;
+  sourceFilter: orderSource_e;
   containerRef?: React.RefObject<HTMLDivElement>;
 };
 export type BillContext_t = {
@@ -30,7 +27,8 @@ export type BillContext_t = {
   setState: Dispatch<SetStateAction<billState_t>>;
 };
 export const BillDefaultState: billState_t = {
-  filter: orderStatus_e.prepare,
+  filter: billStatus_e.PrepareProduct,
+  sourceFilter: orderSource_e.Direct,
   dialogOpen: billDialog_e.none,
 };
 export const BillContext = createContext<BillContext_t | undefined>(

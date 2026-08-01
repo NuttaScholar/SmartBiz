@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import type { Secret } from "jsonwebtoken";
+import { parseAllowedOrigins } from "./utils/cors-origin";
 
 dotenv.config();
 
@@ -35,7 +36,9 @@ function readPort(): number {
 export const PORT = readPort();
 export const JWT_SECRET = requireEnv("SECRET") as Secret;
 export const SERVICE_AUTH_SECRET = readServiceAuthSecret();
-export const WEB_HOST = requireEnv("WEB_HOST");
+export const WEB_HOSTS = parseAllowedOrigins(
+  process.env.WEB_HOSTS || requireEnv("WEB_HOST"),
+);
 export const MONGO_URI_ACCOUNT = requireEnv("MONGO_URI_ACCOUNT");
 export const MONGO_URI_BILL = requireEnv("MONGO_URI_BILL");
 export const MONGO_URI_STOCK = requireEnv("MONGO_URI_STOCK");

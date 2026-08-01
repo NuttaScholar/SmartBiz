@@ -1,5 +1,5 @@
 
-import { OrderStatus, productType_e, role_e, stockStatus_e } from "./utils/enum";
+import { OrderSource, OrderStatus, productType_e, role_e, stockStatus_e } from "./utils/enum";
 
 export type productInfo_t = {
   id: string;
@@ -35,6 +35,7 @@ export type orderInfo_t = {
   total: number;
   list: orderItemInfo_t[];
   status: OrderStatus;
+  source: OrderSource;
 }
 
 export type orderStatusCount_t = {

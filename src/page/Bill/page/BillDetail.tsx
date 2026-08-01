@@ -15,7 +15,13 @@ import Field from "../../../component/Atoms/Field";
 import MySpeedDial from "../../../component/Molecules/MySpeedDial";
 import { menuList_t } from "../../../component/Molecules/ButtonOption";
 import { orderInfo_t } from "../../../API/BillService/type";
-import { billStatus_e, errorCode_e, productType_e, stockStatus_e } from "../../../enum";
+import {
+  billStatus_e,
+  errorCode_e,
+  orderSource_e,
+  productType_e,
+  stockStatus_e,
+} from "../../../enum";
 import { useAuth } from "../../../hooks/useAuth";
 import { ErrorString } from "../../../function/Enum";
 import billWithRetry_f from "../lib/billWithRetry";
@@ -42,8 +48,24 @@ const menuAction = {
 //*************************************************
 // Helper functions
 //*************************************************
-function canEditOrder(status?: billStatus_e) {
-  return status !== undefined && editableStatuses.has(status);
+function canEditOrder(order?: orderInfo_t) {
+  return (
+    order?.source === orderSource_e.Direct &&
+    editableStatuses.has(order.status)
+  );
+}
+
+function canAdvanceOrder(order?: orderInfo_t) {
+  if (!order) return false;
+
+  if (order.source === orderSource_e.Online) {
+    return editableStatuses.has(order.status);
+  }
+
+  return (
+    order.status >= billStatus_e.PrepareProduct &&
+    order.status < billStatus_e.Completed
+  );
 }
 
 function getErrorMessage(errCode?: errorCode_e) {
@@ -88,7 +110,7 @@ const Page_OrderDetail: React.FC = () => {
       { text: menuAction.goToTop, icon: <KeyboardArrowUpIcon /> },
     ];
 
-    if (!canEditOrder(order?.status)) return commonMenu;
+    if (!canEditOrder(order)) return commonMenu;
 
     return [
       { text: menuAction.print, icon: <PrintIcon /> },
@@ -100,7 +122,7 @@ const Page_OrderDetail: React.FC = () => {
       { text: menuAction.delete, icon: <DeleteIcon /> },
       { text: menuAction.goToTop, icon: <KeyboardArrowUpIcon /> },
     ];
-  }, [order?.status, orderID]);
+  }, [order, orderID]);
 
   // UI handlers ******************************
   const scrollToTop = React.useCallback(() => {
@@ -127,7 +149,7 @@ const Page_OrderDetail: React.FC = () => {
   const onNext = React.useCallback(async () => {
     if (!orderID || !order || isUpdatingStatus) return;
 
-    if (order.status === billStatus_e.Completed) {
+    if (!canAdvanceOrder(order)) {
       alert("คำสั่งซื้ออยู่ในสถานะสุดท้ายแล้ว");
       return;
     }
@@ -296,7 +318,7 @@ const Page_OrderDetail: React.FC = () => {
             disabled={
               !order ||
               isUpdatingStatus ||
-              order.status === billStatus_e.Completed
+              !canAdvanceOrder(order)
             }
             onClick={onNext}
           >

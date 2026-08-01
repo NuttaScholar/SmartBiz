@@ -4,12 +4,13 @@ import {
   CardActionArea,
   CardContent,
   CardMedia,
+  Chip,
   Typography,
 } from "@mui/material";
 import React from "react";
 import errImg from "../../assets/NoImage.jpg";
 import { orderInfo_t } from "../../API/BillService/type";
-import { billStatus_e } from "../../enum";
+import { billStatus_e, orderSource_e } from "../../enum";
 import { BillStatusString } from "../../function/Enum";
 /**************************************************** */
 //  Type
@@ -77,6 +78,20 @@ const CardOrder: React.FC<MyProps> = (props) => {
               <Typography component="div" variant="h5">
                 {props.value.customer}
               </Typography>
+              <Chip
+                size="small"
+                color={
+                  props.value.source === orderSource_e.Online
+                    ? "primary"
+                    : "default"
+                }
+                label={
+                  props.value.source === orderSource_e.Online
+                    ? "หน้าร้าน Online"
+                    : "สั่งโดยตรง"
+                }
+                sx={{ mb: 0.5 }}
+              />
               <Typography
                 variant="subtitle1"
                 component="div"

@@ -1,6 +1,6 @@
 import cors from "cors";
 import express from "express";
-import { MINIO_HOST, PORT, WEB_HOST } from "./config";
+import { MINIO_HOST, PORT, WEB_HOSTS } from "./config";
 import CustomerLinkController from "./controllers/customer-link.controller";
 import AdminOrderController from "./controllers/admin-order.controller";
 import HealthController from "./controllers/health.controller";
@@ -23,13 +23,10 @@ import type { ProductDocument } from "./models/product.interface";
 import { ProductSchema } from "./models/product.model";
 import type { StorefrontAccessDocument } from "./models/storefront-access.interface";
 import { StorefrontAccessSchema } from "./models/storefront-access.model";
-import type { StorefrontOrderDocument } from "./models/storefront-order.interface";
-import { StorefrontOrderSchema } from "./models/storefront-order.model";
 import ProductRepo from "./repositories/product.repo";
 import ContactRepo from "./repositories/contact.repo";
 import DiscountRepo from "./repositories/discount.repo";
 import StorefrontAccessRepo from "./repositories/storefront-access.repo";
-import StorefrontOrderRepo from "./repositories/storefront-order.repo";
 import healthRoutes from "./routes/health.routes";
 import customerLinkRoutes from "./routes/customer-link.routes";
 import adminOrderRoutes from "./routes/admin-order.routes";
@@ -50,7 +47,7 @@ async function startServer(): Promise<void> {
   app.disable("x-powered-by");
   app.use(
     cors({
-      origin: WEB_HOST,
+      origin: WEB_HOSTS,
       credentials: true,
       exposedHeaders: ["X-Request-ID"],
     }),
@@ -75,11 +72,6 @@ async function startServer(): Promise<void> {
     "StorefrontAccess",
     StorefrontAccessSchema,
   );
-  const orderModel = getDB("StoreFront").model<StorefrontOrderDocument>(
-    "StorefrontOrder",
-    StorefrontOrderSchema,
-  );
-
   const healthController = new HealthController(
     new HealthService(databases),
   );
@@ -90,7 +82,7 @@ async function startServer(): Promise<void> {
       new StorefrontAccessRepo(accessModel),
       new ProductRepo(productModel),
       discountRepo,
-      new StorefrontOrderRepo(orderModel),
+      billClient,
       evidenceStorage,
       MINIO_HOST,
     ),
@@ -104,7 +96,6 @@ async function startServer(): Promise<void> {
   );
   const adminOrderController = new AdminOrderController(
     new AdminOrderService(
-      new StorefrontOrderRepo(orderModel),
       billClient,
     ),
   );

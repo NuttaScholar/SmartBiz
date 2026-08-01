@@ -1,8 +1,8 @@
 import BillRepo from "../repositories/bill.repo";
 import axios from "axios";
-import { errorCode_e, OrderStatus, productType_e, stockStatus_e, transactionType_e } from "../utils/enum";
+import { errorCode_e, OrderSource, OrderStatus, productType_e, stockStatus_e, transactionType_e } from "../utils/enum";
 import { Model } from "mongoose";
-import { OrderDocument, OrderItem } from "../models/order.interface";
+import { OrderDocument, OrderItem, StoredConfirmationEvidence } from "../models/order.interface";
 import ContactRepo from "../repositories/contact.repo";
 import { ContactDocument } from "../models/contact.interface";
 import { orderInfo_t, orderItemInfo_t, orderStatusCount_t, productInfo_t } from "../type";
@@ -56,17 +56,18 @@ export default class BillService {
   /**
    * ค้นหารายการคำสั่งซื้อจาก customerID / orderID / status
    */
-  async searchOrders(customerID?: string, orderID?: string, status?: string): Promise<orderInfo_t[]> {
+  async searchOrders(customerID?: string, orderID?: string, status?: string, source?: string): Promise<orderInfo_t[]> {
     const parsedStatus = this.parseOptionalStatus(status);
-    const orders = await this.repo.findByCustomerAndOrder(customerID, orderID, parsedStatus);
+    const parsedSource = this.parseOptionalSource(source);
+    const orders = await this.repo.findByCustomerAndOrder(customerID, orderID, parsedStatus, parsedSource);
     const products = await this.productRepo.findByIds(this.getProductIDs(orders));
     const productById = new Map(products.map((product) => [product.id, product]));
 
     return Promise.all(orders.map((order) => this.toOrderInfo(order, productById)));
   }
 
-  async countOrdersByStatus(customerID?: string, orderID?: string): Promise<orderStatusCount_t[]> {
-    return this.repo.countByStatus(customerID, orderID);
+  async countOrdersByStatus(customerID?: string, orderID?: string, source?: string): Promise<orderStatusCount_t[]> {
+    return this.repo.countByStatus(customerID, orderID, this.parseOptionalSource(source));
   }
 
   async getProductUsage(productID?: string) {
@@ -88,7 +89,7 @@ export default class BillService {
   /**
    * ดึงรายการคำสั่งซื้อตามสถานะ (OrderStatus)
    */
-  async getOrdersByStatus(status: OrderStatus) {
+  async getOrdersByStatus(status: OrderStatus, source?: string) {
     // ป้องกันค่าที่ไม่อยู่ใน enum
     if (!Object.values(OrderStatus).includes(status)) {
       throw {
@@ -97,20 +98,42 @@ export default class BillService {
       };
     }
 
-    return this.repo.findByStatus(status);
+    return this.repo.findByStatus(status, this.parseOptionalSource(source));
   }
   /**
    * สร้างคำสั่งซื้อใหม่
    */
-  async createOrder(data: any) {
-    await this.ensureCustomerExists(data?.customerID);
-    this.validateStatus(data?.status);
-    this.validateTotalAmount(data?.items, data?.totalAmount);
-    const stockChanges = this.getStockChanges(data.items);
+  async createOrder(data: any, source = OrderSource.Direct) {
+    const normalizedData = {
+      ...data,
+      source,
+      status: source === OrderSource.Online
+        ? OrderStatus.Submitted
+        : data?.status,
+    };
+    if (source === OrderSource.Online && normalizedData.orderID) {
+      const existing = await this.repo.getOrder(normalizedData.orderID);
+      if (existing) {
+        if (
+          existing.customerID === normalizedData.customerID
+          && (existing.source ?? OrderSource.Direct) === OrderSource.Online
+        ) {
+          return existing;
+        }
+        throw {
+          code: errorCode_e.AlreadyExistsError,
+          message: "orderID already exists",
+        };
+      }
+    }
+    await this.ensureCustomerExists(normalizedData.customerID);
+    this.validateStatus(normalizedData.status);
+    this.validateTotalAmount(normalizedData.items, normalizedData.totalAmount);
+    const stockChanges = this.getStockChanges(normalizedData.items);
 
     await this.applyStockChanges(stockChanges);
     try {
-      return await this.repo.createOrder(data);
+      return await this.repo.createOrder(normalizedData);
     } catch (error) {
       await this.rollbackStockChanges(stockChanges);
       throw error;
@@ -125,6 +148,12 @@ export default class BillService {
       throw {
         code: errorCode_e.NotFoundError,
         message: "Order not found"
+      };
+    }
+    if ((order.source ?? OrderSource.Direct) !== OrderSource.Direct) {
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: "Online orders cannot be edited through the direct-order API",
       };
     }
     if (order.status >= OrderStatus.Billing) {
@@ -160,6 +189,12 @@ export default class BillService {
       throw {
         code: errorCode_e.NotFoundError,
         message: "Order not found"
+      };
+    }
+    if ((order.source ?? OrderSource.Direct) !== OrderSource.Direct) {
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: "Online orders must use the storefront cancellation flow",
       };
     }
     if (order.status >= OrderStatus.Billing) {
@@ -201,6 +236,20 @@ export default class BillService {
       throw {
         code: errorCode_e.InvalidInputError,
         message: `Invalid status: ${order.status}`
+      };
+    }
+
+    const source = order.source ?? OrderSource.Direct;
+    if (source === OrderSource.Online) {
+      if (status === OrderStatus.PrepareProduct) {
+        return this.repo.updateStatus(orderID, OrderStatus.PrepareShipment);
+      }
+      if (status === OrderStatus.PrepareShipment) {
+        return this.completeOrderWithIncome(order);
+      }
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: `Status ${status} cannot advance in online workflow`,
       };
     }
 
@@ -283,6 +332,112 @@ export default class BillService {
     }
 
     return order.status;
+  }
+
+  async getOnlineOrders(customerID: string, orderID?: string) {
+    await this.ensureCustomerExists(customerID);
+    return this.repo.findOnlineByCustomer(customerID, orderID);
+  }
+
+  async updateOnlineEvidence(
+    customerID: string,
+    orderID: string,
+    evidence: StoredConfirmationEvidence,
+  ) {
+    this.requireText(customerID, "customerID");
+    this.requireText(orderID, "orderID");
+    if (
+      !evidence
+      || typeof evidence.fileName !== "string"
+      || typeof evidence.mimeType !== "string"
+      || typeof evidence.objectKey !== "string"
+      || !evidence.updatedAt
+    ) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "Valid evidence is required",
+      };
+    }
+    const updated = await this.repo.updateOnlineEvidence(
+      customerID,
+      orderID,
+      evidence,
+    );
+    if (!updated) {
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: "Evidence can only be updated before payment confirmation",
+      };
+    }
+    return updated;
+  }
+
+  async cancelOnlineOrder(customerID: string, orderID: string) {
+    const order = await this.repo.getOrder(orderID);
+    if (
+      !order
+      || order.customerID !== customerID
+      || (order.source ?? OrderSource.Direct) !== OrderSource.Online
+    ) {
+      throw { code: errorCode_e.NotFoundError, message: "Order not found" };
+    }
+    if (order.status !== OrderStatus.Submitted) {
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: "Only a submitted order can be cancelled",
+      };
+    }
+
+    const stockChanges = this.getStockChanges([], order.items);
+    await this.applyStockChanges(stockChanges);
+    const updated = await this.repo.cancelOnline(customerID, orderID);
+    if (!updated) {
+      await this.rollbackStockChanges(stockChanges);
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: "Only a submitted order can be cancelled",
+      };
+    }
+    return updated;
+  }
+
+  async listPaymentConfirmations() {
+    return this.repo.findByStatus(
+      OrderStatus.PaymentNotified,
+      OrderSource.Online,
+    );
+  }
+
+  async confirmOnlinePayment(orderID: string, confirmedBy: string) {
+    this.requireText(orderID, "orderID");
+    this.requireText(confirmedBy, "confirmedBy");
+    const order = await this.repo.getOrder(orderID);
+    if (!order) {
+      throw { code: errorCode_e.NotFoundError, message: "Order not found" };
+    }
+    if (
+      (order.source ?? OrderSource.Direct) !== OrderSource.Online
+      || order.status !== OrderStatus.PaymentNotified
+      || !order.confirmationEvidence
+    ) {
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: "Only an online order with payment evidence can be confirmed",
+      };
+    }
+
+    const updated = await this.repo.confirmOnlinePayment(
+      orderID,
+      confirmedBy.trim(),
+      new Date(),
+    );
+    if (!updated) {
+      throw {
+        code: errorCode_e.InvalidStateError,
+        message: "Payment confirmation has already been processed",
+      };
+    }
+    return updated;
   }
 
   private async completeOrderWithIncome(order: OrderDocument) {
@@ -410,7 +565,8 @@ export default class BillService {
       date: order.createdAt,
       total: order.totalAmount,
       list: await Promise.all(order.items.map((item) => this.toProductInfo(item, productById?.get(item.productID)))),
-      status: order.status
+      status: order.status,
+      source: order.source ?? OrderSource.Direct,
     };
   }
 
@@ -422,8 +578,8 @@ export default class BillService {
     const productInfo: orderItemInfo_t = {
       id: item.productID,
       type: product?.type ?? productType_e.merchandise,
-      name: product?.name ?? item.productID,
-      img: this.getProductImageUrl(product?.img),
+      name: product?.name ?? item.name ?? item.productID,
+      img: this.getProductImageUrl(product?.img ?? item.img),
       status: stockStatus_e.normal,
       price: item.priceOriginal,
       amount: quantity,
@@ -490,6 +646,27 @@ export default class BillService {
     const parsedStatus = Number(status);
     this.validateStatus(parsedStatus);
     return parsedStatus;
+  }
+
+  private parseOptionalSource(source?: string): OrderSource | undefined {
+    if (source === undefined || source === "") return undefined;
+    if (!Object.values(OrderSource).includes(source as OrderSource)) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: `Invalid source: ${source}`,
+      };
+    }
+    return source as OrderSource;
+  }
+
+  private requireText(value: unknown, fieldName: string): string {
+    if (typeof value !== "string" || !value.trim()) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: `${fieldName} is required`,
+      };
+    }
+    return value.trim();
   }
 
   private validateTotalAmount(items: OrderItem[], totalAmount: number) {

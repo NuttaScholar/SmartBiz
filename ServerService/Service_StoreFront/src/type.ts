@@ -77,7 +77,7 @@ export interface StorefrontOrder {
 export interface PaymentConfirmationResult {
   orderID: string;
   billOrderID: string;
-  status: orderStatus_e.PaymentConfirmed;
+  status: orderStatus_e.PrepareProduct;
   paymentConfirmedAt?: Date;
   paymentConfirmedBy?: string;
 }

@@ -1,7 +1,11 @@
 import axios, { AxiosError } from "axios";
 import { BILL_REQUEST_TIMEOUT_MS, SERVICE_BILL_URL } from "../config";
-import type { StorefrontOrderItem } from "../type";
+import type {
+  StoredConfirmationEvidence,
+  StorefrontOrderItem,
+} from "../type";
 import AppError from "../utils/app-error";
+import { orderStatus_e } from "../utils/enum";
 import { createServiceToken } from "../utils/service-token";
 
 export interface CreateBillOrderInput {
@@ -11,8 +15,14 @@ export interface CreateBillOrderInput {
   totalAmount: number;
 }
 
-export interface CreatedBillOrder {
-  orderID: string;
+export interface BillOrderRecord extends CreateBillOrderInput {
+  status: orderStatus_e;
+  source: "online";
+  createdAt: Date;
+  updatedAt: Date;
+  confirmationEvidence?: StoredConfirmationEvidence;
+  paymentConfirmedAt?: Date;
+  paymentConfirmedBy?: string;
 }
 
 interface BillApiResponse<T> {
@@ -21,125 +31,152 @@ interface BillApiResponse<T> {
   message?: string;
 }
 
-interface BillSearchOrder {
-  id: string;
-  customerID: string;
-  total: number;
-  list: Array<{
-    id: string;
-    amount: number;
-    priceAfterDiscount?: number;
-  }>;
-}
-
 export interface BillGateway {
-  createOrder(
-    input: CreateBillOrderInput,
-  ): Promise<CreatedBillOrder>;
+  createOrder(input: CreateBillOrderInput): Promise<BillOrderRecord>;
+  listOnlineOrders(
+    customerID: string,
+    orderID?: string,
+  ): Promise<BillOrderRecord[]>;
+  updateEvidence(
+    customerID: string,
+    orderID: string,
+    evidence: StoredConfirmationEvidence,
+  ): Promise<BillOrderRecord>;
+  cancelOrder(
+    customerID: string,
+    orderID: string,
+  ): Promise<BillOrderRecord>;
+  listPaymentConfirmations(): Promise<BillOrderRecord[]>;
+  confirmPayment(
+    orderID: string,
+    confirmedBy: string,
+  ): Promise<BillOrderRecord>;
 }
 
 export default class BillClientService implements BillGateway {
   private readonly baseUrl = SERVICE_BILL_URL.replace(/\/$/, "");
 
-  async createOrder(
-    input: CreateBillOrderInput,
-  ): Promise<CreatedBillOrder> {
+  createOrder(input: CreateBillOrderInput): Promise<BillOrderRecord> {
+    return this.call(
+      "create online order",
+      ["bill.storefront.manage"],
+      (authorization) => axios.post(
+        `${this.baseUrl}/bill/storefront`,
+        input,
+        this.config(authorization),
+      ),
+    );
+  }
+
+  listOnlineOrders(
+    customerID: string,
+    orderID?: string,
+  ): Promise<BillOrderRecord[]> {
+    return this.call(
+      "read online orders",
+      ["bill.storefront.read"],
+      (authorization) => axios.get(
+        `${this.baseUrl}/bill/storefront`,
+        {
+          ...this.config(authorization),
+          params: { customerID, orderID },
+        },
+      ),
+    );
+  }
+
+  updateEvidence(
+    customerID: string,
+    orderID: string,
+    evidence: StoredConfirmationEvidence,
+  ): Promise<BillOrderRecord> {
+    return this.call(
+      "update online order evidence",
+      ["bill.storefront.manage"],
+      (authorization) => axios.patch(
+        `${this.baseUrl}/bill/storefront/${encodeURIComponent(orderID)}/evidence`,
+        { customerID, evidence },
+        this.config(authorization),
+      ),
+    );
+  }
+
+  cancelOrder(
+    customerID: string,
+    orderID: string,
+  ): Promise<BillOrderRecord> {
+    return this.call(
+      "cancel online order",
+      ["bill.storefront.manage"],
+      (authorization) => axios.delete(
+        `${this.baseUrl}/bill/storefront/${encodeURIComponent(orderID)}`,
+        {
+          ...this.config(authorization),
+          params: { customerID },
+        },
+      ),
+    );
+  }
+
+  listPaymentConfirmations(): Promise<BillOrderRecord[]> {
+    return this.call(
+      "list payment confirmations",
+      ["bill.storefront.read"],
+      (authorization) => axios.get(
+        `${this.baseUrl}/bill/storefront/payment-confirmations`,
+        this.config(authorization),
+      ),
+    );
+  }
+
+  confirmPayment(
+    orderID: string,
+    confirmedBy: string,
+  ): Promise<BillOrderRecord> {
+    return this.call(
+      "confirm online payment",
+      ["bill.storefront.manage"],
+      (authorization) => axios.patch(
+        `${this.baseUrl}/bill/storefront/${encodeURIComponent(orderID)}/payment-confirmation`,
+        { confirmedBy },
+        this.config(authorization),
+      ),
+    );
+  }
+
+  private async call<T>(
+    action: string,
+    scopes: string[],
+    operation: (
+      authorization: string,
+    ) => Promise<{ data: BillApiResponse<T> }>,
+  ): Promise<T> {
     const authorization = `Bearer ${createServiceToken(
       "service_bill",
-      ["bill.order.create", "bill.order.read"],
+      scopes,
     )}`;
     try {
-      const response = await axios.post<BillApiResponse<{ orderID: string }>>(
-        `${this.baseUrl}/bill`,
-        {
-          orderID: input.orderID,
-          customerID: input.customerID,
-          status: 0,
-          items: input.items.map((item) => ({
-            productID: item.productID,
-            quantity: item.quantity,
-            priceOriginal: item.priceOriginal,
-            priceAfterDiscount: item.priceAfterDiscount,
-            discountPercent: item.discountPercent,
-          })),
-          totalAmount: input.totalAmount,
-        },
-        {
-          headers: { Authorization: authorization },
-          timeout: BILL_REQUEST_TIMEOUT_MS,
-        },
-      );
-
-      if (!response.data.success) {
+      const response = await operation(authorization);
+      if (!response.data.success || response.data.data === undefined) {
         throw new AppError(
-          response.data.message || "Bill Service rejected order",
+          response.data.message || `Bill Service rejected ${action}`,
           502,
         );
       }
-      return { orderID: input.orderID };
+      return response.data.data;
     } catch (thrown) {
-      const existing = await this.findMatchingOrder(input, authorization);
-      if (existing) {
-        return { orderID: existing.id };
-      }
-      throw this.toAppError(thrown);
+      throw this.toAppError(thrown, action);
     }
   }
 
-  private async findMatchingOrder(
-    input: CreateBillOrderInput,
-    authorization: string,
-  ): Promise<BillSearchOrder | undefined> {
-    try {
-      const response = await axios.get<BillApiResponse<BillSearchOrder[]>>(
-        `${this.baseUrl}/bill/search`,
-        {
-          params: { orderID: input.orderID },
-          headers: { Authorization: authorization },
-          timeout: BILL_REQUEST_TIMEOUT_MS,
-        },
-      );
-      const existing = response.data.data.find(
-        (order) => order.id === input.orderID,
-      );
-      return existing && this.matches(existing, input)
-        ? existing
-        : undefined;
-    } catch {
-      return undefined;
-    }
+  private config(authorization: string) {
+    return {
+      headers: { Authorization: authorization },
+      timeout: BILL_REQUEST_TIMEOUT_MS,
+    };
   }
 
-  private matches(
-    existing: BillSearchOrder,
-    input: CreateBillOrderInput,
-  ): boolean {
-    if (
-      existing.customerID !== input.customerID
-      || this.roundMoney(existing.total) !== this.roundMoney(input.totalAmount)
-      || existing.list.length !== input.items.length
-    ) {
-      return false;
-    }
-
-    const itemByID = new Map(
-      input.items.map((item) => [item.productID, item]),
-    );
-    return existing.list.every((item) => {
-      const expected = itemByID.get(item.id);
-      return Boolean(
-        expected
-        && Number(item.amount) === expected.quantity
-        && this.roundMoney(Number(item.priceAfterDiscount))
-          === this.roundMoney(expected.priceAfterDiscount),
-      );
-    });
-  }
-
-  private toAppError(
-    thrown: unknown,
-    action = "create order",
-  ): AppError {
+  private toAppError(thrown: unknown, action: string): AppError {
     if (!(thrown instanceof AxiosError)) {
       return thrown instanceof AppError
         ? thrown
@@ -170,9 +207,5 @@ export default class BillClientService implements BillGateway {
         : `Unable to ${action} in Bill Service`,
       status,
     );
-  }
-
-  private roundMoney(value: number): number {
-    return Math.round((value + Number.EPSILON) * 100) / 100;
   }
 }

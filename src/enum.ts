@@ -40,15 +40,25 @@ export enum billStatus_e{
   Billing = 2,
   WaitingPayment = 3,
   Completed = 4,
+  Submitted = 5,
+  PaymentNotified = 6,
+  PaymentConfirmed = 7,
+  Cancelled = 8,
+}
+export enum orderSource_e {
+  Online = "online",
+  Direct = "direct",
 }
 export enum orderStatus_e {
-  Submitted = 0,
-  PaymentNotified = 1,
-  PaymentConfirmed = 2,
-  PrepareProduct = 3,
-  PrepareShipment = 4,
-  Completed = 5,
-  Cancelled = 6,
+  PrepareProduct = 0,
+  PrepareShipment = 1,
+  Billing = 2,
+  WaitingPayment = 3,
+  Completed = 4,
+  Submitted = 5,
+  PaymentNotified = 6,
+  PaymentConfirmed = 7,
+  Cancelled = 8,
 }
 export enum errorCode_e {
   UnknownError, // ไม่สามารถระบุสาเหตุได้

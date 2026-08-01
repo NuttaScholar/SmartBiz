@@ -11,13 +11,15 @@ export enum stockStatus_e {
 }
 
 export enum orderStatus_e {
-  Submitted,
-  PaymentNotified,
-  PaymentConfirmed,
-  PrepareProduct,
-  PrepareShipment,
-  Completed,
-  Cancelled,
+  PrepareProduct = 0,
+  PrepareShipment = 1,
+  Billing = 2,
+  WaitingPayment = 3,
+  Completed = 4,
+  Submitted = 5,
+  PaymentNotified = 6,
+  PaymentConfirmed = 7,
+  Cancelled = 8,
 }
 
 export enum stockLogType_e {

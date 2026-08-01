@@ -1,5 +1,5 @@
 import { Schema } from "mongoose";
-import { OrderStatus } from "../utils/enum";
+import { OrderSource, OrderStatus } from "../utils/enum";
 import { OrderDocument } from "./order.interface";
 
 // ฟังก์ชันสร้าง orderID อัตโนมัติ
@@ -14,7 +14,19 @@ const OrderItemSchema = new Schema(
         quantity: { type: Number, required: true, min: 1 },
         priceOriginal: { type: Number, required: true, min: 0 },
         priceAfterDiscount: { type: Number, required: true, min: 0 },
-        discountPercent: { type: Number, required: false, min: 0, max: 100 }
+        discountPercent: { type: Number, required: false, min: 0, max: 100 },
+        name: { type: String, required: false },
+        img: { type: String, required: false }
+    },
+    { _id: false }
+);
+
+const ConfirmationEvidenceSchema = new Schema(
+    {
+        fileName: { type: String, required: true },
+        mimeType: { type: String, required: true },
+        objectKey: { type: String, required: true },
+        updatedAt: { type: Date, required: true }
     },
     { _id: false }
 );
@@ -44,7 +56,23 @@ export const OrderSchema = new Schema<OrderDocument>(
             }
         },
 
-        totalAmount: { type: Number, required: true, min: 0 }
+        source: {
+            type: String,
+            enum: Object.values(OrderSource),
+            required: true,
+            default: OrderSource.Direct
+        },
+
+        totalAmount: { type: Number, required: true, min: 0 },
+
+        confirmationEvidence: {
+            type: ConfirmationEvidenceSchema,
+            required: false,
+            default: undefined
+        },
+
+        paymentConfirmedAt: { type: Date, required: false },
+        paymentConfirmedBy: { type: String, required: false }
     },
     { timestamps: true }
 );

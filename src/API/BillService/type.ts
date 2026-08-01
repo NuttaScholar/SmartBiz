@@ -1,4 +1,4 @@
-import { billStatus_e } from "../../enum";
+import { billStatus_e, orderSource_e } from "../../enum";
 import { productInfo_t } from "../StockService/type";
 import { errorCode_e } from "../../enum";
 
@@ -10,6 +10,7 @@ export type orderInfo_t = {
     total: number;
     list: productInfo_t[];
     status: billStatus_e;
+    source: orderSource_e;
 }
 
 export type orderInfoForm_t = {
@@ -31,6 +32,7 @@ export type order_t = {
     orderID: string;
     customerID: string;
     status: billStatus_e;
+    source: orderSource_e;
     items: orderItem_t[];
     totalAmount: number;
     createdAt?: Date;
@@ -55,6 +57,7 @@ export type searchOrderForm_t = {
     customerID?: string;
     orderID?: string;
     status?: billStatus_e;
+    source?: orderSource_e;
 }
 
 export type discountItem_t = {

@@ -31,7 +31,7 @@ export default class AdminOrderController {
             request.params.orderID,
             getPrincipalName(request),
           ),
-          "Payment confirmed and Bill order created",
+          "Payment confirmed",
         ),
       );
     } catch (thrown) {

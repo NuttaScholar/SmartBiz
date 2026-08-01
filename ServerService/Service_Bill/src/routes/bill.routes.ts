@@ -23,6 +23,19 @@ export default function billRoutes(
 
     router.get("/product/:productID/usage", (req, res) => controller.getProductUsage(req, res));
 
+    router.get("/storefront/payment-confirmations", (req, res) =>
+      controller.listPaymentConfirmations(req, res));
+    router.get("/storefront", (req, res) =>
+      controller.getStorefrontOrders(req, res));
+    router.post("/storefront", (req, res) =>
+      controller.createStorefrontOrder(req, res));
+    router.patch("/storefront/:orderID/evidence", (req, res) =>
+      controller.updateStorefrontEvidence(req, res));
+    router.patch("/storefront/:orderID/payment-confirmation", (req, res) =>
+      controller.confirmStorefrontPayment(req, res));
+    router.delete("/storefront/:orderID", (req, res) =>
+      controller.cancelStorefrontOrder(req, res));
+
     /**
      * 2. ขอรายการคำสั่งซื้อตามสถานะ
      * GET /bill/status/:status

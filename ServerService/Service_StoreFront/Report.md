@@ -136,7 +136,7 @@ HTTP status ที่ใช้:
 
 ## Database Design
 
-service เชื่อมต่อ MongoDB สามฐาน:
+service เชื่อมต่อ MongoDB สี่ฐาน โดยข้อมูล order เข้าถึงผ่าน Service_Bill API:
 
 ```text
 Account
@@ -146,8 +146,11 @@ Stock
 └── products (อ่านอย่างเดียว)
 
 StoreFront
-├── storefrontaccesses
-└── storefrontorders
+└── storefrontaccesses
+
+Bill
+├── discounts (อ่านอย่างเดียวจาก StoreFront service)
+└── orders (Service_Bill เป็นเจ้าของและเข้าถึงผ่าน API)
 
 MinIO
 └── storefront-payment (private)
@@ -192,15 +195,18 @@ indexes:
 
 ไม่มี field `expiresAt` เนื่องจาก Customer Link ไม่มีวันหมดอายุ
 
-### StoreFront.storefrontorders
+### Bill.orders (Order Document กลาง)
 
-เก็บ order ของลูกค้า:
+คำสั่งซื้อ Storefront ถูกสร้างใน `Bill.orders` ตั้งแต่เริ่ม โดย
+`Service_StoreFront` เรียก API ของ `Service_Bill` และไม่เขียน order ลง
+MongoDB โดยตรง:
 
 ```json
 {
   "orderID": "SO-260725-3A7F910C",
   "customerID": "CUST-001",
-  "status": 0,
+  "source": "online",
+  "status": 5,
   "totalAmount": 180,
   "items": [
     {
@@ -216,7 +222,7 @@ indexes:
   "confirmationEvidence": {
     "fileName": "proof.png",
     "mimeType": "image/png",
-    "objectKey": "SO-260725-3A7F910C/1784952000000-a1b2c3d4.png",
+      "objectKey": "SO-260725-3A7F910C/1784952000000-a1b2c3d4.webp",
     "updatedAt": "2026-07-25T03:00:00.000Z"
   },
   "createdAt": "2026-07-25T03:00:00.000Z",
@@ -231,28 +237,31 @@ indexes:
 `objectKey` และ metadata ส่วน binary file เก็บใน MinIO bucket
 `storefront-payment`
 
-indexes:
-
-- unique index ที่ `orderID`
-- compound index `{ customerID: 1, createdAt: -1 }`
+collection `StoreFront.storefrontorders` เดิมไม่อยู่ใน runtime path แล้ว
+และเก็บไว้เป็น legacy data เท่านั้น หาก environment มีข้อมูลเดิม ต้องย้ายข้อมูล
+เข้าสู่ `Bill.orders` ก่อนนำเวอร์ชันนี้ขึ้นใช้งาน
 
 ## Order Status
 
 | Value | Name | ความหมาย |
 | --- | --- | --- |
-| `0` | `Submitted` | ส่งคำสั่งซื้อแล้ว |
-| `1` | `PaymentNotified` | แนบหลักฐาน/แจ้งชำระแล้ว |
-| `2` | `PaymentConfirmed` | ยืนยันการชำระแล้ว |
-| `3` | `PrepareProduct` | เตรียมสินค้า |
-| `4` | `PrepareShipment` | เตรียมจัดส่ง |
-| `5` | `Completed` | จัดส่งสำเร็จ |
-| `6` | `Cancelled` | ยกเลิก |
+| `0` | `PrepareProduct` | เตรียมสินค้า |
+| `1` | `PrepareShipment` | เตรียมจัดส่ง |
+| `2` | `Billing` | จัดการบิล (ใช้กับ source `direct`) |
+| `3` | `WaitingPayment` | รอชำระเงิน (ใช้กับ source `direct`) |
+| `4` | `Completed` | เสร็จสิ้น |
+| `5` | `Submitted` | ส่งคำสั่งซื้อ Online แล้ว |
+| `6` | `PaymentNotified` | แนบหลักฐาน/แจ้งชำระแล้ว |
+| `7` | `PaymentConfirmed` | สถานะที่สงวนไว้สำหรับ flow Online |
+| `8` | `Cancelled` | ยกเลิก |
 
 customer ทำได้สอง transition:
 
 ```text
 Submitted --upload evidence--> PaymentNotified
 Submitted --cancel-----------> Cancelled
+PaymentNotified --admin confirm--> PrepareProduct
+PrepareProduct -> PrepareShipment -> Completed
 ```
 
 สถานะหลังจากนั้นเป็น workflow ฝั่งผู้ดูแลระบบ
@@ -408,8 +417,8 @@ endpoint นี้ต้องเป็น Admin หรือ service token ท�
 โดยตรง หลังลบแล้ว token เดิมจะใช้เข้า Storefront ไม่ได้ และสามารถสร้าง
 Customer Link ใหม่ให้ `customerID` เดิมได้
 
-การลบนี้มีผลเฉพาะ Customer Link ไม่ได้ลบข้อมูลใน
-`StoreFront.storefrontorders` หรือส่วนลดใน `Bill.discounts`
+การลบนี้มีผลเฉพาะ Customer Link ไม่ได้ลบ Online order ใน `Bill.orders`
+หรือส่วนลดใน `Bill.discounts`
 
 response:
 
@@ -577,7 +586,7 @@ body:
 4. upload binary ไป MinIO bucket `storefront-payment` โดยรูปภาพใช้ extension
    `.webp` และ `Content-Type: image/webp`
 5. bucket ใช้ private policy แบบเดียวกับ bucket `bill` ของ Service_Stock
-6. MongoDB เก็บเฉพาะ `fileName`, `mimeType`, `objectKey` และ `updatedAt` โดย
+6. `Bill.orders` เก็บเฉพาะ `fileName`, `mimeType`, `objectKey` และ `updatedAt` โดย
    metadata ของรูปภาพที่เก็บจะเป็นชื่อ `.webp` และ `image/webp`
 7. เมื่อแทนไฟล์ ระบบอัปเดต MongoDB ก่อนแล้วลบ object เดิม
 
@@ -603,15 +612,17 @@ DELETE /storefront/:customerToken/orders/:orderID
 ```
 
 endpoint นี้เป็น soft cancel ไม่ลบ document และทำได้เฉพาะสถานะ `Submitted`
-จากนั้นจะคืน order ที่มี `status = 6`
+จากนั้น `Service_Bill` จะคืน stock และคืน order ที่มี `status = 8`
 
 ## Environment
 
 ```env
-WEB_HOST=http://localhost:4030
+WEB_HOSTS=http://localhost:3030,http://localhost:4030
 PORT=3005
 SECRET=NuttaScholar
 SERVICE_AUTH_SECRET=<random-secret-at-least-32-characters>
+SERVICE_BILL_URL=http://localhost:3004
+BILL_REQUEST_TIMEOUT_MS=10000
 MONGO_URI_ACCOUNT=mongodb://root:example@localhost:27017/Account?authSource=admin
 MONGO_URI_BILL=mongodb://root:example@localhost:27017/Bill?authSource=admin
 MONGO_URI_STOCK=mongodb://root:example@localhost:27017/Stock?authSource=admin
@@ -641,8 +652,7 @@ Authorization: Bearer <admin-access-token>
 
 endpoint นี้ต้องเป็น Admin หรือ service token ที่มี scope
 `storefront.payment.confirm` และคืนเฉพาะคำสั่งซื้อสถานะ `PaymentNotified`
-เรียงจากใหม่ไปเก่า หน้า Bill ใช้ข้อมูลนี้ใน tab “ยืนยันการชำระเงิน” พร้อม
-badge จำนวนรายการ และรองรับการค้นหาด้วย `customerID` หรือ `orderID`
+เรียงจากใหม่ไปเก่า ข้อมูลทั้งหมดมาจาก `Bill.orders` ที่มี `source=online`
 
 ตัวอย่าง response:
 
@@ -655,7 +665,7 @@ badge จำนวนรายการ และรองรับการค�
       "id": "SO-260728-ABCDEF01",
       "customerID": "CUST-001",
       "date": "2026-07-28T04:00:00.000Z",
-      "status": 1,
+      "status": 6,
       "totalAmount": 180,
       "items": []
     }
@@ -670,25 +680,21 @@ PATCH /storefront/admin/orders/:orderID/payment-confirmation
 Authorization: Bearer <admin-access-token>
 ```
 
-ไม่ต้องส่ง request body โดย API จะรับเฉพาะออเดอร์สถานะ
-`PaymentNotified` แล้วส่ง `POST /bill` ไปยัง Service_Bill พร้อม JWT เดิมของ
-Admin และใช้ `orderID` เดียวกับ StoreFront เพื่อให้ retry ได้โดยไม่สร้างซ้ำ
-
-เมื่อ Service_Bill สร้างออเดอร์สำเร็จ API จะเปลี่ยนสถานะเป็น
-`PaymentConfirmed` พร้อมบันทึก `paymentConfirmedAt` และ
-`paymentConfirmedBy` หาก Service_Bill ปฏิเสธคำขอ สถานะ StoreFront
-จะไม่เปลี่ยน
+ไม่ต้องส่ง request body โดย API รับเฉพาะออเดอร์ `source=online` สถานะ
+`PaymentNotified` ที่มีหลักฐาน แล้วสั่งให้ `Service_Bill` อัปเดต document เดิม
+เป็น `PrepareProduct` พร้อมบันทึก `paymentConfirmedAt` และ
+`paymentConfirmedBy` ไม่มีการสร้างหรือคัดลอก Bill order รอบที่สอง
 
 response:
 
 ```json
 {
   "success": true,
-  "message": "Payment confirmed and Bill order created",
+  "message": "Payment confirmed",
   "data": {
     "orderID": "SO-260728-ABCDEF01",
     "billOrderID": "SO-260728-ABCDEF01",
-    "status": 2,
+    "status": 0,
     "paymentConfirmedAt": "2026-07-28T04:00:00.000Z",
     "paymentConfirmedBy": "admin"
   }
@@ -708,10 +714,10 @@ npm run build
 npm test
 ```
 
-ผลตรวจล่าสุด (2026-07-25):
+ผลตรวจล่าสุด (2026-08-01):
 
 ```text
 npm run typecheck: pass
 npm run build: pass
-npm test: pass, 15 specs
+npm test: pass, 31 specs
 ```

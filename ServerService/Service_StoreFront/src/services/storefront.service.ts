@@ -3,7 +3,10 @@ import type { ProductDocument } from "../models/product.interface";
 import DiscountRepo from "../repositories/discount.repo";
 import ProductRepo from "../repositories/product.repo";
 import StorefrontAccessRepo from "../repositories/storefront-access.repo";
-import StorefrontOrderRepo from "../repositories/storefront-order.repo";
+import type {
+  BillGateway,
+  BillOrderRecord,
+} from "./bill-client.service";
 import type {
   ConfirmationEvidence,
   CreateOrderItem,
@@ -52,7 +55,7 @@ export default class StorefrontService {
     private readonly accessRepo: StorefrontAccessRepo,
     private readonly productRepo: ProductRepo,
     private readonly discountRepo: DiscountRepo,
-    private readonly orderRepo: StorefrontOrderRepo,
+    private readonly billGateway: BillGateway,
     private readonly evidenceStorage: EvidenceStorage,
     private readonly productImageHost: string,
     private readonly now: () => Date = () => new Date(),
@@ -83,13 +86,13 @@ export default class StorefrontService {
 
   async getOrders(token: string): Promise<StorefrontOrder[]> {
     const access = await this.authenticate(token);
-    const orders = await this.orderRepo.listByCustomer(access.customerID);
+    const orders = await this.billGateway.listOnlineOrders(access.customerID);
     return Promise.all(orders.map((order) => this.mapOrder(order)));
   }
 
   async getOrder(token: string, orderID: string): Promise<StorefrontOrder> {
     const access = await this.authenticate(token);
-    const order = await this.orderRepo.findByCustomerAndOrder(
+    const order = await this.findOnlineOrder(
       access.customerID,
       this.requireText(orderID, "orderID"),
     );
@@ -151,10 +154,9 @@ export default class StorefrontService {
         0,
       ),
     );
-    const created = await this.orderRepo.create({
+    const created = await this.billGateway.createOrder({
       orderID: this.generateOrderID(),
       customerID: access.customerID,
-      status: orderStatus_e.Submitted,
       items: orderItems,
       totalAmount,
     });
@@ -169,7 +171,7 @@ export default class StorefrontService {
   ): Promise<StorefrontOrder> {
     const access = await this.authenticate(token);
     const normalizedOrderID = this.requireText(orderID, "orderID");
-    const currentOrder = await this.orderRepo.findByCustomerAndOrder(
+    const currentOrder = await this.findOnlineOrder(
       access.customerID,
       normalizedOrderID,
     );
@@ -201,18 +203,11 @@ export default class StorefrontService {
     };
 
     try {
-      const updated = await this.orderRepo.updateEvidence(
+      const updated = await this.billGateway.updateEvidence(
         access.customerID,
         normalizedOrderID,
         evidence,
       );
-      if (!updated) {
-        throw new AppError(
-          "Evidence can only be updated before payment confirmation",
-          409,
-        );
-      }
-
       const previousKey = currentOrder.confirmationEvidence?.objectKey;
       if (previousKey && previousKey !== uploadedEvidence.objectKey) {
         await this.removeEvidenceSafely(previousKey);
@@ -229,16 +224,11 @@ export default class StorefrontService {
     orderID: string,
   ): Promise<StorefrontOrder> {
     const access = await this.authenticate(token);
-    const updated = await this.orderRepo.cancelSubmitted(
+    const updated = await this.billGateway.cancelOrder(
       access.customerID,
       this.requireText(orderID, "orderID"),
     );
-    if (updated) {
-      return this.mapOrder(updated);
-    }
-
-    await this.assertOrderExists(access.customerID, orderID);
-    throw new AppError("Only a submitted order can be cancelled", 409);
+    return this.mapOrder(updated);
   }
 
   private async authenticate(
@@ -286,15 +276,7 @@ export default class StorefrontService {
     return `${this.productImageHost.replace(/\/$/, "")}/${storagePath}`;
   }
 
-  private async mapOrder(order: {
-    orderID: string;
-    customerID: string;
-    createdAt: Date;
-    status: orderStatus_e;
-    totalAmount: number;
-    confirmationEvidence?: StoredConfirmationEvidence;
-    items: StorefrontOrderItem[];
-  }): Promise<StorefrontOrder> {
+  private async mapOrder(order: BillOrderRecord): Promise<StorefrontOrder> {
     const storedEvidence = order.confirmationEvidence;
     const confirmationEvidence: ConfirmationEvidence | undefined =
       storedEvidence
@@ -372,17 +354,15 @@ export default class StorefrontService {
     return { fileName, mimeType, data };
   }
 
-  private async assertOrderExists(
+  private async findOnlineOrder(
     customerID: string,
     orderID: string,
-  ): Promise<void> {
-    const order = await this.orderRepo.findByCustomerAndOrder(
+  ): Promise<BillOrderRecord | undefined> {
+    const orders = await this.billGateway.listOnlineOrders(
       customerID,
       orderID,
     );
-    if (!order) {
-      throw new AppError("Order not found", 404);
-    }
+    return orders.find((order) => order.orderID === orderID);
   }
 
   private requireText(value: unknown, fieldName: string): string {

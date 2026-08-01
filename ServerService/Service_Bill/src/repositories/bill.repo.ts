@@ -1,6 +1,7 @@
 import { Model } from "mongoose";
-import { OrderStatus } from "../utils/enum";
+import { OrderSource, OrderStatus } from "../utils/enum";
 import { OrderDocument } from "../models/order.interface";
+import type { StoredConfirmationEvidence } from "../models/order.interface";
 
 type OrderUpdateData = Partial<Pick<OrderDocument, "customerID" | "items" | "totalAmount">>;
 
@@ -11,7 +12,7 @@ export default class BillRepo {
     this.OrderModel = OrderModel;
   }
 
-  async findByCustomerAndOrder(customerID?: string, orderID?: string, status?: number) {
+  async findByCustomerAndOrder(customerID?: string, orderID?: string, status?: number, source?: OrderSource) {
     const query: any = {};
 
     if (customerID)
@@ -23,10 +24,13 @@ export default class BillRepo {
     if (status !== undefined)
       query.status = status;
 
+    if (source)
+      query.source = sourceFilter(source);
+
     return this.OrderModel.find(query).limit(100);
   }
 
-  async countByStatus(customerID?: string, orderID?: string) {
+  async countByStatus(customerID?: string, orderID?: string, source?: OrderSource) {
     const match: any = {};
 
     if (customerID)
@@ -34,6 +38,9 @@ export default class BillRepo {
 
     if (orderID)
       match.orderID = orderID;
+
+    if (source)
+      match.source = sourceFilter(source);
 
     return this.OrderModel.aggregate([
       { $match: match },
@@ -43,8 +50,11 @@ export default class BillRepo {
     ]);
   }
 
-  async findByStatus(status: number) {
-    return this.OrderModel.find({ status });
+  async findByStatus(status: number, source?: OrderSource) {
+    return this.OrderModel.find({
+      status,
+      ...(source ? { source: sourceFilter(source) } : {}),
+    }).sort({ createdAt: -1 });
   }
 
   async countByProduct(productID: string) {
@@ -79,8 +89,79 @@ export default class BillRepo {
   async getOrder(orderID: string) {
     return this.OrderModel.findOne({ orderID });
   }
+
+  async findOnlineByCustomer(customerID: string, orderID?: string) {
+    return this.OrderModel.find({
+      customerID,
+      source: OrderSource.Online,
+      ...(orderID ? { orderID } : {}),
+    }).sort({ createdAt: -1 });
+  }
+
+  async updateOnlineEvidence(
+    customerID: string,
+    orderID: string,
+    evidence: StoredConfirmationEvidence,
+  ) {
+    return this.OrderModel.findOneAndUpdate(
+      {
+        customerID,
+        orderID,
+        source: OrderSource.Online,
+        status: { $in: [OrderStatus.Submitted, OrderStatus.PaymentNotified] },
+      },
+      {
+        $set: {
+          confirmationEvidence: evidence,
+          status: OrderStatus.PaymentNotified,
+        },
+      },
+      { new: true, runValidators: true },
+    );
+  }
+
+  async cancelOnline(customerID: string, orderID: string) {
+    return this.OrderModel.findOneAndUpdate(
+      {
+        customerID,
+        orderID,
+        source: OrderSource.Online,
+        status: OrderStatus.Submitted,
+      },
+      { $set: { status: OrderStatus.Cancelled } },
+      { new: true, runValidators: true },
+    );
+  }
+
+  async confirmOnlinePayment(
+    orderID: string,
+    paymentConfirmedBy: string,
+    paymentConfirmedAt: Date,
+  ) {
+    return this.OrderModel.findOneAndUpdate(
+      {
+        orderID,
+        source: OrderSource.Online,
+        status: OrderStatus.PaymentNotified,
+      },
+      {
+        $set: {
+          status: OrderStatus.PrepareProduct,
+          paymentConfirmedBy,
+          paymentConfirmedAt,
+        },
+      },
+      { new: true, runValidators: true },
+    );
+  }
 }
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function sourceFilter(source: OrderSource) {
+  return source === OrderSource.Direct
+    ? { $in: [OrderSource.Direct, null] }
+    : source;
 }

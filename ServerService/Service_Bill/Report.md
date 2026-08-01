@@ -88,8 +88,17 @@ Customer contact not found
 | 2 | `Billing` | จัดการบิล |
 | 3 | `WaitingPayment` | รอชำระเงิน |
 | 4 | `Completed` | เสร็จสิ้น |
+| 5 | `Submitted` | รับคำสั่งซื้อ Online แล้ว รอหลักฐาน |
+| 6 | `PaymentNotified` | ลูกค้าแนบหลักฐานแล้ว รอตรวจสอบ |
+| 7 | `PaymentConfirmed` | สถานะรองรับความเข้ากันได้ของ flow Online |
+| 8 | `Cancelled` | ยกเลิกคำสั่งซื้อ Online |
 
-workflow ปกติ:
+Order มี `source` เพื่อเลือก workflow โดยไม่เปลี่ยนเลขสถานะเดิม:
+
+- `direct`: รายการที่สร้างจากหน้า Bill; document รุ่นเก่าที่ไม่มี `source` ถือเป็น `direct`
+- `online`: รายการจาก Storefront
+
+workflow สั่งโดยตรง:
 
 ```text
 PrepareProduct -> PrepareShipment -> Billing -> WaitingPayment -> Completed
@@ -97,21 +106,32 @@ PrepareProduct -> PrepareShipment -> Billing -> WaitingPayment -> Completed
 
 หมายเหตุ: เมื่ออยู่สถานะ `Billing` จะไม่สามารถ auto next ได้ ต้องเลือก `billing/income` หรือ `billing/debt`
 
+workflow หน้าร้าน Online:
+
+```text
+Submitted -> PaymentNotified -> PrepareProduct -> PrepareShipment -> Completed
+Submitted -> Cancelled
+```
+
+เมื่อยืนยันหลักฐาน ระบบบันทึก `paymentConfirmedAt` และ `paymentConfirmedBy`
+พร้อมเปลี่ยนเป็น `PrepareProduct` ใน document เดิม ไม่สร้าง Bill order ซ้ำ
+
 ## Bill APIs
 
 ### Search Orders
 
 ```http
-GET /bill/search?customerID=CUST001&orderID=ORD-123&status=2
+GET /bill/search?customerID=CUST001&orderID=ORD-123&status=2&source=direct
 ```
 
-query ทั้งสามตัวเป็น optional:
+query ทุกตัวเป็น optional:
 
 | Query | Type | Required | Description |
 | --- | --- | --- | --- |
 | `customerID` | string | no | ค้นหาแบบ regex ไม่สนตัวพิมพ์เล็กใหญ่ |
 | `orderID` | string | no | ค้นหาด้วย orderID แบบตรงตัว |
 | `status` | number | no | ค้นหาด้วย OrderStatus; ถ้าค่าไม่ถูกต้องจะได้ `InvalidInputError` |
+| `source` | `online` \| `direct` | no | กรองแหล่งที่มาของ order |
 
 ตัวอย่าง response:
 
@@ -126,6 +146,7 @@ query ทั้งสามตัวเป็น optional:
       "date": "2026-05-23T10:00:00.000Z",
       "total": 900,
       "status": 0,
+      "source": "direct",
       "list": [
         {
           "id": "PROD001",
@@ -436,6 +457,42 @@ MONGO_URI_BILL=mongodb://root:example@localhost:27017/Bill?authSource=admin
 MONGO_URI_STOCK=mongodb://root:example@localhost:27017/Stock?authSource=admin
 ```
 
+## Storefront Order APIs (Service-to-Service)
+
+`Service_Bill` เป็นเจ้าของ Online order ตั้งแต่สร้างรายการ โดย endpoint กลุ่มนี้
+รับ service token จาก `service_storefront` เท่านั้น:
+
+| Method | Endpoint | Scope | หน้าที่ |
+| --- | --- | --- | --- |
+| `POST` | `/bill/storefront` | `bill.storefront.manage` | สร้าง order ที่ `source=online`, `status=Submitted` และตัด stock |
+| `GET` | `/bill/storefront?customerID=...&orderID=...` | `bill.storefront.read` | อ่าน Online order ของลูกค้า |
+| `PATCH` | `/bill/storefront/:orderID/evidence` | `bill.storefront.manage` | บันทึก metadata หลักฐานและเปลี่ยนเป็น `PaymentNotified` |
+| `DELETE` | `/bill/storefront/:orderID?customerID=...` | `bill.storefront.manage` | soft cancel สถานะ `Submitted` และคืน stock |
+| `GET` | `/bill/storefront/payment-confirmations` | `bill.storefront.read` | รายการ `PaymentNotified` ที่รอตรวจสอบ |
+| `PATCH` | `/bill/storefront/:orderID/payment-confirmation` | `bill.storefront.manage` | ยืนยันชำระ บันทึกผู้ยืนยัน และเปลี่ยนเป็น `PrepareProduct` |
+
+ตัวอย่าง document กลาง:
+
+```json
+{
+  "orderID": "SO-260801-ABCDEF01",
+  "customerID": "CUST-001",
+  "source": "online",
+  "status": 6,
+  "items": [],
+  "totalAmount": 180,
+  "confirmationEvidence": {
+    "fileName": "proof.webp",
+    "mimeType": "image/webp",
+    "objectKey": "SO-260801-ABCDEF01/1785550000000-proof.webp",
+    "updatedAt": "2026-08-01T03:00:00.000Z"
+  }
+}
+```
+
+หน้า Bill ใช้ `source` เป็นตัวกรอง “หน้าร้าน Online” และ “สั่งโดยตรง”
+จากนั้นแสดง status tabs ตาม flow ของ source ที่เลือก
+
 ## Run And Test
 
 ติดตั้ง dependency:
@@ -466,7 +523,7 @@ npm test
 
 ```text
 npm run build: pass
-npm test: pass, 14 specs
+npm test: pass, 20 specs
 npm run dev: pass
 API smoke test: pass (2026-05-23)
 Frontend npm run build: pass (2026-05-24)

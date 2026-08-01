@@ -15,7 +15,7 @@ at least 32 characters, and differ from the user JWT `SECRET`.
   "sub": "service:service_storefront",
   "iss": "service_storefront",
   "aud": "service_bill",
-  "scopes": ["bill.order.create"],
+  "scopes": ["bill.storefront.manage"],
   "jti": "unique-token-id",
   "iat": 1785211200,
   "exp": 1785211320
@@ -35,7 +35,7 @@ its existing user role or the endpoint-specific service scope.
 
 | Caller | Audience | Scopes |
 | --- | --- | --- |
-| `service_storefront` | `service_bill` | `bill.order.create`, `bill.order.read` |
+| `service_storefront` | `service_bill` | `bill.storefront.manage`, `bill.storefront.read` |
 | `service_stock` | `service_bill` | `bill.product-usage.read` |
 | `service_stock` | `service_account` | `account.transaction.create` |
 | `service_bill` | `service_account` | `account.transaction.create` |

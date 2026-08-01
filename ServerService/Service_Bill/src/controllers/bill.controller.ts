@@ -1,6 +1,6 @@
 import { Response } from "express";
 import BillService from "../services/bill.service";
-import { errorCode_e, role_e } from "../utils/enum";
+import { errorCode_e, OrderSource, role_e } from "../utils/enum";
 import { Model } from "mongoose";
 import { OrderDocument } from "../models/order.interface";
 import { ContactDocument } from "../models/contact.interface";
@@ -34,11 +34,12 @@ export default class BillController {
   async searchOrders(req: AuthRequest, res: Response) {
     try {
       if (!ensureBillUser(req, res, "bill.order.read")) return;
-      const { customerID, orderID, status } = req.query;
+      const { customerID, orderID, status, source } = req.query;
       const data = await this.service.searchOrders(
         customerID as string,
         orderID as string,
-        status as string
+        status as string,
+        source as string,
       );
       return res.json({ success: true, data });
     } catch (err: any) {
@@ -49,10 +50,11 @@ export default class BillController {
   async countOrdersByStatus(req: AuthRequest, res: Response) {
     try {
       if (!ensureBillUser(req, res, "bill.order.read")) return;
-      const { customerID, orderID } = req.query;
+      const { customerID, orderID, source } = req.query;
       const data = await this.service.countOrdersByStatus(
         customerID as string,
-        orderID as string
+        orderID as string,
+        source as string,
       );
       return res.json({ success: true, data });
     } catch (err: any) {
@@ -75,7 +77,10 @@ export default class BillController {
     try {
       if (!ensureBillUser(req, res, "bill.order.read")) return;
       const status = Number(req.params.status);
-      const data = await this.service.getOrdersByStatus(status);
+      const data = await this.service.getOrdersByStatus(
+        status,
+        req.query.source as string,
+      );
       return res.json({ success: true, data });
     } catch (err: any) {
       return handleError(res, err);
@@ -85,7 +90,10 @@ export default class BillController {
   async createOrder(req: AuthRequest, res: Response) {
     try {
       if (!ensureBillUser(req, res, "bill.order.create")) return;
-      const data = await this.service.createOrder(req.body);
+      const data = await this.service.createOrder(
+        req.body,
+        OrderSource.Direct,
+      );
       return res.json({ success: true, data });
     } catch (err: any) {
       return handleError(res, err);
@@ -152,6 +160,82 @@ export default class BillController {
       if (!ensureBillUser(req, res, "bill.order.status.read")) return;
       const { orderID } = req.params;
       const data = await this.service.getStatus(orderID);
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async createStorefrontOrder(req: AuthRequest, res: Response) {
+    try {
+      if (!ensureBillUser(req, res, "bill.storefront.manage")) return;
+      const data = await this.service.createOrder(
+        req.body,
+        OrderSource.Online,
+      );
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async getStorefrontOrders(req: AuthRequest, res: Response) {
+    try {
+      if (!ensureBillUser(req, res, "bill.storefront.read")) return;
+      const data = await this.service.getOnlineOrders(
+        req.query.customerID as string,
+        req.query.orderID as string,
+      );
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async updateStorefrontEvidence(req: AuthRequest, res: Response) {
+    try {
+      if (!ensureBillUser(req, res, "bill.storefront.manage")) return;
+      const data = await this.service.updateOnlineEvidence(
+        req.body?.customerID,
+        req.params.orderID,
+        req.body?.evidence,
+      );
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async cancelStorefrontOrder(req: AuthRequest, res: Response) {
+    try {
+      if (!ensureBillUser(req, res, "bill.storefront.manage")) return;
+      const data = await this.service.cancelOnlineOrder(
+        req.query.customerID as string,
+        req.params.orderID,
+      );
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async listPaymentConfirmations(req: AuthRequest, res: Response) {
+    try {
+      if (!ensureBillUser(req, res, "bill.storefront.read")) return;
+      const data = await this.service.listPaymentConfirmations();
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async confirmStorefrontPayment(req: AuthRequest, res: Response) {
+    try {
+      if (!ensureBillUser(req, res, "bill.storefront.manage")) return;
+      const data = await this.service.confirmOnlinePayment(
+        req.params.orderID,
+        req.body?.confirmedBy,
+      );
       return res.json({ success: true, data });
     } catch (err: any) {
       return handleError(res, err);

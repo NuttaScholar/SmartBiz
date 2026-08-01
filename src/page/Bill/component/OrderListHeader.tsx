@@ -1,256 +1,200 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import TabBox from "../../../component/Atoms/TabBox";
 import FieldSearch from "../../../component/Molecules/FieldSearch";
-import { billStatus_e } from "../../../enum";
+import { billStatus_e, orderSource_e } from "../../../enum";
 import { useBillContext } from "../hooks/useBillContex";
 import { orderInfo_t } from "../../../API/BillService/type";
 import billWithRetry_f from "../lib/billWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import {
-  redirectToLogin,
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
 } from "../../../lib/authRedirect";
-import {
-  listPaymentConfirmationOrders,
-  StorefrontApiError,
-} from "../../../API/StorefrontService/Storefront";
-import type { StorefrontOrder } from "../../Storefront/type";
-import { storefrontAdminWithRetry } from "../../Customer/lib/storefrontAdminWithRetry";
-import { productType_e, stockStatus_e } from "../../../enum";
 
-const tabStatusList = [
-  billStatus_e.PrepareProduct,
-  billStatus_e.PrepareShipment,
-  billStatus_e.Billing,
-  billStatus_e.WaitingPayment,
-  billStatus_e.Completed,
+type SourceFilter = orderSource_e;
+
+type StatusTab = {
+  status: billStatus_e;
+  label: string;
+};
+
+const commonTabs: StatusTab[] = [
+  { status: billStatus_e.PrepareProduct, label: "แพ็คสินค้า" },
+  { status: billStatus_e.PrepareShipment, label: "พร้อมจัดส่ง" },
+  { status: billStatus_e.Billing, label: "จัดการบิล" },
+  { status: billStatus_e.WaitingPayment, label: "รอชำระเงิน" },
+  { status: billStatus_e.Completed, label: "เสร็จสิ้น" },
 ];
 
-const completedTabIndex = tabStatusList.indexOf(billStatus_e.Completed);
-const paymentConfirmationTabIndex = tabStatusList.length;
+const onlineTabs: StatusTab[] = [
+  { status: billStatus_e.PaymentNotified, label: "ยืนยันการชำระเงิน" },
+  { status: billStatus_e.Submitted, label: "รอหลักฐาน" },
+  { status: billStatus_e.PaymentConfirmed, label: "ยืนยันแล้ว" },
+  { status: billStatus_e.PrepareProduct, label: "แพ็คสินค้า" },
+  { status: billStatus_e.PrepareShipment, label: "พร้อมจัดส่ง" },
+  { status: billStatus_e.Completed, label: "เสร็จสิ้น" },
+  { status: billStatus_e.Cancelled, label: "ยกเลิก" },
+];
 
-function emptyStatusCountList() {
-  return [
-    ...tabStatusList.map((_, index) =>
-      index === completedTabIndex ? null : 0,
-    ),
-    0,
-  ];
+function tabsFor(source: SourceFilter) {
+  if (source === orderSource_e.Online) return onlineTabs;
+  return commonTabs;
 }
 
-function matchesSearch(order: StorefrontOrder, keyword?: string) {
-  const normalizedKeyword = keyword?.trim().toLowerCase();
-  if (!normalizedKeyword) return true;
-  return order.customerID.toLowerCase().includes(normalizedKeyword)
-    || order.id.toLowerCase().includes(normalizedKeyword);
-}
-
-function toBillOrder(order: StorefrontOrder): orderInfo_t {
-  return {
-    id: order.id,
-    customerID: order.customerID,
-    customer: order.customerID,
-    date: new Date(order.date),
-    total: order.totalAmount,
-    status: billStatus_e.WaitingPayment,
-    list: order.items.map((item) => ({
-      id: item.productID,
-      name: item.name,
-      img: item.img,
-      type: productType_e.merchandise,
-      status: stockStatus_e.normal,
-      price: item.priceOriginal,
-      amount: item.quantity,
-      total: item.priceAfterDiscount * item.quantity,
-      percentDiscount: item.discountPercent,
-      priceAfterDiscount: item.priceAfterDiscount,
-    })),
-  };
-}
-
-//*************************************************
-// Interface
-//*************************************************
-interface myProps {
+interface OrderListHeaderProps {
   children?: React.ReactNode;
-
 }
-//*************************************************
-// Function
-//*************************************************
-const OrderListHeader: React.FC<myProps> = (props) => {
-  // Hook ************************************
+
+const OrderListHeader: React.FC<OrderListHeaderProps> = ({ children }) => {
   const [tab, setTab] = React.useState(0);
   const [searchValue, setSearchValue] = React.useState("");
-  const [statusCountList, setStatusCountList] = React.useState<Array<number | null>>(emptyStatusCountList);
+  const [statusCountList, setStatusCountList] = React.useState<number[]>([]);
   const { state, setState } = useBillContext();
   const authContext = useAuth();
   const navigate = useNavigate();
-  // Local function **************************
-  const countOrders = React.useCallback((orders: orderInfo_t[]) => {
-    const countByStatus = new Map<billStatus_e, number>();
-    orders.forEach((order) => {
-      countByStatus.set(order.status, (countByStatus.get(order.status) ?? 0) + 1);
-    });
+  const source = state.sourceFilter;
+  const tabs = React.useMemo(() => tabsFor(source), [source]);
+  const selectedStatus = tabs[tab]?.status ?? tabs[0].status;
+  const apiSource = source;
 
-    return tabStatusList.map((status, index) =>
-      index === completedTabIndex ? null : countByStatus.get(status) ?? 0,
-    );
-  }, []);
-
-  const getPaymentConfirmationOrders = React.useCallback(
-    async (value?: string) => {
-      const orders = await storefrontAdminWithRetry(
-        authContext,
-        listPaymentConfirmationOrders,
-      );
-      return orders.filter((order) => matchesSearch(order, value));
-    },
-    [authContext],
-  );
-
-  const updateOrderStatusCounts = React.useCallback(
+  const loadStatusCounts = React.useCallback(
     async (value?: string) => {
       const keyword = value?.trim();
-
       if (!keyword) {
-        const res = await billWithRetry_f.getOrderStatusCounts(authContext);
-        const countByStatus = new Map<billStatus_e, number>();
-        if (res.success) {
-          res.data?.forEach((item) => countByStatus.set(item.status, item.count));
-        } else if (redirectToLoginOnAuthError(navigate, res.errCode)) {
-          return emptyStatusCountList();
-        }
+        const response = await billWithRetry_f.getOrderStatusCounts(
+          authContext,
+          { source: apiSource },
+        );
+        if (redirectToLoginOnAuthError(navigate, response.errCode)) return [];
 
-        const pendingOrders = await getPaymentConfirmationOrders();
-        return [...tabStatusList.map((status, index) =>
-          index === completedTabIndex ? null : countByStatus.get(status) ?? 0,
-        ), pendingOrders.length];
+        const countByStatus = new Map<billStatus_e, number>();
+        response.data?.forEach((item) =>
+          countByStatus.set(item.status, item.count),
+        );
+        return tabs.map((item) => countByStatus.get(item.status) ?? 0);
       }
 
-      const [customerRes, orderRes] = await Promise.all([
+      const [customerResponse, orderResponse] = await Promise.all([
         billWithRetry_f.searchOrders(authContext, {
           customerID: keyword,
+          source: apiSource,
         }),
         billWithRetry_f.searchOrders(authContext, {
           orderID: keyword,
+          source: apiSource,
         }),
       ]);
-
-      const orderMap = new Map<string, orderInfo_t>();
-      if (customerRes.success) {
-        customerRes.data?.forEach((order) => orderMap.set(order.id, order));
-      } else if (redirectToLoginOnAuthError(navigate, customerRes.errCode)) {
-        return emptyStatusCountList();
-      }
-      if (orderRes.success) {
-        orderRes.data?.forEach((order) => orderMap.set(order.id, order));
-      } else if (redirectToLoginOnAuthError(navigate, orderRes.errCode)) {
-        return emptyStatusCountList();
+      if (
+        redirectToLoginOnAuthError(navigate, customerResponse.errCode)
+        || redirectToLoginOnAuthError(navigate, orderResponse.errCode)
+      ) {
+        return [];
       }
 
-      const pendingOrders = await getPaymentConfirmationOrders(keyword);
-      return [
-        ...countOrders(Array.from(orderMap.values())),
-        pendingOrders.length,
-      ];
+      const orders = new Map<string, orderInfo_t>();
+      customerResponse.data?.forEach((order) => orders.set(order.id, order));
+      orderResponse.data?.forEach((order) => orders.set(order.id, order));
+      const countByStatus = new Map<billStatus_e, number>();
+      orders.forEach((order) =>
+        countByStatus.set(
+          order.status,
+          (countByStatus.get(order.status) ?? 0) + 1,
+        ),
+      );
+      return tabs.map((item) => countByStatus.get(item.status) ?? 0);
     },
-    [authContext, countOrders, getPaymentConfirmationOrders, navigate],
+    [apiSource, authContext, navigate, tabs],
   );
 
-  const updateOrderList = React.useCallback(
+  const loadOrders = React.useCallback(
     async (status: billStatus_e, value?: string) => {
       const keyword = value?.trim();
-
       if (!keyword) {
-        const res = await billWithRetry_f.getOrdersByStatus(authContext, status);
-        if (redirectToLoginOnAuthError(navigate, res.errCode)) return [];
-
-        return res.success ? res.data ?? [] : [];
+        const response = await billWithRetry_f.getOrdersByStatus(
+          authContext,
+          status,
+          apiSource,
+        );
+        if (redirectToLoginOnAuthError(navigate, response.errCode)) return [];
+        return response.data ?? [];
       }
 
-      const [customerRes, orderRes] = await Promise.all([
+      const [customerResponse, orderResponse] = await Promise.all([
         billWithRetry_f.searchOrders(authContext, {
           customerID: keyword,
           status,
+          source: apiSource,
         }),
         billWithRetry_f.searchOrders(authContext, {
           orderID: keyword,
           status,
+          source: apiSource,
         }),
       ]);
-
-      const orderMap = new Map<string, orderInfo_t>();
-      if (customerRes.success) {
-        customerRes.data?.forEach((order) => orderMap.set(order.id, order));
-      } else if (redirectToLoginOnAuthError(navigate, customerRes.errCode)) {
-        return [];
-      }
-      if (orderRes.success) {
-        orderRes.data?.forEach((order) => orderMap.set(order.id, order));
-      } else if (redirectToLoginOnAuthError(navigate, orderRes.errCode)) {
+      if (
+        redirectToLoginOnAuthError(navigate, customerResponse.errCode)
+        || redirectToLoginOnAuthError(navigate, orderResponse.errCode)
+      ) {
         return [];
       }
 
-      return Array.from(orderMap.values());
+      const orders = new Map<string, orderInfo_t>();
+      customerResponse.data?.forEach((order) => orders.set(order.id, order));
+      orderResponse.data?.forEach((order) => orders.set(order.id, order));
+      return Array.from(orders.values());
     },
-    [authContext, navigate],
+    [apiSource, authContext, navigate],
   );
 
-  const onSerch = (value: string) => {
-    setSearchValue(value);
-  };
-  // Effect **********************************
   React.useEffect(() => {
-    let isActive = true;
-    const status = tabStatusList[tab];
+    let active = true;
 
-    async function fetchOrders() {
-      const isPaymentConfirmationTab = tab === paymentConfirmationTabIndex;
-      const [orders, statusCounts] = await Promise.all([
-        isPaymentConfirmationTab
-          ? getPaymentConfirmationOrders(searchValue).then((items) =>
-              items.map(toBillOrder),
-            )
-          : updateOrderList(status, searchValue),
-        updateOrderStatusCounts(searchValue),
-      ]);
-      if (!isActive) return;
-
-      setStatusCountList(statusCounts);
-      setState((prev) => ({
-        ...prev,
-        filter: tab,
-        isPaymentConfirmationTab,
-        orderList: orders,
-      }));
-    }
-
-    fetchOrders().catch((err) => {
-      if (err instanceof StorefrontApiError && err.status === 401) {
-        redirectToLogin(navigate);
-        return;
-      }
-      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
-
-      if (isActive) {
-        setStatusCountList(emptyStatusCountList());
-        setState((prev) => ({
-          ...prev,
-          filter: tab,
-          isPaymentConfirmationTab: tab === paymentConfirmationTabIndex,
+    Promise.all([
+      loadOrders(selectedStatus, searchValue),
+      loadStatusCounts(searchValue),
+    ])
+      .then(([orders, counts]) => {
+        if (!active) return;
+        setStatusCountList(counts);
+        setState((previous) => ({
+          ...previous,
+          filter: selectedStatus,
+          isPaymentConfirmationTab:
+            selectedStatus === billStatus_e.PaymentNotified,
+          orderList: orders,
+        }));
+      })
+      .catch((error) => {
+        if (redirectToLoginOnThrownAuthError(navigate, error)) return;
+        if (!active) return;
+        setStatusCountList(tabs.map(() => 0));
+        setState((previous) => ({
+          ...previous,
+          filter: selectedStatus,
           orderList: [],
         }));
-      }
-    });
+      });
 
     return () => {
-      isActive = false;
+      active = false;
     };
-  }, [getPaymentConfirmationOrders, navigate, searchValue, setState, state.trigger_updateOrderList, tab, updateOrderList, updateOrderStatusCounts]);
+  }, [loadOrders, loadStatusCounts, navigate, searchValue, selectedStatus, setState, state.trigger_updateOrderList, tabs]);
+
+  const changeSource = (
+    _event: React.MouseEvent<HTMLElement>,
+    nextSource: SourceFilter | null,
+  ) => {
+    if (!nextSource) return;
+    setTab(0);
+    setState((previous) => ({
+      ...previous,
+      sourceFilter: nextSource,
+      orderList: [],
+    }));
+  };
 
   return (
     <Box
@@ -266,19 +210,33 @@ const OrderListHeader: React.FC<myProps> = (props) => {
       <FieldSearch
         placeholder="รหัสลูกค้า หรือ รหัสคำสั่งซื้อ"
         maxWidth="650px"
-        onSubmit={onSerch}
-      />  
+        onSubmit={setSearchValue}
+      />
+      <ToggleButtonGroup
+        value={source}
+        exclusive
+        size="small"
+        onChange={changeSource}
+        aria-label="แหล่งที่มาของคำสั่งซื้อ"
+      >
+        <ToggleButton value={orderSource_e.Online}>
+          หน้าร้าน Online
+        </ToggleButton>
+        <ToggleButton value={orderSource_e.Direct}>
+          สั่งโดยตรง
+        </ToggleButton>
+      </ToggleButtonGroup>
       <TabBox
         gotoTop={state.triger_gotoTop}
-        list={["แพ็คสินค้า", "พร้อมจัดส่ง", "จัดการบิล", "รอชำระเงิน", "เสร็จสิ้น", "ยืนยันการชำระเงิน"]}
-        height="calc(100vh - 200px)"
+        list={tabs.map((item) => item.label)}
+        height="calc(100vh - 240px)"
         alignItems="center"
         onClick={setTab}
         valueList={statusCountList}
         value={tab}
         maxWidth="1280px"
       >
-        {props.children}
+        {children}
       </TabBox>
     </Box>
   );

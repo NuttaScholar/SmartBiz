@@ -172,7 +172,7 @@ services:
     environment:
       SECRET: ${SECRET}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
+      WEB_HOSTS: "http://${VITE_HOST}:${VITE_PORT},http://${VITE_HOST}:${VITE_STOREFRONT_PORT}"
       PORT: 3005
       MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
       MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin
