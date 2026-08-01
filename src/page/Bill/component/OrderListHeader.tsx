@@ -1,6 +1,6 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import { ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { Divider, Tab, Tabs } from "@mui/material";
 import TabBox from "../../../component/Atoms/TabBox";
 import FieldSearch from "../../../component/Molecules/FieldSearch";
 import { billStatus_e, orderSource_e } from "../../../enum";
@@ -30,9 +30,8 @@ const commonTabs: StatusTab[] = [
 ];
 
 const onlineTabs: StatusTab[] = [
-  { status: billStatus_e.PaymentNotified, label: "ยืนยันการชำระเงิน" },
   { status: billStatus_e.Submitted, label: "รอหลักฐาน" },
-  { status: billStatus_e.PaymentConfirmed, label: "ยืนยันแล้ว" },
+  { status: billStatus_e.PaymentNotified, label: "ยืนยันการชำระเงิน" },
   { status: billStatus_e.PrepareProduct, label: "แพ็คสินค้า" },
   { status: billStatus_e.PrepareShipment, label: "พร้อมจัดส่ง" },
   { status: billStatus_e.Completed, label: "เสร็จสิ้น" },
@@ -189,17 +188,8 @@ const OrderListHeader: React.FC<OrderListHeaderProps> = ({ children }) => {
     };
   }, [loadOrders, loadStatusCounts, navigate, searchValue, selectedStatus, setState, state.trigger_updateOrderList, tabs]);
 
-  const changeSource = (
-    _event: React.MouseEvent<HTMLElement>,
-    nextSource: SourceFilter | null,
-  ) => {
-    if (!nextSource) return;
-    setTab(0);
-    setState((previous) => ({
-      ...previous,
-      sourceFilter: nextSource,
-      orderList: [],
-    }));
+  const changeSource = (_event: React.SyntheticEvent, nextSource: SourceFilter) => {
+    navigate(`/bill/${nextSource}`);
   };
 
   return (
@@ -218,20 +208,25 @@ const OrderListHeader: React.FC<OrderListHeaderProps> = ({ children }) => {
         maxWidth="650px"
         onSubmit={setSearchValue}
       />
-      <ToggleButtonGroup
-        value={source}
-        exclusive
-        size="small"
-        onChange={changeSource}
-        aria-label="แหล่งที่มาของคำสั่งซื้อ"
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: "1280px",
+          borderBottom: 1,
+          borderColor: "divider",
+        }}
       >
-        <ToggleButton value={orderSource_e.Online}>
-          หน้าร้าน Online
-        </ToggleButton>
-        <ToggleButton value={orderSource_e.Direct}>
-          สั่งโดยตรง
-        </ToggleButton>
-      </ToggleButtonGroup>
+        <Tabs
+          value={source}
+          variant="scrollable"
+          onChange={changeSource}
+          aria-label="แหล่งที่มาของคำสั่งซื้อ"
+        >
+          <Tab label="หน้าร้าน Online" value={orderSource_e.Online} />
+          <Divider orientation="vertical" variant="middle" flexItem />
+          <Tab label="สั่งโดยตรง" value={orderSource_e.Direct} />
+        </Tabs>
+      </Box>
       <TabBox
         gotoTop={state.triger_gotoTop}
         list={tabs.map((item) => item.label)}

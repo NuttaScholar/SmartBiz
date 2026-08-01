@@ -1,5 +1,17 @@
 import React from "react";
-import { Box, IconButton, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Stack,
+  Typography,
+} from "@mui/material";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PrintIcon from "@mui/icons-material/Print";
@@ -28,7 +40,15 @@ import billWithRetry_f from "../lib/billWithRetry";
 import {
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
+  redirectToLogin,
 } from "../../../lib/authRedirect";
+import {
+  getAdminStorefrontOrder,
+  getStorefrontErrorMessage,
+  StorefrontApiError,
+} from "../../../API/StorefrontService/Storefront";
+import type { StorefrontOrder } from "../../Storefront/type";
+import { storefrontAdminWithRetry } from "../../Customer/lib/storefrontAdminWithRetry";
 
 //*************************************************
 // Constants
@@ -44,6 +64,10 @@ const menuAction = {
   delete: "Delete",
   goToTop: "Go to Top",
 } as const;
+
+interface PageOrderDetailProps {
+  source: orderSource_e;
+}
 
 //*************************************************
 // Helper functions
@@ -91,7 +115,7 @@ function toProductCardValue(item: orderInfo_t["list"][number]) {
 //*************************************************
 // Component
 //*************************************************
-const Page_OrderDetail: React.FC = () => {
+const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
   // Hooks ************************************
   const authContext = useAuth();
   const navigate = useNavigate();
@@ -102,6 +126,12 @@ const Page_OrderDetail: React.FC = () => {
   const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false);
   const [isPaymentQuestionOpen, setIsPaymentQuestionOpen] =
     React.useState(false);
+  const [isEvidenceOpen, setIsEvidenceOpen] = React.useState(false);
+  const [isEvidenceLoading, setIsEvidenceLoading] = React.useState(false);
+  const [evidenceOrder, setEvidenceOrder] =
+    React.useState<StorefrontOrder | null>(null);
+  const [evidenceError, setEvidenceError] = React.useState("");
+  const orderListPath = `/bill/${source}`;
 
   // Memo *************************************
   const menuList = React.useMemo<menuList_t[]>(() => {
@@ -138,8 +168,42 @@ const Page_OrderDetail: React.FC = () => {
   }, [orderID]);
 
   const onClose = React.useCallback(() => {
-    navigate("/bill");
-  }, [navigate]);
+    navigate(orderListPath);
+  }, [navigate, orderListPath]);
+
+  const showPaymentEvidence = React.useCallback(
+    async (selectedOrder: orderInfo_t) => {
+      if (selectedOrder.source !== orderSource_e.Online) return;
+
+      setIsEvidenceOpen(true);
+      setIsEvidenceLoading(true);
+      setEvidenceOrder(null);
+      setEvidenceError("");
+      try {
+        const storefrontOrder = await storefrontAdminWithRetry(
+          authContext,
+          (accessToken) => getAdminStorefrontOrder(
+            accessToken,
+            selectedOrder.id,
+            selectedOrder.customerID,
+          ),
+        );
+        setEvidenceOrder(storefrontOrder);
+      } catch (requestError) {
+        if (
+          requestError instanceof StorefrontApiError
+          && requestError.status === 401
+        ) {
+          redirectToLogin(navigate);
+          return;
+        }
+        setEvidenceError(getStorefrontErrorMessage(requestError));
+      } finally {
+        setIsEvidenceLoading(false);
+      }
+    },
+    [authContext, navigate],
+  );
 
   // API handlers *****************************
   const closePaymentQuestion = React.useCallback(() => {
@@ -163,7 +227,7 @@ const Page_OrderDetail: React.FC = () => {
     try {
       const res = await billWithRetry_f.nextStep(authContext, orderID);
       if (res.success) {
-        navigate("/bill");
+        navigate(orderListPath);
         return;
       }
 
@@ -177,7 +241,7 @@ const Page_OrderDetail: React.FC = () => {
     } finally {
       setIsUpdatingStatus(false);
     }
-  }, [authContext, isUpdatingStatus, navigate, order, orderID]);
+  }, [authContext, isUpdatingStatus, navigate, order, orderID, orderListPath]);
 
   const updateBillingStatus = React.useCallback(
     async (isPaid: boolean) => {
@@ -192,7 +256,7 @@ const Page_OrderDetail: React.FC = () => {
         const res = await updateStatus(authContext, orderID);
 
         if (res.success) {
-          navigate("/bill");
+          navigate(orderListPath);
           return;
         }
 
@@ -213,6 +277,7 @@ const Page_OrderDetail: React.FC = () => {
       isUpdatingStatus,
       navigate,
       orderID,
+      orderListPath,
     ],
   );
 
@@ -222,7 +287,7 @@ const Page_OrderDetail: React.FC = () => {
     try {
       const res = await billWithRetry_f.delOrder(authContext, orderID);
       if (res.success) {
-        navigate("/bill");
+        navigate(orderListPath);
         return;
       }
 
@@ -234,7 +299,7 @@ const Page_OrderDetail: React.FC = () => {
 
       alert("เกิดข้อผิดพลาด");
     }
-  }, [authContext, navigate, orderID]);
+  }, [authContext, navigate, orderID, orderListPath]);
 
   const speedDialHandler = React.useCallback(
     (index: number) => {
@@ -270,6 +335,7 @@ const Page_OrderDetail: React.FC = () => {
       try {
         const res = await billWithRetry_f.searchOrders(authContext, {
           orderID,
+          source,
         });
         if (!active) return;
 
@@ -300,7 +366,7 @@ const Page_OrderDetail: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [authContext, navigate, orderID]);
+  }, [authContext, navigate, orderID, source]);
 
   // Render ***********************************
   return (
@@ -346,7 +412,17 @@ const Page_OrderDetail: React.FC = () => {
             ไม่พบข้อมูลคำสั่งซื้อ
           </Typography>
         )}
-        {order && <CardOrder maxWidth="400px" value={{ ...order, list: [] }} />}
+        {order && (
+          <CardOrder
+            maxWidth="400px"
+            value={{ ...order, list: [] }}
+            onClick={
+              order.source === orderSource_e.Online
+                ? showPaymentEvidence
+                : undefined
+            }
+          />
+        )}
         {order && (
           <Field maxWidth="1280px" direction="column" alignItem="center">
             <Typography variant="h6">รายการสินค้า</Typography>
@@ -402,6 +478,84 @@ const Page_OrderDetail: React.FC = () => {
         onCancel={() => updateBillingStatus(false)}
         onClose={closePaymentQuestion}
       />
+      <Dialog
+        open={isEvidenceOpen}
+        onClose={() => setIsEvidenceOpen(false)}
+        maxWidth="md"
+        fullWidth
+        aria-labelledby="payment-evidence-title"
+      >
+        <DialogTitle id="payment-evidence-title">
+          หลักฐานการชำระเงิน
+        </DialogTitle>
+        <DialogContent dividers>
+          {isEvidenceLoading && (
+            <Stack alignItems="center" spacing={1.5} sx={{ py: 4 }}>
+              <CircularProgress />
+              <Typography color="text.secondary">กำลังโหลดหลักฐาน</Typography>
+            </Stack>
+          )}
+          {!isEvidenceLoading && evidenceError && (
+            <Alert severity="error">{evidenceError}</Alert>
+          )}
+          {!isEvidenceLoading
+            && !evidenceError
+            && !evidenceOrder?.confirmationEvidence && (
+            <Typography color="text.secondary">
+              ยังไม่มีหลักฐานการชำระเงิน
+            </Typography>
+          )}
+          {!isEvidenceLoading && evidenceOrder?.confirmationEvidence && (
+            <Stack spacing={2}>
+              {evidenceOrder.confirmationEvidence.mimeType.startsWith("image/") && (
+                <Box
+                  component="img"
+                  src={evidenceOrder.confirmationEvidence.dataUrl}
+                  alt={`หลักฐาน ${evidenceOrder.confirmationEvidence.fileName}`}
+                  sx={{
+                    width: "100%",
+                    maxHeight: "70vh",
+                    objectFit: "contain",
+                    bgcolor: "action.hover",
+                    borderRadius: 1,
+                  }}
+                />
+              )}
+              {evidenceOrder.confirmationEvidence.mimeType === "application/pdf" && (
+                <Box
+                  component="iframe"
+                  src={evidenceOrder.confirmationEvidence.dataUrl}
+                  title={`หลักฐาน ${evidenceOrder.confirmationEvidence.fileName}`}
+                  sx={{ width: "100%", height: "70vh", border: 0 }}
+                />
+              )}
+              <Box>
+                <Typography fontWeight={600}>
+                  {evidenceOrder.confirmationEvidence.fileName}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  อัปเดตล่าสุด{" "}
+                  {new Date(
+                    evidenceOrder.confirmationEvidence.updatedAt,
+                  ).toLocaleString("th-TH")}
+                </Typography>
+              </Box>
+              <Button
+                component="a"
+                href={evidenceOrder.confirmationEvidence.dataUrl}
+                target="_blank"
+                rel="noreferrer"
+                variant="outlined"
+              >
+                เปิดหลักฐาน
+              </Button>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsEvidenceOpen(false)}>ปิด</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

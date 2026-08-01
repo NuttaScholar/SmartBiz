@@ -97,6 +97,7 @@ async function startServer(): Promise<void> {
   const adminOrderController = new AdminOrderController(
     new AdminOrderService(
       billClient,
+      evidenceStorage,
     ),
   );
   app.use("/health", healthRoutes(healthController));

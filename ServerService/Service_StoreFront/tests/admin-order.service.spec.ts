@@ -40,9 +40,17 @@ describe("AdminOrderService", () => {
           paymentConfirmedBy: "admin",
         }),
     };
+    const evidenceStorage = {
+      uploadEvidence: jasmine.createSpy("uploadEvidence"),
+      getEvidenceUrl: jasmine
+        .createSpy("getEvidenceUrl")
+        .and.callFake((objectKey: string) => Promise.resolve(`https://evidence/${objectKey}`)),
+      removeEvidence: jasmine.createSpy("removeEvidence"),
+    };
     return {
-      service: new AdminOrderService(billGateway),
+      service: new AdminOrderService(billGateway, evidenceStorage),
       billGateway,
+      evidenceStorage,
     };
   }
 
@@ -81,6 +89,35 @@ describe("AdminOrderService", () => {
       paymentConfirmedAt: fixedNow,
       paymentConfirmedBy: "admin",
     });
+  });
+
+  it("gets an online order with a signed payment evidence URL", async () => {
+    const { service, billGateway, evidenceStorage } = createService();
+    billGateway.listOnlineOrders.and.resolveTo([{
+      ...paymentNotifiedOrder,
+      confirmationEvidence: {
+        fileName: "payment.png",
+        mimeType: "image/png",
+        objectKey: "SO-001/payment.png",
+        updatedAt: fixedNow,
+      },
+    }]);
+
+    const result = await service.getOrder(
+      paymentNotifiedOrder.orderID,
+      paymentNotifiedOrder.customerID,
+    );
+
+    expect(billGateway.listOnlineOrders).toHaveBeenCalledWith(
+      paymentNotifiedOrder.customerID,
+      paymentNotifiedOrder.orderID,
+    );
+    expect(evidenceStorage.getEvidenceUrl).toHaveBeenCalledWith(
+      "SO-001/payment.png",
+    );
+    expect(result.confirmationEvidence?.dataUrl).toBe(
+      "https://evidence/SO-001/payment.png",
+    );
   });
 
   it("does not hide a Bill Service confirmation failure", async () => {

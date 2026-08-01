@@ -19,6 +19,21 @@ export default class AdminOrderController {
     }
   };
 
+  getOrder = async (
+    request: AuthRequest,
+    response: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      response.json(success(await this.service.getOrder(
+        request.params.orderID,
+        request.query.customerID,
+      )));
+    } catch (thrown) {
+      next(thrown);
+    }
+  };
+
   confirmPayment = async (
     request: AuthRequest,
     response: Response,

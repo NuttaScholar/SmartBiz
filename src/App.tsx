@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -11,6 +11,7 @@ import "@fontsource/kanit/400.css";
 import "@fontsource/kanit/500.css";
 import "@fontsource/kanit/700.css";
 import PageLoader from "./page/PageLoader";
+import { orderSource_e } from "./enum";
 //*********************************************
 // Lazy load pages
 //*********************************************
@@ -59,11 +60,37 @@ function App() {
               </Route>
               <Route path="/login" element={<Page_Login />} />
               <Route path="/bill">
-                <Route index element={<Page_Bill />} />
+                <Route index element={<Navigate to="direct" replace />} />
+                <Route
+                  path="online"
+                  element={
+                    <Page_Bill
+                      key={orderSource_e.Online}
+                      source={orderSource_e.Online}
+                    />
+                  }
+                />
+                <Route
+                  path="direct"
+                  element={
+                    <Page_Bill
+                      key={orderSource_e.Direct}
+                      source={orderSource_e.Direct}
+                    />
+                  }
+                />
                 <Route path="create" element={<Page_BillCreate />} />
                 <Route
-                  path="detail/:orderID"
-                  element={<Page_BillOrderDetail />}
+                  path="online/detail/:orderID"
+                  element={
+                    <Page_BillOrderDetail source={orderSource_e.Online} />
+                  }
+                />
+                <Route
+                  path="direct/detail/:orderID"
+                  element={
+                    <Page_BillOrderDetail source={orderSource_e.Direct} />
+                  }
                 />
                 <Route path="edit/:orderID" element={<Page_BillCreate />} />
                 <Route path="discount" element={<Page_BillSetDiscount />} />

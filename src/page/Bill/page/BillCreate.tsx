@@ -149,6 +149,10 @@ export default function Page_BillCreate() {
 
   // Local variables **************************
   const selectedCustomerID = state.billForm?.customer?.trim() || "";
+  const orderListPath = `/bill/${state.sourceFilter}`;
+  const orderDetailPath = orderID
+    ? `${orderListPath}/detail/${orderID}`
+    : orderListPath;
 
   // Data mappers *****************************
   const applyDiscount = React.useCallback(
@@ -188,6 +192,7 @@ export default function Page_BillCreate() {
     setOriginalOrderAmountMap(toOrderAmountMap(order));
     setState((prev) => ({
       ...prev,
+      sourceFilter: order.source,
       billForm: {
         ...prev.billForm,
         id: order.id,
@@ -200,8 +205,8 @@ export default function Page_BillCreate() {
 
   // UI handlers ******************************
   const onClose = React.useCallback(() => {
-    navigate(orderID ? `/bill/detail/${orderID}` : "/bill");
-  }, [navigate, orderID]);
+    navigate(orderDetailPath);
+  }, [navigate, orderDetailPath]);
 
   const onEdit = React.useCallback(
     (del: boolean, value: productInfo_t) => {
@@ -386,7 +391,7 @@ export default function Page_BillCreate() {
         : await billWithRetry_f.postOrder(authContext, data);
 
       if (res.success) {
-        navigate(orderID ? `/bill/detail/${orderID}` : "/bill");
+        navigate(orderDetailPath);
         return;
       }
 
@@ -404,6 +409,7 @@ export default function Page_BillCreate() {
     authContext,
     navigate,
     orderID,
+    orderDetailPath,
     state.billForm?.customer,
     state.merchList,
   ]);

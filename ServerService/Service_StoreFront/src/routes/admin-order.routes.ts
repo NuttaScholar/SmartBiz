@@ -16,6 +16,11 @@ export default function adminOrderRoutes(
     adminOrServiceScope("storefront.payment.confirm"),
     controller.listPaymentConfirmations,
   );
+  router.get(
+    "/:orderID",
+    adminOrServiceScope("storefront.payment.confirm"),
+    controller.getOrder,
+  );
   router.patch(
     "/:orderID/payment-confirmation",
     adminOrServiceScope("storefront.payment.confirm"),

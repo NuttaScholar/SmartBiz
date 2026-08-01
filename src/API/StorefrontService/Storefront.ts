@@ -210,6 +210,22 @@ export function listPaymentConfirmationOrders(
   );
 }
 
+export function getAdminStorefrontOrder(
+  accessToken: string,
+  orderID: string,
+  customerID: string,
+): Promise<StorefrontOrder> {
+  return request(() =>
+    axios_storefront.get(
+      `/storefront/admin/orders/${pathSegment(orderID)}`,
+      {
+        ...adminAuth(accessToken),
+        params: { customerID },
+      },
+    ),
+  );
+}
+
 export function createCustomerLink(
   accessToken: string,
   customerID: string,
