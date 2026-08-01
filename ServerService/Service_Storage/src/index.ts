@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { DEFAULT_BUCKET, PORT, PRODUCT_BUCKET, WEB_HOST } from "./config";
+import { DEFAULT_BUCKET, PORT, PRODUCT_BUCKET, WEB_HOSTS } from "./config";
 import AuthMiddleware from "./middlewares/auth";
 import storageRoutes from "./routes/storage.routes";
 import StorageService from "./services/storage.service";
@@ -12,10 +12,10 @@ async function startServer() {
   await storageService.initBucket(PRODUCT_BUCKET, false);
 
   const app = express();
-  console.log("origin:", WEB_HOST);
+  console.log("origins:", WEB_HOSTS);
   app.use(
     cors({
-      origin: WEB_HOST,
+      origin: WEB_HOSTS,
       credentials: true,
     }),
   );

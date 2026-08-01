@@ -10,14 +10,14 @@ import { LogSchema } from "./models/log.model";
 import productRoutes from "./routes/product.routes";
 import stockRoutes from "./routes/stock.routes";
 import StorageService from "./services/storage.service";
-import { BILL_BUCKET, DEFAULT_BUCKET, PORT, WEB_HOST } from "./config";
+import { BILL_BUCKET, DEFAULT_BUCKET, PORT, WEB_HOSTS } from "./config";
 import ProductRepo from "./repositories/product.repo";
 
 const app = express();
 
 app.use(
   cors({
-    origin: WEB_HOST,
+    origin: WEB_HOSTS,
     credentials: true,
   }),
 );

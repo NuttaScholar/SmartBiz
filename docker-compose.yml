@@ -62,7 +62,7 @@ services:
     environment:
       SECRET: ${SECRET}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
+      WEB_HOSTS: "${VITE_WEB_BACKEND},${VITE_WEB_SHOP}"
       PORT: 3000
       DB_URL: mongodb://root:example@mongo:27017/Account?authSource=admin
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
@@ -81,10 +81,10 @@ services:
 
   service_login:
     container_name: service_login
-    image: nuttascholar/smartbiz_login:1.1
+    image: nuttascholar/smartbiz_login:1.2
     environment:
       SECRET: ${SECRET}
-      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
+      WEB_HOSTS: "${VITE_WEB_BACKEND}"
       PORT: 3001
       DB_URL: mongodb://root:example@mongo:27017/User?authSource=admin
     networks:
@@ -101,7 +101,7 @@ services:
     environment:
       SECRET: ${SECRET}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
+      WEB_HOSTS: "${VITE_WEB_BACKEND}"
       PORT: 3003
       DB_URL: mongodb://root:example@mongo:27017/Stock?authSource=admin
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
@@ -127,7 +127,7 @@ services:
     environment:
       SECRET: ${SECRET}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
+      WEB_HOSTS: "${VITE_WEB_BACKEND}"
       PORT: 3004
       MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
       MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin
@@ -151,7 +151,7 @@ services:
     environment:
       SECRET: ${SECRET}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOST: http://${VITE_HOST}:${VITE_PORT}
+      WEB_HOSTS: "${VITE_WEB_BACKEND}"
       PORT: 3002
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
@@ -172,7 +172,7 @@ services:
     environment:
       SECRET: ${SECRET}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOSTS: "http://${VITE_HOST}:${VITE_PORT},http://${VITE_HOST}:${VITE_STOREFRONT_PORT}"
+      WEB_HOSTS: "${VITE_WEB_BACKEND},${VITE_WEB_SHOP}"
       PORT: 3005
       MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
       MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin
@@ -204,7 +204,7 @@ services:
       - ./dist:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
-      - ${VITE_PORT}:80
+      - 3030:80
     environment:
       - NGINX_PORT=80
 

@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
-import { PORT, WEB_HOST } from "./config";
+import { PORT, WEB_HOSTS } from "./config";
 import { connectDB } from "./database/mongo";
 import { ProfileDocument } from "./models/profile.interface";
 import { ProfileSchema } from "./models/profile.model";
@@ -16,10 +16,10 @@ async function startServer() {
   await new UserService(UserModel).ensureDefaultUser();
 
   const app = express();
-  console.log("origin:", WEB_HOST);
+  console.log("origins:", WEB_HOSTS);
   app.use(
     cors({
-      origin: WEB_HOST,
+      origin: WEB_HOSTS,
       credentials: true,
     }),
   );

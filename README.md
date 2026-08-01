@@ -66,8 +66,8 @@ npm install
 SECRET="NuttaScholar"
 SERVICE_AUTH_SECRET="<random-secret-at-least-32-characters>"
 
-VITE_HOST=localhost
-VITE_PORT=3030
+VITE_WEB_BACKEND=http://localhost:3030
+VITE_WEB_SHOP=http://localhost:4030
 VITE_PORT_ACCESS=3000
 VITE_PORT_LOGIN=3001
 VITE_PORT_STORE=3002
@@ -81,7 +81,7 @@ MINIO_USER=admin
 MINIO_PASSWORD=StrongPass123!
 ```
 
-ถ้ารันให้เครื่องอื่นในวง LAN ใช้งาน ให้เปลี่ยน `VITE_HOST` และ `MINIO_ENDPOINT` เป็น IP ของเครื่องที่รัน service
+ถ้ารันให้เครื่องอื่นในวง LAN ใช้งาน ให้เปลี่ยน host ใน `VITE_WEB_BACKEND`, `VITE_WEB_SHOP` และ `MINIO_ENDPOINT` เป็น IP ของเครื่องที่รัน service
 
 4. เปิด backend และ infrastructure
 
@@ -120,7 +120,7 @@ SmartBizV0_3/
     templates/
 ```
 
-โฟลเดอร์ `App` คือชุดสำหรับรันระบบจริงด้วย Docker Compose ส่วน `CreateWeb` คือชุด source frontend สำหรับ build `dist` ใหม่เมื่อเปลี่ยนค่า endpoint เช่น `VITE_HOST`
+โฟลเดอร์ `App` คือชุดสำหรับรันระบบจริงด้วย Docker Compose ส่วน `CreateWeb` คือชุด source frontend สำหรับ build `dist` ใหม่เมื่อเปลี่ยนค่า endpoint เช่น `VITE_WEB_BACKEND`
 
 1. ดาวน์โหลด Release asset จากหน้า GitHub Releases แล้วแตกไฟล์ เช่น:
 
@@ -136,13 +136,13 @@ notepad ./App/.env
 
 ค่าที่ควรตรวจเป็นพิเศษ:
 
-- `VITE_HOST` - host หรือ IP ที่ browser ของผู้ใช้จะเรียก backend services
-- `VITE_PORT` - port ของ frontend web เช่น `3030`
+- `VITE_WEB_BACKEND` - URL ของหน้า Back Office เช่น `http://localhost:3030` และใช้ hostname/protocol สำหรับเรียก backend services
+- `VITE_WEB_SHOP` - URL ของหน้า Storefront เช่น `http://localhost:4030`
 - `VITE_PORT_ACCESS`, `VITE_PORT_LOGIN`, `VITE_PORT_STORE`, `VITE_PORT_STOCK`, `VITE_PORT_BILL`, `VITE_PORT_STOREFRONT`, `VITE_PORT_MINIO`, `MONGO_EXPRESS_PORT`, `MINIO_CONSOLE_PORT` - port ที่เปิดออกจาก Docker Compose
 - `MINIO_ENDPOINT` - IP  ที่ backend ใช้ติดต่อ MinIO
 - `SECRET`, `MINIO_USER`, `MINIO_PASSWORD`, `MONGO_EXPRESS_USERNAME`, `MONGO_EXPRESS_PASSWORD` - ควรเปลี่ยนก่อนใช้งาน production จริง
 
-หมายเหตุ: frontend ใน `App\dist` ถูก build มากับค่า `VITE_*` แล้ว ถ้าเปลี่ยน `VITE_HOST` หรือ `VITE_PORT_*` หลังแตกไฟล์ ควร build frontend ใหม่จาก `CreateWeb` แล้วคัดลอก `dist` กลับไปที่ `App`
+หมายเหตุ: frontend ใน `App\dist` ถูก build มากับค่า `VITE_*` แล้ว ถ้าเปลี่ยน `VITE_WEB_BACKEND`, `VITE_WEB_SHOP` หรือ `VITE_PORT_*` หลังแตกไฟล์ ควร build frontend ใหม่จาก `CreateWeb` แล้วคัดลอก `dist` กลับไปที่ `App`
 
 3. เริ่มระบบจากโฟลเดอร์ `App`
 
@@ -199,7 +199,7 @@ docker compose --env-file .env -f docker-compose.yml down -v
 
 ### Build Frontend ใหม่จาก CreateWeb
 
-ใช้ขั้นตอนนี้เมื่อมีการเปลี่ยนค่า endpoint ของ frontend เช่น `VITE_HOST` หรือ port ของ service ต่าง ๆ
+ใช้ขั้นตอนนี้เมื่อมีการเปลี่ยนค่า endpoint ของ frontend เช่น `VITE_WEB_BACKEND`, `VITE_WEB_SHOP` หรือ port ของ service ต่าง ๆ
 
 1. แก้ค่าใน `CreateWeb\.env.production` ให้ตรงกับ `App\.env`
 
@@ -274,7 +274,7 @@ docker compose config
 
 ## หมายเหตุการใช้งาน
 
-- Frontend อ่าน endpoint จากตัวแปร `VITE_HOST` และ port ต่าง ๆ ใน `.env`
+- Frontend อ่าน hostname/protocol จาก `VITE_WEB_BACKEND` และใช้ร่วมกับ port ของ service ต่าง ๆ ใน `.env`
 - ถ้าเปลี่ยนค่า `.env` ต้อง restart dev server หรือ build ใหม่
 - `docker-compose.yml` ใช้ subnet `192.168.110.0/24` สำหรับ private network ของ service ภายใน
 - MinIO console เปิดได้ที่ `http://localhost:9001`

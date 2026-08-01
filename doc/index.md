@@ -333,7 +333,7 @@ Endpoint หลักของ Service_Bill:
 ## ความสัมพันธ์ของระบบ
 
 - Frontend เรียก API ผ่านไฟล์ใน `src/API/*`
-- `src/lib/axios.ts` สร้าง axios instance สำหรับ login, user, account, storage, stock และ bill จากค่า `VITE_HOST`/`VITE_PORT_*`
+- `src/lib/axios.ts` สร้าง axios instance สำหรับ login, user, account, storage, stock, bill และ storefront จากค่า `VITE_WEB_BACKEND`/`VITE_PORT_*`
 - `Service_Login` ออก access token และ refresh token
 - Service อื่นตรวจสิทธิ์ผ่าน JWT `Authorization: Bearer <token>`
 - `Service_Account` ใช้ MongoDB สำหรับ contact/transaction/wallet และ MinIO สำหรับรูปบิล

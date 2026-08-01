@@ -13,12 +13,12 @@ import { ContactSchema } from "./models/contact.model";
 import { ProductDocument } from "./models/product.interface";
 import { ProductSchema } from "./models/product.model";
 import cors from "cors";
-import { PORT, WEB_HOST } from "./config";
+import { PORT, WEB_HOSTS } from "./config";
 
 const app = express();
 app.use(
   cors({
-    origin: WEB_HOST,
+    origin: WEB_HOSTS,
     credentials: true,
   }),
 );

@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import type { Secret } from "jsonwebtoken";
+import { parseAllowedOrigins } from "./utils/cors-origin";
 
 dotenv.config();
 
@@ -26,7 +27,9 @@ function readServiceAuthSecret(): Secret {
 export const PORT = Number(process.env.PORT || 3000);
 export const JWT_SECRET = requireEnv("SECRET") as Secret;
 export const SERVICE_AUTH_SECRET = readServiceAuthSecret();
-export const WEB_HOST = requireEnv("WEB_HOST");
+export const WEB_HOSTS = parseAllowedOrigins(
+  process.env.WEB_HOSTS || requireEnv("WEB_HOST"),
+);
 
 export const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "localhost";
 export const MINIO_PORT = Number(process.env.MINIO_PORT || 9000);

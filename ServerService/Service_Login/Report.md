@@ -200,7 +200,7 @@ When the `Profile` collection is empty, the service creates:
 ```env
 PORT=3001
 SECRET=NuttaScholar
-WEB_HOST=http://localhost:3030
+WEB_HOSTS=http://localhost:3030,http://localhost:4030
 DB_URL=mongodb://root:example@localhost:27017/User?authSource=admin
 ```
 

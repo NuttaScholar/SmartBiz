@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import type { Secret } from "jsonwebtoken";
+import { parseAllowedOrigins } from "./utils/cors-origin";
 
 dotenv.config();
 
@@ -35,7 +36,9 @@ function readPort() {
 export const PORT = readPort();
 export const JWT_SECRET = requireEnv("SECRET") as Secret;
 export const SERVICE_AUTH_SECRET = readServiceAuthSecret();
-export const WEB_HOST = requireEnv("WEB_HOST");
+export const WEB_HOSTS = parseAllowedOrigins(
+  process.env.WEB_HOSTS || requireEnv("WEB_HOST"),
+);
 export const DB_URL = requireEnv("DB_URL");
 export const SERVICE_ACCOUNT_URL = requireEnv("SERVICE_ACCOUNT_URL");
 export const SERVICE_BILL_URL = process.env.SERVICE_BILL_URL || "http://localhost:3004";

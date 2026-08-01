@@ -182,7 +182,7 @@ product
 PORT=3002
 SECRET=NuttaScholar
 SERVICE_AUTH_SECRET=<random-secret-at-least-32-characters>
-WEB_HOST=http://localhost:3030
+WEB_HOSTS=http://localhost:3030,http://localhost:4030
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9000
 MINIO_USE_SSL=false

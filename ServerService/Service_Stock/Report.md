@@ -263,7 +263,7 @@ GET /log?id=PROD001&type=1&index=0&size=50
 PORT=3003
 SECRET=NuttaScholar
 SERVICE_AUTH_SECRET=<random-secret-at-least-32-characters>
-WEB_HOST=http://localhost:3030
+WEB_HOSTS=http://localhost:3030,http://localhost:4030
 DB_URL=mongodb://root:example@localhost:27017/Stock?authSource=admin
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9000

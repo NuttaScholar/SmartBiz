@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import type { Secret } from "jsonwebtoken";
+import { parseAllowedOrigins } from "./utils/cors-origin";
 
 dotenv.config();
 
@@ -25,7 +26,9 @@ function readServiceAuthSecret(): Secret {
 export const PORT = Number(process.env.PORT || 3000);
 export const JWT_SECRET = process.env.SECRET as Secret;
 export const SERVICE_AUTH_SECRET = readServiceAuthSecret();
-export const WEB_HOST = process.env.WEB_HOST as string;
+export const WEB_HOSTS = parseAllowedOrigins(
+  process.env.WEB_HOSTS || requireEnv("WEB_HOST"),
+);
 
 export const BILL_BUCKET = "bill";
 export const MAX_IMAGE_WIDTH = 720;

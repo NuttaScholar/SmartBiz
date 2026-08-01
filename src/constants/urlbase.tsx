@@ -1,4 +1,6 @@
-const minio =  `http://${import.meta.env.VITE_HOST}:${import.meta.env.VITE_PORT_MINIO}`
+import { serviceUrl } from "../lib/serviceUrl";
+
+const minio = serviceUrl(import.meta.env.VITE_PORT_MINIO)
 
 const urlbase_c = {
     minio,
