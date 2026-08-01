@@ -59,6 +59,12 @@ const OrderListHeader: React.FC<OrderListHeaderProps> = ({ children }) => {
   const tabs = React.useMemo(() => tabsFor(source), [source]);
   const selectedStatus = tabs[tab]?.status ?? tabs[0].status;
   const apiSource = source;
+  const displayedStatusCounts = tabs.map((item, index) =>
+    item.status === billStatus_e.Completed
+    || item.status === billStatus_e.Cancelled
+      ? null
+      : (statusCountList[index] ?? 0),
+  );
 
   const loadStatusCounts = React.useCallback(
     async (value?: string) => {
@@ -232,7 +238,7 @@ const OrderListHeader: React.FC<OrderListHeaderProps> = ({ children }) => {
         height="calc(100vh - 240px)"
         alignItems="center"
         onClick={setTab}
-        valueList={statusCountList}
+        valueList={displayedStatusCounts}
         value={tab}
         maxWidth="1280px"
       >
