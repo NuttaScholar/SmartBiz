@@ -37,7 +37,7 @@ import { redirectToLogin } from "../../../lib/authRedirect";
 import { storefrontAdminWithRetry } from "../lib/storefrontAdminWithRetry";
 
 function getLinkUrl(link: CustomerLink): string {
-  return new URL(link.path, window.location.origin).toString();
+  return new URL(link.path, import.meta.env.VITE_WEB_SHOP).toString();
 }
 
 export default function Page_CustomerCreate() {
