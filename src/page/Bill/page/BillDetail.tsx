@@ -43,6 +43,7 @@ import {
   redirectToLogin,
 } from "../../../lib/authRedirect";
 import {
+  confirmAdminStorefrontPayment,
   getAdminStorefrontOrder,
   getStorefrontErrorMessage,
   StorefrontApiError,
@@ -54,6 +55,12 @@ import { storefrontAdminWithRetry } from "../../Customer/lib/storefrontAdminWith
 // Constants
 //*************************************************
 const editableStatuses = new Set<billStatus_e>([
+  billStatus_e.PrepareProduct,
+  billStatus_e.PrepareShipment,
+]);
+
+const onlineAdvanceStatuses = new Set<billStatus_e>([
+  billStatus_e.PaymentNotified,
   billStatus_e.PrepareProduct,
   billStatus_e.PrepareShipment,
 ]);
@@ -83,7 +90,7 @@ function canAdvanceOrder(order?: orderInfo_t) {
   if (!order) return false;
 
   if (order.source === orderSource_e.Online) {
-    return editableStatuses.has(order.status);
+    return onlineAdvanceStatuses.has(order.status);
   }
 
   return (
@@ -225,6 +232,17 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
 
     setIsUpdatingStatus(true);
     try {
+      if (
+        order.source === orderSource_e.Online
+        && order.status === billStatus_e.PaymentNotified
+      ) {
+        await storefrontAdminWithRetry(authContext, (accessToken) =>
+          confirmAdminStorefrontPayment(accessToken, orderID),
+        );
+        navigate(orderListPath);
+        return;
+      }
+
       const res = await billWithRetry_f.nextStep(authContext, orderID);
       if (res.success) {
         navigate(orderListPath);
@@ -235,6 +253,15 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
 
       alert(getErrorMessage(res.errCode));
     } catch (err) {
+      if (err instanceof StorefrontApiError) {
+        if (err.status === 401) {
+          redirectToLogin(navigate);
+          return;
+        }
+        alert(getStorefrontErrorMessage(err));
+        return;
+      }
+
       if (redirectToLoginOnThrownAuthError(navigate, err)) return;
 
       alert("เกิดข้อผิดพลาด");

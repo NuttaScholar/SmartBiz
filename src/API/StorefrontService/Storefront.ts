@@ -1,5 +1,6 @@
 import { AxiosError } from "axios";
 import { axios_storefront } from "../../lib/axios";
+import { orderStatus_e } from "../../enum";
 import type {
   CartItem,
   CustomerSession,
@@ -33,6 +34,14 @@ export type CustomerLinkSummary = {
   customerName: string;
   isActive: boolean;
   productDiscounts: StorefrontProductDiscount[];
+};
+
+export type PaymentConfirmationResult = {
+  orderID: string;
+  billOrderID: string;
+  status: orderStatus_e.PrepareProduct;
+  paymentConfirmedAt?: string;
+  paymentConfirmedBy?: string;
 };
 
 export class StorefrontApiError extends Error {
@@ -222,6 +231,19 @@ export function getAdminStorefrontOrder(
         ...adminAuth(accessToken),
         params: { customerID },
       },
+    ),
+  );
+}
+
+export function confirmAdminStorefrontPayment(
+  accessToken: string,
+  orderID: string,
+): Promise<PaymentConfirmationResult> {
+  return request(() =>
+    axios_storefront.patch(
+      `/storefront/admin/orders/${pathSegment(orderID)}/payment-confirmation`,
+      undefined,
+      adminAuth(accessToken),
     ),
   );
 }
