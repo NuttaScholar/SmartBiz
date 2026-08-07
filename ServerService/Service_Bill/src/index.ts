@@ -37,6 +37,7 @@ async function startServer() {
 
    // ⭐ สร้าง Model หลัง DB เชื่อมต่อแล้ว
   const OrderModel = getDB("Bill").model<OrderDocument>("Order", OrderSchema);
+  await OrderModel.createIndexes();
   const DiscountModel = getDB("Bill").model<DiscountDocument>("Discount", DiscountSchema); // ⭐ สมมติชื่อเดียวกับไฟล์ model
   const ContactModel = getDB("Account").model<ContactDocument>("contact", ContactSchema);
   const ProductModel = getDB("Stock").model<ProductDocument>("product", ProductSchema);

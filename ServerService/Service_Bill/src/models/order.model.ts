@@ -1,4 +1,5 @@
 import { Schema } from "mongoose";
+import { CANCELLED_ORDER_TTL_SECONDS } from "../config";
 import { OrderSource, OrderStatus } from "../utils/enum";
 import { OrderDocument } from "./order.interface";
 
@@ -75,4 +76,13 @@ export const OrderSchema = new Schema<OrderDocument>(
         paymentConfirmedBy: { type: String, required: false }
     },
     { timestamps: true }
+);
+
+OrderSchema.index(
+    { updatedAt: 1 },
+    {
+        name: "cancelled_orders_ttl",
+        expireAfterSeconds: CANCELLED_ORDER_TTL_SECONDS,
+        partialFilterExpression: { status: OrderStatus.Cancelled }
+    }
 );

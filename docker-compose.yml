@@ -129,6 +129,7 @@ services:
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
       WEB_HOSTS: "${VITE_WEB_BACKEND}"
       PORT: 3004
+      CANCELLED_ORDER_TTL_SECONDS: ${ORDER_TTL_SECONDS} 
       MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
       MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin
       MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin
@@ -157,7 +158,7 @@ services:
       MINIO_PORT: ${VITE_PORT_MINIO}
       MINIO_USE_SSL: false
       MINIO_USER: ${MINIO_USER}
-      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}      
     networks:
       private:
         ipv4_address: 192.168.110.92

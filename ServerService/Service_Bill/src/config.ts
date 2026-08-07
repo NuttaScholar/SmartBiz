@@ -35,6 +35,15 @@ function readPort() {
   return value;
 }
 
+function readPositiveInteger(name: string, fallback: number) {
+  const value = Number(process.env[name] ?? fallback);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+
+  return value;
+}
+
 export const PORT = readPort();
 export const JWT_SECRET = requireEnv("SECRET") as Secret;
 export const SERVICE_AUTH_SECRET = readServiceAuthSecret();
@@ -51,3 +60,7 @@ export const MINIO_USE_SSL =
   (process.env.MINIO_USE_SSL || "false") === "true";
 export const MINIO_HOST =
   `${MINIO_USE_SSL ? "https" : "http"}://${MINIO_ENDPOINT}:${MINIO_PORT}`;
+export const CANCELLED_ORDER_TTL_SECONDS = readPositiveInteger(
+  "CANCELLED_ORDER_TTL_SECONDS",
+  30 * 24 * 60 * 60,
+);
