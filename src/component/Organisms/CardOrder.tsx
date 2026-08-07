@@ -25,6 +25,48 @@ interface MyProps {
   maxWidth?: string;
   statusLabel?: string;
 }
+
+const billStatusStyles: Record<
+  billStatus_e,
+  { backgroundColor: string; color: string }
+> = {
+  [billStatus_e.PrepareProduct]: {
+    backgroundColor: "warning.main",
+    color: "warning.contrastText",
+  },
+  [billStatus_e.PrepareShipment]: {
+    backgroundColor: "warning.light",
+    color: "warning.contrastText",
+  },
+  [billStatus_e.Billing]: {
+    backgroundColor: "info.main",
+    color: "info.contrastText",
+  },
+  [billStatus_e.WaitingPayment]: {
+    backgroundColor: "error.main",
+    color: "error.contrastText",
+  },
+  [billStatus_e.Completed]: {
+    backgroundColor: "success.main",
+    color: "success.contrastText",
+  },
+  [billStatus_e.Submitted]: {
+    backgroundColor: "warning.dark",
+    color: "warning.contrastText",
+  },
+  [billStatus_e.PaymentNotified]: {
+    backgroundColor: "error.light",
+    color: "error.contrastText",
+  },
+  [billStatus_e.PaymentConfirmed]: {
+    backgroundColor: "info.dark",
+    color: "info.contrastText",
+  },
+  [billStatus_e.Cancelled]: {
+    backgroundColor: "grey.700",
+    color: "common.white",
+  },
+};
 /**************************************************** */
 //  Function
 /**************************************************** */
@@ -126,19 +168,7 @@ const CardOrder: React.FC<MyProps> = (props) => {
               <Typography
                 variant="subtitle2"
                 sx={{
-                  color: "white",
-                  backgroundColor:
-                    props.value.status === billStatus_e.preparing
-                      ? "warning.main"
-                      : props.value.status === billStatus_e.completed
-                        ? "success.main"
-                        : props.value.status === billStatus_e.recording
-                          ? "info.main"
-                          : props.value.status === billStatus_e.shipping
-                            ? "warning.light"
-                            : props.value.status === billStatus_e.waitingPayment
-                              ? "error.main"
-                              : "default",
+                  ...billStatusStyles[props.value.status],
                   p: "4px 8px",
                   borderRadius: 1,
                 }}

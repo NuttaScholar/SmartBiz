@@ -15,15 +15,15 @@ export function RoleString(data: role_e): string {
 export function BillStatusString(data: billStatus_e): string {
     switch (data) {
         case billStatus_e.preparing:
-            return "Preparing";
+            return "เตรียมสินค้า";
         case billStatus_e.completed:
-            return "Completed";
+            return "เสร็จสิ้น";
         case billStatus_e.recording:
-            return "Recording";
+            return "จัดการบิล";
         case billStatus_e.shipping:
-            return "Shipping";
+            return "พร้อมจัดส่ง";
         case billStatus_e.waitingPayment:
-            return "Unpaid";
+            return "รอชำระเงิน";
         case billStatus_e.Submitted:
             return "รอหลักฐาน";
         case billStatus_e.PaymentNotified:
