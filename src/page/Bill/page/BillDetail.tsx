@@ -59,6 +59,11 @@ const editableStatuses = new Set<billStatus_e>([
   billStatus_e.PrepareShipment,
 ]);
 
+const cancellableOnlineStatuses = new Set<billStatus_e>([
+  billStatus_e.Submitted,
+  billStatus_e.PaymentNotified,
+]);
+
 const onlineAdvanceStatuses = new Set<billStatus_e>([
   billStatus_e.PaymentNotified,
   billStatus_e.PrepareProduct,
@@ -69,6 +74,7 @@ const menuAction = {
   print: "Print",
   edit: "Edit",
   delete: "Delete",
+  cancel: "Cancel",
   goToTop: "Go to Top",
 } as const;
 
@@ -83,6 +89,13 @@ function canEditOrder(order?: orderInfo_t) {
   return (
     order?.source === orderSource_e.Direct &&
     editableStatuses.has(order.status)
+  );
+}
+
+function canCancelOnlineOrder(order?: orderInfo_t) {
+  return (
+    order?.source === orderSource_e.Online
+    && cancellableOnlineStatuses.has(order.status)
   );
 }
 
@@ -147,18 +160,24 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
       { text: menuAction.goToTop, icon: <KeyboardArrowUpIcon /> },
     ];
 
-    if (!canEditOrder(order)) return commonMenu;
+    const actions = commonMenu.slice(0, -1);
 
-    return [
-      { text: menuAction.print, icon: <PrintIcon /> },
-      {
+    if (canEditOrder(order)) {
+      actions.push({
         text: menuAction.edit,
         icon: <EditIcon />,
         path: orderID ? `/bill/edit/${orderID}` : undefined,
-      },
-      { text: menuAction.delete, icon: <DeleteIcon /> },
-      { text: menuAction.goToTop, icon: <KeyboardArrowUpIcon /> },
-    ];
+      });
+    }
+
+    if (canEditOrder(order)) {
+      actions.push({ text: menuAction.delete, icon: <DeleteIcon /> });
+    } else if (canCancelOnlineOrder(order)) {
+      actions.push({ text: menuAction.cancel, icon: <DeleteIcon /> });
+    }
+
+    actions.push(commonMenu[commonMenu.length - 1]);
+    return actions;
   }, [order, orderID]);
 
   // UI handlers ******************************
@@ -309,7 +328,11 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
   );
 
   const onDelete = React.useCallback(async () => {
-    if (!orderID) return;
+    if (
+      !orderID
+      || !order
+      || (!canEditOrder(order) && !canCancelOnlineOrder(order))
+    ) return;
 
     try {
       const res = await billWithRetry_f.delOrder(authContext, orderID);
@@ -326,7 +349,7 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
 
       alert("เกิดข้อผิดพลาด");
     }
-  }, [authContext, navigate, orderID, orderListPath]);
+  }, [authContext, navigate, order, orderID, orderListPath]);
 
   const speedDialHandler = React.useCallback(
     (index: number) => {
@@ -337,6 +360,7 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
           openPreview();
           break;
         case menuAction.delete:
+        case menuAction.cancel:
           onDelete();
           break;
         case menuAction.goToTop:

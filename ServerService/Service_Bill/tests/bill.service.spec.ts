@@ -27,6 +27,7 @@ describe("BillService", () => {
       findOnlineByCustomer: jasmine.createSpy("findOnlineByCustomer").and.resolveTo([]),
       updateOnlineEvidence: jasmine.createSpy("updateOnlineEvidence"),
       cancelOnline: jasmine.createSpy("cancelOnline"),
+      cancelOnlineByAdmin: jasmine.createSpy("cancelOnlineByAdmin"),
       confirmOnlinePayment: jasmine.createSpy("confirmOnlinePayment"),
     };
     service.productRepo = {
@@ -187,6 +188,34 @@ describe("BillService", () => {
         status: stockStatus_e.normal,
       },
     );
+  });
+
+  [OrderStatus.Submitted, OrderStatus.PaymentNotified].forEach((status) => {
+    it(`soft-cancels an online order in status ${status}`, async () => {
+      const service = createService();
+      const order = {
+        orderID: "SO-001",
+        source: OrderSource.Online,
+        status,
+        items: [{
+          productID: "PROD001",
+          quantity: 1,
+          priceOriginal: 500,
+          priceAfterDiscount: 500,
+        }],
+      };
+      service.repo.getOrder.and.resolveTo(order);
+      service.repo.cancelOnlineByAdmin.and.resolveTo({
+        ...order,
+        status: OrderStatus.Cancelled,
+      });
+
+      const result = await service.deleteOrder("SO-001");
+
+      expect(service.repo.cancelOnlineByAdmin).toHaveBeenCalledWith("SO-001");
+      expect(service.repo.deleteOrder).not.toHaveBeenCalled();
+      expect(result).toEqual({ deleted: true });
+    });
   });
 
   it("searches orders with optional status", async () => {

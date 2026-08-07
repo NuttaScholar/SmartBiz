@@ -191,11 +191,33 @@ export default class BillService {
         message: "Order not found"
       };
     }
-    if ((order.source ?? OrderSource.Direct) !== OrderSource.Direct) {
-      throw {
-        code: errorCode_e.InvalidStateError,
-        message: "Online orders must use the storefront cancellation flow",
-      };
+    if ((order.source ?? OrderSource.Direct) === OrderSource.Online) {
+      if (
+        order.status !== OrderStatus.Submitted
+        && order.status !== OrderStatus.PaymentNotified
+      ) {
+        throw {
+          code: errorCode_e.InvalidStateError,
+          message: "Only submitted or payment-notified orders can be cancelled",
+        };
+      }
+
+      const stockChanges = this.getStockChanges([], order.items);
+      await this.applyStockChanges(stockChanges);
+      try {
+        const cancelledOrder = await this.repo.cancelOnlineByAdmin(orderID);
+        if (!cancelledOrder) {
+          throw {
+            code: errorCode_e.InvalidStateError,
+            message: "Order status changed before it could be cancelled",
+          };
+        }
+      } catch (error) {
+        await this.rollbackStockChanges(stockChanges);
+        throw error;
+      }
+
+      return { deleted: true };
     }
     if (order.status >= OrderStatus.Billing) {
       throw {

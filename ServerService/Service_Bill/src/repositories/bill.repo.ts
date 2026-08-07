@@ -133,6 +133,18 @@ export default class BillRepo {
     );
   }
 
+  async cancelOnlineByAdmin(orderID: string) {
+    return this.OrderModel.findOneAndUpdate(
+      {
+        orderID,
+        source: OrderSource.Online,
+        status: { $in: [OrderStatus.Submitted, OrderStatus.PaymentNotified] },
+      },
+      { $set: { status: OrderStatus.Cancelled } },
+      { new: true, runValidators: true },
+    );
+  }
+
   async confirmOnlinePayment(
     orderID: string,
     paymentConfirmedBy: string,
