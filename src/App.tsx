@@ -18,6 +18,7 @@ import { orderSource_e } from "./enum";
 const Page_Login = lazy(() => import("./page/Login"));
 const Page_Access = lazy(() => import("./page/Access/Access"));
 const Page_AccessSearch = lazy(() => import("./page/Access/page/AccessSearch"));
+const Page_AccessHistory = lazy(() => import("./page/Access/page/AccessHistory"));
 const Page_Bill = lazy(() => import("./page/Bill/Bill"));
 const Page_BillCreate = lazy(() => import("./page/Bill/page/BillCreate"));
 const Page_BillOrderDetail = lazy(
@@ -57,6 +58,7 @@ function App() {
               <Route path="/access">
                 <Route index element={<Page_Access />} />
                 <Route path="search" element={<Page_AccessSearch />} />
+                <Route path="history" element={<Page_AccessHistory />} />
               </Route>
               <Route path="/login" element={<Page_Login />} />
               <Route path="/bill">

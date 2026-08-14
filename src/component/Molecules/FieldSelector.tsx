@@ -52,7 +52,7 @@ const FieldSelector: React.FC<myProps> = (props) => {
           required={props.required}
           readOnly={props.readonly}
           name={props.name}
-          value={props.value||value}
+          value={props.value ?? value}
           label={`${props.label}${(props.required)?" *":""}`}
           onChange={handleChange}
         >

@@ -1,4 +1,5 @@
 import {
+  LogAuditQuery_t,
   responst_t,
   SearchTransForm_t,
   TransitionForm_t,
@@ -124,13 +125,41 @@ export async function put(
   }
 }
 
+export async function getLogAudit(
+  token: string,
+  id: string,
+): Promise<responst_t<"getLogAudit">> {
+  const res = await axios_account.get(`/log-audit/${encodeURIComponent(id)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data as responst_t<"getLogAudit">;
+}
+
+export async function queryLogAudit(
+  token: string,
+  query: LogAuditQuery_t,
+): Promise<responst_t<"queryLogAudit">> {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    params.set(key, value instanceof Date ? value.toISOString() : String(value));
+  });
+
+  const res = await axios_account.get(`/log-audit?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data as responst_t<"queryLogAudit">;
+}
+
 const Access_f = {
   getDetail,
   getWallet,
   get,
   del,
   post,
-  put
+  put,
+  getLogAudit,
+  queryLogAudit,
 }
 
 export default Access_f;

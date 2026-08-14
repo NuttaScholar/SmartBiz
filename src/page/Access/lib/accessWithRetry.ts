@@ -1,5 +1,12 @@
 import Access_f from "../../../API/AccountService/Account";
-import { SearchTransForm_t, statement_t, TransitionForm_t } from "../../../API/AccountService/type";
+import {
+    LogAuditQuery_t,
+    LogAuditQueryResult_t,
+    LogAudit_t,
+    SearchTransForm_t,
+    statement_t,
+    TransitionForm_t,
+} from "../../../API/AccountService/type";
 import { AuthContext_t } from "../../../context/AuthContextCore";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
@@ -11,6 +18,12 @@ interface resSlipWithRetry_t extends resApiWithRetry_t {
 }
 interface resWalletWithRetry_t extends resApiWithRetry_t {
     data?: number;
+}
+interface resLogAuditWithRetry_t extends resApiWithRetry_t {
+    data?: LogAudit_t;
+}
+interface resLogAuditQueryWithRetry_t extends resApiWithRetry_t {
+    data?: LogAuditQueryResult_t;
 }
 
 export async function get(context: AuthContext_t, condition: SearchTransForm_t): Promise<resStatementWithRetry_t> {
@@ -37,13 +50,23 @@ export async function del(context: AuthContext_t, id: string): Promise<resApiWit
     return ApiWithRetry(context, Access_f.del, id);
 }
 
+export async function getLogAudit(context: AuthContext_t, id: string): Promise<resLogAuditWithRetry_t> {
+    return ApiWithRetry(context, Access_f.getLogAudit, id) as Promise<resLogAuditWithRetry_t>;
+}
+
+export async function queryLogAudit(context: AuthContext_t, query: LogAuditQuery_t): Promise<resLogAuditQueryWithRetry_t> {
+    return ApiWithRetry(context, Access_f.queryLogAudit, query) as Promise<resLogAuditQueryWithRetry_t>;
+}
+
 const accessWithRetry_f = {
     get,
     getSlip,
     getWallet,
     post,
     put,
-    del
+    del,
+    getLogAudit,
+    queryLogAudit,
 }
 
 export default accessWithRetry_f;

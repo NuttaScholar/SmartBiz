@@ -9,6 +9,7 @@ import React, { useMemo } from "react";
 import { accessDialog_e } from "../context/AccessContext";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
+import HistoryIcon from "@mui/icons-material/History";
 
 //*********************************************
 // Style
@@ -27,6 +28,7 @@ const SpeedDial_Access: React.FC = () => {
     () => [
       { text: "Add", icon: <AddIcon /> },
       { text: "Search", icon: <SearchIcon />, path: "/access/search" },
+      { text: "History", icon: <HistoryIcon />, path: "/access/history" },
       { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
     ],
     [],
@@ -49,6 +51,8 @@ const SpeedDial_Access: React.FC = () => {
         setState({ ...state, open: accessDialog_e.searchTransaction });
         break;
       case 3:
+        break;
+      case 4:
         state.containerRef?.current?.scrollTo({
           top: 0,
           behavior: "smooth",
