@@ -44,19 +44,21 @@ const ACTOR_TYPE_OPTIONS: listSelect_t[] = [
 ];
 
 const FILTER_FIELD_SX = {
-  width: { xs: "100%", sm: "calc(50% - 4px)" },
+  width: { xs: "100%", md: "calc(50% - 4px)" },
+  justifyItems: "center",
   minWidth: 0,
   "& > *": {
     width: "100%",
     minWidth: 0,
-    maxWidth: "none",
+    maxWidth: "480px",
   },
 } as const;
 
 export default function AuditHistorySearch({
   onSearch,
 }: AuditHistorySearchProps) {
-  const [draft, setDraft] = React.useState<AuditHistoryFilters_t>(EMPTY_FILTERS);
+  const [draft, setDraft] =
+    React.useState<AuditHistoryFilters_t>(EMPTY_FILTERS);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,73 +93,63 @@ export default function AuditHistorySearch({
           gap: "8px",
         }}
       >
-        <Box sx={FILTER_FIELD_SX}>
-          <FieldText
-            label="Transaction ID"
-            value={draft.transactionId}
-            onChange={(event) =>
-              setDraft({ ...draft, transactionId: event.target.value })
-            }
-          />
-        </Box>
-        <Box sx={FILTER_FIELD_SX}>
-          <FieldSelector
-            label="การทำรายการ"
-            list={ACTION_OPTIONS}
-            value={actionSelectorValue(draft.action)}
-            onChange={(value) =>
-              setDraft({ ...draft, action: actionFromSelector(value) })
-            }
-          />
-        </Box>
-        <Box sx={FILTER_FIELD_SX}>
-          <FieldText
-            label="ผู้ดำเนินการ"
-            value={draft.actorName}
-            onChange={(event) =>
-              setDraft({ ...draft, actorName: event.target.value })
-            }
-          />
-        </Box>
-        <Box sx={FILTER_FIELD_SX}>
-          <FieldSelector
-            label="ประเภทผู้ดำเนินการ"
-            list={ACTOR_TYPE_OPTIONS}
-            value={actorTypeSelectorValue(draft.actorType)}
-            onChange={(value) =>
-              setDraft({ ...draft, actorType: actorTypeFromSelector(value) })
-            }
-          />
-        </Box>
-        <Box sx={FILTER_FIELD_SX}>
-          <FieldDuration
-            name="auditDuration"
-            icon={<CalendarMonthIcon />}
-            value={{ from: draft.from, to: draft.to }}
-            onChange={({ from, to }) =>
-              setDraft({
-                ...draft,
-                from: from?.startOf("day").toDate() ?? null,
-                to: to?.endOf("day").toDate() ?? null,
-              })
-            }
-          />
-        </Box>
+        <FieldText
+          label="Transaction ID"
+          value={draft.transactionId}
+          onChange={(event) =>
+            setDraft({ ...draft, transactionId: event.target.value })
+          }
+        />
+        <FieldSelector
+          label="การทำรายการ"
+          list={ACTION_OPTIONS}
+          value={actionSelectorValue(draft.action)}
+          onChange={(value) =>
+            setDraft({ ...draft, action: actionFromSelector(value) })
+          }
+        />
+        <FieldText
+          label="ผู้ดำเนินการ"
+          value={draft.actorName}
+          onChange={(event) =>
+            setDraft({ ...draft, actorName: event.target.value })
+          }
+        />
+        <FieldSelector
+          label="ประเภทผู้ดำเนินการ"
+          list={ACTOR_TYPE_OPTIONS}
+          value={actorTypeSelectorValue(draft.actorType)}
+          onChange={(value) =>
+            setDraft({ ...draft, actorType: actorTypeFromSelector(value) })
+          }
+        />
+        <FieldDuration
+          name="auditDuration"
+          icon={<CalendarMonthIcon />}
+          value={{ from: draft.from, to: draft.to }}
+          onChange={({ from, to }) =>
+            setDraft({
+              ...draft,
+              from: from?.startOf("day").toDate() ?? null,
+              to: to?.endOf("day").toDate() ?? null,
+            })
+          }
+        />
         <Box
           sx={{
             display: "flex",
-            flexDirection: { xs: "column-reverse", sm: "row" },
-            width: { xs: "100%", sm: "calc(50% - 4px)" },
+            flexDirection: { xs: "column-reverse", md: "row" },
+            width: { xs: "100%", md: "calc(50% - 4px)" },
             justifyContent: "center",
             alignItems: "center",
-            gap: { xs: 1, sm: 4 },
+            gap: { xs: 1, md: 4 },
             minWidth: 0,
             maxWidth: "480px",
           }}
         >
           <Button
             sx={{
-              width: { xs: "100%", sm: "150px" },
+              width: { xs: "100%", md: "150px" },
               height: "50px",
               letterSpacing: "2px",
             }}
@@ -172,7 +164,7 @@ export default function AuditHistorySearch({
             variant="contained"
             startIcon={<SearchIcon />}
             sx={{
-              width: { xs: "100%", sm: "150px" },
+              width: { xs: "100%", md: "150px" },
               height: "50px",
               letterSpacing: "2px",
             }}
