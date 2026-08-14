@@ -1,16 +1,77 @@
 services:
+  mongo-keyfile-init:
+    image: alpine:3.20
+    restart: "no"
+    command:
+      - sh
+      - -c
+      - |
+        if [ ! -s /keyfile/mongo-keyfile ]; then
+          head -c 756 /dev/urandom | base64 > /keyfile/mongo-keyfile
+        fi
+        chown 999:999 /keyfile/mongo-keyfile
+        chmod 400 /keyfile/mongo-keyfile
+    volumes:
+      - mongo-keyfile:/keyfile
+
   mongo:
     container_name: database
-    image: mongo
+    # The current mongo-data volume is MongoDB 8.0/FCV 8.0. Set
+    # MONGO_VERSION=4.4 only when using a MongoDB 4.4-compatible data volume.
+    image: mongo:${MONGO_VERSION:-8.0.5}
     restart: always
+    command:
+      - mongod
+      - --replSet
+      - rs0
+      - --bind_ip_all
+      - --keyFile
+      - /run/mongo-keyfile/mongo-keyfile
     networks:
       private:
         ipv4_address: 192.168.110.80
     volumes:
       - mongo-data:/data/db
+      - mongo-keyfile:/run/mongo-keyfile:ro
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    depends_on:
+      mongo-keyfile-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "MONGO_SHELL=$$(command -v mongosh || command -v mongo) && $$MONGO_SHELL --quiet --username root --password example --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 }).ok'"
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  mongo-replica-init:
+    image: mongo:${MONGO_VERSION:-8.0.5}
+    restart: "no"
+    networks:
+      - private
+    depends_on:
+      mongo:
+        condition: service_healthy
+    entrypoint:
+      - bash
+      - -c
+      - |
+        MONGO_SHELL=$$(command -v mongosh || command -v mongo)
+        $$MONGO_SHELL --host mongo:27017 --quiet \
+          --username root --password example --authenticationDatabase admin \
+          --eval 'try { rs.status() } catch (error) { rs.initiate({_id:"rs0",members:[{_id:0,host:"mongo:27017"}]}) }'
+        for attempt in {1..30}; do
+          if $$MONGO_SHELL --host mongo:27017 --quiet \
+            --username root --password example --authenticationDatabase admin \
+            --eval 'db.isMaster().ismaster' | grep -q true; then
+            exit 0
+          fi
+          sleep 1
+        done
+        exit 1
 
   mongo-express:
     container_name: web_database
@@ -24,7 +85,7 @@ services:
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
-      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/?authSource=admin&replicaSet=rs0
       ME_CONFIG_BASICAUTH: true
       ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME}
       ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
@@ -64,7 +125,8 @@ services:
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
       WEB_HOSTS: "${VITE_WEB_BACKEND},${VITE_WEB_SHOP}"
       PORT: 3000
-      DB_URL: mongodb://root:example@mongo:27017/Account?authSource=admin
+      DB_URL: mongodb://root:example@mongo:27017/Account?authSource=admin&replicaSet=rs0
+      LOG_AUDIT_RETENTION_DAYS: ${LOG_AUDIT_RETENTION_DAYS:-365}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
       MINIO_USE_SSL: false
@@ -76,8 +138,10 @@ services:
     ports:
       - ${VITE_PORT_ACCESS}:3000
     depends_on:
-      - mongo
-      - minio
+      mongo-replica-init:
+        condition: service_completed_successfully
+      minio:
+        condition: service_started
 
   service_login:
     container_name: service_login
@@ -86,7 +150,7 @@ services:
       SECRET: ${SECRET}
       WEB_HOSTS: "${VITE_WEB_BACKEND}"
       PORT: 3001
-      DB_URL: mongodb://root:example@mongo:27017/User?authSource=admin
+      DB_URL: mongodb://root:example@mongo:27017/User?authSource=admin&replicaSet=rs0
     networks:
       private:
         ipv4_address: 192.168.110.91
@@ -103,7 +167,7 @@ services:
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
       WEB_HOSTS: "${VITE_WEB_BACKEND}"
       PORT: 3003
-      DB_URL: mongodb://root:example@mongo:27017/Stock?authSource=admin
+      DB_URL: mongodb://root:example@mongo:27017/Stock?authSource=admin&replicaSet=rs0
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
       MINIO_USE_SSL: false
@@ -130,9 +194,9 @@ services:
       WEB_HOSTS: "${VITE_WEB_BACKEND}"
       PORT: 3004
       CANCELLED_ORDER_TTL_SECONDS: ${ORDER_TTL_SECONDS} 
-      MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
-      MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin
-      MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin
+      MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin&replicaSet=rs0
+      MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin&replicaSet=rs0
+      MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin&replicaSet=rs0
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
       MINIO_USE_SSL: false
@@ -175,10 +239,10 @@ services:
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
       WEB_HOSTS: "${VITE_WEB_BACKEND},${VITE_WEB_SHOP}"
       PORT: 3005
-      MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin
-      MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin
-      MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin
-      MONGO_URI_STOREFRONT: mongodb://root:example@mongo:27017/StoreFront?authSource=admin
+      MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin&replicaSet=rs0
+      MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin&replicaSet=rs0
+      MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin&replicaSet=rs0
+      MONGO_URI_STOREFRONT: mongodb://root:example@mongo:27017/StoreFront?authSource=admin&replicaSet=rs0
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
       MINIO_USE_SSL: false
@@ -219,4 +283,5 @@ networks:
 
 volumes:
   mongo-data: {}
+  mongo-keyfile: {}
   minio-data: {}

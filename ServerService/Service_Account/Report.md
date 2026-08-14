@@ -181,6 +181,37 @@ DELETE /transaction?id=<transactionId>
 
 Admin only. Readonly transactions cannot be deleted.
 
+### Transaction audit
+
+Creating, updating, or deleting a transaction runs the `transactions`,
+`wallets`, and `log_audit` writes in one MongoDB transaction. Each document in
+the `Account.log_audit` collection contains the action, authenticated actor,
+transaction snapshots, changed fields, and the main wallet's `beforeAmount`
+and `afterAmount`.
+
+Audit documents expire automatically through the TTL index on `expiresAt`.
+The retention period is configured with `LOG_AUDIT_RETENTION_DAYS` and defaults
+to 365 days.
+
+Only an authenticated user with the `admin` role can read audit data. Service
+tokens and other user roles receive `403 Forbidden`.
+
+Get one audit entry:
+
+```http
+GET /log-audit/<auditId>
+```
+
+Query audit entries with pagination:
+
+```http
+GET /log-audit?action=UPDATE&transactionId=<transactionId>&actorName=admin&actorType=user&from=2026-08-01T00:00:00.000Z&to=2026-08-31T23:59:59.999Z&page=1&size=20
+```
+
+Wallet amount filters are also available: `minBeforeAmount`,
+`maxBeforeAmount`, `minAfterAmount`, and `maxAfterAmount`. Results are ordered
+by `occurredAt` descending and `size` is limited to 100.
+
 ## Wallet APIs
 
 ### Get Main Wallet
@@ -205,7 +236,8 @@ PORT=3000
 SECRET=NuttaScholar
 SERVICE_AUTH_SECRET=<random-secret-at-least-32-characters>
 WEB_HOSTS=http://localhost:3030,http://localhost:4030
-DB_URL=mongodb://root:example@localhost:27017/Account?authSource=admin
+DB_URL=mongodb://root:example@localhost:27017/Account?authSource=admin&replicaSet=rs0
+LOG_AUDIT_RETENTION_DAYS=365
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9000
 MINIO_USE_SSL=false

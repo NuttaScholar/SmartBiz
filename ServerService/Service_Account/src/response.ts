@@ -1,7 +1,14 @@
 import { errorCode_e } from "./enum";
 import { responst_t } from "./type";
 
-type ResponseKind = "getTransaction" | "getTransDetail" | "getContact" | "getWallet" | "none";
+type ResponseKind =
+  | "getTransaction"
+  | "getTransDetail"
+  | "getContact"
+  | "getWallet"
+  | "getLogAudit"
+  | "queryLogAudit"
+  | "none";
 
 export const success = <T extends ResponseKind>(
   data?: unknown,

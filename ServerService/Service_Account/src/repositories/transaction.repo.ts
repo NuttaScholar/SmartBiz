@@ -1,4 +1,4 @@
-import { Model } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import { statement_t, TransitionForm_t } from "../type";
 import { TransactionDocument } from "../models/transaction.interface";
 
@@ -7,12 +7,17 @@ const LOCAL_TIMEZONE = "Asia/Bangkok";
 export default class TransactionRepo {
   constructor(private TransactionModel: Model<TransactionDocument>) {}
 
-  create(data: TransitionForm_t) {
-    return new this.TransactionModel(data).save();
+  startSession() {
+    return this.TransactionModel.db.startSession();
   }
 
-  findById(id?: string | string[]) {
-    return this.TransactionModel.findOne({ _id: id });
+  create(data: TransitionForm_t, session?: ClientSession) {
+    return new this.TransactionModel(data).save({ session });
+  }
+
+  findById(id?: string | string[], session?: ClientSession) {
+    const query = this.TransactionModel.findOne({ _id: id });
+    return session ? query.session(session) : query;
   }
 
   findByContact(codeName?: string | string[]) {
@@ -72,11 +77,19 @@ export default class TransactionRepo {
     }));
   }
 
-  updateById(id: string | string[] | undefined, data: Partial<TransitionForm_t>) {
-    return this.TransactionModel.updateOne({ _id: id }, data);
+  updateById(
+    id: string | string[] | undefined,
+    data: Partial<TransitionForm_t>,
+    session?: ClientSession,
+  ) {
+    return this.TransactionModel.findOneAndUpdate(
+      { _id: id },
+      { $set: data },
+      { new: true, session, runValidators: true },
+    );
   }
 
-  deleteById(id: string | string[] | undefined) {
-    return this.TransactionModel.deleteOne({ _id: id });
+  deleteById(id: string | string[] | undefined, session?: ClientSession) {
+    return this.TransactionModel.deleteOne({ _id: id }, { session });
   }
 }

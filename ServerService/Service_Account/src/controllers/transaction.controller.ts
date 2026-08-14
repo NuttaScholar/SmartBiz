@@ -2,9 +2,11 @@ import { Response } from "express";
 import { Model } from "mongoose";
 import {
   AuthRequest,
+  getPrincipalName,
   hasServiceScope,
   isUserWithRole,
 } from "../middlewares/auth";
+import { AuditActor, LogAuditDocument } from "../models/log-audit.interface";
 import { TransactionDocument } from "../models/transaction.interface";
 import { WalletDocument } from "../models/wallet.interface";
 import { TransitionForm_t } from "../type";
@@ -17,16 +19,25 @@ export default class TransactionController {
 
   constructor(
     TransactionModel: Model<TransactionDocument>,
-    WalletModel: Model<WalletDocument>
+    WalletModel: Model<WalletDocument>,
+    LogAuditModel: Model<LogAuditDocument>,
   ) {
-    this.service = new TransactionService(TransactionModel, WalletModel);
+    this.service = new TransactionService(
+      TransactionModel,
+      WalletModel,
+      LogAuditModel,
+    );
   }
 
   async createTransaction(req: AuthRequest, res: Response) {
     try {
       if (!requireAdmin(req, res, "account.transaction.create")) return;
 
-      await this.service.createTransaction(req.body as TransitionForm_t, req.file);
+      await this.service.createTransaction(
+        req.body as TransitionForm_t,
+        getAuditActor(req),
+        req.file,
+      );
       return res.json(success<"none">());
     } catch (err) {
       return handleError(res, err);
@@ -69,6 +80,7 @@ export default class TransactionController {
       await this.service.updateTransaction(
         req.query.id as string,
         req.body as TransitionForm_t,
+        getAuditActor(req),
         req.file
       );
       return res.json(success<"none">());
@@ -81,12 +93,30 @@ export default class TransactionController {
     try {
       if (!requireAdmin(req, res, "account.transaction.delete")) return;
 
-      await this.service.deleteTransaction(req.query.id as string);
+      await this.service.deleteTransaction(
+        req.query.id as string,
+        getAuditActor(req),
+      );
       return res.json(success<"none">());
     } catch (err) {
       return handleError(res, err);
     }
   }
+}
+
+function getAuditActor(req: AuthRequest): AuditActor {
+  const name = getPrincipalName(req);
+  if (!name) {
+    throw {
+      code: errorCode_e.UnauthorizedError,
+      message: "Unable to identify audit actor",
+    };
+  }
+
+  return {
+    type: req.authData?.type === "serviceToken" ? "service" : "user",
+    name,
+  };
 }
 
 function requireAdmin(req: AuthRequest, res: Response, scope: string) {

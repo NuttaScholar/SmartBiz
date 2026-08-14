@@ -1,4 +1,4 @@
-import { Model } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import { transactionType_e } from "../utils/enum";
 import { WalletDocument } from "../models/wallet.interface";
 import WalletRepo from "../repositories/wallet.repo";
@@ -18,13 +18,13 @@ export default class WalletService {
     console.log("Create Wallet Success!");
   }
 
-  async getMainWalletAmount() {
-    const wallet = await this.repo.findMainWallet();
+  async getMainWalletAmount(session?: ClientSession) {
+    const wallet = await this.repo.findMainWallet(session);
     return wallet?.amount || 0;
   }
 
-  updateMainWalletAmount(amount: number) {
-    return this.repo.updateMainAmount(amount);
+  updateMainWalletAmount(amount: number, session?: ClientSession) {
+    return this.repo.updateMainAmount(amount, session);
   }
 
   calWallet(type: transactionType_e, wallet: number, val: number, invert = false) {

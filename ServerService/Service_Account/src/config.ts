@@ -43,3 +43,9 @@ export const MINIO_CONFIG = {
 };
 
 export const DB_URL = process.env.DB_URL as string;
+
+const retentionDays = Number(process.env.LOG_AUDIT_RETENTION_DAYS || 365);
+if (!Number.isInteger(retentionDays) || retentionDays <= 0) {
+  throw new Error("LOG_AUDIT_RETENTION_DAYS must be a positive integer");
+}
+export const LOG_AUDIT_RETENTION_DAYS = retentionDays;

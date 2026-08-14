@@ -27,6 +27,9 @@ lerna-debug.log*
 # Local release notes
 /NewRelease/
 
+# Local database backups
+/.mongo-backup/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

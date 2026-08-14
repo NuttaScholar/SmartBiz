@@ -1,4 +1,5 @@
 import { errorCode_e, role_e, transactionType_e } from "./enum";
+import { LogAuditQueryResult, LogAuditView } from "./models/log-audit.interface";
 
 export type transactionDetail_t = {
   id?: string;
@@ -57,6 +58,8 @@ export type responst_t<
   | "getTransDetail"
   | "getContact"
   | "getWallet"
+  | "getLogAudit"
+  | "queryLogAudit"
   | "none"
 > = T extends "getTransaction"
   ? {
@@ -89,6 +92,20 @@ export type responst_t<
   ? {
     success: boolean;
     data?: number;
+    errCode?: errorCode_e;
+    message?: string;
+  }
+  : T extends "getLogAudit"
+  ? {
+    success: boolean;
+    data?: LogAuditView;
+    errCode?: errorCode_e;
+    message?: string;
+  }
+  : T extends "queryLogAudit"
+  ? {
+    success: boolean;
+    data?: LogAuditQueryResult;
     errCode?: errorCode_e;
     message?: string;
   }

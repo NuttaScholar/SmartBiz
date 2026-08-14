@@ -7,11 +7,14 @@ import { connectDB } from "./database/mongo";
 import { AuthMiddleware } from "./middlewares/auth";
 import { ContactDocument } from "./models/contact.interface";
 import { ContactSchema } from "./models/contact.model";
+import { LogAuditDocument } from "./models/log-audit.interface";
+import { LogAuditSchema } from "./models/log-audit.model";
 import { TransactionDocument } from "./models/transaction.interface";
 import { TransactionSchema } from "./models/transaction.model";
 import { WalletDocument } from "./models/wallet.interface";
 import { WalletSchema } from "./models/wallet.model";
 import contactRoutes from "./routes/contact.routes";
+import logAuditRoutes from "./routes/log-audit.routes";
 import transactionRoutes from "./routes/transaction.routes";
 import walletRoutes from "./routes/wallet.routes";
 import WalletService from "./services/wallet.service";
@@ -22,6 +25,11 @@ async function main() {
   const ContactModel = mongoose.model<ContactDocument>("contact", ContactSchema);
   const TransactionModel = mongoose.model<TransactionDocument>("transaction", TransactionSchema);
   const WalletModel = mongoose.model<WalletDocument>("wallet", WalletSchema);
+  const LogAuditModel = mongoose.model<LogAuditDocument>(
+    "log_audit",
+    LogAuditSchema,
+    "log_audit",
+  );
 
   await new WalletService(WalletModel).ensureMainWallet().catch((err) => {
     console.log(err);
@@ -41,7 +49,12 @@ async function main() {
   app.use(cookieParser());
 
   app.use("/contact", AuthMiddleware, contactRoutes(ContactModel, TransactionModel));
-  app.use("/", AuthMiddleware, transactionRoutes(TransactionModel, WalletModel));
+  app.use("/log-audit", AuthMiddleware, logAuditRoutes(LogAuditModel));
+  app.use(
+    "/",
+    AuthMiddleware,
+    transactionRoutes(TransactionModel, WalletModel, LogAuditModel),
+  );
   app.use("/wallet", AuthMiddleware, walletRoutes(WalletModel));
 
   app.listen(PORT, () => {
