@@ -1,4 +1,4 @@
-import { Alert, Box, CircularProgress, Fab } from "@mui/material";
+import { Alert, Box, CircularProgress, Fab, useMediaQuery } from "@mui/material";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { LogAuditQuery_t, LogAudit_t } from "../../../API/AccountService/type";
@@ -19,6 +19,7 @@ import AuditHistoryTable from "../component/AuditHistoryTable";
 import accessWithRetry_f from "../lib/accessWithRetry";
 import { GoToTop } from "../../../function/Window";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import theme from "../../../theme";
 
 const EMPTY_FILTERS: AuditHistoryFilters_t = {
   transactionId: "",
@@ -32,6 +33,7 @@ const EMPTY_FILTERS: AuditHistoryFilters_t = {
 export default function Page_AccessHistory() {
   const navigate = useNavigate();
   const authContext = useAuth();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [allowed, setAllowed] = React.useState(false);
   const [filters, setFilters] =
     React.useState<AuditHistoryFilters_t>(EMPTY_FILTERS);
@@ -40,6 +42,7 @@ export default function Page_AccessHistory() {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(20);
   const [total, setTotal] = React.useState(0);
+  const [hasMore, setHasMore] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [detailLoading, setDetailLoading] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -77,8 +80,14 @@ export default function Page_AccessHistory() {
       .then((response) => {
         if (!active) return;
         if (response.success && response.data) {
-          setLogs(response.data.logs);
-          setTotal(response.data.total);
+          const result = response.data;
+          setLogs((currentLogs) =>
+            isMobile && page > 0
+              ? appendUniqueLogs(currentLogs, result.logs)
+              : result.logs,
+          );
+          setTotal(result.total);
+          setHasMore(result.hasMore);
           return;
         }
         if (redirectToLoginOnAuthError(navigate, response.errCode)) return;
@@ -102,10 +111,17 @@ export default function Page_AccessHistory() {
     return () => {
       active = false;
     };
-  }, [allowed, authContext, filters, navigate, page, rowsPerPage]);
+  }, [allowed, authContext, filters, isMobile, navigate, page, rowsPerPage]);
+
+  React.useEffect(() => {
+    setPage(0);
+  }, [isMobile]);
 
   function handleSearch(nextFilters: AuditHistoryFilters_t) {
     setPage(0);
+    setLogs([]);
+    setTotal(0);
+    setHasMore(false);
     setFilters(nextFilters);
   }
 
@@ -161,6 +177,7 @@ export default function Page_AccessHistory() {
           logs={logs}
           loading={loading}
           total={total}
+          hasMore={hasMore}
           page={page}
           rowsPerPage={rowsPerPage}
           onOpenDetail={openDetail}
@@ -194,7 +211,7 @@ export default function Page_AccessHistory() {
       <Fab
         size="medium"
         color="primary"
-        sx={{ position: "fixed", bottom: 16, right: 16 }}
+        sx={{display: {xs: "flex", md: "none"}, position: "fixed", bottom: 16, right: 16 }}
         onClick={GoToTop}
       >
         <KeyboardArrowUpIcon />
@@ -218,4 +235,12 @@ function toQuery(
     page,
     size,
   };
+}
+
+function appendUniqueLogs(currentLogs: LogAudit_t[], nextLogs: LogAudit_t[]) {
+  const currentIds = new Set(currentLogs.map((log) => log.id));
+  return [
+    ...currentLogs,
+    ...nextLogs.filter((log) => !currentIds.has(log.id)),
+  ];
 }

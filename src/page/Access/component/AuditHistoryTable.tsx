@@ -1,9 +1,6 @@
 import {
-  Box,
-  CardActionArea,
   Chip,
   CircularProgress,
-  Divider,
   Paper,
   Stack,
   Table,
@@ -16,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { AuditAction_t, LogAudit_t } from "../../../API/AccountService/type";
-import theme from "../../../theme";
+import MobileAuditHistoryList from "./MobileAuditHistoryList";
 
 const ACTION_COLORS: Record<AuditAction_t, "success" | "warning" | "error"> = {
   CREATE: "success",
@@ -28,6 +25,7 @@ interface AuditHistoryTableProps {
   logs: LogAudit_t[];
   loading: boolean;
   total: number;
+  hasMore: boolean;
   page: number;
   rowsPerPage: number;
   onOpenDetail: (id: string) => void;
@@ -44,6 +42,7 @@ export default function AuditHistoryTable({
   logs,
   loading,
   total,
+  hasMore,
   page,
   rowsPerPage,
   onOpenDetail,
@@ -58,7 +57,11 @@ export default function AuditHistoryTable({
 
   return (
     <Paper variant="outlined" sx={{ overflow: "hidden", borderRadius: 2 }}>
-      <MobileAuditHistoryList {...contentProps} />
+      <MobileAuditHistoryList
+        {...contentProps}
+        hasMore={hasMore}
+        onLoadMore={() => onPageChange(page + 1)}
+      />
       <PcAuditHistoryTable {...contentProps} />
       <AuditHistoryPagination
         total={total}
@@ -67,100 +70,6 @@ export default function AuditHistoryTable({
         onPageChange={onPageChange}
         onRowsPerPageChange={onRowsPerPageChange}
       />
-    </Paper>
-  );
-}
-
-function MobileAuditHistoryList({
-  logs,
-  loading,
-  onOpenDetail,
-}: AuditHistoryContentProps) {
-  return (
-    <Box sx={{ display: { xs: "block", md: "none" }, p: 1 }}>
-      {loading ? (
-        <LoadingState />
-      ) : logs.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <Stack spacing={1}>
-          {logs.map((log) => (
-            <MobileAuditHistoryCard
-              key={log.id}
-              log={log}
-              onOpenDetail={onOpenDetail}
-            />
-          ))}
-        </Stack>
-      )}
-    </Box>
-  );
-}
-
-function MobileAuditHistoryCard({
-  log,
-  onOpenDetail,
-}: {
-  log: LogAudit_t;
-  onOpenDetail: (id: string) => void;
-}) {
-  return (
-    <Paper elevation={4} >
-      <CardActionArea
-        onClick={() => onOpenDetail(log.id)}
-        sx={{ p: 1.5, textAlign: "left" }}
-      >
-        <Stack spacing={1.25}>
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            spacing={1}
-          >
-            <Typography variant="body2" color="text.secondary">
-              {formatDateTime(log.occurredAt)}
-            </Typography>
-            <ActionChip action={log.action} />
-          </Stack>
-
-          <Box>
-            <Typography variant="body1" fontWeight={500}>
-              {log.actor.name}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {log.actor.type}
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography variant="caption" color="text.secondary">
-              Transaction ID
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{ fontFamily: "monospace", overflowWrap: "anywhere" }}
-            >
-              {log.transactionId}
-            </Typography>
-          </Box>
-
-          <Divider />
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: 1,
-            }}
-          >
-            <Amount label="ยอดก่อน" value={log.wallet.beforeAmount} />
-            <Amount label="ยอดหลัง" value={log.wallet.afterAmount} />
-          </Box>
-
-          {log.changedFields.length > 0 && (
-            <ChangedFieldChips fields={log.changedFields} />
-          )}
-        </Stack>
-      </CardActionArea>
     </Paper>
   );
 }
@@ -284,6 +193,7 @@ function AuditHistoryPagination({
         onRowsPerPageChange(Number(event.target.value))
       }
       sx={{
+        display: { xs: "none", md: "block" },
         ".MuiTablePagination-toolbar": {
           px: { xs: 0.5, sm: 2 },
           justifyContent: { xs: "center", sm: "flex-end" },
@@ -299,22 +209,6 @@ function AuditHistoryPagination({
   );
 }
 
-function LoadingState() {
-  return (
-    <Box sx={{ display: "grid", minHeight: 240, placeItems: "center" }}>
-      <CircularProgress size={32} />
-    </Box>
-  );
-}
-
-function EmptyState() {
-  return (
-    <Typography align="center" color="text.secondary" sx={{ py: 8 }}>
-      ไม่พบประวัติการทำรายการ
-    </Typography>
-  );
-}
-
 function ActionChip({ action }: { action: AuditAction_t }) {
   return (
     <Chip
@@ -322,19 +216,6 @@ function ActionChip({ action }: { action: AuditAction_t }) {
       label={actionLabel(action)}
       color={ACTION_COLORS[action]}
     />
-  );
-}
-
-function Amount({ label, value }: { label: string; value: number }) {
-  return (
-    <Box>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body2" fontWeight={500}>
-        {formatMoney(value)}
-      </Typography>
-    </Box>
   );
 }
 
