@@ -61,8 +61,11 @@ export default class BillRepo {
     return this.OrderModel.countDocuments({ "items.productID": productID });
   }
 
-  async createOrder(data: any) {
-    const order = new this.OrderModel(data);
+  prepareOrder(data: any) {
+    return new this.OrderModel(data);
+  }
+
+  async saveOrder(order: OrderDocument) {
     return order.save();
   }
 

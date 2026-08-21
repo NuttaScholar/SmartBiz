@@ -245,6 +245,9 @@ inventory behavior:
 - insufficient stock returns `InvalidStateError`
 - updating an order applies only the quantity difference
 - deleting an order before Billing restores its stock
+- all stock mutations call `POST /stock/adjust` on `Service_Stock` with a short-lived service token and scope `stock.inventory.adjust`
+- each request sends `orderID` as `reference`; `Service_Stock` records the change in `log_audit` without creating a normal stock log
+- each order operation sends all product deltas as one atomic batch; if saving the order fails, `Service_Bill` sends a compensating batch with the opposite deltas
 
 error example:
 
@@ -456,6 +459,8 @@ WEB_HOSTS=http://localhost:3030,http://localhost:4030
 MONGO_URI_ACCOUNT=mongodb://root:example@localhost:27017/Account?authSource=admin
 MONGO_URI_BILL=mongodb://root:example@localhost:27017/Bill?authSource=admin
 MONGO_URI_STOCK=mongodb://root:example@localhost:27017/Stock?authSource=admin
+SERVICE_ACCOUNT_URL=http://localhost:3000
+SERVICE_STOCK_URL=http://localhost:3003
 ```
 
 ## Storefront Order APIs (Service-to-Service)

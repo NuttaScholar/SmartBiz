@@ -24,6 +24,7 @@ type AccountApiResponse = {
   errCode?: errorCode_e;
   message?: string;
 };
+type StockApiResponse = AccountApiResponse;
 
 const WORKFLOW = [
   OrderStatus.PrepareProduct,
@@ -47,6 +48,7 @@ export default class BillService {
     },
     private readonly serviceAccountUrl = "http://localhost:3000",
     private readonly productImageHost = "http://localhost:9000",
+    private readonly serviceStockUrl = "http://localhost:3003",
   ) {
     this.repo = new BillRepo(OrderModel);
     this.contactRepo = new ContactRepo(ContactModel);
@@ -130,12 +132,13 @@ export default class BillService {
     this.validateStatus(normalizedData.status);
     this.validateTotalAmount(normalizedData.items, normalizedData.totalAmount);
     const stockChanges = this.getStockChanges(normalizedData.items);
+    const order = this.repo.prepareOrder(normalizedData);
 
-    await this.applyStockChanges(stockChanges);
+    await this.applyStockChanges(stockChanges, order.orderID, "Reserve stock for order creation");
     try {
-      return await this.repo.createOrder(normalizedData);
+      return await this.repo.saveOrder(order);
     } catch (error) {
-      await this.rollbackStockChanges(stockChanges);
+      await this.rollbackStockChanges(stockChanges, order.orderID, "Rollback stock after order creation failed");
       throw error;
     }
   }
@@ -172,11 +175,11 @@ export default class BillService {
     const updateData = this.pickOrderUpdate(data);
     const stockChanges = data?.items ? this.getStockChanges(data.items, order.items) : [];
 
-    await this.applyStockChanges(stockChanges);
+    await this.applyStockChanges(stockChanges, orderID, "Adjust stock for order update");
     try {
       return await this.repo.updateOrder(orderID, updateData);
     } catch (error) {
-      await this.rollbackStockChanges(stockChanges);
+      await this.rollbackStockChanges(stockChanges, orderID, "Rollback stock after order update failed");
       throw error;
     }
   }
@@ -203,7 +206,7 @@ export default class BillService {
       }
 
       const stockChanges = this.getStockChanges([], order.items);
-      await this.applyStockChanges(stockChanges);
+      await this.applyStockChanges(stockChanges, orderID, "Restore stock for admin order cancellation");
       try {
         const cancelledOrder = await this.repo.cancelOnlineByAdmin(orderID);
         if (!cancelledOrder) {
@@ -213,7 +216,7 @@ export default class BillService {
           };
         }
       } catch (error) {
-        await this.rollbackStockChanges(stockChanges);
+        await this.rollbackStockChanges(stockChanges, orderID, "Rollback stock after admin order cancellation failed");
         throw error;
       }
 
@@ -227,7 +230,7 @@ export default class BillService {
     }
 
     const stockChanges = this.getStockChanges([], order.items);
-    await this.applyStockChanges(stockChanges);
+    await this.applyStockChanges(stockChanges, orderID, "Restore stock for order deletion");
     try {
       const deletedOrder = await this.repo.deleteOrder(orderID);
       if (!deletedOrder) {
@@ -237,7 +240,7 @@ export default class BillService {
         };
       }
     } catch (error) {
-      await this.rollbackStockChanges(stockChanges);
+      await this.rollbackStockChanges(stockChanges, orderID, "Rollback stock after order deletion failed");
       throw error;
     }
 
@@ -411,10 +414,10 @@ export default class BillService {
     }
 
     const stockChanges = this.getStockChanges([], order.items);
-    await this.applyStockChanges(stockChanges);
+    await this.applyStockChanges(stockChanges, orderID, "Restore stock for storefront order cancellation");
     const updated = await this.repo.cancelOnline(customerID, orderID);
     if (!updated) {
-      await this.rollbackStockChanges(stockChanges);
+      await this.rollbackStockChanges(stockChanges, orderID, "Rollback stock after storefront order cancellation failed");
       throw {
         code: errorCode_e.InvalidStateError,
         message: "Only a submitted order can be cancelled",
@@ -813,67 +816,65 @@ export default class BillService {
     }, new Map<string, number>());
   }
 
-  private async applyStockChanges(changes: StockChange[]) {
-    const appliedChanges: StockChange[] = [];
+  private async applyStockChanges(changes: StockChange[], reference: string, note: string) {
+    await this.requestStockAdjustment(
+      changes.map((change) => ({
+        productID: change.productID,
+        delta: -change.quantity,
+      })),
+      reference,
+      note,
+    );
+  }
+
+  private async rollbackStockChanges(changes: StockChange[], reference: string, note: string) {
+    await this.requestStockAdjustment(
+      changes.map((change) => ({
+        productID: change.productID,
+        delta: change.quantity,
+      })),
+      reference,
+      note,
+    );
+  }
+
+  private async requestStockAdjustment(
+    items: Array<{ productID: string; delta: number }>,
+    reference: string,
+    note: string,
+  ) {
+    if (items.length === 0) return;
 
     try {
-      for (const change of changes) {
-        const applied = await this.applyStockChange(change);
-        if (applied) {
-          appliedChanges.push(change);
-        }
+      const serviceToken = this.serviceTokenFactory(
+        "service_stock",
+        ["stock.inventory.adjust"],
+      );
+      const response = await axios.post<StockApiResponse>(
+        `${this.serviceStockUrl.replace(/\/$/, "")}/stock/adjust`,
+        { reference, note, items },
+        {
+          headers: {
+            Authorization: `Bearer ${serviceToken}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.data?.success) {
+        throw {
+          code: response.data?.errCode ?? errorCode_e.UnknownError,
+          message: response.data?.message ?? "Stock adjustment failed",
+        };
       }
-    } catch (error) {
-      await this.rollbackStockChanges(appliedChanges);
-      throw error;
-    }
-  }
-
-  private async rollbackStockChanges(changes: StockChange[]) {
-    for (const change of [...changes].reverse()) {
-      await this.applyStockChange({
-        productID: change.productID,
-        quantity: -change.quantity
-      });
-    }
-  }
-
-  private async applyStockChange(change: StockChange) {
-    const product = await this.productRepo.findById(change.productID);
-    if (!product) {
+    } catch (error: any) {
+      if (typeof error?.code === "number" && !error?.response) {
+        throw error;
+      }
       throw {
-        code: errorCode_e.NotFoundError,
-        message: `Product not found: ${change.productID}`
+        code: error?.response?.data?.errCode ?? errorCode_e.UnknownError,
+        message: error?.response?.data?.message ?? "Stock adjustment failed",
       };
     }
-
-    if (product.amount === undefined) {
-      throw {
-        code: errorCode_e.NotFoundError,
-        message: `Product stock amount not found: ${change.productID}`
-      };
-    }
-
-    const currentAmount = Number(product.amount);
-    const nextAmount = currentAmount - change.quantity;
-    if (nextAmount < 0) {
-      throw {
-        code: errorCode_e.InvalidStateError,
-        message: `Insufficient stock for product ${change.productID}. Available: ${currentAmount}`
-      };
-    }
-
-    await this.productRepo.updateById(change.productID, {
-      amount: nextAmount,
-      status: this.resolveStockStatus(nextAmount, Number(product.condition))
-    });
-
-    return true;
-  }
-
-  private resolveStockStatus(amount: number, condition: number) {
-    if (amount === 0) return stockStatus_e.stockOut;
-    if (amount < condition) return stockStatus_e.stockLow;
-    return stockStatus_e.normal;
   }
 }

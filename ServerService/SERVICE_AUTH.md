@@ -39,6 +39,7 @@ its existing user role or the endpoint-specific service scope.
 | `service_stock` | `service_bill` | `bill.product-usage.read` |
 | `service_stock` | `service_account` | `account.transaction.create` |
 | `service_bill` | `service_account` | `account.transaction.create` |
+| `service_bill` | `service_stock` | `stock.inventory.adjust` |
 
 An inbound service token must never be forwarded to another audience.
 The calling service creates a new token for every downstream service.

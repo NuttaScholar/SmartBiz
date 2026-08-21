@@ -1,5 +1,6 @@
 import BillService from "../src/services/bill.service";
 import { errorCode_e, OrderSource, OrderStatus, productType_e, stockStatus_e } from "../src/utils/enum";
+import axios from "axios";
 
 describe("BillService", () => {
   function createService(contactExists = true) {
@@ -7,17 +8,25 @@ describe("BillService", () => {
       {} as any,
       {} as any,
       {} as any,
-      undefined,
+      jasmine.createSpy("createServiceToken").and.returnValue("service-token"),
       undefined,
       "http://minio.example:9000/",
+      "http://stock.example:3003/",
     ) as any;
+    service.stockPost = spyOn(axios, "post").and.resolveTo({
+      data: { success: true },
+    } as any);
     service.contactRepo = {
       findByCodeName: jasmine
         .createSpy("findByCodeName")
         .and.resolveTo(contactExists ? { codeName: "CUST001", billName: "Customer One" } : null),
     };
     service.repo = {
-      createOrder: jasmine.createSpy("createOrder").and.callFake((data) => Promise.resolve(data)),
+      prepareOrder: jasmine.createSpy("prepareOrder").and.callFake((data) => ({
+        ...data,
+        orderID: data.orderID ?? "ORD-GENERATED",
+      })),
+      saveOrder: jasmine.createSpy("saveOrder").and.callFake((order) => Promise.resolve(order)),
       findByCustomerAndOrder: jasmine.createSpy("findByCustomerAndOrder").and.resolveTo([]),
       getOrder: jasmine.createSpy("getOrder"),
       updateOrder: jasmine.createSpy("updateOrder").and.callFake((orderID, data) => Promise.resolve({ orderID, ...data })),
@@ -51,7 +60,6 @@ describe("BillService", () => {
           price: 500,
         },
       ]),
-      updateById: jasmine.createSpy("updateById").and.resolveTo(undefined),
     };
 
     return service;
@@ -77,24 +85,20 @@ describe("BillService", () => {
     const result = await service.createOrder(payload);
 
     expect(service.contactRepo.findByCodeName).toHaveBeenCalledWith("CUST001");
-    expect(service.repo.createOrder).toHaveBeenCalledWith({
+    expect(service.repo.prepareOrder).toHaveBeenCalledWith({
       ...payload,
       source: OrderSource.Direct,
     });
-    expect(result).toEqual({ ...payload, source: OrderSource.Direct });
+    expect(service.repo.saveOrder).toHaveBeenCalled();
+    expect(result).toEqual({
+      ...payload,
+      orderID: "ORD-GENERATED",
+      source: OrderSource.Direct,
+    });
   });
 
   it("deducts stock when creating an order with an another product", async () => {
     const service = createService();
-    service.productRepo.findById.and.resolveTo({
-      id: "OTHER001",
-      type: productType_e.another,
-      name: "Other Product",
-      status: stockStatus_e.normal,
-      amount: 5,
-      condition: 2,
-      price: 100,
-    });
     const payload = {
       customerID: "CUST001",
       status: OrderStatus.PrepareProduct,
@@ -111,25 +115,31 @@ describe("BillService", () => {
 
     await service.createOrder(payload);
 
-    expect(service.productRepo.updateById).toHaveBeenCalledWith(
-      "OTHER001",
+    expect(service.stockPost).toHaveBeenCalledWith(
+      "http://stock.example:3003/stock/adjust",
       {
-        amount: 2,
-        status: stockStatus_e.normal,
+        reference: "ORD-GENERATED",
+        note: "Reserve stock for order creation",
+        items: [{ productID: "OTHER001", delta: -3 }],
+      },
+      {
+        headers: {
+          Authorization: "Bearer service-token",
+          "Content-Type": "application/json",
+        },
       },
     );
   });
 
   it("rejects an another product order when stock is insufficient", async () => {
     const service = createService();
-    service.productRepo.findById.and.resolveTo({
-      id: "OTHER001",
-      type: productType_e.another,
-      name: "Other Product",
-      status: stockStatus_e.normal,
-      amount: 2,
-      condition: 1,
-      price: 100,
+    service.stockPost.and.rejectWith({
+      response: {
+        data: {
+          errCode: errorCode_e.InvalidStateError,
+          message: "Insufficient stock for product OTHER001. Available: 2",
+        },
+      },
     });
 
     try {
@@ -149,8 +159,35 @@ describe("BillService", () => {
       fail("Expected createOrder to throw");
     } catch (err: any) {
       expect(err.code).toBe(errorCode_e.InvalidStateError);
-      expect(service.repo.createOrder).not.toHaveBeenCalled();
-      expect(service.productRepo.updateById).not.toHaveBeenCalled();
+      expect(service.repo.saveOrder).not.toHaveBeenCalled();
+    }
+  });
+
+  it("restores stock through the API when saving a new order fails", async () => {
+    const service = createService();
+    service.repo.saveOrder.and.rejectWith(new Error("Order write failed"));
+
+    try {
+      await service.createOrder({
+        customerID: "CUST001",
+        status: OrderStatus.PrepareProduct,
+        items: [{
+          productID: "PROD001",
+          quantity: 2,
+          priceOriginal: 500,
+          priceAfterDiscount: 500,
+        }],
+        totalAmount: 1000,
+      });
+      fail("Expected createOrder to throw");
+    } catch (err: any) {
+      expect(err.message).toBe("Order write failed");
+      expect(service.stockPost.calls.count()).toBe(2);
+      expect(service.stockPost.calls.argsFor(1)[1]).toEqual({
+        reference: "ORD-GENERATED",
+        note: "Rollback stock after order creation failed",
+        items: [{ productID: "PROD001", delta: 2 }],
+      });
     }
   });
 
@@ -169,24 +206,16 @@ describe("BillService", () => {
       ],
       totalAmount: 200,
     });
-    service.productRepo.findById.and.resolveTo({
-      id: "OTHER001",
-      type: productType_e.another,
-      name: "Other Product",
-      status: stockStatus_e.normal,
-      amount: 3,
-      condition: 1,
-      price: 100,
-    });
-
     await service.deleteOrder("ORD001");
 
-    expect(service.productRepo.updateById).toHaveBeenCalledWith(
-      "OTHER001",
+    expect(service.stockPost).toHaveBeenCalledWith(
+      "http://stock.example:3003/stock/adjust",
       {
-        amount: 5,
-        status: stockStatus_e.normal,
+        reference: "ORD001",
+        note: "Restore stock for order deletion",
+        items: [{ productID: "OTHER001", delta: 2 }],
       },
+      jasmine.any(Object),
     );
   });
 
@@ -342,7 +371,7 @@ describe("BillService", () => {
       fail("Expected createOrder to throw");
     } catch (err: any) {
       expect(err.code).toBe(errorCode_e.NotFoundError);
-      expect(service.repo.createOrder).not.toHaveBeenCalled();
+      expect(service.repo.saveOrder).not.toHaveBeenCalled();
     }
   });
 
@@ -367,7 +396,7 @@ describe("BillService", () => {
       fail("Expected createOrder to throw");
     } catch (err: any) {
       expect(err.code).toBe(errorCode_e.InvalidInputError);
-      expect(service.repo.createOrder).not.toHaveBeenCalled();
+      expect(service.repo.saveOrder).not.toHaveBeenCalled();
     }
   });
 
@@ -442,7 +471,7 @@ describe("BillService", () => {
 
     await service.createOrder(payload, OrderSource.Online);
 
-    expect(service.repo.createOrder).toHaveBeenCalledWith({
+    expect(service.repo.prepareOrder).toHaveBeenCalledWith({
       ...payload,
       source: OrderSource.Online,
       status: OrderStatus.Submitted,

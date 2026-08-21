@@ -204,6 +204,7 @@ services:
       MINIO_PORT: ${VITE_PORT_MINIO}
       MINIO_USE_SSL: false
       SERVICE_ACCOUNT_URL: http://service_account:3000
+      SERVICE_STOCK_URL: http://service_stock:3003
       TZ: Asia/Bangkok
     networks:
       private:
@@ -212,6 +213,7 @@ services:
       - ${VITE_PORT_BILL}:3004
     depends_on:
       - mongo
+      - service_stock
 
   service_storage:
     container_name: service_storage
