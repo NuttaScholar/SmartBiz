@@ -6,6 +6,7 @@ import { menuList_t } from "../../../component/Molecules/ButtonOption";
 import React from "react";
 import UploadIcon from "@mui/icons-material/Upload";
 import DownloadIcon from "@mui/icons-material/Download";
+import HistoryIcon from "@mui/icons-material/History";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
 
@@ -27,6 +28,7 @@ const SpeedDial_Stock: React.FC = () => {
       { text: "Create", icon: <AddIcon /> },
       { text: "Stock In", icon: <DownloadIcon />, path: "/stock/in" },
       { text: "Stock Out", icon: <UploadIcon />, path: "/stock/out" },
+      { text: "History", icon: <HistoryIcon />, path: "/stock/history" },
       { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
     ],
     [],
@@ -40,7 +42,7 @@ const SpeedDial_Stock: React.FC = () => {
           productForm: undefined,
         });
         break;
-      case 3:
+      case 4:
         setState({
           ...state,
           trigger_gotoTop: (state.trigger_gotoTop || 0) + 1,

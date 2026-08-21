@@ -3,29 +3,30 @@ import HistoryIcon from "@mui/icons-material/History";
 import SearchIcon from "@mui/icons-material/Search";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import React from "react";
-import { AuditAction_t } from "../../../API/AccountService/type";
+import {
+  AuditAction_t,
+  AuditOperation_t,
+} from "../../../API/StockService/type";
 import FieldDuration from "../../../component/Molecules/FieldDuration";
 import FieldSelector, {
   listSelect_t,
 } from "../../../component/Molecules/FieldSelector";
 import FieldText from "../../../component/Molecules/FieldText";
 
-export type AuditHistoryFilters_t = {
-  transactionId: string;
+export type StockAuditHistoryFilters_t = {
+  productID: string;
   action: "" | AuditAction_t;
+  operation: "" | AuditOperation_t;
   actorName: string;
   actorType: "" | "user" | "service";
   from: Date | null;
   to: Date | null;
 };
 
-interface AuditHistorySearchProps {
-  onSearch: (filters: AuditHistoryFilters_t) => void;
-}
-
-const EMPTY_FILTERS: AuditHistoryFilters_t = {
-  transactionId: "",
+const EMPTY_STOCK_AUDIT_FILTERS: StockAuditHistoryFilters_t = {
+  productID: "",
   action: "",
+  operation: "",
   actorName: "",
   actorType: "",
   from: null,
@@ -33,9 +34,17 @@ const EMPTY_FILTERS: AuditHistoryFilters_t = {
 };
 
 const ACTION_OPTIONS: listSelect_t[] = [
-  { value: 1, label: "สร้างรายการ" },
-  { value: 2, label: "แก้ไขรายการ" },
-  { value: 3, label: "ลบรายการ" },
+  { value: 1, label: "สร้าง" },
+  { value: 2, label: "แก้ไข" },
+  { value: 3, label: "ลบ" },
+];
+
+const OPERATION_OPTIONS: listSelect_t[] = [
+  { value: 1, label: "สร้าง" },
+  { value: 2, label: "แก้ไข" },
+  { value: 3, label: "ลบ" },
+  { value: 4, label: "รับเข้า" },
+  { value: 5, label: "เบิกออก" },
 ];
 
 const ACTOR_TYPE_OPTIONS: listSelect_t[] = [
@@ -43,11 +52,14 @@ const ACTOR_TYPE_OPTIONS: listSelect_t[] = [
   { value: 2, label: "Service" },
 ];
 
-export default function AuditHistorySearch({
-  onSearch,
-}: AuditHistorySearchProps) {
-  const [draft, setDraft] =
-    React.useState<AuditHistoryFilters_t>(EMPTY_FILTERS);
+interface Props {
+  onSearch: (filters: StockAuditHistoryFilters_t) => void;
+}
+
+export default function StockAuditHistorySearch({ onSearch }: Props) {
+  const [draft, setDraft] = React.useState<StockAuditHistoryFilters_t>(
+    EMPTY_STOCK_AUDIT_FILTERS,
+  );
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,8 +67,8 @@ export default function AuditHistorySearch({
   }
 
   function handleClear() {
-    setDraft(EMPTY_FILTERS);
-    onSearch(EMPTY_FILTERS);
+    setDraft(EMPTY_STOCK_AUDIT_FILTERS);
+    onSearch(EMPTY_STOCK_AUDIT_FILTERS);
   }
 
   return (
@@ -68,29 +80,36 @@ export default function AuditHistorySearch({
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
         <HistoryIcon color="primary" />
-        <Typography variant="h6">ค้นหาประวัติ</Typography>
+        <Typography variant="h6">ค้นหาประวัติสต็อก</Typography>
       </Stack>
       <Box
         sx={{
           display: "flex",
-          flexDirection: "row",
           flexWrap: "wrap",
           width: "100%",
-          maxWidth: "1000px",
+          maxWidth: 1000,
           mx: "auto",
           justifyContent: "center",
-          gap: "8px",
+          gap: 1,
         }}
       >
         <FieldText
-          label="Transaction ID"
-          value={draft.transactionId}
+          label="รหัสสินค้า"
+          value={draft.productID}
           onChange={(event) =>
-            setDraft({ ...draft, transactionId: event.target.value })
+            setDraft({ ...draft, productID: event.target.value })
           }
         />
         <FieldSelector
           label="การทำรายการ"
+          list={OPERATION_OPTIONS}
+          value={operationSelectorValue(draft.operation)}
+          onChange={(value) =>
+            setDraft({ ...draft, operation: operationFromSelector(value) })
+          }
+        />
+        <FieldSelector
+          label="การเปลี่ยนแปลง"
           list={ACTION_OPTIONS}
           value={actionSelectorValue(draft.action)}
           onChange={(value) =>
@@ -113,7 +132,7 @@ export default function AuditHistorySearch({
           }
         />
         <FieldDuration
-          name="auditDuration"
+          name="stockAuditDuration"
           icon={<CalendarMonthIcon />}
           value={{ from: draft.from, to: draft.to }}
           onChange={({ from, to }) =>
@@ -130,21 +149,15 @@ export default function AuditHistorySearch({
             flexDirection: { xs: "column-reverse", md: "row" },
             width: { xs: "100%", md: "calc(50% - 4px)" },
             justifyContent: "center",
-            alignItems: "center",
             gap: { xs: 1, md: 4 },
-            minWidth: 0,
-            maxWidth: "480px",
+            maxWidth: 480,
           }}
         >
           <Button
-            sx={{
-              width: { xs: "100%", md: "150px" },
-              height: "50px",
-              letterSpacing: "2px",
-            }}
             type="button"
             variant="outlined"
             onClick={handleClear}
+            sx={{ width: { xs: "100%", md: 150 }, height: 50 }}
           >
             ล้างตัวกรอง
           </Button>
@@ -152,11 +165,7 @@ export default function AuditHistorySearch({
             type="submit"
             variant="contained"
             startIcon={<SearchIcon />}
-            sx={{
-              width: { xs: "100%", md: "150px" },
-              height: "50px",
-              letterSpacing: "2px",
-            }}
+            sx={{ width: { xs: "100%", md: 150 }, height: 50 }}
           >
             ค้นหา
           </Button>
@@ -166,32 +175,40 @@ export default function AuditHistorySearch({
   );
 }
 
-function actionSelectorValue(action: AuditHistoryFilters_t["action"]) {
-  if (action === "CREATE") return "1";
-  if (action === "UPDATE") return "2";
-  if (action === "DELETE") return "3";
-  return "";
+function actionSelectorValue(value: StockAuditHistoryFilters_t["action"]) {
+  return value === "CREATE" ? "1" : value === "UPDATE" ? "2" : value === "DELETE" ? "3" : "";
 }
 
-function actionFromSelector(
-  value: number | null,
-): AuditHistoryFilters_t["action"] {
-  if (value === 1) return "CREATE";
-  if (value === 2) return "UPDATE";
-  if (value === 3) return "DELETE";
-  return "";
+function actionFromSelector(value: number | null): StockAuditHistoryFilters_t["action"] {
+  return value === 1 ? "CREATE" : value === 2 ? "UPDATE" : value === 3 ? "DELETE" : "";
 }
 
-function actorTypeSelectorValue(actorType: AuditHistoryFilters_t["actorType"]) {
-  if (actorType === "user") return "1";
-  if (actorType === "service") return "2";
-  return "";
+function operationSelectorValue(value: StockAuditHistoryFilters_t["operation"]) {
+  const values: Record<AuditOperation_t, string> = {
+    PRODUCT_CREATE: "1",
+    PRODUCT_UPDATE: "2",
+    PRODUCT_DELETE: "3",
+    STOCK_IN: "4",
+    STOCK_OUT: "5",
+  };
+  return value ? values[value] : "";
 }
 
-function actorTypeFromSelector(
-  value: number | null,
-): AuditHistoryFilters_t["actorType"] {
-  if (value === 1) return "user";
-  if (value === 2) return "service";
-  return "";
+function operationFromSelector(value: number | null): StockAuditHistoryFilters_t["operation"] {
+  const values: Record<number, AuditOperation_t> = {
+    1: "PRODUCT_CREATE",
+    2: "PRODUCT_UPDATE",
+    3: "PRODUCT_DELETE",
+    4: "STOCK_IN",
+    5: "STOCK_OUT",
+  };
+  return value ? values[value] || "" : "";
+}
+
+function actorTypeSelectorValue(value: StockAuditHistoryFilters_t["actorType"]) {
+  return value === "user" ? "1" : value === "service" ? "2" : "";
+}
+
+function actorTypeFromSelector(value: number | null): StockAuditHistoryFilters_t["actorType"] {
+  return value === 1 ? "user" : value === 2 ? "service" : "";
 }

@@ -1,5 +1,5 @@
 import { axios_stock } from "../../lib/axios";
-import { formProduct_t, logReq_t, queryProduct_t, responst_t, stockInForm_t, stockOutForm_t, stockReq_t } from "./type";
+import { formProduct_t, LogAuditQuery_t, logReq_t, queryProduct_t, responst_t, stockInForm_t, stockOutForm_t, stockReq_t } from "./type";
 
 export async function postProduct(
     token: string,
@@ -216,6 +216,31 @@ export async function postStockIn(token: string,
     }
 }
 
+export async function getLogAudit(
+    token: string,
+    id: string,
+): Promise<responst_t<"getLogAudit">> {
+    const res = await axios_stock.get(`/log-audit/${encodeURIComponent(id)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data as responst_t<"getLogAudit">;
+}
+
+export async function queryLogAudit(
+    token: string,
+    query: LogAuditQuery_t,
+): Promise<responst_t<"queryLogAudit">> {
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+        params.set(key, value instanceof Date ? value.toISOString() : String(value));
+    });
+    const res = await axios_stock.get(`/log-audit?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data as responst_t<"queryLogAudit">;
+}
+
 
 const Stock_f = {
     getProduct,
@@ -227,6 +252,8 @@ const Stock_f = {
     getStock,
     postStockOut,
     postStockIn,
+    getLogAudit,
+    queryLogAudit,
 }
 
 export default Stock_f;

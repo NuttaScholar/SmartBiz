@@ -1,5 +1,5 @@
 import Stock_f from "../../../API/StockService/Stock";
-import { formProduct_t, logReq_t, logRes_t, productInfo_t, productRes_t, queryProduct_t, stockForm_t, stockInForm_t, stockOutForm_t, stockReq_t, stockStatus_t } from "../../../API/StockService/type";
+import { formProduct_t, LogAuditQuery_t, LogAuditQueryResult_t, LogAudit_t, logReq_t, logRes_t, productInfo_t, productRes_t, queryProduct_t, stockForm_t, stockInForm_t, stockOutForm_t, stockReq_t, stockStatus_t } from "../../../API/StockService/type";
 import { AuthContext_t } from "../../../context/AuthContextCore";
 import ApiWithRetry, { resApiWithRetry_t } from "../../../lib/apiWithRetry";
 
@@ -18,6 +18,12 @@ interface resStockOutWithRetry_t extends resApiWithRetry_t {
 }
 interface resLogWithRetry_t extends resApiWithRetry_t {
     data?: logRes_t;
+}
+interface resLogAuditWithRetry_t extends resApiWithRetry_t {
+    data?: LogAudit_t;
+}
+interface resLogAuditQueryWithRetry_t extends resApiWithRetry_t {
+    data?: LogAuditQueryResult_t;
 }
 
 export async function getProduct(context: AuthContext_t, condition?: queryProduct_t): Promise<resProductWithRetry_t> {
@@ -92,6 +98,12 @@ export async function postStockIn(context: AuthContext_t, data: stockInForm_t): 
         throw err;
     }
 }
+export async function getLogAudit(context: AuthContext_t, id: string): Promise<resLogAuditWithRetry_t> {
+    return ApiWithRetry(context, Stock_f.getLogAudit, id) as Promise<resLogAuditWithRetry_t>;
+}
+export async function queryLogAudit(context: AuthContext_t, query: LogAuditQuery_t): Promise<resLogAuditQueryWithRetry_t> {
+    return ApiWithRetry(context, Stock_f.queryLogAudit, query) as Promise<resLogAuditQueryWithRetry_t>;
+}
 
 
 const stockWithRetry_f = {
@@ -104,6 +116,8 @@ const stockWithRetry_f = {
     getStock,
     postStockOut,
     postStockIn,
+    getLogAudit,
+    queryLogAudit,
 }
 
 export default stockWithRetry_f; 
