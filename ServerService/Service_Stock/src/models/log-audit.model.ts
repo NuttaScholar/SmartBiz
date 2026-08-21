@@ -24,6 +24,7 @@ const StockLogSnapshotSchema = new Schema(
     price: Number,
     bill: String,
     note: String,
+    reference: String,
   },
   { _id: false },
 );

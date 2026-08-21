@@ -33,6 +33,7 @@ export type StockLogSnapshot = {
   price?: number;
   bill?: string;
   note?: string;
+  reference?: string;
 };
 
 export interface LogAuditDocument extends Document {

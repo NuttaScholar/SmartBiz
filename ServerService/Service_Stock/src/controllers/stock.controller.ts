@@ -10,7 +10,7 @@ import {
 } from "../middlewares/auth";
 import StockService from "../services/stock.service";
 import StorageService from "../services/storage.service";
-import { stockOutForm_t } from "../type";
+import { stockAdjustmentForm_t, stockOutForm_t } from "../type";
 import { errorCode_e, role_e } from "../utils/enum";
 import { getAuditActor, handleError } from "./product.controller";
 
@@ -48,6 +48,19 @@ export default class StockController {
         success: true,
         ...(errors.length ? { data: errors, message: "Completed with warnings" } : {}),
       });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async adjustStock(req: AuthRequest, res: Response) {
+    try {
+      this.ensureBillService(req, "stock.inventory.adjust");
+      const result = await this.service.adjustStock(
+        req.body as stockAdjustmentForm_t,
+        getAuditActor(req),
+      );
+      return res.json({ success: true, data: result });
     } catch (err: any) {
       return handleError(res, err);
     }
@@ -99,6 +112,19 @@ export default class StockController {
       && !hasServiceScope(req, scope)
     ) {
       throw { code: errorCode_e.PermissionDeniedError, message: "Permission denied" };
+    }
+  }
+
+  private ensureBillService(req: AuthRequest, scope: string) {
+    if (
+      req.authData?.type !== "serviceToken"
+      || req.authData.service !== "service_bill"
+      || !hasServiceScope(req, scope)
+    ) {
+      throw {
+        code: errorCode_e.PermissionDeniedError,
+        message: "This endpoint is restricted to Service_Bill",
+      };
     }
   }
 }

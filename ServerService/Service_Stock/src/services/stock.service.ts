@@ -14,7 +14,17 @@ import {
 import LogRepo from "../repositories/log.repo";
 import LogAuditRepo from "../repositories/log-audit.repo";
 import ProductRepo from "../repositories/product.repo";
-import { logInfo_t, logRes_t, productInfo_t, productRes_t, stockForm_t, stockOutForm_t } from "../type";
+import {
+  logInfo_t,
+  logRes_t,
+  productInfo_t,
+  productRes_t,
+  stockAdjustmentForm_t,
+  stockAdjustmentItem_t,
+  stockAdjustmentResult_t,
+  stockForm_t,
+  stockOutForm_t,
+} from "../type";
 import { errorCode_e, productType_e, stockLogType_e, stockStatus_e } from "../utils/enum";
 import StorageService from "./storage.service";
 import TransactionService from "./transaction.service";
@@ -288,6 +298,105 @@ export default class StockService {
     }
   }
 
+  async adjustStock(
+    data: stockAdjustmentForm_t,
+    actor: AuditActor,
+  ): Promise<stockAdjustmentResult_t> {
+    const adjustments = this.normalizeAdjustments(data?.items);
+    const reference = this.optionalTrimmedString(data?.reference, "reference");
+    const note = this.optionalTrimmedString(data?.note, "note");
+    const date = new Date();
+    const session = await this.productRepo.startSession();
+
+    try {
+      let items: stockAdjustmentResult_t["items"] = [];
+      await session.withTransaction(async () => {
+        const nextItems: stockAdjustmentResult_t["items"] = [];
+
+        for (const adjustment of adjustments) {
+          const product = await this.productRepo.findById(
+            adjustment.productID,
+            session,
+          );
+          if (!product) {
+            throw {
+              code: errorCode_e.NotFoundError,
+              message: `Product not found: ${adjustment.productID}`,
+            };
+          }
+
+          const beforeAmount = Number(product.amount);
+          if (!Number.isFinite(beforeAmount)) {
+            throw {
+              code: errorCode_e.InvalidStateError,
+              message: `Product stock amount not found: ${adjustment.productID}`,
+            };
+          }
+
+          const afterAmount = beforeAmount + adjustment.delta;
+          if (afterAmount < 0) {
+            throw {
+              code: errorCode_e.InvalidStateError,
+              message: `Insufficient stock for product ${adjustment.productID}. Available: ${beforeAmount}`,
+            };
+          }
+
+          const before = toProductSnapshot(product);
+          const type = adjustment.delta > 0
+            ? stockLogType_e.in
+            : stockLogType_e.out;
+          const updated = await this.productRepo.updateById(
+            adjustment.productID,
+            {
+              amount: afterAmount,
+              status: this.resolveStockStatus(
+                afterAmount,
+                Number(product.condition ?? 0),
+              ),
+            },
+            session,
+          );
+          if (!updated) {
+            throw {
+              code: errorCode_e.NotFoundError,
+              message: `Product not found: ${adjustment.productID}`,
+            };
+          }
+
+          const auditStockLog: StockLogSnapshot = {
+            amount: Math.abs(adjustment.delta),
+            type,
+            date,
+            note,
+            reference,
+          };
+          await this.writeAudit(
+            "UPDATE",
+            type === stockLogType_e.in ? "STOCK_IN" : "STOCK_OUT",
+            adjustment.productID,
+            actor,
+            before,
+            toProductSnapshot(updated),
+            auditStockLog,
+            ["products"],
+            session,
+          );
+          nextItems.push({
+            productID: adjustment.productID,
+            beforeAmount,
+            afterAmount,
+          });
+        }
+
+        items = nextItems;
+      }, this.transactionOptions());
+
+      return { reference, items };
+    } finally {
+      await session.endSession();
+    }
+  }
+
   async getLog(id?: string, type?: string, index?: string, size?: string): Promise<logRes_t> {
     if (!id) {
       throw { code: errorCode_e.InvalidInputError, message: "id is required" };
@@ -419,6 +528,62 @@ export default class StockService {
     if (amount === 0) return stockStatus_e.stockOut;
     if (amount < condition) return stockStatus_e.stockLow;
     return stockStatus_e.normal;
+  }
+
+  private normalizeAdjustments(items?: stockAdjustmentItem_t[]) {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "items must be a non-empty array",
+      };
+    }
+    if (items.length > 500) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "items must not contain more than 500 entries",
+      };
+    }
+
+    const deltaByProduct = new Map<string, number>();
+    for (const item of items) {
+      const productID = typeof item?.productID === "string"
+        ? item.productID.trim()
+        : "";
+      const delta = Number(item?.delta);
+      if (!productID || !Number.isFinite(delta) || delta === 0) {
+        throw {
+          code: errorCode_e.InvalidInputError,
+          message: "Each item requires productID and a non-zero numeric delta",
+        };
+      }
+      deltaByProduct.set(
+        productID,
+        (deltaByProduct.get(productID) || 0) + delta,
+      );
+    }
+
+    const normalized = [...deltaByProduct.entries()]
+      .filter(([, delta]) => delta !== 0)
+      .map(([productID, delta]) => ({ productID, delta }));
+    if (normalized.length === 0) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "Combined item delta must not be zero",
+      };
+    }
+    return normalized;
+  }
+
+  private optionalTrimmedString(value: unknown, field: string) {
+    if (value === undefined || value === null) return undefined;
+    if (typeof value !== "string") {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: `${field} must be a string`,
+      };
+    }
+    const trimmed = value.trim();
+    return trimmed || undefined;
   }
 
   private requireInventoryValue(value: unknown, fieldName: string) {

@@ -25,6 +25,23 @@ export type stockOutForm_t = {
   note?: string;
   products: stockForm_t[];
 }
+export type stockAdjustmentItem_t = {
+  productID: string;
+  delta: number;
+}
+export type stockAdjustmentForm_t = {
+  reference?: string;
+  note?: string;
+  items: stockAdjustmentItem_t[];
+}
+export type stockAdjustmentResult_t = {
+  reference?: string;
+  items: Array<{
+    productID: string;
+    beforeAmount: number;
+    afterAmount: number;
+  }>;
+}
 export type logInfo_t = {
   productID: string;
   amount: number;
@@ -100,6 +117,7 @@ export type responst_t<
   | "getLog"
   | "getStock"
   | "postStock"
+  | "adjustStock"
   | "getLogAudit"
   | "queryLogAudit"
   | "none"
@@ -135,6 +153,13 @@ export type responst_t<
   ? {
     success: boolean;
     data?: errList_t;
+    errCode?: errorCode_e;
+    message?: string;
+  }
+  : T extends "adjustStock"
+  ? {
+    success: boolean;
+    data?: stockAdjustmentResult_t;
     errCode?: errorCode_e;
     message?: string;
   }

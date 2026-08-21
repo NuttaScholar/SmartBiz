@@ -249,6 +249,69 @@ POST /stock_out
 }
 ```
 
+### Adjust Stock From Service Bill
+
+```http
+POST /stock/adjust
+Authorization: Bearer <service-token>
+Content-Type: application/json
+```
+
+This endpoint is restricted to a `service_bill` token with the
+`stock.inventory.adjust` scope. It changes up to 500 products atomically and
+writes audit logs in the same MongoDB transaction. Service-originated changes
+do not create entries in the normal `logs` collection.
+If any product does not exist or the resulting amount is negative, none of the
+changes are committed.
+
+`delta` is applied directly to the current amount: a positive value increases
+stock and a negative value decreases stock. Repeated product IDs in one request
+are combined before applying the changes.
+
+```json
+{
+  "reference": "ORDER-20260821-001",
+  "note": "Order items changed",
+  "items": [
+    {
+      "productID": "PROD001",
+      "delta": -2
+    },
+    {
+      "productID": "PROD002",
+      "delta": 1
+    }
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "reference": "ORDER-20260821-001",
+    "items": [
+      {
+        "productID": "PROD001",
+        "beforeAmount": 10,
+        "afterAmount": 8
+      },
+      {
+        "productID": "PROD002",
+        "beforeAmount": 4,
+        "afterAmount": 5
+      }
+    ]
+  }
+}
+```
+
+The authenticated actor is recorded as `{ "type": "service", "name":
+"service_bill" }`. `reference` and the adjustment details are stored only in
+the audit snapshot so they can be correlated with the originating order.
+
 ### Get Log
 
 ```http
