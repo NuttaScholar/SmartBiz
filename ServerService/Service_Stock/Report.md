@@ -257,6 +257,38 @@ GET /log?id=PROD001&type=1&index=0&size=50
 
 `id` is required. `type`, `index`, and `size` are optional.
 
+## Audit APIs
+
+Product create/update/delete and successful stock-in/stock-out rows write an
+audit document to the `Stock.log_audit` collection. The product change, normal
+stock log, and audit log are committed together in one MongoDB transaction.
+Each audit entry contains the authenticated actor, operation, affected
+collections, changed fields, product snapshots before and after the change,
+and the related stock-log data when applicable.
+
+Audit entries expire through the TTL index on `expiresAt`. Retention defaults
+to 365 days and can be configured with `LOG_AUDIT_RETENTION_DAYS`.
+
+Only users with the admin role may read audit entries; service tokens and
+other roles receive `403 Forbidden`.
+
+Get one audit entry:
+
+```http
+GET /log-audit/<auditId>
+```
+
+Query audit entries (newest first):
+
+```http
+GET /log-audit?productID=PROD001&operation=STOCK_IN&action=UPDATE&actorName=admin&actorType=user&from=2026-08-01T00:00:00.000Z&to=2026-08-31T23:59:59.999Z&page=1&size=20
+```
+
+Supported operations are `PRODUCT_CREATE`, `PRODUCT_UPDATE`,
+`PRODUCT_DELETE`, `STOCK_IN`, and `STOCK_OUT`. Amount filters are also
+available: `minBeforeAmount`, `maxBeforeAmount`, `minAfterAmount`, and
+`maxAfterAmount`. The maximum page size is 100.
+
 ## Environment
 
 ```env
@@ -264,7 +296,8 @@ PORT=3003
 SECRET=NuttaScholar
 SERVICE_AUTH_SECRET=<random-secret-at-least-32-characters>
 WEB_HOSTS=http://localhost:3030,http://localhost:4030
-DB_URL=mongodb://root:example@localhost:27017/Stock?authSource=admin
+DB_URL=mongodb://root:example@localhost:27017/Stock?authSource=admin&replicaSet=rs0
+LOG_AUDIT_RETENTION_DAYS=365
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9000
 MINIO_USE_SSL=false

@@ -1,4 +1,5 @@
 import { errorCode_e, productType_e, role_e, stockLogType_e, stockStatus_e, transactionType_e } from "./utils/enum";
+import { LogAuditQueryResult, LogAuditView } from "./models/log-audit.interface";
 
 export type productInfo_t = {
   id: string;
@@ -99,6 +100,8 @@ export type responst_t<
   | "getLog"
   | "getStock"
   | "postStock"
+  | "getLogAudit"
+  | "queryLogAudit"
   | "none"
 > = T extends "getProduct"
   ? {
@@ -132,6 +135,20 @@ export type responst_t<
   ? {
     success: boolean;
     data?: errList_t;
+    errCode?: errorCode_e;
+    message?: string;
+  }
+  : T extends "getLogAudit"
+  ? {
+    success: boolean;
+    data?: LogAuditView;
+    errCode?: errorCode_e;
+    message?: string;
+  }
+  : T extends "queryLogAudit"
+  ? {
+    success: boolean;
+    data?: LogAuditQueryResult;
     errCode?: errorCode_e;
     message?: string;
   }

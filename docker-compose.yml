@@ -168,6 +168,7 @@ services:
       WEB_HOSTS: "${VITE_WEB_BACKEND}"
       PORT: 3003
       DB_URL: mongodb://root:example@mongo:27017/Stock?authSource=admin&replicaSet=rs0
+      LOG_AUDIT_RETENTION_DAYS: ${LOG_AUDIT_RETENTION_DAYS:-365}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
       MINIO_USE_SSL: false
@@ -182,8 +183,10 @@ services:
     ports:
       - ${VITE_PORT_STOCK}:3003
     depends_on:
-      - mongo
-      - minio
+      mongo-replica-init:
+        condition: service_completed_successfully
+      minio:
+        condition: service_started
 
   service_bill:
     container_name: service_bill

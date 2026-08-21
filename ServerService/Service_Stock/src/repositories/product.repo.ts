@@ -1,4 +1,4 @@
-import { Model } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import { productType_e, stockStatus_e } from "../utils/enum";
 import { productInfo_t, stockStatus_t } from "../type";
 import { ProductDocument } from "../models/product.interface";
@@ -6,25 +6,34 @@ import { ProductDocument } from "../models/product.interface";
 export default class ProductRepo {
   constructor(private ProductModel: Model<ProductDocument>) {}
 
-  findById(id: string) {
-    return this.ProductModel.findOne({ id });
+  startSession() {
+    return this.ProductModel.db.startSession();
+  }
+
+  findById(id: string, session?: ClientSession) {
+    const query = this.ProductModel.findOne({ id });
+    return session ? query.session(session) : query;
   }
 
   findByName(name: string) {
     return this.ProductModel.findOne({ name });
   }
 
-  create(data: productInfo_t) {
+  create(data: productInfo_t, session?: ClientSession) {
     const product = new this.ProductModel(data);
-    return product.save();
+    return product.save({ session });
   }
 
-  updateById(id: string, data: Partial<productInfo_t>) {
-    return this.ProductModel.updateOne({ id }, data);
+  updateById(id: string, data: Partial<productInfo_t>, session?: ClientSession) {
+    return this.ProductModel.findOneAndUpdate(
+      { id },
+      { $set: data },
+      { new: true, session, runValidators: true },
+    );
   }
 
-  deleteById(id: string) {
-    return this.ProductModel.deleteOne({ id });
+  deleteById(id: string, session?: ClientSession) {
+    return this.ProductModel.findOneAndDelete({ id }, { session });
   }
 
   initializeAnotherInventory() {

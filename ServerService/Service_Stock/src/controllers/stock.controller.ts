@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { Model } from "mongoose";
 import { LogDocument } from "../models/log.interface";
+import { LogAuditDocument } from "../models/log-audit.interface";
 import { ProductDocument } from "../models/product.interface";
 import {
   AuthRequest,
@@ -11,20 +12,25 @@ import StockService from "../services/stock.service";
 import StorageService from "../services/storage.service";
 import { stockOutForm_t } from "../type";
 import { errorCode_e, role_e } from "../utils/enum";
-import { handleError } from "./product.controller";
+import { getAuditActor, handleError } from "./product.controller";
 
 export default class StockController {
   private service: StockService;
 
-  constructor(ProductModel: Model<ProductDocument>, LogModel: Model<LogDocument>, storageService: StorageService) {
-    this.service = new StockService(ProductModel, LogModel, storageService);
+  constructor(
+    ProductModel: Model<ProductDocument>,
+    LogModel: Model<LogDocument>,
+    LogAuditModel: Model<LogAuditDocument>,
+    storageService: StorageService,
+  ) {
+    this.service = new StockService(ProductModel, LogModel, LogAuditModel, storageService);
   }
 
   async stockIn(req: AuthRequest, res: Response) {
     try {
       this.ensureAdmin(req, "stock.inventory.in");
       const { products, who } = req.body as { products?: string; who?: string };
-      const errors = await this.service.stockIn(products, who, req.file);
+      const errors = await this.service.stockIn(products, who, getAuditActor(req), req.file);
       return res.json({
         success: true,
         ...(errors.length ? { data: errors, message: "Completed with warnings" } : {}),
@@ -37,7 +43,7 @@ export default class StockController {
   async stockOut(req: AuthRequest, res: Response) {
     try {
       this.ensureAdmin(req, "stock.inventory.out");
-      const errors = await this.service.stockOut(req.body as stockOutForm_t);
+      const errors = await this.service.stockOut(req.body as stockOutForm_t, getAuditActor(req));
       return res.json({
         success: true,
         ...(errors.length ? { data: errors, message: "Completed with warnings" } : {}),

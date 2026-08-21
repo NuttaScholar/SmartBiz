@@ -43,6 +43,12 @@ export const DB_URL = requireEnv("DB_URL");
 export const SERVICE_ACCOUNT_URL = requireEnv("SERVICE_ACCOUNT_URL");
 export const SERVICE_BILL_URL = process.env.SERVICE_BILL_URL || "http://localhost:3004";
 
+const retentionDays = Number(process.env.LOG_AUDIT_RETENTION_DAYS || 365);
+if (!Number.isInteger(retentionDays) || retentionDays <= 0) {
+  throw new Error("LOG_AUDIT_RETENTION_DAYS must be a positive integer");
+}
+export const LOG_AUDIT_RETENTION_DAYS = retentionDays;
+
 export const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "localhost";
 export const MINIO_PORT = Number(process.env.MINIO_PORT || 9000);
 export const MINIO_USE_SSL = (process.env.MINIO_USE_SSL || "false") === "true";

@@ -1,15 +1,29 @@
-import { Model } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import axios from "axios";
 import { BILL_BUCKET, DEFAULT_BUCKET, MINIO_HOST, SERVICE_BILL_URL } from "../config";
 import { LogDocument } from "../models/log.interface";
 import { ProductDocument } from "../models/product.interface";
+import {
+  AuditAction,
+  AuditActor,
+  AuditOperation,
+  LogAuditDocument,
+  ProductSnapshot,
+  StockLogSnapshot,
+} from "../models/log-audit.interface";
 import LogRepo from "../repositories/log.repo";
+import LogAuditRepo from "../repositories/log-audit.repo";
 import ProductRepo from "../repositories/product.repo";
 import { logInfo_t, logRes_t, productInfo_t, productRes_t, stockForm_t, stockOutForm_t } from "../type";
 import { errorCode_e, productType_e, stockLogType_e, stockStatus_e } from "../utils/enum";
 import StorageService from "./storage.service";
 import TransactionService from "./transaction.service";
 import { createServiceToken } from "../utils/service-token";
+import {
+  getAuditDates,
+  getChangedFields,
+  toProductSnapshot,
+} from "../utils/stock-audit";
 
 type ProductUsageResponse = {
   success: boolean;
@@ -24,19 +38,26 @@ type ProductUsageResponse = {
 export default class StockService {
   private productRepo: ProductRepo;
   private logRepo: LogRepo;
+  private logAuditRepo: LogAuditRepo;
   private transactionService: TransactionService;
 
   constructor(
     ProductModel: Model<ProductDocument>,
     LogModel: Model<LogDocument>,
+    LogAuditModel: Model<LogAuditDocument>,
     private storageService: StorageService,
   ) {
     this.productRepo = new ProductRepo(ProductModel);
     this.logRepo = new LogRepo(LogModel);
+    this.logAuditRepo = new LogAuditRepo(LogAuditModel);
     this.transactionService = new TransactionService(this.productRepo);
   }
 
-  async createProduct(data: productInfo_t, file?: Express.Multer.File) {
+  async createProduct(
+    data: productInfo_t,
+    actor: AuditActor,
+    file?: Express.Multer.File,
+  ) {
     await this.ensureProductIsUnique(data.id, data.name);
 
     const { img: _requestedImg, ...productData } = data;
@@ -45,16 +66,42 @@ export default class StockService {
     const status = this.resolveStockStatus(amount, condition);
     const img = file ? (await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url : undefined;
 
-    await this.productRepo.create({
+    const newProduct = {
       ...productData,
       amount,
       condition,
       status,
       ...(img ? { img } : {}),
-    });
+    };
+    const session = await this.productRepo.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const product = await this.productRepo.create(newProduct, session);
+        await this.writeAudit(
+          "CREATE",
+          "PRODUCT_CREATE",
+          product.id,
+          actor,
+          null,
+          toProductSnapshot(product),
+          null,
+          ["products"],
+          session,
+        );
+      }, this.transactionOptions());
+    } catch (err) {
+      if (img) await this.safeRemoveProductImage(img);
+      throw err;
+    } finally {
+      await session.endSession();
+    }
   }
 
-  async updateProduct(data: productInfo_t, file?: Express.Multer.File) {
+  async updateProduct(
+    data: productInfo_t,
+    actor: AuditActor,
+    file?: Express.Multer.File,
+  ) {
     const product = await this.productRepo.findById(data.id);
     if (!product) {
       throw { code: errorCode_e.NotFoundError, message: "Product not found" };
@@ -76,20 +123,53 @@ export default class StockService {
       condition,
     };
     const status = this.resolveStockStatus(amount, condition);
-    if (file) {
-      await this.removeProductImage(product.img);
-      const img = (await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url;
-      await this.productRepo.updateById(data.id, { ...productData, status, img });
-      return;
+    const uploadedImg = file
+      ? (await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url
+      : undefined;
+    const shouldRemoveImage = Boolean(uploadedImg) || data.img === "";
+    const updateData = {
+      ...productData,
+      status,
+      ...(uploadedImg !== undefined
+        ? { img: uploadedImg }
+        : data.img === ""
+          ? { img: "" }
+          : {}),
+    };
+    const session = await this.productRepo.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const current = await this.productRepo.findById(data.id, session);
+        if (!current) {
+          throw { code: errorCode_e.NotFoundError, message: "Product not found" };
+        }
+        const before = toProductSnapshot(current);
+        const updated = await this.productRepo.updateById(data.id, updateData, session);
+        if (!updated) {
+          throw { code: errorCode_e.NotFoundError, message: "Product not found" };
+        }
+        await this.writeAudit(
+          "UPDATE",
+          "PRODUCT_UPDATE",
+          data.id,
+          actor,
+          before,
+          toProductSnapshot(updated),
+          null,
+          ["products"],
+          session,
+        );
+      }, this.transactionOptions());
+    } catch (err) {
+      if (uploadedImg) await this.safeRemoveProductImage(uploadedImg);
+      throw err;
+    } finally {
+      await session.endSession();
     }
 
-    if (data.img === "") {
-      await this.removeProductImage(product.img);
-      await this.productRepo.updateById(data.id, { ...productData, status, img: "" });
-      return;
+    if (shouldRemoveImage && product.img && product.img !== uploadedImg) {
+      await this.safeRemoveProductImage(product.img);
     }
-
-    await this.productRepo.updateById(data.id, { ...productData, status });
   }
 
   async getProducts(type?: string, name?: string, status?: string): Promise<productRes_t> {
@@ -101,22 +181,51 @@ export default class StockService {
     return { products: products.map((product) => this.withProductImageUrl(product)), status: stockStatus };
   }
 
-  async deleteProduct(id?: string) {
+  async deleteProduct(id: string | undefined, actor: AuditActor) {
     if (!id) {
       throw { code: errorCode_e.InvalidInputError, message: "id is required" };
     }
 
     await this.ensureProductIsNotUsedInOrders(id);
 
-    const product = await this.productRepo.findById(id);
-    if (product?.img) {
-      await this.removeProductImage(product.img);
+    const session = await this.productRepo.startSession();
+    let imageToRemove: string | undefined;
+    try {
+      await session.withTransaction(async () => {
+        const product = await this.productRepo.findById(id, session);
+        if (!product) {
+          throw { code: errorCode_e.NotFoundError, message: "Product not found" };
+        }
+        const before = toProductSnapshot(product);
+        const deleted = await this.productRepo.deleteById(id, session);
+        if (!deleted) {
+          throw { code: errorCode_e.NotFoundError, message: "Product not found" };
+        }
+        await this.writeAudit(
+          "DELETE",
+          "PRODUCT_DELETE",
+          id,
+          actor,
+          before,
+          null,
+          null,
+          ["products"],
+          session,
+        );
+        imageToRemove = product.img;
+      }, this.transactionOptions());
+    } finally {
+      await session.endSession();
     }
-
-    await this.productRepo.deleteById(id);
+    if (imageToRemove) await this.safeRemoveProductImage(imageToRemove);
   }
 
-  async stockIn(productsText?: string, who?: string, file?: Express.Multer.File) {
+  async stockIn(
+    productsText: string | undefined,
+    who: string | undefined,
+    actor: AuditActor,
+    file?: Express.Multer.File,
+  ) {
     if (!file || !productsText) {
       throw { code: errorCode_e.InvalidInputError, message: "products and bill image are required" };
     }
@@ -134,16 +243,49 @@ export default class StockService {
       throw { code: transactionRes.errCode || errorCode_e.UnknownError, message: "Create transaction failed" };
     }
 
-    const { logs, errors } = await this.applyStockChange(products, stockLogType_e.in, date, uploadedBill.url);
-    await this.logRepo.insertMany(logs);
-    return errors;
+    const session = await this.productRepo.startSession();
+    try {
+      let errors: stockForm_t[] = [];
+      await session.withTransaction(async () => {
+        const result = await this.applyStockChange(
+          products,
+          stockLogType_e.in,
+          date,
+          actor,
+          session,
+          uploadedBill.url,
+        );
+        errors = result.errors;
+        if (result.logs.length) await this.logRepo.insertMany(result.logs, session);
+      }, this.transactionOptions());
+      return errors;
+    } finally {
+      await session.endSession();
+    }
   }
 
-  async stockOut(data: stockOutForm_t) {
+  async stockOut(data: stockOutForm_t, actor: AuditActor) {
     const date = new Date();
-    const { logs, errors } = await this.applyStockChange(data.products, stockLogType_e.out, date, undefined, data.note);
-    await this.logRepo.insertMany(logs);
-    return errors;
+    const session = await this.productRepo.startSession();
+    try {
+      let errors: stockForm_t[] = [];
+      await session.withTransaction(async () => {
+        const result = await this.applyStockChange(
+          data.products,
+          stockLogType_e.out,
+          date,
+          actor,
+          session,
+          undefined,
+          data.note,
+        );
+        errors = result.errors;
+        if (result.logs.length) await this.logRepo.insertMany(result.logs, session);
+      }, this.transactionOptions());
+      return errors;
+    } finally {
+      await session.endSession();
+    }
   }
 
   async getLog(id?: string, type?: string, index?: string, size?: string): Promise<logRes_t> {
@@ -207,6 +349,8 @@ export default class StockService {
     products: stockForm_t[],
     type: stockLogType_e,
     date: Date,
+    actor: AuditActor,
+    session: ClientSession,
     bill?: string,
     note?: string,
   ) {
@@ -214,42 +358,58 @@ export default class StockService {
     const errors: stockForm_t[] = [];
 
     for (const item of products) {
-      try {
-        const product = await this.productRepo.findById(item.productID);
-        if (!product) {
-          errors.push(item);
-          continue;
-        }
-
-        const currentAmount = Number(product.amount ?? 0);
-        if (!Number.isFinite(currentAmount)) {
-          errors.push(item);
-          continue;
-        }
-        if (type === stockLogType_e.out && currentAmount < item.amount) {
-          errors.push(item);
-          continue;
-        }
-
-        const newAmount = type === stockLogType_e.in ? currentAmount + item.amount : currentAmount - item.amount;
-        const newStatus = this.resolveStockStatus(
-          newAmount,
-          Number(product.condition ?? 0),
-        );
-        await this.productRepo.updateById(item.productID, { amount: newAmount, status: newStatus });
-
-        logs.push({
-          productID: item.productID,
-          amount: item.amount,
-          type,
-          date,
-          price: item.price,
-          bill,
-          note,
-        });
-      } catch (err) {
+      const product = await this.productRepo.findById(item.productID, session);
+      const itemAmount = Number(item.amount);
+      if (!product || !Number.isFinite(itemAmount) || itemAmount <= 0) {
         errors.push(item);
+        continue;
       }
+
+      const currentAmount = Number(product.amount ?? 0);
+      if (!Number.isFinite(currentAmount)) {
+        errors.push(item);
+        continue;
+      }
+      if (type === stockLogType_e.out && currentAmount < itemAmount) {
+        errors.push(item);
+        continue;
+      }
+
+      const before = toProductSnapshot(product);
+      const newAmount = type === stockLogType_e.in
+        ? currentAmount + itemAmount
+        : currentAmount - itemAmount;
+      const newStatus = this.resolveStockStatus(newAmount, Number(product.condition ?? 0));
+      const updated = await this.productRepo.updateById(
+        item.productID,
+        { amount: newAmount, status: newStatus },
+        session,
+      );
+      if (!updated) {
+        throw { code: errorCode_e.NotFoundError, message: "Product not found" };
+      }
+
+      const log: logInfo_t = {
+        productID: item.productID,
+        amount: itemAmount,
+        type,
+        date,
+        price: item.price,
+        bill,
+        note,
+      };
+      logs.push(log);
+      await this.writeAudit(
+        "UPDATE",
+        type === stockLogType_e.in ? "STOCK_IN" : "STOCK_OUT",
+        item.productID,
+        actor,
+        before,
+        toProductSnapshot(updated),
+        log,
+        ["products", "logs"],
+        session,
+      );
     }
 
     return { logs, errors };
@@ -336,6 +496,48 @@ export default class StockService {
         code: billError?.errCode || errorCode_e.UnknownError,
         message: "Check product usage failed",
       };
+    }
+  }
+
+  private async writeAudit(
+    action: AuditAction,
+    operation: AuditOperation,
+    productID: string,
+    actor: AuditActor,
+    before: ProductSnapshot | null,
+    after: ProductSnapshot | null,
+    stockLog: StockLogSnapshot | null,
+    affectedCollections: string[],
+    session: ClientSession,
+  ) {
+    const { occurredAt, expiresAt } = getAuditDates();
+    await this.logAuditRepo.create({
+      productID,
+      action,
+      operation,
+      actor,
+      affectedCollections,
+      changedFields: getChangedFields(before, after),
+      productBefore: before,
+      productAfter: after,
+      stockLog,
+      occurredAt,
+      expiresAt,
+    }, session);
+  }
+
+  private transactionOptions() {
+    return {
+      readConcern: { level: "snapshot" as const },
+      writeConcern: { w: "majority" as const },
+    };
+  }
+
+  private async safeRemoveProductImage(img: string) {
+    try {
+      await this.removeProductImage(img);
+    } catch (err) {
+      console.error("Remove product image failed", err);
     }
   }
 

@@ -1,9 +1,11 @@
 import { Response } from "express";
 import { Model } from "mongoose";
 import { LogDocument } from "../models/log.interface";
+import { AuditActor, LogAuditDocument } from "../models/log-audit.interface";
 import { ProductDocument } from "../models/product.interface";
 import {
   AuthRequest,
+  getPrincipalName,
   hasServiceScope,
   isUserWithRole,
 } from "../middlewares/auth";
@@ -15,14 +17,19 @@ import { errorCode_e, role_e } from "../utils/enum";
 export default class ProductController {
   private service: StockService;
 
-  constructor(ProductModel: Model<ProductDocument>, LogModel: Model<LogDocument>, storageService: StorageService) {
-    this.service = new StockService(ProductModel, LogModel, storageService);
+  constructor(
+    ProductModel: Model<ProductDocument>,
+    LogModel: Model<LogDocument>,
+    LogAuditModel: Model<LogAuditDocument>,
+    storageService: StorageService,
+  ) {
+    this.service = new StockService(ProductModel, LogModel, LogAuditModel, storageService);
   }
 
   async createProduct(req: AuthRequest, res: Response) {
     try {
       this.ensureAdmin(req, "stock.product.write");
-      await this.service.createProduct(req.body as productInfo_t, req.file);
+      await this.service.createProduct(req.body as productInfo_t, getAuditActor(req), req.file);
       return res.json({ success: true });
     } catch (err: any) {
       return handleError(res, err);
@@ -32,7 +39,7 @@ export default class ProductController {
   async updateProduct(req: AuthRequest, res: Response) {
     try {
       this.ensureAdmin(req, "stock.product.write");
-      await this.service.updateProduct(req.body as productInfo_t, req.file);
+      await this.service.updateProduct(req.body as productInfo_t, getAuditActor(req), req.file);
       return res.json({ success: true });
     } catch (err: any) {
       return handleError(res, err);
@@ -53,7 +60,7 @@ export default class ProductController {
   async deleteProduct(req: AuthRequest, res: Response) {
     try {
       this.ensureAdmin(req, "stock.product.delete");
-      await this.service.deleteProduct(req.query.id as string);
+      await this.service.deleteProduct(req.query.id as string, getAuditActor(req));
       return res.json({ success: true });
     } catch (err: any) {
       return handleError(res, err);
@@ -79,9 +86,34 @@ export default class ProductController {
   }
 }
 
+export function getAuditActor(req: AuthRequest): AuditActor {
+  const name = getPrincipalName(req);
+  if (!name) {
+    throw {
+      code: errorCode_e.UnauthorizedError,
+      message: "Unable to identify audit actor",
+    };
+  }
+  return {
+    type: req.authData?.type === "serviceToken" ? "service" : "user",
+    name,
+  };
+}
+
 export function handleError(res: Response, err: any) {
   console.error(err);
-  return res.status(err?.code ? 400 : 500).json({
+  const status = err?.code === errorCode_e.UnauthorizedError
+    || err?.code === errorCode_e.TokenExpiredError
+    ? 401
+    : err?.code === errorCode_e.ForbiddenError
+      || err?.code === errorCode_e.PermissionDeniedError
+      ? 403
+      : err?.code === errorCode_e.NotFoundError
+        ? 404
+        : err?.code
+          ? 400
+          : 500;
+  return res.status(status).json({
     success: false,
     errCode: err?.code || errorCode_e.UnknownError,
     message: err?.message || "Unknown error",

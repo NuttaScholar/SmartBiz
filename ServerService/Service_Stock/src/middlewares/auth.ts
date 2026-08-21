@@ -73,6 +73,13 @@ export function isUserWithRole(
     && roles.includes(request.authData.role);
 }
 
+export function getPrincipalName(request: AuthRequest): string | undefined {
+  if (request.authData?.type === "accessToken") {
+    return request.authData.username;
+  }
+  return request.authData?.service;
+}
+
 export default function AuthMiddleware(
   request: AuthRequest,
   response: Response,

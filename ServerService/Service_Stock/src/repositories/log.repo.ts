@@ -1,12 +1,12 @@
-import { Model } from "mongoose";
+import { ClientSession, Model } from "mongoose";
 import { LogDocument } from "../models/log.interface";
 import { logInfo_t } from "../type";
 
 export default class LogRepo {
   constructor(private LogModel: Model<LogDocument>) {}
 
-  insertMany(logs: logInfo_t[]) {
-    return this.LogModel.insertMany(logs);
+  insertMany(logs: logInfo_t[], session?: ClientSession) {
+    return this.LogModel.insertMany(logs, { session });
   }
 
   countByProduct(productID: string, type: number) {
