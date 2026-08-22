@@ -15,10 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import InfiniteScroll from "react-infinite-scroll-component";
-import {
-  AuditOperation_t,
-  LogAudit_t,
-} from "../../../API/StockService/type";
+import { AuditOperation_t, LogAudit_t } from "../../../API/StockService/type";
 import { stockAuditOperationLabel } from "../lib/stockAuditLabels";
 
 interface Props {
@@ -64,7 +61,11 @@ export default function StockAuditHistoryTable(props: Props) {
           >
             <Stack spacing={1}>
               {logs.map((log) => (
-                <MobileCard key={log.id} log={log} onOpen={props.onOpenDetail} />
+                <MobileCard
+                  key={log.id}
+                  log={log}
+                  onOpen={props.onOpenDetail}
+                />
               ))}
             </Stack>
           </InfiniteScroll>
@@ -81,14 +82,26 @@ export default function StockAuditHistoryTable(props: Props) {
         <Table stickyHeader sx={{ minWidth: 1050 }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ bgcolor: "secondary.main" }}>วันและเวลา</TableCell>
+              <TableCell sx={{ bgcolor: "secondary.main" }}>
+                วันและเวลา
+              </TableCell>
               <TableCell sx={{ bgcolor: "secondary.main" }}>รายการ</TableCell>
               <TableCell sx={{ bgcolor: "secondary.main" }}>สินค้า</TableCell>
-              <TableCell sx={{ bgcolor: "secondary.main" }}>เลขอ้างอิง</TableCell>
-              <TableCell sx={{ bgcolor: "secondary.main" }}>ผู้ดำเนินการ</TableCell>
-              <TableCell sx={{ bgcolor: "secondary.main" }} align="right">จำนวนก่อน</TableCell>
-              <TableCell sx={{ bgcolor: "secondary.main" }} align="right">จำนวนหลัง</TableCell>
-              <TableCell sx={{ bgcolor: "secondary.main" }}>ข้อมูลที่เปลี่ยน</TableCell>
+              <TableCell sx={{ bgcolor: "secondary.main" }}>
+                เลขอ้างอิง
+              </TableCell>
+              <TableCell sx={{ bgcolor: "secondary.main" }}>
+                ผู้ดำเนินการ
+              </TableCell>
+              <TableCell sx={{ bgcolor: "secondary.main" }} align="right">
+                จำนวนก่อน
+              </TableCell>
+              <TableCell sx={{ bgcolor: "secondary.main" }} align="right">
+                จำนวนหลัง
+              </TableCell>
+              <TableCell sx={{ bgcolor: "secondary.main" }}>
+                ข้อมูลที่เปลี่ยน
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -100,7 +113,11 @@ export default function StockAuditHistoryTable(props: Props) {
               </TableRow>
             ) : logs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 8, color: "text.secondary" }}>
+                <TableCell
+                  colSpan={8}
+                  align="center"
+                  sx={{ py: 8, color: "text.secondary" }}
+                >
                   ไม่พบประวัติการทำรายการ
                 </TableCell>
               </TableRow>
@@ -113,26 +130,42 @@ export default function StockAuditHistoryTable(props: Props) {
                   sx={{ cursor: "pointer" }}
                 >
                   <TableCell>{formatDateTime(log.occurredAt)}</TableCell>
-                  <TableCell><OperationChip operation={log.operation} /></TableCell>
+                  <TableCell>
+                    <OperationChip operation={log.operation} />
+                  </TableCell>
                   <TableCell>
                     <Typography variant="body2">{productName(log)}</Typography>
-                    <Typography variant="caption" color="text.secondary">{log.productID}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {log.productID}
+                    </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography
                       variant="body2"
-                      sx={{ fontFamily: log.stockLog?.reference ? "monospace" : undefined }}
+                      sx={{
+                        fontFamily: log.stockLog?.reference
+                          ? "monospace"
+                          : undefined,
+                      }}
                     >
                       {stockReference(log)}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">{log.actor.name}</Typography>
-                    <Typography variant="caption" color="text.secondary">{log.actor.type}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {log.actor.type}
+                    </Typography>
                   </TableCell>
-                  <TableCell align="right">{formatAmount(log.productBefore?.amount)}</TableCell>
-                  <TableCell align="right">{formatAmount(log.productAfter?.amount)}</TableCell>
-                  <TableCell><ChangedFields fields={log.changedFields} /></TableCell>
+                  <TableCell align="right">
+                    {formatAmount(log.productBefore?.amount)}
+                  </TableCell>
+                  <TableCell align="right">
+                    {formatAmount(log.productAfter?.amount)}
+                  </TableCell>
+                  <TableCell>
+                    <ChangedFields fields={log.changedFields} />
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -156,35 +189,74 @@ export default function StockAuditHistoryTable(props: Props) {
   );
 }
 
-function MobileCard({ log, onOpen }: { log: LogAudit_t; onOpen: (id: string) => void }) {
+function MobileCard({
+  log,
+  onOpen,
+}: {
+  log: LogAudit_t;
+  onOpen: (id: string) => void;
+}) {
   return (
     <Paper elevation={4}>
-      <CardActionArea onClick={() => onOpen(log.id)} sx={{ p: 1.5, textAlign: "left" }}>
+      <CardActionArea
+        onClick={() => onOpen(log.id)}
+        sx={{ p: 1.5, textAlign: "left" }}
+      >
         <Stack spacing={1.25}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            spacing={1}
+          >
             <Typography variant="body2" color="text.secondary">
               {formatDateTime(log.occurredAt)}
             </Typography>
             <OperationChip operation={log.operation} />
           </Stack>
           <Box>
-            <Typography variant="body1" fontWeight={500}>{productName(log)}</Typography>
-            <Typography variant="caption" color="text.secondary">{log.productID}</Typography>
+            <Typography variant="h5" fontWeight={500}>
+              {productName(log)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {log.productID}
+            </Typography>
           </Box>
           {log.stockLog?.reference && (
             <Box>
-              <Typography variant="caption" color="text.secondary">เลขอ้างอิง</Typography>
-              <Typography variant="body2" sx={{ fontFamily: "monospace", overflowWrap: "anywhere" }}>
+              <Typography variant="caption" color="text.secondary">
+                เลขอ้างอิง
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ fontFamily: "monospace", overflowWrap: "anywhere" }}
+              >
                 {log.stockLog.reference}
               </Typography>
             </Box>
           )}
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 1 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: 1,
+            }}
+          >
             <Amount label="จำนวนก่อน" value={log.productBefore?.amount} />
             <Amount label="จำนวนหลัง" value={log.productAfter?.amount} />
           </Box>
-          <Typography variant="caption" color="text.secondary">
-            โดย {log.actor.name} ({log.actor.type})
+          <Typography
+            variant="body1"
+            noWrap
+            title={`โดย ${log.actor.name} (${log.actor.type})`}
+          >
+            <Box
+              component="span"
+              sx={{ typography: "caption", color: "text.secondary", mr: 0.5 }}
+            >
+              โดย
+            </Box>
+            {log.actor.name} ({log.actor.type})
           </Typography>
           <ChangedFields fields={log.changedFields} />
         </Stack>
@@ -193,10 +265,24 @@ function MobileCard({ log, onOpen }: { log: LogAudit_t; onOpen: (id: string) => 
   );
 }
 
-function StateMessage({ loading = false, compact = false }: { loading?: boolean; compact?: boolean }) {
+function StateMessage({
+  loading = false,
+  compact = false,
+}: {
+  loading?: boolean;
+  compact?: boolean;
+}) {
   return (
-    <Box sx={{ display: "grid", minHeight: compact ? 56 : 240, placeItems: "center" }}>
-      {loading ? <CircularProgress size={compact ? 28 : 32} /> : (
+    <Box
+      sx={{
+        display: "grid",
+        minHeight: compact ? 56 : 240,
+        placeItems: "center",
+      }}
+    >
+      {loading ? (
+        <CircularProgress size={compact ? 28 : 32} />
+      ) : (
         <Typography color="text.secondary">ไม่พบประวัติการทำรายการ</Typography>
       )}
     </Box>
@@ -204,7 +290,13 @@ function StateMessage({ loading = false, compact = false }: { loading?: boolean;
 }
 
 function OperationChip({ operation }: { operation: AuditOperation_t }) {
-  return <Chip size="small" label={stockAuditOperationLabel(operation)} color={OPERATION_COLORS[operation]} />;
+  return (
+    <Chip
+      size="small"
+      label={stockAuditOperationLabel(operation)}
+      color={OPERATION_COLORS[operation]}
+    />
+  );
 }
 
 function ChangedFields({ fields }: { fields: string[] }) {
@@ -213,7 +305,9 @@ function ChangedFields({ fields }: { fields: string[] }) {
       {fields.slice(0, 3).map((field) => (
         <Chip key={field} size="small" variant="outlined" label={field} />
       ))}
-      {fields.length > 3 && <Chip size="small" label={`+${fields.length - 3}`} />}
+      {fields.length > 3 && (
+        <Chip size="small" label={`+${fields.length - 3}`} />
+      )}
     </Stack>
   );
 }
@@ -221,14 +315,20 @@ function ChangedFields({ fields }: { fields: string[] }) {
 function Amount({ label, value }: { label: string; value?: number }) {
   return (
     <Box>
-      <Typography variant="caption" color="text.secondary">{label}</Typography>
-      <Typography variant="body2" fontWeight={500}>{formatAmount(value)}</Typography>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="h5" fontWeight={500}>
+        {formatAmount(value)}
+      </Typography>
     </Box>
   );
 }
 
 function productName(log: LogAudit_t) {
-  return log.productAfter?.name || log.productBefore?.name || "ไม่ทราบชื่อสินค้า";
+  return (
+    log.productAfter?.name || log.productBefore?.name || "ไม่ทราบชื่อสินค้า"
+  );
 }
 
 function stockReference(log: LogAudit_t) {
@@ -236,7 +336,9 @@ function stockReference(log: LogAudit_t) {
 }
 
 function formatAmount(value?: number) {
-  return value === undefined ? "-" : new Intl.NumberFormat("th-TH").format(value);
+  return value === undefined
+    ? "-"
+    : new Intl.NumberFormat("th-TH").format(value);
 }
 
 function formatDateTime(value: string) {
