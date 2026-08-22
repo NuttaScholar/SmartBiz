@@ -347,6 +347,10 @@ Query audit entries (newest first):
 GET /log-audit?productID=PROD001&operation=STOCK_IN&action=UPDATE&actorName=admin&actorType=user&from=2026-08-01T00:00:00.000Z&to=2026-08-31T23:59:59.999Z&page=1&size=20
 ```
 
+`productID` and `actorName` use case-insensitive partial matching. For example,
+`productID=prod` matches `PROD001`, and `actorName=bill` matches
+`service_bill`. Regular-expression metacharacters are treated as literal text.
+
 Supported operations are `PRODUCT_CREATE`, `PRODUCT_UPDATE`,
 `PRODUCT_DELETE`, `STOCK_IN`, and `STOCK_OUT`. Amount filters are also
 available: `minBeforeAmount`, `maxBeforeAmount`, `minAfterAmount`, and

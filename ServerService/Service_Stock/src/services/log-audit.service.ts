@@ -57,7 +57,8 @@ export default class LogAuditService {
     if (size > 100) throw invalidInput("size must not exceed 100");
 
     const filter: FilterQuery<LogAuditDocument> = {};
-    if (query.productID) filter.productID = query.productID;
+    const productID = partialTextPattern(query.productID);
+    if (productID) filter.productID = productID;
 
     if (query.action) {
       const action = query.action.toUpperCase() as AuditAction;
@@ -83,7 +84,8 @@ export default class LogAuditService {
       }
       filter["actor.type"] = query.actorType;
     }
-    if (query.actorName) filter["actor.name"] = query.actorName;
+    const actorName = partialTextPattern(query.actorName);
+    if (actorName) filter["actor.name"] = actorName;
 
     const occurredAt = buildDateRange(query.from, query.to);
     if (occurredAt) filter.occurredAt = occurredAt;
@@ -164,6 +166,17 @@ function parseNumber(value: string, name: string) {
   const number = Number(value);
   if (!Number.isFinite(number)) throw invalidInput(`${name} must be a number`);
   return number;
+}
+
+function partialTextPattern(value?: string) {
+  const normalized = value?.trim();
+  return normalized
+    ? new RegExp(escapeRegex(normalized), "i")
+    : undefined;
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function invalidInput(message: string) {
