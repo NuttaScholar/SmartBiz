@@ -1,13 +1,7 @@
-import CloseIcon from "@mui/icons-material/Close";
 import {
   Box,
   Chip,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Divider,
-  IconButton,
-  Paper,
   Stack,
   Typography,
 } from "@mui/material";
@@ -16,6 +10,15 @@ import {
   LogAudit_t,
   TransactionSnapshot_t,
 } from "../../../API/AccountService/type";
+import {
+  AuditChangedFields,
+  AuditComparisonGrid,
+  AuditDetailDialogFrame,
+  AuditInfo,
+  AuditInfoGrid,
+  AuditPaper,
+  AuditSnapshotCard,
+} from "../../../component/Molecules/AuditDetail";
 import { transactionType_e } from "../../../enum";
 
 const ACTION_COLORS: Record<AuditAction_t, "success" | "warning" | "error"> = {
@@ -34,102 +37,79 @@ export default function AuditDetailDialog({
   onClose,
 }: AuditDetailDialogProps) {
   return (
-    <Dialog open={Boolean(log)} onClose={onClose} fullWidth maxWidth="md">
+    <AuditDetailDialogFrame
+      open={Boolean(log)}
+      onClose={onClose}
+      title="รายละเอียดประวัติ"
+      badge={
+        log && (
+          <Chip
+            size="small"
+            label={actionLabel(log.action)}
+            color={ACTION_COLORS[log.action]}
+          />
+        )
+      }
+    >
       {log && (
         <>
-          <DialogTitle sx={{ pr: 6 }}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip
-                size="small"
-                label={actionLabel(log.action)}
-                color={ACTION_COLORS[log.action]}
-              />
-              <Typography variant="h6">รายละเอียดประวัติ</Typography>
-            </Stack>
-            <IconButton
-              aria-label="ปิด"
-              onClick={onClose}
-              sx={{
-                position: "absolute",
-                right: 8,
-                top: 8,
-                color: "grey.500",
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent dividers>
-            <Stack spacing={2}>
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
-                  gap: 1,
-                }}
-              >
-                <Info
-                  label="วันและเวลา"
-                  value={formatDateTime(log.occurredAt)}
-                />
-                <Info
-                  label="ผู้ดำเนินการ"
-                  value={`${log.actor.name} (${log.actor.type})`}
-                />
-                <Info label="Transaction ID" value={log.transactionId} mono />
-                <Info label="หมดอายุ" value={formatDateTime(log.expiresAt)} />
-              </Box>
-              <Divider />
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
-                  gap: 1.5,
-                }}
-              >
-                <Paper variant="outlined" sx={{ p: 1.5 }}>
-                  <Typography color="text.secondary" variant="caption">
-                    ยอด Wallet ก่อนทำรายการ
-                  </Typography>
-                  <Typography variant="h5">
-                    {formatMoney(log.wallet.beforeAmount)}
-                  </Typography>
-                </Paper>
-                <Paper variant="outlined" sx={{ p: 1.5 }}>
-                  <Typography color="text.secondary" variant="caption">
-                    ยอด Wallet หลังทำรายการ
-                  </Typography>
-                  <Typography variant="h5">
-                    {formatMoney(log.wallet.afterAmount)}
-                  </Typography>
-                </Paper>
-              </Box>
-              <Stack direction="row" flexWrap="wrap" gap={0.5}>
-                {log.changedFields.map((field) => (
-                  <Chip key={field} size="small" label={field} />
-                ))}
-              </Stack>
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" },
-                  gap: 1.5,
-                }}
-              >
-                <Snapshot
-                  title="ข้อมูลก่อนทำรายการ"
-                  value={log.transactionBefore}
-                />
-                <Snapshot
-                  title="ข้อมูลหลังทำรายการ"
-                  value={log.transactionAfter}
-                />
-              </Box>
-            </Stack>
-          </DialogContent>
+          <AuditInfoGrid>
+            <AuditInfo
+              label="วันและเวลา"
+              value={formatDateTime(log.occurredAt)}
+            />
+            <AuditInfo
+              label="ผู้ดำเนินการ"
+              value={`${log.actor.name} (${log.actor.type})`}
+            />
+            <AuditInfo
+              label="Transaction ID"
+              value={log.transactionId}
+            />
+            <AuditInfo
+              label="หมดอายุ"
+              value={formatDateTime(log.expiresAt)}
+            />
+          </AuditInfoGrid>
+          <Divider />
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+              gap: 1.5,
+            }}
+          >
+            <AuditPaper sx={{ p: 1.5 }}>
+              <Typography color="text.secondary" variant="caption">
+                ยอด Wallet ก่อนทำรายการ
+              </Typography>
+              <Typography variant="h5">
+                {formatMoney(log.wallet.beforeAmount)}
+              </Typography>
+            </AuditPaper>
+            <AuditPaper sx={{ p: 1.5 }}>
+              <Typography color="text.secondary" variant="caption">
+                ยอด Wallet หลังทำรายการ
+              </Typography>
+              <Typography variant="h5">
+                {formatMoney(log.wallet.afterAmount)}
+              </Typography>
+            </AuditPaper>
+          </Box>
+          <AuditChangedFields fields={log.changedFields} />
+          <AuditComparisonGrid>
+            <Snapshot
+              title="ข้อมูลก่อนทำรายการ"
+              value={log.transactionBefore}
+            />
+            <Snapshot
+              title="ข้อมูลหลังทำรายการ"
+              value={log.transactionAfter}
+            />
+          </AuditComparisonGrid>
         </>
       )}
-    </Dialog>
+    </AuditDetailDialogFrame>
   );
 }
 
@@ -141,54 +121,22 @@ function Snapshot({
   value: TransactionSnapshot_t | null;
 }) {
   return (
-    <Paper variant="outlined" sx={{ p: 1.5 }}>
-      <Typography variant="subtitle1" fontWeight={500} sx={{ mb: 1 }}>
-        {title}
-      </Typography>
-      {!value ? (
-        <Typography color="text.secondary">ไม่มีข้อมูล</Typography>
-      ) : (
+    <AuditSnapshotCard title={title} hasData={Boolean(value)}>
+      {value && (
         <Stack spacing={0.75}>
-          <Info label="วันที่รายการ" value={formatDateTime(value.date)} />
-          <Info label="หัวข้อ" value={value.topic} />
-          <Info label="ประเภท" value={transactionTypeLabel(value.type)} />
-          <Info label="จำนวนเงิน" value={formatMoney(value.money)} />
-          <Info label="ผู้ติดต่อ" value={value.who || "-"} />
-          <Info label="รายละเอียด" value={value.description || "-"} />
-          <Info
+          <AuditInfo label="วันที่รายการ" value={formatDateTime(value.date)} />
+          <AuditInfo label="หัวข้อ" value={value.topic} />
+          <AuditInfo label="ประเภท" value={transactionTypeLabel(value.type)} />
+          <AuditInfo label="จำนวนเงิน" value={formatMoney(value.money)} />
+          <AuditInfo label="ผู้ติดต่อ" value={value.who || "-"} />
+          <AuditInfo label="รายละเอียด" value={value.description || "-"} />
+          <AuditInfo
             label="สถานะ"
             value={value.readonly ? "อ่านอย่างเดียว" : "แก้ไขได้"}
           />
         </Stack>
       )}
-    </Paper>
-  );
-}
-
-function Info({
-  label,
-  value,
-  mono = false,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <Box>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography
-        variant="body2"
-        sx={{
-          overflowWrap: "anywhere",
-          fontFamily: mono ? "monospace" : undefined,
-        }}
-      >
-        {value}
-      </Typography>
-    </Box>
+    </AuditSnapshotCard>
   );
 }
 
