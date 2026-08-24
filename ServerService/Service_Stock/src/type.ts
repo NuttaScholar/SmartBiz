@@ -43,6 +43,7 @@ export type stockAdjustmentResult_t = {
   }>;
 }
 export type logInfo_t = {
+  id?: string;
   productID: string;
   amount: number;
   type: stockLogType_e,
@@ -50,6 +51,11 @@ export type logInfo_t = {
   price?: number;
   bill?: string;
   note?: string;
+}
+export type stockLogUpdateForm_t = {
+  amount: number;
+  price?: number | null;
+  note?: string | null;
 }
 export type logReq_t = {
   id: string;

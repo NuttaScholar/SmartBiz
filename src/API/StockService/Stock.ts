@@ -1,5 +1,5 @@
 import { axios_stock } from "../../lib/axios";
-import { formProduct_t, LogAuditQuery_t, logReq_t, queryProduct_t, responst_t, stockInForm_t, stockOutForm_t, stockReq_t } from "./type";
+import { formProduct_t, LogAuditQuery_t, logReq_t, queryProduct_t, responst_t, stockInForm_t, stockLogUpdateForm_t, stockOutForm_t, stockReq_t } from "./type";
 
 export async function postProduct(
     token: string,
@@ -165,6 +165,18 @@ export async function getStock(
         throw err;
     }
 }
+export async function putLog(
+    token: string,
+    data: stockLogUpdateForm_t
+): Promise<responst_t<"none">> {
+    const { id, ...body } = data;
+    const res = await axios_stock.put(
+        `/log/${encodeURIComponent(id)}`,
+        body,
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data as responst_t<"none">;
+}
 
 function buildStockQuery(condition?: stockReq_t) {
     if (!condition || condition.productType === undefined) return "";
@@ -249,6 +261,7 @@ const Stock_f = {
     putProduct,
     getStatus,
     getLog,
+    putLog,
     getStock,
     postStockOut,
     postStockIn,

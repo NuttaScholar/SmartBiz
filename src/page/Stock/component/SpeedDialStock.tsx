@@ -28,7 +28,7 @@ const SpeedDial_Stock: React.FC = () => {
       { text: "Create", icon: <AddIcon /> },
       { text: "Stock In", icon: <DownloadIcon />, path: "/stock/in" },
       { text: "Stock Out", icon: <UploadIcon />, path: "/stock/out" },
-      { text: "History", icon: <HistoryIcon />, path: "/stock/history" },
+      { text: "History", icon: <HistoryIcon />, path: "/stock/audit" },
       { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
     ],
     [],

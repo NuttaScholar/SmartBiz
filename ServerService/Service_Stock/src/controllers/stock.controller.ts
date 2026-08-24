@@ -10,7 +10,7 @@ import {
 } from "../middlewares/auth";
 import StockService from "../services/stock.service";
 import StorageService from "../services/storage.service";
-import { stockAdjustmentForm_t, stockOutForm_t } from "../type";
+import { stockAdjustmentForm_t, stockLogUpdateForm_t, stockOutForm_t } from "../type";
 import { errorCode_e, role_e } from "../utils/enum";
 import { getAuditActor, handleError } from "./product.controller";
 
@@ -71,6 +71,20 @@ export default class StockController {
       this.ensureAdmin(req, "stock.log.read");
       const { id, type, index, size } = req.query;
       const result = await this.service.getLog(id as string, type as string, index as string, size as string);
+      return res.json({ success: true, data: result });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
+  async updateLog(req: AuthRequest, res: Response) {
+    try {
+      this.ensureAdmin(req, "stock.log.update");
+      const result = await this.service.updateLog(
+        req.params.id,
+        req.body as stockLogUpdateForm_t,
+        getAuditActor(req),
+      );
       return res.json({ success: true, data: result });
     } catch (err: any) {
       return handleError(res, err);

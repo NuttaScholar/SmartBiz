@@ -1,4 +1,4 @@
-import { ClientSession, Model } from "mongoose";
+import { ClientSession, isValidObjectId, Model } from "mongoose";
 import axios from "axios";
 import { BILL_BUCKET, DEFAULT_BUCKET, MINIO_HOST, SERVICE_BILL_URL } from "../config";
 import { LogDocument } from "../models/log.interface";
@@ -23,6 +23,7 @@ import {
   stockAdjustmentItem_t,
   stockAdjustmentResult_t,
   stockForm_t,
+  stockLogUpdateForm_t,
   stockOutForm_t,
 } from "../type";
 import { errorCode_e, productType_e, stockLogType_e, stockStatus_e } from "../utils/enum";
@@ -418,6 +419,132 @@ export default class StockService {
     };
   }
 
+  async updateLog(
+    id: string | undefined,
+    data: stockLogUpdateForm_t,
+    actor: AuditActor,
+  ) {
+    if (!id || !isValidObjectId(id)) {
+      throw { code: errorCode_e.InvalidInputError, message: "Valid log id is required" };
+    }
+    const amount = Number(data?.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw { code: errorCode_e.InvalidInputError, message: "amount must be greater than zero" };
+    }
+
+    const session = await this.productRepo.startSession();
+    try {
+      let result: logInfo_t | undefined;
+      await session.withTransaction(async () => {
+        const log = await this.logRepo.findById(id, session);
+        if (!log) {
+          throw { code: errorCode_e.NotFoundError, message: "Stock log not found" };
+        }
+        if (log.type !== stockLogType_e.in && log.type !== stockLogType_e.out) {
+          throw { code: errorCode_e.InvalidStateError, message: "Invalid stock log type" };
+        }
+
+        const product = await this.productRepo.findById(log.productID, session);
+        if (!product) {
+          throw { code: errorCode_e.NotFoundError, message: "Product not found" };
+        }
+        const currentAmount = Number(product.amount);
+        const previousLogAmount = Number(log.amount);
+        if (!Number.isFinite(currentAmount) || !Number.isFinite(previousLogAmount)) {
+          throw { code: errorCode_e.InvalidStateError, message: "Invalid stock amount" };
+        }
+
+        const nextProductAmount = log.type === stockLogType_e.in
+          ? currentAmount + amount - previousLogAmount
+          : currentAmount + previousLogAmount - amount;
+        if (nextProductAmount < 0) {
+          throw {
+            code: errorCode_e.InvalidStateError,
+            message: "The edited amount would make stock negative",
+          };
+        }
+
+        const logUpdate: Partial<logInfo_t> = { amount };
+        const unsetFields: Array<"price" | "note"> = [];
+        if (log.type === stockLogType_e.in && data.price !== undefined) {
+          if (data.price === null) {
+            unsetFields.push("price");
+          } else {
+            const price = Number(data.price);
+            if (!Number.isFinite(price) || price < 0) {
+              throw { code: errorCode_e.InvalidInputError, message: "price must be non-negative" };
+            }
+            logUpdate.price = price;
+          }
+        }
+        if (log.type === stockLogType_e.out && data.note !== undefined) {
+          const note = typeof data.note === "string" ? data.note.trim() : "";
+          if (note) logUpdate.note = note;
+          else unsetFields.push("note");
+        }
+
+        const before = toProductSnapshot(product);
+        const updatedProduct = await this.productRepo.updateById(
+          product.id,
+          {
+            amount: nextProductAmount,
+            status: this.resolveStockStatus(
+              nextProductAmount,
+              Number(product.condition ?? 0),
+            ),
+          },
+          session,
+        );
+        const updatedLog = await this.logRepo.updateById(
+          id,
+          logUpdate,
+          unsetFields,
+          session,
+        );
+        if (!updatedProduct || !updatedLog) {
+          throw { code: errorCode_e.NotFoundError, message: "Stock log not found" };
+        }
+
+        const stockLog: StockLogSnapshot = {
+          amount: updatedLog.amount,
+          type: updatedLog.type,
+          date: updatedLog.date,
+          price: updatedLog.price,
+          bill: updatedLog.bill,
+          note: updatedLog.note,
+        };
+        const stockLogChangedFields = (["amount", "price", "note"] as const)
+          .filter((field) => log[field] !== updatedLog[field])
+          .map((field) => `stockLog.${field}`);
+        await this.writeAudit(
+          "UPDATE",
+          updatedLog.type === stockLogType_e.in ? "STOCK_IN" : "STOCK_OUT",
+          updatedLog.productID,
+          actor,
+          before,
+          toProductSnapshot(updatedProduct),
+          stockLog,
+          ["products", "logs"],
+          session,
+          stockLogChangedFields,
+        );
+        result = {
+          id: updatedLog.id,
+          productID: updatedLog.productID,
+          amount: updatedLog.amount,
+          type: updatedLog.type,
+          date: updatedLog.date,
+          price: updatedLog.price,
+          bill: updatedLog.bill,
+          note: updatedLog.note,
+        };
+      }, this.transactionOptions());
+      return result;
+    } finally {
+      await session.endSession();
+    }
+  }
+
   getStatus() {
     return this.productRepo.getStockStatus();
   }
@@ -674,6 +801,7 @@ export default class StockService {
     stockLog: StockLogSnapshot | null,
     affectedCollections: string[],
     session: ClientSession,
+    additionalChangedFields: string[] = [],
   ) {
     const { occurredAt, expiresAt } = getAuditDates();
     await this.logAuditRepo.create({
@@ -682,7 +810,12 @@ export default class StockService {
       operation,
       actor,
       affectedCollections,
-      changedFields: getChangedFields(before, after),
+      changedFields: [
+        ...new Set([
+          ...getChangedFields(before, after),
+          ...additionalChangedFields,
+        ]),
+      ],
       productBefore: before,
       productAfter: after,
       stockLog,

@@ -17,7 +17,6 @@ export enum stockDialog_e {
   none,
   productForm,
   editForm,
-  logs,
 }
 export type billForm_t = {
   img?: File | null;

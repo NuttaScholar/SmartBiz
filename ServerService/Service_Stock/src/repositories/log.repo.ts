@@ -9,6 +9,28 @@ export default class LogRepo {
     return this.LogModel.insertMany(logs, { session });
   }
 
+  findById(id: string, session?: ClientSession) {
+    const query = this.LogModel.findById(id);
+    return session ? query.session(session) : query;
+  }
+
+  updateById(
+    id: string,
+    data: Partial<logInfo_t>,
+    unsetFields: Array<"price" | "note">,
+    session?: ClientSession,
+  ) {
+    const update: Record<string, unknown> = { $set: data };
+    if (unsetFields.length) {
+      update.$unset = Object.fromEntries(unsetFields.map((field) => [field, 1]));
+    }
+    return this.LogModel.findByIdAndUpdate(id, update, {
+      new: true,
+      session,
+      runValidators: true,
+    });
+  }
+
   countByProduct(productID: string, type: number) {
     return this.LogModel.countDocuments({ productID, type });
   }
@@ -22,6 +44,7 @@ export default class LogRepo {
       {
         $project: {
           _id: 0,
+          id: { $toString: "$_id" },
           productID: "$productID",
           amount: "$amount",
           type: "$type",

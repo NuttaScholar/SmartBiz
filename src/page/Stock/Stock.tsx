@@ -12,10 +12,11 @@ import SpeedDial_Stock from "./component/SpeedDialStock";
 import DialogFormProduct from "./component/DialogFormProduct";
 import StockListHeader from "./component/StockListHeader";
 import { productInfo_t } from "../../API/StockService/type";
-import DialogHistory from "./component/DialogHistory";
+import { useNavigate } from "react-router-dom";
 
 const Page_Stock: React.FC = () => {
   const [state, setState] = React.useState<stock_t>(StockDefaultState);
+  const navigate = useNavigate();
   const onClickList = (edit: boolean, value: productInfo_t) => {
     if (edit) {
       setState({
@@ -24,11 +25,7 @@ const Page_Stock: React.FC = () => {
         productForm: value,
       });
     } else {
-      setState({
-        ...state,
-        dialogOpen: stockDialog_e.logs,
-        productForm: value,
-      });
+      navigate(`/stock/history/${encodeURIComponent(value.id)}`);
     }
   };
   return (
@@ -41,7 +38,6 @@ const Page_Stock: React.FC = () => {
 
         <SpeedDial_Stock />
       </AppBar_c>
-      <DialogHistory />
       <DialogFormProduct />
     </StockContext.Provider>
   );

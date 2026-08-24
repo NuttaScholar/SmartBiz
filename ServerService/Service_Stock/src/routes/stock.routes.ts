@@ -25,6 +25,7 @@ export default function stockRoutes(
   router.post("/stock_out", (req, res) => controller.stockOut(req, res));
   router.post("/stock/adjust", (req, res) => controller.adjustStock(req, res));
   router.get("/log", (req, res) => controller.getLog(req, res));
+  router.put("/log/:id", (req, res) => controller.updateLog(req, res));
   router.get("/status", (req, res) => controller.getStatus(req, res));
   router.get("/stock", (req, res) => controller.getStock(req, res));
 

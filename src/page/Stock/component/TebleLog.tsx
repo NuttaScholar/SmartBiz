@@ -23,6 +23,7 @@ import {
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
 } from "../../../lib/authRedirect";
+import StockLogEditDialog from "./StockLogEditDialog";
 
 //*********************************************
 // Type
@@ -37,6 +38,7 @@ type headerTable_t = {
 //*********************************************
 interface myProps {
   productID: string;
+  onLogUpdated?: () => void;
 }
 //*********************************************
 // Header Table
@@ -74,6 +76,8 @@ const TebleLog: React.FC<myProps> = (props) => {
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [page, setPage] = React.useState(0);
   const [totalRows, setTotalRows] = React.useState(0);
+  const [selectedLog, setSelectedLog] = React.useState<logInfo_t>();
+  const [reloadKey, setReloadKey] = React.useState(0);
   // Local function **************************
   const handleChangePage = (_event: unknown, newPage: number) => {  
     setPage(newPage);
@@ -131,7 +135,7 @@ const TebleLog: React.FC<myProps> = (props) => {
 
         console.error("Get log error:", err);
       });
-  }, [auth, navigate, tab, props.productID, page, rowsPerPage]);
+  }, [auth, navigate, tab, props.productID, page, rowsPerPage, reloadKey]);
   // UI  ************************************
   return (
     <>
@@ -175,11 +179,23 @@ const TebleLog: React.FC<myProps> = (props) => {
             <TableBody>
               {rows.length > 0 ?
                 rows
-                .map((row, index) => (
+                .map((row) => (
                   <TableRow
                     hover
-                    key={index}
-                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                    key={row.id}
+                    tabIndex={0}
+                    role="button"
+                    onClick={() => setSelectedLog(row)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedLog(row);
+                      }
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                      "&:last-child td, &:last-child th": { border: 0 },
+                    }}
                   >
                     <TableCell
                       sx={{ py: 0, height: "50px" }}
@@ -198,7 +214,12 @@ const TebleLog: React.FC<myProps> = (props) => {
                     )}
                     <TableCell sx={{ py: 0, height: "50px" }} align="right">
                       {tab === 0 ? (
-                        <IconButton onClick={() => onOpenImg(row.bill || "")}>
+                        <IconButton
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onOpenImg(row.bill || "");
+                          }}
+                        >
                           <TopicIcon />
                         </IconButton>
                       ) : (
@@ -224,6 +245,15 @@ const TebleLog: React.FC<myProps> = (props) => {
         />
       </TabBox>
       <DialogShowImg open={open} img={img} onClose={() => setOpen(false)} />
+      <StockLogEditDialog
+        log={selectedLog}
+        onClose={() => setSelectedLog(undefined)}
+        onSaved={() => {
+          setSelectedLog(undefined);
+          setReloadKey((current) => current + 1);
+          props.onLogUpdated?.();
+        }}
+      />
     </>
   );
 };
