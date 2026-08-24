@@ -234,6 +234,7 @@ export default class StockService {
   async stockIn(
     productsText: string | undefined,
     who: string | undefined,
+    requestedDate: string | undefined,
     actor: AuditActor,
     file?: Express.Multer.File,
   ) {
@@ -242,14 +243,19 @@ export default class StockService {
     }
 
     const products = JSON.parse(productsText) as stockForm_t[];
-    const date = new Date();
+    const date = this.normalizeTransactionDate(requestedDate);
     const imgKey = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, "0")}${date
       .getDate()
       .toString()
       .padStart(2, "0")}`;
     const uploadedBill = await this.storageService.uploadImage(file.buffer, BILL_BUCKET, imgKey);
 
-    const transactionRes = await this.transactionService.postStockIn(products, uploadedBill.url, who);
+    const transactionRes = await this.transactionService.postStockIn(
+      products,
+      uploadedBill.url,
+      date,
+      who,
+    );
     if (!transactionRes.success) {
       throw { code: transactionRes.errCode || errorCode_e.UnknownError, message: "Create transaction failed" };
     }
@@ -276,7 +282,7 @@ export default class StockService {
   }
 
   async stockOut(data: stockOutForm_t, actor: AuditActor) {
-    const date = new Date();
+    const date = this.normalizeTransactionDate(data?.date);
     const session = await this.productRepo.startSession();
     try {
       let errors: stockForm_t[] = [];
@@ -465,6 +471,9 @@ export default class StockService {
         }
 
         const logUpdate: Partial<logInfo_t> = { amount };
+        if (data.date !== undefined) {
+          logUpdate.date = this.normalizeTransactionDate(data.date);
+        }
         const unsetFields: Array<"price" | "note"> = [];
         if (log.type === stockLogType_e.in && data.price !== undefined) {
           if (data.price === null) {
@@ -516,6 +525,9 @@ export default class StockService {
         const stockLogChangedFields = (["amount", "price", "note"] as const)
           .filter((field) => log[field] !== updatedLog[field])
           .map((field) => `stockLog.${field}`);
+        if (new Date(log.date).getTime() !== new Date(updatedLog.date).getTime()) {
+          stockLogChangedFields.push("stockLog.date");
+        }
         await this.writeAudit(
           "UPDATE",
           updatedLog.type === stockLogType_e.in ? "STOCK_IN" : "STOCK_OUT",
@@ -711,6 +723,18 @@ export default class StockService {
     }
     const trimmed = value.trim();
     return trimmed || undefined;
+  }
+
+  private normalizeTransactionDate(value: unknown) {
+    if (value === undefined || value === null || value === "") return new Date();
+    if (typeof value !== "string" && !(value instanceof Date)) {
+      throw { code: errorCode_e.InvalidInputError, message: "date must be a valid date" };
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw { code: errorCode_e.InvalidInputError, message: "date must be a valid date" };
+    }
+    return date;
   }
 
   private requireInventoryValue(value: unknown, fieldName: string) {

@@ -8,7 +8,12 @@ import { createServiceToken } from "../utils/service-token";
 export default class TransactionService {
   constructor(private productRepo: ProductRepo) {}
 
-  async postStockIn(list: stockForm_t[], bill: string, who?: string): Promise<responst_t<"none">> {
+  async postStockIn(
+    list: stockForm_t[],
+    bill: string,
+    date: Date,
+    who?: string,
+  ): Promise<responst_t<"none">> {
     try {
       let amount = 0;
       let description = "";
@@ -21,9 +26,8 @@ export default class TransactionService {
         amount += item.price || 0;
       }
 
-      const date = new Date();
       const data: TransitionForm_t = {
-        date: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
+        date,
         topic: "Stock In",
         type: transactionType_e.expenses,
         money: amount,

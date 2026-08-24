@@ -29,8 +29,18 @@ export default class StockController {
   async stockIn(req: AuthRequest, res: Response) {
     try {
       this.ensureAdmin(req, "stock.inventory.in");
-      const { products, who } = req.body as { products?: string; who?: string };
-      const errors = await this.service.stockIn(products, who, getAuditActor(req), req.file);
+      const { products, who, date } = req.body as {
+        products?: string;
+        who?: string;
+        date?: string;
+      };
+      const errors = await this.service.stockIn(
+        products,
+        who,
+        date,
+        getAuditActor(req),
+        req.file,
+      );
       return res.json({
         success: true,
         ...(errors.length ? { data: errors, message: "Completed with warnings" } : {}),

@@ -31,19 +31,34 @@ interface myProps {
 const FormStockHeader: React.FC<myProps> = (props) => {
   // Hook *********************
   const { state, setState } = useStockContext();
-  // Local Variable *****************
-  const nowDate = new Date();
   // Local Function *****************
+  const onChangeDate = (value: import("dayjs").Dayjs | null) => {
+    setState({
+      ...state,
+      billForm: {
+        ...state.billForm,
+        date: value?.isValid() ? value.toDate() : undefined,
+      },
+    });
+  };
   const onChangeImage = (file: File | null) => {
     setState({ ...state, billForm: { ...state.billForm, img: file } });
   };
   const onChangeDecs = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    setState({ ...state, billForm: { description: value } });
+    setState({
+      ...state,
+      billForm: { ...state.billForm, description: value },
+    });
   };
   return (
     <Field direction="column">
-      <FieldDate defaultValue={nowDate} label="Date" hideField readonly />
+      <FieldDate
+        defaultValue={state.billForm?.date}
+        label="วันที่"
+        hideField
+        onChange={onChangeDate}
+      />
       {props.type === "in" ? (
         <Box sx={{ display: "flex", flexDirection: "column" }}>
           <FieldContactAccess

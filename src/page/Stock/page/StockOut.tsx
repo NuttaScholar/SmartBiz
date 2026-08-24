@@ -33,7 +33,10 @@ export default function Page_StockOut() {
   // Hook ************************************
   const authContext = useAuth();
   const nevigate = useNavigate();
-  const [state, setState] = React.useState<stock_t>(StockDefaultState);
+  const [state, setState] = React.useState<stock_t>(() => ({
+    ...StockDefaultState,
+    billForm: { date: startOfToday() },
+  }));
   const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
 
   // Local function **************************
@@ -72,6 +75,10 @@ export default function Page_StockOut() {
     }
   };
   const onSave = () => {
+    if (!state.billForm?.date) {
+      alert("กรุณาระบุวันที่");
+      return;
+    }
     if (
       state.billForm?.description === undefined ||
       state.billForm.description === ""
@@ -93,6 +100,7 @@ export default function Page_StockOut() {
       price: item.price,
     }));
     const data: stockOutForm_t = {
+      date: state.billForm.date,
       note: state.billForm.description,
       products: list,
     };
@@ -202,4 +210,9 @@ export default function Page_StockOut() {
       <DialogStockEdit type="out" listOption={listOption} />
     </StockContext.Provider>
   );
+}
+
+function startOfToday() {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate());
 }

@@ -33,7 +33,10 @@ export default function Page_StockIn() {
   // Hook ************************************
   const authContext = useAuth();
   const nevigate = useNavigate();
-  const [state, setState] = React.useState<stock_t>(StockDefaultState);
+  const [state, setState] = React.useState<stock_t>(() => ({
+    ...StockDefaultState,
+    billForm: { date: startOfToday() },
+  }));
   const navigate = useNavigate();
   const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
   // Local function **************************
@@ -58,6 +61,10 @@ export default function Page_StockIn() {
     }
   };
   const onSave = () => {
+    if (!state.billForm?.date) {
+      alert("กรุณาระบุวันที่");
+      return;
+    }
     if (state.billForm?.img === undefined || state.billForm.img === null) {
       alert("กรุณาแนบรูปใบเสร็จรับเงิน");
       return;
@@ -72,6 +79,7 @@ export default function Page_StockIn() {
       price: item.price,
     }));
     const data: stockInForm_t = {
+      date: state.billForm.date,
       bill_Img: state.billForm.img,
       products: list,
       who: state.billForm?.who,
@@ -176,4 +184,9 @@ export default function Page_StockIn() {
       <DialogStockEdit type="in" />
     </StockContext.Provider>
   );
+}
+
+function startOfToday() {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate());
 }

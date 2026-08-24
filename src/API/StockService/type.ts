@@ -42,6 +42,7 @@ export type logInfo_t = {
 }
 export type stockLogUpdateForm_t = {
   id: string;
+  date: Date;
   amount: number;
   price?: number | null;
   note?: string | null;
@@ -95,10 +96,12 @@ export type stockForm_t = {
   price?: number;
 }
 export type stockOutForm_t = {
+  date: Date;
   note?: string;
   products: stockForm_t[];
 }
 export type stockInForm_t = {
+  date: Date;
   bill_Img?: File | null;
   products: stockForm_t[];
   who?: string;

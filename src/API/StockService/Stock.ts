@@ -210,8 +210,9 @@ export async function postStockIn(token: string,
     data: stockInForm_t): Promise<responst_t<"postStock">> {
     try {
         const formData = new FormData();
-        const { bill_Img, who, ...rest } = data;
+        const { bill_Img, who, date, ...rest } = data;
         formData.append("products", JSON.stringify(rest.products));
+        formData.append("date", date.toISOString());
         who && formData.append("who", who);
         bill_Img && formData.append("file", bill_Img);
         const res = await axios_stock.post(

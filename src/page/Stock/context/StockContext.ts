@@ -19,6 +19,7 @@ export enum stockDialog_e {
   editForm,
 }
 export type billForm_t = {
+  date?: Date;
   img?: File | null;
   description?: string;
   who?: string;

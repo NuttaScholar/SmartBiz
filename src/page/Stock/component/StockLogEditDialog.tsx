@@ -8,6 +8,8 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs, { Dayjs } from "dayjs";
 import React from "react";
 import { logInfo_t } from "../../../API/StockService/type";
 import { stockLogType_e } from "../../../enum";
@@ -29,6 +31,7 @@ type Props = {
 export default function StockLogEditDialog({ log, onClose, onSaved }: Props) {
   const authContext = useAuth();
   const navigate = useNavigate();
+  const [date, setDate] = React.useState<Dayjs | null>(null);
   const [amount, setAmount] = React.useState("");
   const [price, setPrice] = React.useState("");
   const [note, setNote] = React.useState("");
@@ -36,6 +39,7 @@ export default function StockLogEditDialog({ log, onClose, onSaved }: Props) {
   const [error, setError] = React.useState("");
 
   React.useEffect(() => {
+    setDate(log ? dayjs(log.date) : null);
     setAmount(log ? String(log.amount) : "");
     setPrice(log?.price !== undefined ? String(log.price) : "");
     setNote(log?.note ?? "");
@@ -44,6 +48,10 @@ export default function StockLogEditDialog({ log, onClose, onSaved }: Props) {
 
   async function handleSave() {
     if (!log) return;
+    if (!date?.isValid()) {
+      setError("กรุณาระบุวันที่ให้ถูกต้อง");
+      return;
+    }
     const parsedAmount = Number(amount);
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       setError("จำนวนต้องมากกว่า 0");
@@ -64,6 +72,7 @@ export default function StockLogEditDialog({ log, onClose, onSaved }: Props) {
     try {
       const response = await stockWithRetry_f.putLog(authContext, {
         id: log.id,
+        date: date.toDate(),
         amount: parsedAmount,
         ...(log.type === stockLogType_e.in
           ? { price: parsedPrice }
@@ -96,6 +105,13 @@ export default function StockLogEditDialog({ log, onClose, onSaved }: Props) {
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           {error && <Alert severity="error">{error}</Alert>}
+          <DatePicker
+            label="วันที่"
+            value={date}
+            onChange={setDate}
+            format="DD/MM/YYYY"
+            slotProps={{ textField: { required: true, fullWidth: true } }}
+          />
           <TextField
             autoFocus
             required
