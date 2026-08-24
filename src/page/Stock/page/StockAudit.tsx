@@ -34,7 +34,7 @@ const EMPTY_STOCK_AUDIT_FILTERS: StockAuditHistoryFilters_t = {
   to: null,
 };
 
-export default function Page_StockHistory() {
+export default function Page_StockAudit() {
   const navigate = useNavigate();
   const authContext = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));

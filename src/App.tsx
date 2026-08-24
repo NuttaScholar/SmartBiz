@@ -40,7 +40,7 @@ const Page_SetPass = lazy(() => import("./page/SetPass"));
 const Page_Stock = lazy(() => import("./page/Stock/Stock"));
 const Page_StockIn = lazy(() => import("./page/Stock/page/StockIn"));
 const Page_StockOut = lazy(() => import("./page/Stock/page/StockOut"));
-const Page_StockHistory = lazy(() => import("./page/Stock/page/StockHistory"));
+const Page_StockAudit = lazy(() => import("./page/Stock/page/StockAudit"));
 const PageDemo = lazy(() => import("./page/test"));
 
 
@@ -117,7 +117,7 @@ function App() {
                 <Route index element={<Page_Stock />} />
                 <Route path="in" element={<Page_StockIn />} />
                 <Route path="out" element={<Page_StockOut />} />
-                <Route path="history" element={<Page_StockHistory />} />
+                <Route path="history" element={<Page_StockAudit />} />
               </Route>
               <Route path="/setuser" element={<Page_SetUser />} />
               <Route path="/setpass" element={<Page_SetPass />} />
