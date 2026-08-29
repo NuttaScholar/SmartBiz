@@ -101,6 +101,16 @@ export default class StockController {
     }
   }
 
+  async deleteLog(req: AuthRequest, res: Response) {
+    try {
+      this.ensureAdmin(req, "stock.log.delete");
+      await this.service.deleteLog(req.params.id, getAuditActor(req));
+      return res.json({ success: true });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
   async getStatus(req: AuthRequest, res: Response) {
     try {
       this.ensureAdmin(req, "stock.status.read");

@@ -8,6 +8,7 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
 import React from "react";
@@ -36,7 +37,9 @@ export default function StockLogEditDialog({ log, onClose, onSaved }: Props) {
   const [price, setPrice] = React.useState("");
   const [note, setNote] = React.useState("");
   const [saving, setSaving] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
   const [error, setError] = React.useState("");
+  const busy = saving || deleting;
 
   React.useEffect(() => {
     setDate(log ? dayjs(log.date) : null);
@@ -97,8 +100,36 @@ export default function StockLogEditDialog({ log, onClose, onSaved }: Props) {
     }
   }
 
+  async function handleDelete() {
+    if (!log || !window.confirm("ยืนยันการลบรายการนี้? การลบจะปรับยอดสต็อกกลับโดยอัตโนมัติ")) {
+      return;
+    }
+
+    setDeleting(true);
+    setError("");
+    try {
+      const response = await stockWithRetry_f.delLog(authContext, log.id);
+      if (response.success) {
+        onSaved();
+        return;
+      }
+      if (redirectToLoginOnAuthError(navigate, response.errCode)) return;
+      setError(
+        response.errCode !== undefined
+          ? ErrorString(response.errCode)
+          : "ไม่สามารถลบรายการได้",
+      );
+    } catch (requestError) {
+      if (!redirectToLoginOnThrownAuthError(navigate, requestError)) {
+        setError("ไม่สามารถเชื่อมต่อบริการสต็อกได้");
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
-    <Dialog open={Boolean(log)} onClose={saving ? undefined : onClose} fullWidth maxWidth="xs">
+    <Dialog open={Boolean(log)} onClose={busy ? undefined : onClose} fullWidth maxWidth="xs">
       <DialogTitle>
         แก้ไขรายการ{log?.type === stockLogType_e.in ? "เติมสต็อก" : "ตัดสต็อก"}
       </DialogTitle>
@@ -144,8 +175,17 @@ export default function StockLogEditDialog({ log, onClose, onSaved }: Props) {
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={saving}>ยกเลิก</Button>
-        <Button onClick={handleSave} disabled={saving} variant="contained">
+        <Button
+          onClick={handleDelete}
+          disabled={busy}
+          color="error"
+          startIcon={<DeleteIcon />}
+          sx={{ mr: "auto" }}
+        >
+          {deleting ? "กำลังลบ..." : "ลบรายการ"}
+        </Button>
+        <Button onClick={onClose} disabled={busy}>ยกเลิก</Button>
+        <Button onClick={handleSave} disabled={busy} variant="contained">
           {saving ? "กำลังบันทึก..." : "บันทึก"}
         </Button>
       </DialogActions>

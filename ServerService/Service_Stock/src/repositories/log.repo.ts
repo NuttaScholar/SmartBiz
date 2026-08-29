@@ -31,6 +31,10 @@ export default class LogRepo {
     });
   }
 
+  deleteById(id: string, session?: ClientSession) {
+    return this.LogModel.findByIdAndDelete(id, { session });
+  }
+
   countByProduct(productID: string, type: number) {
     return this.LogModel.countDocuments({ productID, type });
   }

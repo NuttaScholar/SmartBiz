@@ -557,6 +557,85 @@ export default class StockService {
     }
   }
 
+  async deleteLog(id: string | undefined, actor: AuditActor) {
+    if (!id || !isValidObjectId(id)) {
+      throw { code: errorCode_e.InvalidInputError, message: "Valid log id is required" };
+    }
+
+    const session = await this.productRepo.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const log = await this.logRepo.findById(id, session);
+        if (!log) {
+          throw { code: errorCode_e.NotFoundError, message: "Stock log not found" };
+        }
+        if (log.type !== stockLogType_e.in && log.type !== stockLogType_e.out) {
+          throw { code: errorCode_e.InvalidStateError, message: "Invalid stock log type" };
+        }
+
+        const product = await this.productRepo.findById(log.productID, session);
+        if (!product) {
+          throw { code: errorCode_e.NotFoundError, message: "Product not found" };
+        }
+        const currentAmount = Number(product.amount);
+        const logAmount = Number(log.amount);
+        if (!Number.isFinite(currentAmount) || !Number.isFinite(logAmount)) {
+          throw { code: errorCode_e.InvalidStateError, message: "Invalid stock amount" };
+        }
+
+        const nextProductAmount = log.type === stockLogType_e.in
+          ? currentAmount - logAmount
+          : currentAmount + logAmount;
+        if (nextProductAmount < 0) {
+          throw {
+            code: errorCode_e.InvalidStateError,
+            message: "Deleting this log would make stock negative",
+          };
+        }
+
+        const before = toProductSnapshot(product);
+        const updatedProduct = await this.productRepo.updateById(
+          product.id,
+          {
+            amount: nextProductAmount,
+            status: this.resolveStockStatus(
+              nextProductAmount,
+              Number(product.condition ?? 0),
+            ),
+          },
+          session,
+        );
+        const deletedLog = await this.logRepo.deleteById(id, session);
+        if (!updatedProduct || !deletedLog) {
+          throw { code: errorCode_e.NotFoundError, message: "Stock log not found" };
+        }
+
+        const stockLog: StockLogSnapshot = {
+          amount: deletedLog.amount,
+          type: deletedLog.type,
+          date: deletedLog.date,
+          price: deletedLog.price,
+          bill: deletedLog.bill,
+          note: deletedLog.note,
+        };
+        await this.writeAudit(
+          "DELETE",
+          deletedLog.type === stockLogType_e.in ? "STOCK_IN" : "STOCK_OUT",
+          deletedLog.productID,
+          actor,
+          before,
+          toProductSnapshot(updatedProduct),
+          stockLog,
+          ["products", "logs"],
+          session,
+          ["stockLog"],
+        );
+      }, this.transactionOptions());
+    } finally {
+      await session.endSession();
+    }
+  }
+
   getStatus() {
     return this.productRepo.getStockStatus();
   }

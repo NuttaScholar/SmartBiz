@@ -178,6 +178,17 @@ export async function putLog(
     return res.data as responst_t<"none">;
 }
 
+export async function delLog(
+    token: string,
+    id: string
+): Promise<responst_t<"none">> {
+    const res = await axios_stock.delete(
+        `/log/${encodeURIComponent(id)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data as responst_t<"none">;
+}
+
 function buildStockQuery(condition?: stockReq_t) {
     if (!condition || condition.productType === undefined) return "";
 
@@ -263,6 +274,7 @@ const Stock_f = {
     getStatus,
     getLog,
     putLog,
+    delLog,
     getStock,
     postStockOut,
     postStockIn,

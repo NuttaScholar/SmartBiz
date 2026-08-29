@@ -101,6 +101,9 @@ export async function postStockIn(context: AuthContext_t, data: stockInForm_t): 
 export async function putLog(context: AuthContext_t, data: stockLogUpdateForm_t): Promise<resApiWithRetry_t> {
     return ApiWithRetry(context, Stock_f.putLog, data);
 }
+export async function delLog(context: AuthContext_t, id: string): Promise<resApiWithRetry_t> {
+    return ApiWithRetry(context, Stock_f.delLog, id);
+}
 export async function getLogAudit(context: AuthContext_t, id: string): Promise<resLogAuditWithRetry_t> {
     return ApiWithRetry(context, Stock_f.getLogAudit, id) as Promise<resLogAuditWithRetry_t>;
 }
@@ -117,6 +120,7 @@ const stockWithRetry_f = {
     getStatus,
     getLog,
     putLog,
+    delLog,
     getStock,
     postStockOut,
     postStockIn,
