@@ -225,7 +225,11 @@ export async function postStockIn(token: string,
         formData.append("products", JSON.stringify(rest.products));
         formData.append("date", date.toISOString());
         who && formData.append("who", who);
-        bill_Img && formData.append("file", bill_Img);
+        if (bill_Img instanceof File) {
+            formData.append("file", bill_Img);
+        } else if (typeof bill_Img === "string" && bill_Img.trim()) {
+            formData.append("billFileName", bill_Img.trim());
+        }
         const res = await axios_stock.post(
             `/stock_in`,
             formData, {

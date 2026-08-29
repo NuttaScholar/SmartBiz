@@ -50,6 +50,16 @@ export default class StorageService {
     return this.client.removeObject(bucket, key);
   }
 
+  async objectExists(bucket: string, key: string) {
+    try {
+      await this.client.statObject(bucket, key);
+      return true;
+    } catch (err: any) {
+      if (err?.code === "NoSuchKey" || err?.code === "NotFound") return false;
+      throw err;
+    }
+  }
+
   async initBucket(bucket: string, isPrivate: boolean) {
     const exists = await this.client.bucketExists(bucket);
     if (exists) return;

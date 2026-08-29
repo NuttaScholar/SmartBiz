@@ -102,7 +102,7 @@ export type stockOutForm_t = {
 }
 export type stockInForm_t = {
   date: Date;
-  bill_Img?: File | null;
+  bill_Img?: File | string | null;
   products: stockForm_t[];
   who?: string;
 }

@@ -29,10 +29,11 @@ export default class StockController {
   async stockIn(req: AuthRequest, res: Response) {
     try {
       this.ensureAdmin(req, "stock.inventory.in");
-      const { products, who, date } = req.body as {
+      const { products, who, date, billFileName } = req.body as {
         products?: string;
         who?: string;
         date?: string;
+        billFileName?: string;
       };
       const errors = await this.service.stockIn(
         products,
@@ -40,6 +41,7 @@ export default class StockController {
         date,
         getAuditActor(req),
         req.file,
+        billFileName,
       );
       return res.json({
         success: true,

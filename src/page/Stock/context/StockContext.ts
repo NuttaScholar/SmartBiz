@@ -20,7 +20,7 @@ export enum stockDialog_e {
 }
 export type billForm_t = {
   date?: Date;
-  img?: File | null;
+  img?: File | string | null;
   description?: string;
   who?: string;
 };

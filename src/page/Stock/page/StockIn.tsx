@@ -65,7 +65,11 @@ export default function Page_StockIn() {
       alert("กรุณาระบุวันที่");
       return;
     }
-    if (state.billForm?.img === undefined || state.billForm.img === null) {
+    if (
+      state.billForm?.img === undefined
+      || state.billForm.img === null
+      || (typeof state.billForm.img === "string" && !state.billForm.img.trim())
+    ) {
       alert("กรุณาแนบรูปใบเสร็จรับเงิน");
       return;
     }

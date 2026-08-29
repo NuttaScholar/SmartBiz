@@ -1,5 +1,5 @@
 import React from "react";
-import { Box } from "@mui/material";
+import { Box, TextField, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useStockContext } from "../hooks/useStockContex";
 import Field from "../../../component/Atoms/Field";
 import FieldImage from "../../../component/Molecules/FieldImage";
@@ -31,6 +31,7 @@ interface myProps {
 const FormStockHeader: React.FC<myProps> = (props) => {
   // Hook *********************
   const { state, setState } = useStockContext();
+  const billImageSource = typeof state.billForm?.img === "string" ? "server" : "local";
   // Local Function *****************
   const onChangeDate = (value: import("dayjs").Dayjs | null) => {
     setState({
@@ -43,6 +44,22 @@ const FormStockHeader: React.FC<myProps> = (props) => {
   };
   const onChangeImage = (file: File | null) => {
     setState({ ...state, billForm: { ...state.billForm, img: file } });
+  };
+  const onChangeBillImageSource = (
+    _event: React.MouseEvent<HTMLElement>,
+    source: "local" | "server" | null,
+  ) => {
+    if (!source || source === billImageSource) return;
+    setState({
+      ...state,
+      billForm: { ...state.billForm, img: source === "server" ? "" : null },
+    });
+  };
+  const onChangeServerFileName = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setState({
+      ...state,
+      billForm: { ...state.billForm, img: event.target.value },
+    });
   };
   const onChangeDecs = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -72,12 +89,38 @@ const FormStockHeader: React.FC<myProps> = (props) => {
               setState({ ...state, billForm: { ...state.billForm, who: "" } });
             }}
           />
-          <FieldImage
-            label="Bill Image *"
-            hideField
-            buttonSize={100}
-            onChange={onChangeImage}
-          />
+          <Box sx={{ mt: 1 }}>
+            <ToggleButtonGroup
+              exclusive
+              fullWidth
+              size="small"
+              value={billImageSource}
+              onChange={onChangeBillImageSource}
+              aria-label="แหล่งที่มาของ Bill Image"
+              sx={{ mb: 1, bgcolor: "white" }}
+            >
+              <ToggleButton value="local">ไฟล์จากเครื่อง</ToggleButton>
+              <ToggleButton value="server">ไฟล์เก่าจาก Server</ToggleButton>
+            </ToggleButtonGroup>
+            {billImageSource === "local" ? (
+              <FieldImage
+                label="Bill Image *"
+                hideField
+                buttonSize={100}
+                onChange={onChangeImage}
+              />
+            ) : (
+              <TextField
+                required
+                fullWidth
+                sx={{bgcolor: "white"}}
+                label="ชื่อไฟล์ Bill Image บน Server"
+                placeholder="ตัวอย่าง: 20260830_ab12cd34"
+                value={typeof state.billForm?.img === "string" ? state.billForm.img : ""}
+                onChange={onChangeServerFileName}
+              />
+            )}
+          </Box>
         </Box>
       ) : (
         <FieldText

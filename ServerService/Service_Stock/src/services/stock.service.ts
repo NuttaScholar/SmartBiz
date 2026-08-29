@@ -237,8 +237,9 @@ export default class StockService {
     requestedDate: string | undefined,
     actor: AuditActor,
     file?: Express.Multer.File,
+    billFileName?: string,
   ) {
-    if (!file || !productsText) {
+    if (!productsText || (!file && !billFileName)) {
       throw { code: errorCode_e.InvalidInputError, message: "products and bill image are required" };
     }
 
@@ -248,11 +249,20 @@ export default class StockService {
       .getDate()
       .toString()
       .padStart(2, "0")}`;
-    const uploadedBill = await this.storageService.uploadImage(file.buffer, BILL_BUCKET, imgKey);
+    let billPath: string;
+    if (file) {
+      billPath = (await this.storageService.uploadImage(file.buffer, BILL_BUCKET, imgKey)).url;
+    } else {
+      const fileName = this.normalizeBillFileName(billFileName);
+      if (!(await this.storageService.objectExists(BILL_BUCKET, fileName))) {
+        throw { code: errorCode_e.NotFoundError, message: "Bill image not found" };
+      }
+      billPath = `${BILL_BUCKET}/${fileName}`;
+    }
 
     const transactionRes = await this.transactionService.postStockIn(
       products,
-      uploadedBill.url,
+      billPath,
       date,
       who,
     );
@@ -270,7 +280,7 @@ export default class StockService {
           date,
           actor,
           session,
-          uploadedBill.url,
+          billPath,
         );
         errors = result.errors;
         if (result.logs.length) await this.logRepo.insertMany(result.logs, session);
@@ -802,6 +812,27 @@ export default class StockService {
     }
     const trimmed = value.trim();
     return trimmed || undefined;
+  }
+
+  private normalizeBillFileName(value: unknown) {
+    if (typeof value !== "string") {
+      throw { code: errorCode_e.InvalidInputError, message: "billFileName must be a string" };
+    }
+    const fileName = value.trim();
+    if (
+      !fileName
+      || fileName.length > 255
+      || fileName === "."
+      || fileName === ".."
+      || fileName.includes("/")
+      || fileName.includes("\\")
+    ) {
+      throw {
+        code: errorCode_e.InvalidInputError,
+        message: "billFileName must contain a file name only",
+      };
+    }
+    return fileName;
   }
 
   private normalizeTransactionDate(value: unknown) {
