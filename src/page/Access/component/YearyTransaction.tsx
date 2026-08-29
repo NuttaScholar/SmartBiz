@@ -34,40 +34,30 @@ const YearyTransaction: React.FC = () => {
   const navigate = useNavigate();
   // Local Function ***********
   const fetchTrans = async () => {
-    let finish = false;
     let _month = state.month;
-    const condition: SearchTransForm_t = {
-      from: new Date(state.yearSelect, _month - 1, 1),
-      to: new Date(state.yearSelect, _month, 0),
-    };
-    while (!finish) {
+
+    while (_month >= 1) {
+      const condition: SearchTransForm_t = {
+        from: new Date(state.yearSelect, _month - 1, 1),
+        to: new Date(state.yearSelect, _month, 0),
+      };
+
       try {
         const res = await accessWithRetry_f.get(authContext, condition);
         if (res.data?.length) {
           const statement: statement_t[] = res.data;
-          if (_month > 1) {
-            _month--;
-          }
-          setState({
-            ...state,
-            transaction: [...state.transaction, ...statement],
-            hasMore: _month > 1,
+          _month--;
+          setState((currentState) => ({
+            ...currentState,
+            transaction: [...currentState.transaction, ...statement],
+            hasMore: _month >= 1,
             month: _month,
-          });
-          finish = true;
+          }));
+          return;
         } else {
           if (redirectToLoginOnAuthError(navigate, res.errCode)) return;
 
-          if (_month > 1) {
-            _month--;
-          } else {
-            setState({
-              ...state,
-              hasMore: _month > 1,
-              month: _month,
-            });
-            finish = true;
-          }
+          _month--;
         }
       } catch (err) {
         if (redirectToLoginOnThrownAuthError(navigate, err)) return;
@@ -76,6 +66,12 @@ const YearyTransaction: React.FC = () => {
         return;
       }
     }
+
+    setState((currentState) => ({
+      ...currentState,
+      hasMore: false,
+      month: 0,
+    }));
   };
   const onClickTransHandler = async (value: TransitionForm_t) => {
     let data = value;

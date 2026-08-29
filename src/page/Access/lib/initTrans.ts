@@ -10,7 +10,7 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
   let _month = 12;
   let cnt = 0;
   const trans: statement_t[] = [];
-  while (!finish) {
+  while (!finish && _month >= 1) {
     const condition: SearchTransForm_t = {
       from: new Date(state.yearSelect, _month - 1, 1),
       to: new Date(state.yearSelect, _month, 0),
@@ -20,20 +20,12 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
       if (res.data?.length) {
         trans.push(...res.data);
         cnt++;
-        if (_month > 1) {
-          _month--;
-        }else{
-          finish = true;
-        }
-        if (cnt > 3) {
+        _month--;
+        if (cnt >= 4) {
           finish = true;
         }
       } else {
-        if (_month > 1) {
-          _month--;
-        } else {
-          finish = true;
-        }
+        _month--;
       }
     } catch (err) {
       console.log(err);
@@ -43,23 +35,24 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
   }
   try {
     const wallet = await accessWithRetry_f.getWallet(authContext);
-    if (wallet.data!== undefined) {      
-      setState({
-        ...state,
+    if (wallet.data!== undefined) {
+      const totalMoney = wallet.data;
+      setState((currentState) => ({
+        ...currentState,
         transaction: trans,
-        hasMore: _month > 1,
+        hasMore: _month >= 1,
         month: _month,
-        totalMoney: wallet.data,
-      });
+        totalMoney,
+      }));
     }
     return;
   } catch (err) {
-    setState({
-      ...state,
+    setState((currentState) => ({
+      ...currentState,
       transaction: trans,
-      hasMore: _month > 1,
+      hasMore: _month >= 1,
       month: _month,
-    });
+    }));
     throw err;
   }
 };
