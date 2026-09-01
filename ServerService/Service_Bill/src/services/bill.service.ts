@@ -504,8 +504,7 @@ export default class BillService {
           money: merchandiseTotal.total,
           who: order.customerID,
           description: `OrderID: ${order.orderID}`,
-          bill: "",
-          readonly: true
+          bill: ""
         },
         {
           headers: {

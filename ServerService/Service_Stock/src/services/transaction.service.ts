@@ -34,7 +34,6 @@ export default class TransactionService {
         description,
         bill,
         who,
-        readonly: true,
       };
 
       const serviceToken = createServiceToken(

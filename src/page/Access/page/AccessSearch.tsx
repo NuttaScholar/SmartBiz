@@ -74,7 +74,7 @@ const Page_AccessSearch: React.FC = () => {
     const [tday, tmonth, tyear] = duration_To.split("/").map(Number);
     const data: SearchTransForm_t = {
       from: new Date(fyear, fmonth - 1, fday),
-      to: new Date(tyear, tmonth - 1, tday),
+      to: new Date(tyear, tmonth - 1, tday, 23, 59, 59, 999),
       ...rest,
     };
     setForm(data);

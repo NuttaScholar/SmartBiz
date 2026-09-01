@@ -13,7 +13,7 @@ export const initTrans = async (authContext: AuthContext_t, accessContext: Acces
   while (!finish && _month >= 1) {
     const condition: SearchTransForm_t = {
       from: new Date(state.yearSelect, _month - 1, 1),
-      to: new Date(state.yearSelect, _month, 0),
+      to: new Date(state.yearSelect, _month, 0, 23, 59, 59, 999),
     };
     try {
       const res = await accessWithRetry_f.get(authContext, condition);
