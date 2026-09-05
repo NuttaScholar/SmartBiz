@@ -94,6 +94,7 @@ services:
     image: minio/minio
     container_name: minio
     ports:
+      # Keep the object API public until media-domain proxying is configured.
       - ${VITE_PORT_MINIO}:9000 # API
       - ${MINIO_CONSOLE_PORT}:9001 # Console
     environment:
@@ -135,8 +136,8 @@ services:
     networks:
       private:
         ipv4_address: 192.168.110.90
-    ports:
-      - ${VITE_PORT_ACCESS}:3000
+    expose:
+      - "3000"
     depends_on:
       mongo-replica-init:
         condition: service_completed_successfully
@@ -154,8 +155,8 @@ services:
     networks:
       private:
         ipv4_address: 192.168.110.91
-    ports:
-      - ${VITE_PORT_LOGIN}:3001
+    expose:
+      - "3001"
     depends_on:
       - mongo
 
@@ -180,8 +181,8 @@ services:
     networks:
       private:
         ipv4_address: 192.168.110.93
-    ports:
-      - ${VITE_PORT_STOCK}:3003
+    expose:
+      - "3003"
     depends_on:
       mongo-replica-init:
         condition: service_completed_successfully
@@ -209,8 +210,8 @@ services:
     networks:
       private:
         ipv4_address: 192.168.110.94
-    ports:
-      - ${VITE_PORT_BILL}:3004
+    expose:
+      - "3004"
     depends_on:
       - mongo
       - service_stock
@@ -231,8 +232,8 @@ services:
     networks:
       private:
         ipv4_address: 192.168.110.92
-    ports:
-      - ${VITE_PORT_STORE}:3002
+    expose:
+      - "3002"
     depends_on:
       - minio
 
@@ -259,8 +260,8 @@ services:
     networks:
       private:
         ipv4_address: 192.168.110.95
-    ports:
-      - ${VITE_PORT_STOREFRONT}:3005
+    expose:
+      - "3005"
     depends_on:
       - mongo
       - minio
@@ -275,7 +276,7 @@ services:
       - ./dist:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
-      - 3031:80
+      - 80:80
     environment:
       NGINX_PORT: 80
     networks:
