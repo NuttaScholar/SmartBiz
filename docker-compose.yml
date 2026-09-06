@@ -78,7 +78,7 @@ services:
     image: mongo-express
     restart: always
     ports:
-      - ${MONGO_EXPRESS_PORT}:8081
+      - "127.0.0.1:${MONGO_EXPRESS_PORT}:8081"
     networks:
       private:
         ipv4_address: 192.168.110.81
@@ -94,9 +94,9 @@ services:
     image: minio/minio
     container_name: minio
     ports:
-      # Keep the object API public until media-domain proxying is configured.
-      - ${VITE_PORT_MINIO}:9000 # API
-      - ${MINIO_CONSOLE_PORT}:9001 # Console
+      # Transitional direct endpoint; remove after services support MINIO_PUBLIC_URL.
+      - ${VITE_PORT_MINIO}:9000
+      - "127.0.0.1:${MINIO_CONSOLE_PORT}:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
@@ -109,7 +109,7 @@ services:
           "CMD",
           "curl",
           "-fsS",
-          "http://host.docker.internal:9000/minio/health/live",
+          "http://127.0.0.1:9000/minio/health/live",
         ]
       interval: 10s
       timeout: 5s
@@ -130,7 +130,7 @@ services:
       LOG_AUDIT_RETENTION_DAYS: ${LOG_AUDIT_RETENTION_DAYS:-365}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
-      MINIO_USE_SSL: false
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
       MINIO_USER: ${MINIO_USER}
       MINIO_PASSWORD: ${MINIO_PASSWORD}
     networks:
@@ -172,7 +172,7 @@ services:
       LOG_AUDIT_RETENTION_DAYS: ${LOG_AUDIT_RETENTION_DAYS:-365}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
-      MINIO_USE_SSL: false
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
       MINIO_USER: ${MINIO_USER}
       MINIO_PASSWORD: ${MINIO_PASSWORD}
       SERVICE_ACCOUNT_URL: http://service_account:3000
@@ -203,7 +203,7 @@ services:
       MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin&replicaSet=rs0
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
-      MINIO_USE_SSL: false
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
       SERVICE_ACCOUNT_URL: http://service_account:3000
       SERVICE_STOCK_URL: http://service_stock:3003
       TZ: Asia/Bangkok
@@ -226,7 +226,7 @@ services:
       PORT: 3002
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
-      MINIO_USE_SSL: false
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
       MINIO_USER: ${MINIO_USER}
       MINIO_PASSWORD: ${MINIO_PASSWORD}      
     networks:
@@ -251,7 +251,7 @@ services:
       MONGO_URI_STOREFRONT: mongodb://root:example@mongo:27017/StoreFront?authSource=admin&replicaSet=rs0
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
       MINIO_PORT: ${VITE_PORT_MINIO}
-      MINIO_USE_SSL: false
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
       MINIO_USER: ${MINIO_USER}
       MINIO_PASSWORD: ${MINIO_PASSWORD}
       PAYMENT_EVIDENCE_BUCKET: storefront-payment
@@ -279,6 +279,9 @@ services:
       - 80:80
     environment:
       NGINX_PORT: 80
+      STOREFRONT_DOMAIN: ${STOREFRONT_DOMAIN}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+      MEDIA_DOMAIN: ${MEDIA_DOMAIN}
     networks:
       - private
     depends_on:

@@ -28,10 +28,78 @@ upstream storefront_api {
     keepalive 16;
 }
 
+upstream minio_api {
+    server minio:9000;
+    keepalive 16;
+}
+
+# Default virtual host: health checks succeed, unknown hostnames are rejected.
+server {
+    listen ${NGINX_PORT} default_server;
+    listen [::]:${NGINX_PORT} default_server;
+    server_name _;
+
+    location = /gateway/health {
+        access_log off;
+        default_type application/json;
+        return 200 '{"status":"ok","service":"edge-gateway"}';
+    }
+
+    location / {
+        return 444;
+    }
+}
+
+# Main domain: customer Storefront only.
 server {
     listen ${NGINX_PORT};
     listen [::]:${NGINX_PORT};
-    server_name _;
+    server_name ${STOREFRONT_DOMAIN};
+
+    root /usr/share/nginx/html;
+    index apps/storefront/index.html;
+
+    limit_conn connections_per_ip 30;
+
+    add_header X-Request-ID $request_id always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    # API traffic belongs to the Admin/API Gateway subdomain.
+    location ^~ /api/ {
+        default_type application/json;
+        return 404 '{"error":"API is not available on the Storefront domain","requestId":"$request_id"}';
+    }
+
+    location ~* ^/assets/.*\.(?:css|js|mjs|jpg|jpeg|gif|png|svg|ico|webp|woff2?)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Request-ID $request_id always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options SAMEORIGIN always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        try_files $uri =404;
+    }
+
+    location = /apps/storefront/index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header X-Request-ID $request_id always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options SAMEORIGIN always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri /apps/storefront/index.html;
+    }
+}
+
+# Admin subdomain: Admin SPA and all API Gateway routes.
+server {
+    listen ${NGINX_PORT};
+    listen [::]:${NGINX_PORT};
+    server_name ${ADMIN_DOMAIN};
 
     root /usr/share/nginx/html;
     index index.html;
@@ -44,14 +112,12 @@ server {
     add_header X-Frame-Options SAMEORIGIN always;
     add_header Referrer-Policy strict-origin-when-cross-origin always;
 
-    # Gateway liveness does not depend on any individual upstream service.
     location = /gateway/health {
         access_log off;
         default_type application/json;
         return 200 '{"status":"ok","service":"api-gateway"}';
     }
 
-    # Normalize API prefixes so proxy_pass consistently strips the gateway prefix.
     location = /api/login      { return 308 /api/login/; }
     location = /api/account    { return 308 /api/account/; }
     location = /api/storage    { return 308 /api/storage/; }
@@ -91,7 +157,6 @@ server {
         proxy_pass http://storefront_api/;
     }
 
-    # Never let an unknown API route fall through to the SPA entry point.
     location ^~ /api/ {
         default_type application/json;
         return 404 '{"error":"API route not found","requestId":"$request_id"}';
@@ -119,15 +184,6 @@ server {
         return 503 '{"error":"Upstream service unavailable","requestId":"$request_id"}';
     }
 
-    location = /storefront {
-        try_files /apps/storefront/index.html =404;
-    }
-
-    location ^~ /storefront/ {
-        try_files $uri /apps/storefront/index.html;
-    }
-
-    # Vite fingerprints files in /assets, so they can be cached indefinitely.
     location ~* ^/assets/.*\.(?:css|js|mjs|jpg|jpeg|gif|png|svg|ico|webp|woff2?)$ {
         add_header Cache-Control "public, max-age=31536000, immutable";
         add_header X-Request-ID $request_id always;
@@ -137,17 +193,7 @@ server {
         try_files $uri =404;
     }
 
-    # Entry documents must be revalidated so deployments do not reference stale assets.
     location = /index.html {
-        add_header Cache-Control "no-cache, no-store, must-revalidate";
-        add_header X-Request-ID $request_id always;
-        add_header X-Content-Type-Options nosniff always;
-        add_header X-Frame-Options SAMEORIGIN always;
-        add_header Referrer-Policy strict-origin-when-cross-origin always;
-        try_files $uri =404;
-    }
-
-    location = /apps/storefront/index.html {
         add_header Cache-Control "no-cache, no-store, must-revalidate";
         add_header X-Request-ID $request_id always;
         add_header X-Content-Type-Options nosniff always;
@@ -158,5 +204,34 @@ server {
 
     location / {
         try_files $uri $uri/ /index.html;
+    }
+}
+
+# Media subdomain: preserve the original host and URI for S3 signatures.
+server {
+    listen ${NGINX_PORT};
+    listen [::]:${NGINX_PORT};
+    server_name ${MEDIA_DOMAIN};
+
+    client_max_body_size 100m;
+    limit_conn connections_per_ip 50;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy no-referrer always;
+
+    location / {
+        proxy_pass http://minio_api;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $http_host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header Connection "";
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_intercept_errors off;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
     }
 }
