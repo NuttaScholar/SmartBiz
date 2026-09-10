@@ -44,6 +44,11 @@ async function startServer(): Promise<void> {
   await evidenceStorage.initPrivateBucket();
   const app = express();
 
+  app.get("/readyz", (_req, res) => {
+    const ready = Array.from(databases.values()).every(db => db.readyState === 1);
+    res.status(ready ? 200 : 503).json({ status: ready ? "ok" : "unavailable" });
+  });
+
   app.disable("x-powered-by");
   app.use(
     cors({

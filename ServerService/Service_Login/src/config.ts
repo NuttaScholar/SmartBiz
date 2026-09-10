@@ -3,6 +3,9 @@ import type { Secret } from "jsonwebtoken";
 import { parseAllowedOrigins } from "./utils/cors-origin";
 
 dotenv.config();
+if (process.env.NODE_ENV === "production" && (process.env.SECRET || "").length < 32) {
+  throw new Error("SECRET must be at least 32 characters in production");
+}
 
 function requireEnv(name: string) {
   const value = process.env[name];

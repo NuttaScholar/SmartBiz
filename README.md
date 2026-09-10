@@ -1,5 +1,10 @@
 # SmartBiz
 
+> VPS / HTTPS deployment: follow [deploy/README.md](deploy/README.md).
+> The root Compose now uses Caddy on ports 80/443, loads prebuilt backend images,
+> and requires a generated `.env.vps` with per-service MongoDB credentials.
+> The older release-package deployment instructions below do not describe this Compose setup.
+
 SmartBiz เป็นเว็บแอปสำหรับทดลองพัฒนาระบบจัดการธุรกิจขนาดเล็กด้วย React, TypeScript, Vite และ Material UI โดยฝั่ง backend แยก service ตามโดเมนงาน เช่น บัญชี ผู้ใช้ สต็อก บิล และพื้นที่จัดเก็บไฟล์ ระบบโดยรวมรันร่วมกันผ่าน Docker Compose
 
 ## ความสามารถหลัก

@@ -55,7 +55,6 @@ export default class UserController {
   }
 
   health(req: Request, res: Response) {
-    console.log("refreshToken", req.cookies.refreshToken);
     return res.json({ success: true });
   }
 
@@ -90,7 +89,7 @@ export default class UserController {
 function cookieOptions() {
   return {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "strict" as const,
     maxAge: 1000 * 60 * 60 * 24 * 7,
   };

@@ -4,13 +4,13 @@ import { MONGO_URI_ACCOUNT, MONGO_URI_BILL, MONGO_URI_STOCK } from "../config";
 const connections: Record<string, mongoose.Connection> = {};
 
 async function createConn(name: string, uri: string) {
-  const conn = await mongoose.createConnection(uri, { dbName: name });
+  const conn = mongoose.createConnection(uri, { dbName: name });
 
   conn.on("connected", () => console.log(`[DB] ${name} connected`));
   conn.on("error", err => console.error(`[DB] ${name} error:`, err));
   conn.on("disconnected", () => console.log(`[DB] ${name} disconnected`));
 
-  return conn;
+  return conn.asPromise();
 }
 
 export async function connectDB() {

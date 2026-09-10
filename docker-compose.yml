@@ -1,10 +1,11 @@
+# VPS deployment: see deploy/README.md.
 services:
   mongo-keyfile-init:
     image: alpine:3.20
-    restart: "no"
+    restart: 'no'
     command:
       - sh
-      - -c
+      - '-c'
       - |
         if [ ! -s /keyfile/mongo-keyfile ]; then
           head -c 756 /dev/urandom | base64 > /keyfile/mongo-keyfile
@@ -13,19 +14,16 @@ services:
         chmod 400 /keyfile/mongo-keyfile
     volumes:
       - mongo-keyfile:/keyfile
-
   mongo:
     container_name: database
-    # The current mongo-data volume is MongoDB 8.0/FCV 8.0. Set
-    # MONGO_VERSION=4.4 only when using a MongoDB 4.4-compatible data volume.
     image: mongo:${MONGO_VERSION:-8.0.5}
     restart: always
     command:
       - mongod
-      - --replSet
+      - '--replSet'
       - rs0
-      - --bind_ip_all
-      - --keyFile
+      - '--bind_ip_all'
+      - '--keyFile'
       - /run/mongo-keyfile/mongo-keyfile
     networks:
       private:
@@ -33,240 +31,361 @@ services:
     volumes:
       - mongo-data:/data/db
       - mongo-keyfile:/run/mongo-keyfile:ro
+      - ./deploy/mongo-health.js:/opt/mongo-health.js:ro
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
     depends_on:
       mongo-keyfile-init:
         condition: service_completed_successfully
     healthcheck:
       test:
-        - CMD-SHELL
-        - "MONGO_SHELL=$$(command -v mongosh || command -v mongo) && $$MONGO_SHELL --quiet --username root --password example --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 }).ok'"
+        - CMD
+        - mongosh
+        - '--quiet'
+        - '--nodb'
+        - /opt/mongo-health.js
       interval: 5s
       timeout: 5s
       retries: 30
-
   mongo-replica-init:
     image: mongo:${MONGO_VERSION:-8.0.5}
-    restart: "no"
+    restart: 'no'
     networks:
       - private
     depends_on:
       mongo:
         condition: service_healthy
     entrypoint:
-      - bash
-      - -c
-      - |
-        MONGO_SHELL=$$(command -v mongosh || command -v mongo)
-        $$MONGO_SHELL --host mongo:27017 --quiet \
-          --username root --password example --authenticationDatabase admin \
-          --eval 'try { rs.status() } catch (error) { rs.initiate({_id:"rs0",members:[{_id:0,host:"mongo:27017"}]}) }'
-        for attempt in {1..30}; do
-          if $$MONGO_SHELL --host mongo:27017 --quiet \
-            --username root --password example --authenticationDatabase admin \
-            --eval 'db.isMaster().ismaster' | grep -q true; then
-            exit 0
-          fi
-          sleep 1
-        done
-        exit 1
-
+      - mongosh
+      - '--quiet'
+      - '--nodb'
+      - /opt/mongo-replica-init.js
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
+    volumes:
+      - ./deploy/mongo-replica-init.js:/opt/mongo-replica-init.js:ro
   mongo-express:
     container_name: web_database
-    image: mongo-express
+    image: mongo-express:1.0.2-20-alpine3.19
     restart: always
     ports:
-      - "127.0.0.1:${MONGO_EXPRESS_PORT}:8081"
+      - 127.0.0.1:${MONGO_EXPRESS_PORT:-8081}:8081
     networks:
       private:
         ipv4_address: 192.168.110.81
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: example
-      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/?authSource=admin&replicaSet=rs0
-      ME_CONFIG_BASICAUTH: true
-      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
-
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: 'true'
+      ME_CONFIG_BASICAUTH: 'true'
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME:?Set MONGO_EXPRESS_USERNAME in deployment env}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:?Set MONGO_EXPRESS_PASSWORD in deployment env}
+    profiles:
+      - admin
+    depends_on:
+      mongo:
+        condition: service_healthy
   minio:
-    image: minio/minio
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: minio
     ports:
-      # Transitional direct endpoint; remove after services support MINIO_PUBLIC_URL.
-      - ${VITE_PORT_MINIO}:9000
-      - "127.0.0.1:${MINIO_CONSOLE_PORT}:9001"
+      - 127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001
     environment:
-      MINIO_ROOT_USER: ${MINIO_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_USER:?Set MINIO_USER in deployment env}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:?Set MINIO_PASSWORD in deployment env}
+      MINIO_SITE_REGION: us-east-1
     volumes:
       - minio-data:/data
     command: server /data --console-address ":9001"
     healthcheck:
       test:
-        [
-          "CMD",
-          "curl",
-          "-fsS",
-          "http://127.0.0.1:9000/minio/health/live",
-        ]
+        - CMD
+        - curl
+        - '-fsS'
+        - http://127.0.0.1:9000/minio/health/ready
       interval: 10s
       timeout: 5s
       retries: 10
     networks:
       private:
         ipv4_address: 192.168.110.82
-
+    expose:
+      - '9000'
+    restart: unless-stopped
   service_account:
     container_name: service_account
     image: nuttascholar/smartbiz_account:2.4
     environment:
-      SECRET: ${SECRET}
-      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOSTS: "${VITE_WEB_BACKEND},${VITE_WEB_SHOP}"
+      SECRET: ${SECRET:?Set SECRET in deployment env}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in deployment env}
+      WEB_HOSTS: https://${ADMIN_DOMAIN},https://${STOREFRONT_DOMAIN}
       PORT: 3000
-      DB_URL: mongodb://root:example@mongo:27017/Account?authSource=admin&replicaSet=rs0
+      DB_URL: mongodb://smartbiz_account:${MONGO_ACCOUNT_PASSWORD:?Set MONGO_ACCOUNT_PASSWORD in deployment env}@mongo:27017/Account?authSource=admin&replicaSet=rs0
       LOG_AUDIT_RETENTION_DAYS: ${LOG_AUDIT_RETENTION_DAYS:-365}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
-      MINIO_PORT: ${VITE_PORT_MINIO}
-      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
-      MINIO_USER: ${MINIO_USER}
-      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
+      MINIO_USER: ${MINIO_USER:?Set MINIO_USER in deployment env}
+      MINIO_PASSWORD: ${MINIO_PASSWORD:?Set MINIO_PASSWORD in deployment env}
+      NODE_ENV: production
+      MINIO_PUBLIC_URL: https://${MEDIA_DOMAIN}
     networks:
       private:
         ipv4_address: 192.168.110.90
     expose:
-      - "3000"
+      - '3000'
     depends_on:
-      mongo-replica-init:
+      mongo-users-init:
         condition: service_completed_successfully
       minio:
-        condition: service_started
-
+        condition: service_healthy
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - '-e'
+        - fetch('http://127.0.0.1:3000/readyz',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
   service_login:
     container_name: service_login
     image: nuttascholar/smartbiz_login:1.2
     environment:
-      SECRET: ${SECRET}
-      WEB_HOSTS: "${VITE_WEB_BACKEND}"
+      SECRET: ${SECRET:?Set SECRET in deployment env}
+      WEB_HOSTS: https://${ADMIN_DOMAIN}
       PORT: 3001
-      DB_URL: mongodb://root:example@mongo:27017/User?authSource=admin&replicaSet=rs0
+      DB_URL: mongodb://smartbiz_login:${MONGO_LOGIN_PASSWORD:?Set MONGO_LOGIN_PASSWORD in deployment env}@mongo:27017/User?authSource=admin&replicaSet=rs0
+      NODE_ENV: production
     networks:
       private:
         ipv4_address: 192.168.110.91
     expose:
-      - "3001"
+      - '3001'
     depends_on:
-      - mongo
-
+      mongo-users-init:
+        condition: service_completed_successfully
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - '-e'
+        - fetch('http://127.0.0.1:3001/readyz',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
   service_stock:
     container_name: service_stock
     image: nuttascholar/smartbiz_stock:1.4
     environment:
-      SECRET: ${SECRET}
-      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOSTS: "${VITE_WEB_BACKEND}"
+      SECRET: ${SECRET:?Set SECRET in deployment env}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in deployment env}
+      WEB_HOSTS: https://${ADMIN_DOMAIN}
       PORT: 3003
-      DB_URL: mongodb://root:example@mongo:27017/Stock?authSource=admin&replicaSet=rs0
+      DB_URL: mongodb://smartbiz_stock:${MONGO_STOCK_PASSWORD:?Set MONGO_STOCK_PASSWORD in deployment env}@mongo:27017/Stock?authSource=admin&replicaSet=rs0
       LOG_AUDIT_RETENTION_DAYS: ${LOG_AUDIT_RETENTION_DAYS:-365}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
-      MINIO_PORT: ${VITE_PORT_MINIO}
-      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
-      MINIO_USER: ${MINIO_USER}
-      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
+      MINIO_USER: ${MINIO_USER:?Set MINIO_USER in deployment env}
+      MINIO_PASSWORD: ${MINIO_PASSWORD:?Set MINIO_PASSWORD in deployment env}
       SERVICE_ACCOUNT_URL: http://service_account:3000
       SERVICE_BILL_URL: http://service_bill:3004
       TZ: Asia/Bangkok
+      NODE_ENV: production
+      MINIO_PUBLIC_URL: https://${MEDIA_DOMAIN}
     networks:
       private:
         ipv4_address: 192.168.110.93
     expose:
-      - "3003"
+      - '3003'
     depends_on:
-      mongo-replica-init:
+      mongo-users-init:
         condition: service_completed_successfully
       minio:
-        condition: service_started
-
+        condition: service_healthy
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - '-e'
+        - fetch('http://127.0.0.1:3003/readyz',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
   service_bill:
     container_name: service_bill
     image: nuttascholar/smartbiz_bill:1.3
     environment:
-      SECRET: ${SECRET}
-      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOSTS: "${VITE_WEB_BACKEND}"
+      SECRET: ${SECRET:?Set SECRET in deployment env}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in deployment env}
+      WEB_HOSTS: https://${ADMIN_DOMAIN}
       PORT: 3004
-      CANCELLED_ORDER_TTL_SECONDS: ${ORDER_TTL_SECONDS} 
-      MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin&replicaSet=rs0
-      MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin&replicaSet=rs0
-      MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin&replicaSet=rs0
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
-      MINIO_PORT: ${VITE_PORT_MINIO}
-      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
+      CANCELLED_ORDER_TTL_SECONDS: ${ORDER_TTL_SECONDS:-2592000}
+      MONGO_URI_ACCOUNT: mongodb://smartbiz_bill:${MONGO_BILL_PASSWORD:?Set MONGO_BILL_PASSWORD in deployment env}@mongo:27017/Account?authSource=admin&replicaSet=rs0
+      MONGO_URI_BILL: mongodb://smartbiz_bill:${MONGO_BILL_PASSWORD:?Set MONGO_BILL_PASSWORD in deployment env}@mongo:27017/Bill?authSource=admin&replicaSet=rs0
+      MONGO_URI_STOCK: mongodb://smartbiz_bill:${MONGO_BILL_PASSWORD:?Set MONGO_BILL_PASSWORD in deployment env}@mongo:27017/Stock?authSource=admin&replicaSet=rs0
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
       SERVICE_ACCOUNT_URL: http://service_account:3000
       SERVICE_STOCK_URL: http://service_stock:3003
       TZ: Asia/Bangkok
+      NODE_ENV: production
+      MINIO_PUBLIC_URL: https://${MEDIA_DOMAIN}
     networks:
       private:
         ipv4_address: 192.168.110.94
     expose:
-      - "3004"
+      - '3004'
     depends_on:
-      - mongo
-      - service_stock
-
+      mongo-users-init:
+        condition: service_completed_successfully
+      minio:
+        condition: service_healthy
+      service_stock:
+        condition: service_healthy
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - '-e'
+        - fetch('http://127.0.0.1:3004/readyz',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
   service_storage:
     container_name: service_storage
     image: nuttascholar/smartbiz_storage:1.2
     environment:
-      SECRET: ${SECRET}
-      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOSTS: "${VITE_WEB_BACKEND}"
+      SECRET: ${SECRET:?Set SECRET in deployment env}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in deployment env}
+      WEB_HOSTS: https://${ADMIN_DOMAIN}
       PORT: 3002
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
-      MINIO_PORT: ${VITE_PORT_MINIO}
-      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
-      MINIO_USER: ${MINIO_USER}
-      MINIO_PASSWORD: ${MINIO_PASSWORD}      
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
+      MINIO_USER: ${MINIO_USER:?Set MINIO_USER in deployment env}
+      MINIO_PASSWORD: ${MINIO_PASSWORD:?Set MINIO_PASSWORD in deployment env}
+      NODE_ENV: production
+      MINIO_PUBLIC_URL: https://${MEDIA_DOMAIN}
     networks:
       private:
         ipv4_address: 192.168.110.92
     expose:
-      - "3002"
+      - '3002'
     depends_on:
-      - minio
-
+      minio:
+        condition: service_healthy
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - '-e'
+        - fetch('http://127.0.0.1:3002/readyz',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
   service_storefront:
     container_name: service_storefront
     image: nuttascholar/smartbiz_storefront:1.1
     environment:
-      SECRET: ${SECRET}
-      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET}
-      WEB_HOSTS: "${VITE_WEB_BACKEND},${VITE_WEB_SHOP}"
+      SECRET: ${SECRET:?Set SECRET in deployment env}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in deployment env}
+      WEB_HOSTS: https://${ADMIN_DOMAIN},https://${STOREFRONT_DOMAIN}
       PORT: 3005
-      MONGO_URI_ACCOUNT: mongodb://root:example@mongo:27017/Account?authSource=admin&replicaSet=rs0
-      MONGO_URI_BILL: mongodb://root:example@mongo:27017/Bill?authSource=admin&replicaSet=rs0
-      MONGO_URI_STOCK: mongodb://root:example@mongo:27017/Stock?authSource=admin&replicaSet=rs0
-      MONGO_URI_STOREFRONT: mongodb://root:example@mongo:27017/StoreFront?authSource=admin&replicaSet=rs0
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
-      MINIO_PORT: ${VITE_PORT_MINIO}
-      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
-      MINIO_USER: ${MINIO_USER}
-      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MONGO_URI_ACCOUNT: mongodb://smartbiz_storefront:${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in deployment env}@mongo:27017/Account?authSource=admin&replicaSet=rs0
+      MONGO_URI_BILL: mongodb://smartbiz_storefront:${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in deployment env}@mongo:27017/Bill?authSource=admin&replicaSet=rs0
+      MONGO_URI_STOCK: mongodb://smartbiz_storefront:${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in deployment env}@mongo:27017/Stock?authSource=admin&replicaSet=rs0
+      MONGO_URI_STOREFRONT: mongodb://smartbiz_storefront:${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in deployment env}@mongo:27017/StoreFront?authSource=admin&replicaSet=rs0
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
+      MINIO_USER: ${MINIO_USER:?Set MINIO_USER in deployment env}
+      MINIO_PASSWORD: ${MINIO_PASSWORD:?Set MINIO_PASSWORD in deployment env}
       PAYMENT_EVIDENCE_BUCKET: storefront-payment
       SERVICE_BILL_URL: http://service_bill:3004
       TZ: Asia/Bangkok
+      NODE_ENV: production
+      MINIO_PUBLIC_URL: https://${MEDIA_DOMAIN}
     networks:
       private:
         ipv4_address: 192.168.110.95
     expose:
-      - "3005"
+      - '3005'
     depends_on:
-      - mongo
-      - minio
-      - service_bill
-
+      mongo-users-init:
+        condition: service_completed_successfully
+      minio:
+        condition: service_healthy
+      service_bill:
+        condition: service_healthy
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - '-e'
+        - fetch('http://127.0.0.1:3005/readyz',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
   web:
     container_name: web
     image: nginx:1.27-alpine
@@ -275,29 +394,88 @@ services:
       - ./templates:/etc/nginx/templates:ro
       - ./dist:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - 80:80
     environment:
       NGINX_PORT: 80
-      STOREFRONT_DOMAIN: ${STOREFRONT_DOMAIN}
-      ADMIN_DOMAIN: ${ADMIN_DOMAIN}
-      MEDIA_DOMAIN: ${MEDIA_DOMAIN}
+      STOREFRONT_DOMAIN: ${STOREFRONT_DOMAIN:?Set STOREFRONT_DOMAIN in deployment env}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set ADMIN_DOMAIN in deployment env}
+      MEDIA_DOMAIN: ${MEDIA_DOMAIN:?Set MEDIA_DOMAIN in deployment env}
     networks:
       - private
     depends_on:
-      - service_account
-      - service_login
-      - service_storage
-      - service_stock
-      - service_bill
-      - service_storefront
+      service_account:
+        condition: service_healthy
+      service_login:
+        condition: service_healthy
+      service_stock:
+        condition: service_healthy
+      service_bill:
+        condition: service_healthy
+      service_storage:
+        condition: service_healthy
+      service_storefront:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/gateway/health"]
+      test:
+        - CMD
+        - wget
+        - '-qO-'
+        - http://127.0.0.1:80/gateway/health
       interval: 30s
       timeout: 3s
       start_period: 10s
       retries: 3
-
+    expose:
+      - '80'
+  mongo-users-init:
+    image: mongo:${MONGO_VERSION:-8.0.5}
+    restart: 'no'
+    networks:
+      - private
+    depends_on:
+      mongo-replica-init:
+        condition: service_completed_successfully
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
+      MONGO_ACCOUNT_PASSWORD: ${MONGO_ACCOUNT_PASSWORD:?Set MONGO_ACCOUNT_PASSWORD in deployment env}
+      MONGO_LOGIN_PASSWORD: ${MONGO_LOGIN_PASSWORD:?Set MONGO_LOGIN_PASSWORD in deployment env}
+      MONGO_STOCK_PASSWORD: ${MONGO_STOCK_PASSWORD:?Set MONGO_STOCK_PASSWORD in deployment env}
+      MONGO_BILL_PASSWORD: ${MONGO_BILL_PASSWORD:?Set MONGO_BILL_PASSWORD in deployment env}
+      MONGO_STOREFRONT_PASSWORD: ${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in deployment env}
+    volumes:
+      - ./deploy/mongo-users.js:/opt/mongo-users.js:ro
+    entrypoint:
+      - mongosh
+      - '--quiet'
+      - '--nodb'
+      - /opt/mongo-users.js
+  edge:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - 443:443/udp
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in deployment env}
+      STOREFRONT_DOMAIN: ${STOREFRONT_DOMAIN:?Set STOREFRONT_DOMAIN in deployment env}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set ADMIN_DOMAIN in deployment env}
+      MEDIA_DOMAIN: ${MEDIA_DOMAIN:?Set MEDIA_DOMAIN in deployment env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      private:
+        ipv4_address: 192.168.110.83
+    depends_on:
+      web:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
 networks:
   private:
     driver: bridge
@@ -305,8 +483,9 @@ networks:
       driver: default
       config:
         - subnet: 192.168.110.0/24
-
 volumes:
   mongo-data: {}
   mongo-keyfile: {}
   minio-data: {}
+  caddy-data: {}
+  caddy-config: {}

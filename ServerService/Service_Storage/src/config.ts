@@ -1,8 +1,12 @@
+import { readPublicStorageUrl } from "./utils/public-storage-url";
 import dotenv from "dotenv";
 import type { Secret } from "jsonwebtoken";
 import { parseAllowedOrigins } from "./utils/cors-origin";
 
 dotenv.config();
+if (process.env.NODE_ENV === "production" && (process.env.SECRET || "").length < 32) {
+  throw new Error("SECRET must be at least 32 characters in production");
+}
 
 function requireEnv(name: string) {
   const value = process.env[name];
@@ -41,3 +45,9 @@ export const DEFAULT_BUCKET = "images";
 export const PRODUCT_BUCKET = "product";
 export const MAX_IMAGE_WIDTH = 720;
 export const MAX_IMAGE_HEIGHT = 720;
+
+export const MINIO_PUBLIC_URL = readPublicStorageUrl(
+  process.env.MINIO_PUBLIC_URL,
+  `${MINIO_USE_SSL ? "https" : "http"}://${MINIO_ENDPOINT}:${MINIO_PORT}`,
+);
+export const MINIO_HOST = MINIO_PUBLIC_URL;

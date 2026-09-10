@@ -12,6 +12,10 @@ async function startServer() {
   await storageService.initBucket(PRODUCT_BUCKET, false);
 
   const app = express();
+  app.get("/readyz", async (_req, res) => {
+    const ready = await storageService.isReady();
+    res.status(ready ? 200 : 503).json({ status: ready ? "ok" : "unavailable" });
+  });
   console.log("origins:", WEB_HOSTS);
   app.use(
     cors({

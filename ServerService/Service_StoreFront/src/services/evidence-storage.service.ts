@@ -5,6 +5,7 @@ import {
   MAX_EVIDENCE_IMAGE_HEIGHT,
   MAX_EVIDENCE_IMAGE_WIDTH,
   MINIO_ENDPOINT,
+  MINIO_PUBLIC_URL,
   MINIO_PASSWORD,
   MINIO_PORT,
   MINIO_USE_SSL,
@@ -31,6 +32,17 @@ export default class EvidenceStorageService {
     useSSL: MINIO_USE_SSL,
     accessKey: MINIO_USER,
     secretKey: MINIO_PASSWORD,
+  });
+
+  // Sign for the public hostname directly; rewriting a signed URL breaks S3 signatures.
+  // Fixed region avoids a network lookup through the public edge during signing.
+  private readonly publicClient = new minio.Client({
+    endPoint: new URL(MINIO_PUBLIC_URL).hostname,
+    port: Number(new URL(MINIO_PUBLIC_URL).port || (MINIO_PUBLIC_URL.startsWith("https:") ? 443 : 80)),
+    useSSL: MINIO_PUBLIC_URL.startsWith("https:"),
+    accessKey: MINIO_USER,
+    secretKey: MINIO_PASSWORD,
+    region: "us-east-1",
   });
 
   async initPrivateBucket(): Promise<void> {
@@ -97,7 +109,7 @@ export default class EvidenceStorageService {
   }
 
   getEvidenceUrl(objectKey: string): Promise<string> {
-    return this.client.presignedGetObject(
+    return this.publicClient.presignedGetObject(
       PAYMENT_EVIDENCE_BUCKET,
       objectKey,
       EVIDENCE_URL_EXPIRY_SECONDS,

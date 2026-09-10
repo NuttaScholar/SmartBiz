@@ -42,6 +42,11 @@ async function startServer() {
   await storageService.initBucket(DEFAULT_BUCKET, false);
   await storageService.initBucket(BILL_BUCKET, true);
 
+  app.get("/readyz", (_req, res) => {
+    const ready = db.readyState === 1;
+    res.status(ready ? 200 : 503).json({ status: ready ? "ok" : "unavailable" });
+  });
+
   app.use("/log-audit", AuthMiddleware, logAuditRoutes(LogAuditModel));
   app.use(
     "/product",

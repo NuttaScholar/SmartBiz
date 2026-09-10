@@ -43,6 +43,11 @@ async function startServer() {
   const ProductModel = getDB("Stock").model<ProductDocument>("product", ProductSchema);
 
   // ⭐ ส่ง model เข้า routes (ถ้าต้องการ)
+  app.get("/readyz", (_req, res) => {
+    const ready = Object.values(dbs).every(db => db.readyState === 1);
+    res.status(ready ? 200 : 503).json({ status: ready ? "ok" : "unavailable" });
+  });
+
   app.use("/bill", AuthMiddleware, billRoutes(OrderModel, ContactModel, ProductModel));
   app.use("/discount", AuthMiddleware, discountRoutes(DiscountModel, ContactModel));
 
@@ -51,4 +56,7 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch((error) => {
+  console.error("Failed to start Bill Service", error);
+  process.exit(1);
+});

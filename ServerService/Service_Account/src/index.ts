@@ -38,6 +38,11 @@ async function main() {
 
   const app = express();
 
+  app.get("/readyz", (_req, res) => {
+    const ready = mongoose.connection.readyState === 1;
+    res.status(ready ? 200 : 503).json({ status: ready ? "ok" : "unavailable" });
+  });
+
   console.log("origins:", WEB_HOSTS);
   app.use(
     cors({

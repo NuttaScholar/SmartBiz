@@ -1,9 +1,13 @@
+import { readPublicStorageUrl } from "./utils/public-storage-url";
 import dotenv from "dotenv";
 import type { Secret } from "jsonwebtoken";
 import path from "path";
 import { parseAllowedOrigins } from "./utils/cors-origin";
 
 dotenv.config();
+if (process.env.NODE_ENV === "production" && (process.env.SECRET || "").length < 32) {
+  throw new Error("SECRET must be at least 32 characters in production");
+}
 dotenv.config({ path: path.resolve(__dirname, "../../Service_Stock/.env") });
 
 function requireEnv(name: string) {
@@ -59,8 +63,11 @@ export const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "localhost";
 export const MINIO_PORT = Number(process.env.MINIO_PORT || 9000);
 export const MINIO_USE_SSL =
   (process.env.MINIO_USE_SSL || "false") === "true";
-export const MINIO_HOST =
-  `${MINIO_USE_SSL ? "https" : "http"}://${MINIO_ENDPOINT}:${MINIO_PORT}`;
+export const MINIO_PUBLIC_URL = readPublicStorageUrl(
+  process.env.MINIO_PUBLIC_URL,
+  `${MINIO_USE_SSL ? "https" : "http"}://${MINIO_ENDPOINT}:${MINIO_PORT}`,
+);
+export const MINIO_HOST = MINIO_PUBLIC_URL;
 export const CANCELLED_ORDER_TTL_SECONDS = readPositiveInteger(
   "CANCELLED_ORDER_TTL_SECONDS",
   30 * 24 * 60 * 60,

@@ -19,6 +19,8 @@ lerna-debug.log*
 .env
 **/.env
 .env.production
+.env.vps
+.env.vps.*
 *.local
 
 # Local workflow notes

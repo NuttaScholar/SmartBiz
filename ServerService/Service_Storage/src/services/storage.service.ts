@@ -5,6 +5,7 @@ import {
   MAX_IMAGE_HEIGHT,
   MAX_IMAGE_WIDTH,
   MINIO_ENDPOINT,
+  MINIO_PUBLIC_URL,
   MINIO_PASSWORD,
   MINIO_PORT,
   MINIO_USE_SSL,
@@ -31,6 +32,26 @@ export default class StorageService {
     secretKey: MINIO_PASSWORD,
   });
 
+  // Sign for the public hostname directly; rewriting a signed URL breaks S3 signatures.
+  // Fixed region avoids a network lookup through the public edge during signing.
+  private readonly publicClient = new minio.Client({
+    endPoint: new URL(MINIO_PUBLIC_URL).hostname,
+    port: Number(new URL(MINIO_PUBLIC_URL).port || (MINIO_PUBLIC_URL.startsWith("https:") ? 443 : 80)),
+    useSSL: MINIO_PUBLIC_URL.startsWith("https:"),
+    accessKey: MINIO_USER,
+    secretKey: MINIO_PASSWORD,
+    region: "us-east-1",
+  });
+
+  async isReady(): Promise<boolean> {
+    try {
+      await this.client.listBuckets();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async initBucket(bucket: string, isPrivate: boolean) {
     const exists = await this.client.bucketExists(bucket).catch(() => false);
     if (exists) return;
@@ -41,12 +62,12 @@ export default class StorageService {
 
   async presignedPut(bucket?: string, key?: string) {
     const input = await this.ensureObjectInput(bucket, key);
-    return this.client.presignedPutObject(input.bucket, input.key, 24 * 60 * 60);
+    return this.publicClient.presignedPutObject(input.bucket, input.key, 24 * 60 * 60);
   }
 
   async presignedGet(bucket?: string, key?: string) {
     const input = await this.ensureObjectInput(bucket, key);
-    return this.client.presignedGetObject(input.bucket, input.key, 60);
+    return this.publicClient.presignedGetObject(input.bucket, input.key, 60);
   }
 
   async createBucket(bucket?: string, isPrivate = false) {
@@ -104,7 +125,7 @@ export default class StorageService {
       "Cache-Control": "public, max-age=2592000, immutable",
     });
 
-    return { url: `http://${MINIO_ENDPOINT}:${MINIO_PORT}/${bucket}/${newKey}` };
+    return { url: `${MINIO_PUBLIC_URL}/${encodeURIComponent(bucket)}/${encodeURIComponent(newKey)}` };
   }
 
   removeImage(bucket?: string, key?: string) {
