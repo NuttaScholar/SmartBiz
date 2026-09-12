@@ -36,12 +36,12 @@ compose.services.minio.ports = ['127.0.0.1:19001:9001'];
 compose.services['mongo-express'].ports = ['127.0.0.1:18081:8081'];
 compose.services.edge.ports = ['127.0.0.1:8088:8088', '127.0.0.1:8443:8443'];
 compose.services.edge.volumes[0] = `./${directory}/Caddyfile:/etc/caddy/Caddyfile:ro`;
-compose.services.web.volumes = [
+compose.services.web_gateway.volumes = [
   './templates:/etc/nginx/templates:ro',
   './.production-audit-dist/site:/usr/share/nginx/html:ro',
   `./${directory}/nginx.conf:/etc/nginx/nginx.conf:ro`,
 ];
-writeFileSync(`${directory}/Caddyfile`, '{\n\tadmin off\n\thttp_port 8088\n\thttps_port 8443\n}\n\nlocalhost, app.localhost, media.localhost {\n\ttls internal\n\treverse_proxy web:80\n}\n');
+writeFileSync(`${directory}/Caddyfile`, '{\n\tadmin off\n\thttp_port 8088\n\thttps_port 8443\n}\n\nlocalhost, app.localhost, media.localhost {\n\ttls internal\n\treverse_proxy web_gateway:80\n}\n');
 writeFileSync(`${directory}/nginx.conf`, readFileSync('nginx.conf', 'utf8').replaceAll('192.168.110.83', '192.168.111.83'));
 writeFileSync(`${directory}/compose.yml`, yaml.dump(compose, { lineWidth: -1, noRefs: true }));
 console.log('Prepared local stack smartbiz-docker-test on localhost ports 8088/8443. Existing .env.vps.test credentials were preserved. Use --project-directory . with the generated Compose file.');

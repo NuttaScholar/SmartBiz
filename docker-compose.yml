@@ -386,8 +386,8 @@ services:
       timeout: 5s
       start_period: 60s
       retries: 3
-  web:
-    container_name: web
+  web_gateway:
+    container_name: web_gateway
     image: nginx:1.27-alpine
     restart: unless-stopped
     volumes:
@@ -469,7 +469,7 @@ services:
       private:
         ipv4_address: 192.168.110.83
     depends_on:
-      web:
+      web_gateway:
         condition: service_healthy
     logging:
       driver: json-file

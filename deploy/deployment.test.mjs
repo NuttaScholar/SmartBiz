@@ -16,7 +16,7 @@ const services = compose.services;
 
 test('public traffic enters through HTTPS edge; database and storage ports stay private', () => {
   assert.deepEqual(services.edge.ports, ['80:80', '443:443', '443:443/udp']);
-  assert.equal(services.web.ports, undefined);
+  assert.equal(services.web_gateway.ports, undefined);
   assert.equal(services.mongo.ports, undefined);
   for (const name of ['minio', 'mongo-express']) {
     assert.ok(services[name].ports.every(p => p.startsWith('127.0.0.1:')));

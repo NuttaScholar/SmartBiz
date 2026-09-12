@@ -322,7 +322,7 @@ Endpoint หลักของ Service_Bill:
 
 | Path | หน้าที่ |
 | --- | --- |
-| `docker-compose.yml` | รวม container หลักของระบบ: `mongo`, `mongo-express`, `minio`, `service_account`, `service_login`, `service_stock`, `service_bill`, `service_storage`, `web` |
+| `docker-compose.yml` | รวม container หลักของระบบ: `mongo`, `mongo-express`, `minio`, `service_account`, `service_login`, `service_stock`, `service_bill`, `service_storage`, `web_gateway` |
 | `Dockerfile` | build frontend image จาก Node แล้วคัดลอกผลลัพธ์ไป Nginx |
 | `nginx.conf` | Nginx global config |
 | `templates/default.conf.template` | config สำหรับ serve React SPA และ redirect 404 กลับ `index.html` |

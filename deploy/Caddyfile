@@ -4,5 +4,5 @@
 }
 
 {$STOREFRONT_DOMAIN}, {$ADMIN_DOMAIN}, {$MEDIA_DOMAIN} {
-	reverse_proxy web:80
+	reverse_proxy web_gateway:80
 }

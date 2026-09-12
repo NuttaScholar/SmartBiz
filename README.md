@@ -32,7 +32,7 @@ SmartBiz เป็นเว็บแอปสำหรับทดลองพ�
 
 | Service | Port | หน้าที่ |
 | --- | ---: | --- |
-| `web` | 3030 | เสิร์ฟ frontend จากโฟลเดอร์ `dist` ผ่าน Nginx |
+| `web_gateway` | 3030 | เสิร์ฟ frontend จากโฟลเดอร์ `dist` และส่งต่อ API ผ่าน Nginx |
 | `service_account` | 3000 | ข้อมูลบัญชี รายรับ-รายจ่าย และผู้ติดต่อ |
 | `service_login` | 3001 | เข้าสู่ระบบ จัดการ token และผู้ใช้ |
 | `service_storage` | 3002 | จัดการไฟล์ผ่าน MinIO |
@@ -227,7 +227,7 @@ Remove-Item "../App/dist" -Recurse -Force
 Copy-Item "dist" "../App/dist" -Recurse
 ```
 
-4. Restart web container
+4. Restart web gateway container
 
 ```powershell
 cd ../App
@@ -271,7 +271,7 @@ docker compose config
 | `npm run preview -- --host 0.0.0.0` | ผ่าน หน้าเว็บตอบกลับ `HTTP 200`; ถ้า port `3030` ถูกใช้อยู่ Vite จะขยับไป port ถัดไป เช่น `3031` |
 | `docker compose config` | ผ่าน อ่านค่า `.env` และ render compose config ได้ |
 | `docker compose ps` | backend หลักทำงานอยู่ ได้แก่ MongoDB, MinIO, account, login, storage, stock และ bill |
-| `docker compose ps -a` | พบว่า `web` และ `mongo-express` อยู่สถานะ exited ใน workspace ปัจจุบัน หากต้องการใช้สอง service นี้ให้สั่ง `docker compose up -d web mongo-express` |
+| `docker compose ps -a` | ตรวจสถานะ `web_gateway` และ `mongo-express`; Mongo Express เปิดเฉพาะเมื่อเรียก profile `admin` |
 | `npm ls @toolpad/core @mui/x-data-grid @mui/material` | ผ่าน ไม่พบ `@toolpad/core` และ `@mui/x-data-grid` แล้ว; ยังมี `@mui/material` เพราะ frontend ใช้งานจริง |
 | `npm audit --audit-level=moderate` | พบ 14 vulnerabilities แบ่งเป็น 7 moderate และ 7 high; ยังไม่ได้รัน `npm audit fix` เพราะอาจอัปเดต dependency หลายตัว |
 

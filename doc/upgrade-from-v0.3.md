@@ -296,7 +296,7 @@ docker compose -p app --env-file .env.vps ps -a
 
 สถานะที่คาดหวัง:
 
-- `mongo`, `minio`, backend services และ `web` เป็น `Up` หรือ `healthy`
+- `mongo`, `minio`, backend services และ `web_gateway` เป็น `Up` หรือ `healthy`
 - `edge` เป็น `Up`
 - `mongo-keyfile-init` เป็น `Exited (0)`
 - `mongo-replica-init` เป็น `Exited (0)`
@@ -363,11 +363,81 @@ UserNotFound: Could not find user "smartbiz_root" for db "admin"
 4. แก้ `.env.vps` ให้เป็นรหัสใหม่ค่าเดียวกัน
 5. Recreate MongoDB เพื่อให้ healthcheck ใช้ credentials ใหม่
 
-ตัวอย่างการ recreate หลังเปลี่ยนรหัสผ่านแล้ว:
+#### วิธีเปลี่ยนรหัสผ่าน `root` ผ่านการเชื่อมต่อที่ยืนยันตัวตน
+
+เปิด `mongosh` ภายใน MongoDB container โดยระบุ `--password` แต่ไม่ใส่ค่ารหัสผ่านต่อท้าย เพื่อให้ระบบถามรหัสเดิมแบบ interactive และไม่บันทึกรหัสลงใน shell history:
+
+```powershell
+docker exec -it database mongosh `
+  --host 127.0.0.1:27017 `
+  --username root `
+  --password `
+  --authenticationDatabase admin
+```
+
+เมื่อข้อความ `Enter password:` ปรากฏ ให้ป้อนรหัสผ่านเดิมของ `root` ตัวอักษรที่พิมพ์จะไม่แสดงบนหน้าจอ เมื่อเข้าสู่ `mongosh` สำเร็จ ให้เลือกฐานข้อมูล `admin`:
+
+```javascript
+use admin
+```
+
+สั่งเปลี่ยนรหัสผ่านโดยใช้ `passwordPrompt()`:
+
+```javascript
+db.changeUserPassword("root", passwordPrompt())
+```
+
+เมื่อข้อความ `Enter password` ปรากฏอีกครั้ง ให้ป้อนรหัสผ่านใหม่ คำสั่งที่สำเร็จจะไม่แสดง error จากนั้นออกจาก `mongosh`:
+
+```javascript
+exit
+```
+
+ใช้รหัสผ่านที่ประกอบด้วย ASCII ซึ่งบันทึกในไฟล์ env ได้อย่างปลอดภัย เช่น ตัวอักษรอังกฤษและตัวเลข หลีกเลี่ยงช่องว่างพิเศษ, zero-width character, emoji และ Unicode ที่คัดลอกจากโปรแกรมจัดรูปแบบ เพราะ MongoDB อาจปฏิเสธด้วยข้อผิดพลาด:
+
+```text
+Error preflighting normalization: U_STRINGPREP_PROHIBITED_ERROR
+```
+
+แก้ `.env.vps` ให้ตรงกับบัญชีและรหัสผ่านใหม่ทันที:
+
+```env
+MONGO_ROOT_USER=root
+MONGO_ROOT_PASSWORD=<รหัสผ่านใหม่>
+```
+
+อย่าใส่วงเล็บ `<` และ `>` ลงในค่าจริง และหากรหัสผ่านมี `$` ต้องระวังการแทนค่าของ Compose การใช้รหัสแบบ hexadecimal ช่วยหลีกเลี่ยงปัญหานี้ได้
+
+Recreate MongoDB เพื่อให้ environment และ healthcheck โหลดค่าใหม่:
 
 ```powershell
 docker compose -p app --env-file .env.vps up -d --force-recreate mongo
 ```
+
+รอจน MongoDB เป็น `healthy`:
+
+```powershell
+docker compose -p app --env-file .env.vps ps mongo
+```
+
+ยืนยันว่ารหัสใหม่ใช้เข้าสู่ระบบได้ โดยคำสั่งจะถามรหัสผ่านแบบ interactive:
+
+```powershell
+docker exec -it database mongosh `
+  --host 127.0.0.1:27017 `
+  --username root `
+  --password `
+  --authenticationDatabase admin `
+  --eval "db.adminCommand({ping: 1})"
+```
+
+ผลลัพธ์ต้องมี `ok: 1` หากเปิด Mongo Express อยู่ ให้ recreate service เพื่อให้โหลด credentials ใหม่ด้วย:
+
+```powershell
+docker compose -p app --env-file .env.vps --profile admin up -d --force-recreate mongo-express
+```
+
+ไม่ควรแก้ collection `admin.system.users` โดยตรงผ่าน Mongo Express เพราะ MongoDB ต้องสร้าง SCRAM credentials ผ่านคำสั่งจัดการผู้ใช้
 
 ห้ามแก้ปัญหานี้ด้วยการลบ `app_mongo-data`
 
@@ -453,7 +523,7 @@ docker inspect database --format '{{range .Mounts}}{{.Name}} -> {{.Destination}}
 docker compose -p app --env-file .env.vps up -d
 ```
 
-เมื่อสำเร็จ backend และ `web` ต้องเป็น `healthy` ส่วน initialization jobs ต้องเป็น `Exited (0)`
+เมื่อสำเร็จ backend และ `web_gateway` ต้องเป็น `healthy` ส่วน initialization jobs ต้องเป็น `Exited (0)`
 
 ### 5. Mongo Express ของ V0.3 ยังค้างอยู่
 
