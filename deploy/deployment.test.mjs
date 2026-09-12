@@ -29,7 +29,7 @@ test('public traffic enters through HTTPS edge; database and storage ports stay 
     assert.equal(service.restart, 'unless-stopped');
     assert.ok(service.healthcheck.test.join(' ').includes('/readyz'));
     assert.equal(service.build, undefined);
-    assert.equal(service.pull_policy, 'never');
+    assert.equal(service.pull_policy, 'missing');
     assert.ok(!JSON.stringify(service.environment).includes('MONGO_ROOT'));
     if (name !== 'service_storage') {
       assert.equal(service.depends_on['mongo-users-init'].condition, 'service_completed_successfully');

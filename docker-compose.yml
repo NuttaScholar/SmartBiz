@@ -142,7 +142,7 @@ services:
         condition: service_completed_successfully
       minio:
         condition: service_healthy
-    pull_policy: never
+    pull_policy: missing
     restart: unless-stopped
     init: true
     logging:
@@ -177,7 +177,7 @@ services:
     depends_on:
       mongo-users-init:
         condition: service_completed_successfully
-    pull_policy: never
+    pull_policy: missing
     restart: unless-stopped
     init: true
     logging:
@@ -225,7 +225,7 @@ services:
         condition: service_completed_successfully
       minio:
         condition: service_healthy
-    pull_policy: never
+    pull_policy: missing
     restart: unless-stopped
     init: true
     logging:
@@ -275,7 +275,7 @@ services:
         condition: service_healthy
       service_stock:
         condition: service_healthy
-    pull_policy: never
+    pull_policy: missing
     restart: unless-stopped
     init: true
     logging:
@@ -316,7 +316,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    pull_policy: never
+    pull_policy: missing
     restart: unless-stopped
     init: true
     logging:
@@ -368,7 +368,7 @@ services:
         condition: service_healthy
       service_bill:
         condition: service_healthy
-    pull_policy: never
+    pull_policy: missing
     restart: unless-stopped
     init: true
     logging:

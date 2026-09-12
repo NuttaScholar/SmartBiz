@@ -8,7 +8,7 @@
 
 1. ตั้งค่า DNS A record ของ `example.com`, `app.example.com` และ `media.example.com` ให้ชี้ไปยัง VPS สร้าง AAAA record เฉพาะเมื่อ IPv6 ใช้งานได้จริง เปิดรับ TCP พอร์ต 80/443 และ UDP พอร์ต 443 หากต้องการใช้ HTTP/3 พร้อมตรวจสอบว่ายังเชื่อมต่อ SSH ได้ ไม่จำเป็นต้องเปิดพอร์ตอื่นของแอปสู่ภายนอก และต้องตรวจว่า Docker subnet `192.168.110.0/24` ไม่ทับซ้อนกับ network ของ VPS หรือ VPN
 
-2. คัดลอกชุดไฟล์ deploy ไปยัง VPS โดยใช้เพียง `docker-compose.yml`, `.env.vps`, `nginx.conf`, `templates/`, `deploy/Caddyfile`, สคริปต์ `deploy/mongo-*.js` ทั้งสามไฟล์, `dist/` และ `smartbiz-images.tar` ไม่จำเป็นต้องมี source ในโฟลเดอร์ `ServerService` หรือ Node.js บน VPS ให้ติดตั้ง Docker Engine พร้อม Compose v2 และตรวจสอบว่าไม่มีโปรแกรมอื่นใช้พอร์ต 80/443
+2. คัดลอกชุดไฟล์ deploy ไปยัง VPS โดยใช้เพียง `docker-compose.yml`, `.env.vps`, `nginx.conf`, `templates/`, `deploy/Caddyfile`, สคริปต์ `deploy/mongo-*.js` ทั้งสามไฟล์ และ `dist/` หากต้องติดตั้งแบบไม่เชื่อมต่อ Docker Hub ให้แนบ `smartbiz-images.tar` เพิ่มด้วย ไม่จำเป็นต้องมี source ในโฟลเดอร์ `ServerService` หรือ Node.js บน VPS ให้ติดตั้ง Docker Engine พร้อม Compose v2 และตรวจสอบว่าไม่มีโปรแกรมอื่นใช้พอร์ต 80/443
 
 3. สร้าง credentials บน VPS หรือส่งไฟล์ที่สร้างไว้ไปยัง VPS ผ่านช่องทางที่ปลอดภัย:
 
@@ -29,12 +29,13 @@
    โหลด backend images ที่แนบมาและเริ่มระบบจากโฟลเดอร์ deploy:
 
    ```sh
+   # ทางเลือกสำหรับการติดตั้งแบบ offline หรือเมื่อต้องการใช้ images ที่แนบมากับ release
    docker load -i smartbiz-images.tar
    docker compose --env-file .env.vps config --quiet
    docker compose --env-file .env.vps up -d --wait --wait-timeout 300
    ```
 
-   Compose ใช้ images ที่ build ไว้แล้วทั้งหกตัวในชื่อ `nuttascholar/smartbiz_*` และกำหนด `pull_policy: never` จึงไม่ต้องมี source code และจะไม่ดึง backend image ตัวอื่นจาก Docker Hub ส่วน gateway จะ mount โฟลเดอร์ `dist` ที่แนบมาและไม่ได้ compile frontend ให้ การออก certificate ครั้งแรกต้องใช้ DNS ที่ถูกต้องและ VPS ต้องเข้าถึงได้จากอินเทอร์เน็ต โดย certificate อาจออกสำเร็จหลัง containers เปลี่ยนเป็น healthy แล้ว
+   Compose ใช้ backend images ทั้งหกตัวในชื่อ `nuttascholar/smartbiz_*` และกำหนด `pull_policy: missing` จึงใช้ image ในเครื่องก่อน และดึง tag ที่ขาดจาก Docker Hub โดยอัตโนมัติ ไม่จำเป็นต้องมี source code ส่วน gateway จะ mount โฟลเดอร์ `dist` ที่แนบมาและไม่ได้ compile frontend ให้ การออก certificate ครั้งแรกต้องใช้ DNS ที่ถูกต้องและ VPS ต้องเข้าถึงได้จากอินเทอร์เน็ต โดย certificate อาจออกสำเร็จหลัง containers เปลี่ยนเป็น healthy แล้ว
 
 5. ตรวจสอบโดเมน HTTPS ทั้งสาม รวมถึงขั้นตอนเข้าสู่ระบบ สั่งซื้อ อัปโหลด และดาวน์โหลด หากระบบเริ่มไม่สำเร็จ ให้ตรวจด้วย `docker compose --env-file .env.vps ps -a` และดู logs เส้นทาง `/gateway/health` ตรวจเฉพาะ Nginx ส่วน `/readyz` ของ backend ตรวจสถานะการเชื่อมต่อฐานข้อมูล และ Storage ตรวจการเชื่อมต่อ MinIO การตรวจเหล่านี้ไม่สามารถทดแทน smoke test ของธุรกรรมจริงได้
 
