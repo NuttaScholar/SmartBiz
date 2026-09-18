@@ -19,6 +19,7 @@ lerna-debug.log*
 .env
 **/.env
 .env.production
+.env.dev
 .env.vps
 .env.vps.*
 *.local

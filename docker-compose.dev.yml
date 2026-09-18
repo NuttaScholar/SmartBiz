@@ -1,0 +1,269 @@
+name: smartbiz-dev
+
+x-app-defaults: &app-defaults
+  restart: unless-stopped
+  init: true
+  networks: [dev]
+  pull_policy: missing
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: '2'
+
+x-healthcheck: &app-healthcheck
+  interval: 10s
+  timeout: 5s
+  start_period: 30s
+  retries: 6
+
+services:
+  mongo-keyfile-init:
+    image: alpine:3.20
+    restart: 'no'
+    network_mode: none
+    command: [sh, -c, 'if [ ! -s /keyfile/mongo-keyfile ]; then head -c 756 /dev/urandom | base64 > /keyfile/mongo-keyfile; fi; chown 999:999 /keyfile/mongo-keyfile; chmod 400 /keyfile/mongo-keyfile']
+    volumes: [mongo-keyfile:/keyfile]
+
+  mongo:
+    image: mongo:${MONGO_VERSION:-8.0.5}
+    restart: unless-stopped
+    command: [mongod, --replSet, rs0, --bind_ip_all, --keyFile, /run/mongo-keyfile/mongo-keyfile]
+    networks: [dev]
+    volumes:
+      - mongo-data:/data/db
+      - mongo-keyfile:/run/mongo-keyfile:ro
+      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-8.0}/mongo-health.js:/opt/mongo-health.js:ro
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in the env file}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in the env file}
+    depends_on:
+      mongo-keyfile-init: { condition: service_completed_successfully }
+    healthcheck:
+      test: [CMD, '${MONGO_SHELL:-mongosh}', --quiet, --nodb, /opt/mongo-health.js]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  mongo-replica-init:
+    image: mongo:${MONGO_VERSION:-8.0.5}
+    restart: 'no'
+    networks: [dev]
+    entrypoint: ['${MONGO_SHELL:-mongosh}', --quiet, --nodb, /opt/mongo-replica-init.js]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in the env file}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in the env file}
+    volumes:
+      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-8.0}/mongo-replica-init.js:/opt/mongo-replica-init.js:ro
+    depends_on:
+      mongo: { condition: service_healthy }
+
+  mongo-users-init:
+    image: mongo:${MONGO_VERSION:-8.0.5}
+    restart: 'no'
+    networks: [dev]
+    entrypoint: ['${MONGO_SHELL:-mongosh}', --quiet, --nodb, /opt/mongo-users.js]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in the env file}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in the env file}
+      MONGO_ACCOUNT_PASSWORD: ${MONGO_ACCOUNT_PASSWORD:?Set MONGO_ACCOUNT_PASSWORD in the env file}
+      MONGO_LOGIN_PASSWORD: ${MONGO_LOGIN_PASSWORD:?Set MONGO_LOGIN_PASSWORD in the env file}
+      MONGO_STOCK_PASSWORD: ${MONGO_STOCK_PASSWORD:?Set MONGO_STOCK_PASSWORD in the env file}
+      MONGO_BILL_PASSWORD: ${MONGO_BILL_PASSWORD:?Set MONGO_BILL_PASSWORD in the env file}
+      MONGO_STOREFRONT_PASSWORD: ${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in the env file}
+    volumes:
+      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-8.0}/mongo-users.js:/opt/mongo-users.js:ro
+    depends_on:
+      mongo-replica-init: { condition: service_completed_successfully }
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    restart: unless-stopped
+    command: server /data --console-address ':9001'
+    networks: [dev]
+    ports:
+      - '127.0.0.1:19000:9000'
+      - '127.0.0.1:19001:9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER:?Set MINIO_USER in the env file}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:?Set MINIO_PASSWORD in the env file}
+      MINIO_SITE_REGION: us-east-1
+    volumes: [minio-data:/data]
+    healthcheck:
+      test: [CMD, curl, -fsS, http://127.0.0.1:9000/minio/health/ready]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  service_account:
+    <<: *app-defaults
+    image: nuttascholar/smartbiz_account:2.4
+    environment:
+      SECRET: ${SECRET:?Set SECRET in the env file}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in the env file}
+      WEB_HOSTS: https://localhost:3030,https://localhost:4030,http://localhost:3030,http://localhost:4030
+      PORT: 3000
+      DB_URL: mongodb://smartbiz_account:${MONGO_ACCOUNT_PASSWORD}@mongo:27017/Account?authSource=admin&replicaSet=rs0
+      LOG_AUDIT_RETENTION_DAYS: ${LOG_AUDIT_RETENTION_DAYS:-365}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_PUBLIC_URL: http://localhost:19000
+      NODE_ENV: development
+    depends_on:
+      mongo-users-init: { condition: service_completed_successfully }
+      minio: { condition: service_healthy }
+    healthcheck:
+      <<: *app-healthcheck
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  service_login:
+    <<: *app-defaults
+    image: nuttascholar/smartbiz_login:1.2
+    environment:
+      SECRET: ${SECRET:?Set SECRET in the env file}
+      WEB_HOSTS: https://localhost:3030,http://localhost:3030
+      PORT: 3001
+      DB_URL: mongodb://smartbiz_login:${MONGO_LOGIN_PASSWORD}@mongo:27017/User?authSource=admin&replicaSet=rs0
+      NODE_ENV: development
+    depends_on:
+      mongo-users-init: { condition: service_completed_successfully }
+    healthcheck:
+      <<: *app-healthcheck
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3001/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  service_storage:
+    <<: *app-defaults
+    image: nuttascholar/smartbiz_storage:1.2
+    environment:
+      SECRET: ${SECRET:?Set SECRET in the env file}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in the env file}
+      WEB_HOSTS: https://localhost:3030,http://localhost:3030
+      PORT: 3002
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_PUBLIC_URL: http://localhost:19000
+      NODE_ENV: development
+    depends_on:
+      minio: { condition: service_healthy }
+    healthcheck:
+      <<: *app-healthcheck
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3002/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  service_stock:
+    <<: *app-defaults
+    image: nuttascholar/smartbiz_stock:1.4
+    environment:
+      SECRET: ${SECRET:?Set SECRET in the env file}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in the env file}
+      WEB_HOSTS: https://localhost:3030,http://localhost:3030
+      PORT: 3003
+      DB_URL: mongodb://smartbiz_stock:${MONGO_STOCK_PASSWORD}@mongo:27017/Stock?authSource=admin&replicaSet=rs0
+      LOG_AUDIT_RETENTION_DAYS: ${LOG_AUDIT_RETENTION_DAYS:-365}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_PUBLIC_URL: http://localhost:19000
+      SERVICE_ACCOUNT_URL: http://service_account:3000
+      SERVICE_BILL_URL: http://service_bill:3004
+      TZ: Asia/Bangkok
+      NODE_ENV: development
+    depends_on:
+      mongo-users-init: { condition: service_completed_successfully }
+      minio: { condition: service_healthy }
+    healthcheck:
+      <<: *app-healthcheck
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3003/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  service_bill:
+    <<: *app-defaults
+    image: nuttascholar/smartbiz_bill:1.3
+    environment:
+      SECRET: ${SECRET:?Set SECRET in the env file}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in the env file}
+      WEB_HOSTS: https://localhost:3030,http://localhost:3030
+      PORT: 3004
+      CANCELLED_ORDER_TTL_SECONDS: ${ORDER_TTL_SECONDS:-2592000}
+      MONGO_URI_ACCOUNT: mongodb://smartbiz_bill:${MONGO_BILL_PASSWORD}@mongo:27017/Account?authSource=admin&replicaSet=rs0
+      MONGO_URI_BILL: mongodb://smartbiz_bill:${MONGO_BILL_PASSWORD}@mongo:27017/Bill?authSource=admin&replicaSet=rs0
+      MONGO_URI_STOCK: mongodb://smartbiz_bill:${MONGO_BILL_PASSWORD}@mongo:27017/Stock?authSource=admin&replicaSet=rs0
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
+      MINIO_PUBLIC_URL: http://localhost:19000
+      SERVICE_ACCOUNT_URL: http://service_account:3000
+      SERVICE_STOCK_URL: http://service_stock:3003
+      TZ: Asia/Bangkok
+      NODE_ENV: development
+    depends_on:
+      mongo-users-init: { condition: service_completed_successfully }
+      minio: { condition: service_healthy }
+      service_stock: { condition: service_healthy }
+    healthcheck:
+      <<: *app-healthcheck
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3004/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  service_storefront:
+    <<: *app-defaults
+    image: nuttascholar/smartbiz_storefront:1.1
+    environment:
+      SECRET: ${SECRET:?Set SECRET in the env file}
+      SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in the env file}
+      WEB_HOSTS: https://localhost:3030,https://localhost:4030,http://localhost:3030,http://localhost:4030
+      PORT: 3005
+      MONGO_URI_ACCOUNT: mongodb://smartbiz_storefront:${MONGO_STOREFRONT_PASSWORD}@mongo:27017/Account?authSource=admin&replicaSet=rs0
+      MONGO_URI_BILL: mongodb://smartbiz_storefront:${MONGO_STOREFRONT_PASSWORD}@mongo:27017/Bill?authSource=admin&replicaSet=rs0
+      MONGO_URI_STOCK: mongodb://smartbiz_storefront:${MONGO_STOREFRONT_PASSWORD}@mongo:27017/Stock?authSource=admin&replicaSet=rs0
+      MONGO_URI_STOREFRONT: mongodb://smartbiz_storefront:${MONGO_STOREFRONT_PASSWORD}@mongo:27017/StoreFront?authSource=admin&replicaSet=rs0
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: 'false'
+      MINIO_USER: ${MINIO_USER}
+      MINIO_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_PUBLIC_URL: http://localhost:19000
+      PAYMENT_EVIDENCE_BUCKET: storefront-payment
+      SERVICE_BILL_URL: http://service_bill:3004
+      TZ: Asia/Bangkok
+      NODE_ENV: development
+    depends_on:
+      mongo-users-init: { condition: service_completed_successfully }
+      minio: { condition: service_healthy }
+      service_bill: { condition: service_healthy }
+    healthcheck:
+      <<: *app-healthcheck
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3005/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  api_gateway:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    networks: [dev]
+    ports: ['127.0.0.1:8080:80']
+    volumes:
+      - ./deploy/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      service_account: { condition: service_healthy }
+      service_login: { condition: service_healthy }
+      service_storage: { condition: service_healthy }
+      service_stock: { condition: service_healthy }
+      service_bill: { condition: service_healthy }
+      service_storefront: { condition: service_healthy }
+    healthcheck:
+      test: [CMD, wget, -qO-, http://127.0.0.1/gateway/health]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+networks:
+  dev: {}
+
+volumes:
+  mongo-data: {}
+  mongo-keyfile: {}
+  minio-data: {}
