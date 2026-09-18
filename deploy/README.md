@@ -53,20 +53,22 @@ MinIO API ไม่มีการ map พอร์ตออกมายัง h
 
 การเปลี่ยน `MONGO_ROOT_PASSWORD` ในไฟล์ env **ไม่ได้เปลี่ยนรหัสผ่านภายในฐานข้อมูลเดิม** ห้ามลบ volumes เพื่อแก้ปัญหา authentication
 
-1. สำรอง MongoDB และ MinIO แล้วทดลอง restore ลง volume แยก ตรวจสอบให้แน่ใจว่าสามารถกู้คืนได้จริง ต้องคงชื่อ Compose project, MongoDB major version/FCV, ชื่อ replica set, keyfile และ volumes เดิม สคริปต์ init ที่ให้มาต้องใช้ MongoDB 8 และ `mongosh` ห้ามเลือก MongoDB 4.4
+1. สำรอง MongoDB และ MinIO แล้วทดลอง restore ลง volume แยก ตรวจสอบให้แน่ใจว่าสามารถกู้คืนได้จริง ต้องคงชื่อ Compose project, MongoDB major version/FCV, ชื่อ replica set, keyfile และ volumes เดิม สคริปต์ init ที่ให้มาต้องใช้ MongoDB 8 และ `mongo` ห้ามเลือก MongoDB 4.4
 
 2. หยุด application containers ระหว่าง maintenance สร้าง `.env.vps` แล้วแก้ `MONGO_ROOT_USER` และ `MONGO_ROOT_PASSWORD` ให้เป็น credentials ของผู้ดูแลฐานข้อมูล **ที่ใช้อยู่ในปัจจุบัน** ส่วนรหัสผ่านใหม่ของแต่ละ service ให้เก็บค่าที่ตัวสร้างสร้างไว้
 
 3. รันคำสั่งต่อไปนี้:
 
    ```sh
-   docker compose --env-file .env.vps up -d mongo
-   docker compose --env-file .env.vps run --rm mongo-users-init
+   docker compose --env-file .env.vps config --quiet
+   docker compose --env-file .env.vps up -d --wait --wait-timeout 180 mongo
+   docker compose --env-file .env.vps run --rm --no-deps mongo-replica-init
+   docker compose --env-file .env.vps run --rm --no-deps mongo-users-init
    ```
 
    ระบบจะรอให้ replica set พร้อม แล้วสร้างหรืออัปเดตบัญชีของ application คำสั่งนี้รันซ้ำได้โดยให้ผลลัพธ์เดิม แต่เมื่อใช้รหัสผ่าน application ค่าใหม่ credentials เดิมจะใช้ไม่ได้ จึงต้องปิด applications ไว้จนกว่าจะอัปเดตเสร็จ
 
-4. เปลี่ยนรหัสผ่านผู้ดูแลเดิมหรือรหัสเริ่มต้นผ่าน `mongosh` ที่ยืนยันตัวตนแล้ว โดยใช้ `db.changeUserPassword` ร่วมกับ `passwordPrompt()` จากนั้นตั้ง `MONGO_ROOT_PASSWORD` ใน `.env.vps` ให้เป็นค่าเดียวกัน หลีกเลี่ยงการพิมพ์รหัสผ่านลงใน shell history แล้ว recreate MongoDB เพื่อให้ healthcheck ใช้รหัสใหม่ ห้ามเปลี่ยนรหัสด้วยการแก้ไฟล์ env เพียงอย่างเดียว
+4. เปลี่ยนรหัสผ่านผู้ดูแลเดิมหรือรหัสเริ่มต้นผ่าน `mongo` ที่ยืนยันตัวตนแล้ว โดยใช้ `db.changeUserPassword` ร่วมกับ `passwordPrompt()` จากนั้นตั้ง `MONGO_ROOT_PASSWORD` ใน `.env.vps` ให้เป็นค่าเดียวกัน หลีกเลี่ยงการพิมพ์รหัสผ่านลงใน shell history แล้ว recreate MongoDB เพื่อให้ healthcheck ใช้รหัสใหม่ ห้ามเปลี่ยนรหัสด้วยการแก้ไฟล์ env เพียงอย่างเดียว
 
 5. เริ่มระบบด้วยคำสั่งสำหรับการติดตั้งใหม่โดยไม่ใส่ `--build` แล้วตรวจสอบธุรกรรมและพื้นที่จัดเก็บ เก็บ release เดิมและข้อมูลสำรองไว้สำหรับ rollback หากเปลี่ยนรหัสผ่านของ application แล้ว images ที่ใช้ rollback ต้องรองรับ credentials ชุดใหม่ด้วย
 

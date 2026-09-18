@@ -61,7 +61,9 @@ test('environment generator refuses to overwrite credentials', () => {
   }
 });
 
-test('Mongo user provisioning creates scoped users and updates them on rerun', () => {
+for (const modern of [false, true]) {
+const mongoDirectory = modern ? 'mongodb-8.0' : 'mongodb-4.4';
+test(`${mongoDirectory}: Mongo user provisioning creates scoped users and updates them on rerun`, () => {
   const users = new Map();
   const environment = Object.fromEntries(createEnvironment('example.com', 'ops@example.com').trim().split('\n').map(line => line.split('=')));
   const admin = {
@@ -71,9 +73,9 @@ test('Mongo user provisioning creates scoped users and updates them on rerun', (
     updateUser: (user, data) => users.set(user, { user, ...data }),
   };
   function run() {
-    vm.runInNewContext(readFileSync(new URL('./mongo-users.js', import.meta.url), 'utf8'), {
+    vm.runInNewContext(readFileSync(new URL(`./${mongoDirectory}/mongo-users.js`, import.meta.url), 'utf8'), {
       Mongo: function () { return { getDB: () => admin }; },
-      process: { env: environment }, print() {},
+      _getEnv: key => environment[key], process: { env: environment }, print() {},
     });
   }
   run();
@@ -90,27 +92,30 @@ test('Mongo user provisioning creates scoped users and updates them on rerun', (
   assert.throws(run, /Invalid password/);
 });
 
-test('replica initialization only initiates uninitialized replicas and waits for primary', () => {
-  const script = readFileSync(new URL('./mongo-replica-init.js', import.meta.url), 'utf8');
+test(`${mongoDirectory}: replica initialization only initiates uninitialized replicas and waits for primary`, () => {
+  const script = readFileSync(new URL(`./${mongoDirectory}/mongo-replica-init.js`, import.meta.url), 'utf8');
   for (const initialized of [false, true]) {
     let initiated = 0;
     let polls = 0;
     const admin = { auth: () => true, runCommand(command) {
       if (command.replSetGetStatus) {
         if (initialized) return { ok: 1 };
-        throw Object.assign(new Error('no replset config has been received'), { code: 94 });
+        if (modern) throw Object.assign(new Error("Not initialized"), {code: 94});
+        return { ok: 0, code: 94 };
       }
       if (command.replSetInitiate) { initiated++; return { ok: 1 }; }
-      if (command.hello) return { isWritablePrimary: ++polls >= 2 };
+      if (command.isMaster || command.hello) return { ok: 1, [modern ? "isWritablePrimary" : "ismaster"]: ++polls >= 2, setName: "rs0" };
     } };
     assert.throws(() => vm.runInNewContext(script, {
-      Mongo: function () { return { getDB: () => admin }; }, process: { env: {} },
+      Mongo: function () { return { getDB: () => admin }; }, _getEnv: () => "", process: { env: {} },
       sleep() {}, quit(code) { assert.equal(code, 0); throw new Error('SUCCESS_EXIT'); },
     }), /SUCCESS_EXIT/);
     assert.equal(initiated, initialized ? 0 : 1);
     assert.equal(polls, 2);
   }
 });
+
+}
 
 test('public presigned URLs use the HTTPS host, correct region and private client stays internal', async () => {
   Object.assign(process.env, {

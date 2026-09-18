@@ -1,4 +1,8 @@
 # VPS deployment: see deploy/README.md.
+# MongoDB 4.4 (current VPS): MONGO_VERSION=4.4.29, MONGO_DEPLOY_DIR=mongodb-4.4, MONGO_SHELL=mongo.
+# MongoDB 8.0+: MONGO_VERSION=8.0.5 (or tested newer tag), MONGO_DEPLOY_DIR=mongodb-8.0, MONGO_SHELL=mongosh.
+# Set all three together in .env.vps; defaults preserve the existing 4.4 deployment.
+# Changing versions does not migrate an existing database volume.
 services:
   mongo-keyfile-init:
     image: alpine:3.20
@@ -16,7 +20,7 @@ services:
       - mongo-keyfile:/keyfile
   mongo:
     container_name: database
-    image: mongo:${MONGO_VERSION:-8.0.5}
+    image: mongo:${MONGO_VERSION:-4.4.29}
     restart: always
     command:
       - mongod
@@ -31,7 +35,8 @@ services:
     volumes:
       - mongo-data:/data/db
       - mongo-keyfile:/run/mongo-keyfile:ro
-      - ./deploy/mongo-health.js:/opt/mongo-health.js:ro
+      # 4.4: select mongodb-4.4 scripts; 8.0+: select mongodb-8.0 (all three mounts).
+      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-health.js:/opt/mongo-health.js:ro
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
@@ -41,7 +46,8 @@ services:
     healthcheck:
       test:
         - CMD
-        - mongosh
+        # 4.4 requires mongo; 8.0+ requires mongosh (also both init entrypoints).
+        - ${MONGO_SHELL:-mongo}
         - '--quiet'
         - '--nodb'
         - /opt/mongo-health.js
@@ -49,7 +55,7 @@ services:
       timeout: 5s
       retries: 30
   mongo-replica-init:
-    image: mongo:${MONGO_VERSION:-8.0.5}
+    image: mongo:${MONGO_VERSION:-4.4.29}
     restart: 'no'
     networks:
       - private
@@ -57,7 +63,7 @@ services:
       mongo:
         condition: service_healthy
     entrypoint:
-      - mongosh
+      - ${MONGO_SHELL:-mongo}
       - '--quiet'
       - '--nodb'
       - /opt/mongo-replica-init.js
@@ -65,7 +71,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
     volumes:
-      - ./deploy/mongo-replica-init.js:/opt/mongo-replica-init.js:ro
+      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-replica-init.js:/opt/mongo-replica-init.js:ro
   mongo-express:
     container_name: web_database
     image: mongo-express:1.0.2-20-alpine3.19
@@ -427,7 +433,7 @@ services:
     expose:
       - '80'
   mongo-users-init:
-    image: mongo:${MONGO_VERSION:-8.0.5}
+    image: mongo:${MONGO_VERSION:-4.4.29}
     restart: 'no'
     networks:
       - private
@@ -443,9 +449,9 @@ services:
       MONGO_BILL_PASSWORD: ${MONGO_BILL_PASSWORD:?Set MONGO_BILL_PASSWORD in deployment env}
       MONGO_STOREFRONT_PASSWORD: ${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in deployment env}
     volumes:
-      - ./deploy/mongo-users.js:/opt/mongo-users.js:ro
+      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-users.js:/opt/mongo-users.js:ro
     entrypoint:
-      - mongosh
+      - ${MONGO_SHELL:-mongo}
       - '--quiet'
       - '--nodb'
       - /opt/mongo-users.js
