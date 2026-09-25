@@ -1,4 +1,4 @@
-import { Alert, Box, Chip, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import {
   cancelStorefrontOrder,
@@ -6,10 +6,10 @@ import {
   getStorefrontOrders,
   uploadStorefrontEvidence,
 } from '../../../API/StorefrontService/Storefront';
+import { CardOrder } from '../component/CardOrder';
 import { OrderDetailDialog } from '../component/OrderDetailDialog';
 import { StorefrontLayout } from '../component/StorefrontLayout';
 import { useStorefrontSession } from '../hooks/useStorefrontSession';
-import { formatMoney, statusColor, statusLabel } from '../lib/format';
 import type { StorefrontOrder, StorefrontOrderEvidence } from '../type';
 
 export function OrderHistoryPage() {
@@ -79,25 +79,11 @@ export function OrderHistoryPage() {
         )}
         <Stack spacing={1.5}>
           {!isLoading && orders.map((order) => (
-            <Paper
+            <CardOrder
               key={order.id}
-              variant="outlined"
-              className="order-row"
+              order={order}
               onClick={() => setSelectedOrder(order)}
-            >
-              <Stack spacing={0.5}>
-                <Typography variant="h6">{order.id}</Typography>
-                <Typography color="text.secondary">
-                  {new Date(order.date).toLocaleString("th-TH")} | {order.items.length} รายการ
-                </Typography>
-              </Stack>
-              <Stack alignItems="flex-end" spacing={1}>
-                <Chip label={statusLabel(order.status)} color={statusColor(order.status)} size="small" />
-                <Typography variant="h6" color="primary.dark">
-                  {formatMoney(order.totalAmount)}
-                </Typography>
-              </Stack>
-            </Paper>
+            />
           ))}
           {!isLoading && !error && orders.length === 0 && (
             <Paper variant="outlined" className="empty-state">
