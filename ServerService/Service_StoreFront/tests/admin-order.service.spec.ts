@@ -24,6 +24,7 @@ describe("AdminOrderService", () => {
 
   function createService() {
     const billGateway = {
+      listOrderHistory: jasmine.createSpy("listOrderHistory").and.resolveTo([]),
       createOrder: jasmine.createSpy("createOrder"),
       listOnlineOrders: jasmine.createSpy("listOnlineOrders"),
       updateEvidence: jasmine.createSpy("updateEvidence"),
@@ -62,6 +63,7 @@ describe("AdminOrderService", () => {
     expect(billGateway.listPaymentConfirmations).toHaveBeenCalled();
     expect(result[0]).toEqual({
       id: paymentNotifiedOrder.orderID,
+      source: "online",
       customerID: paymentNotifiedOrder.customerID,
       date: fixedNow,
       status: orderStatus_e.PaymentNotified,

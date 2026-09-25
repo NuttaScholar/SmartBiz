@@ -17,7 +17,7 @@ export interface CreateBillOrderInput {
 
 export interface BillOrderRecord extends CreateBillOrderInput {
   status: orderStatus_e;
-  source: "online";
+  source?: "online" | "direct";
   createdAt: Date;
   updatedAt: Date;
   confirmationEvidence?: StoredConfirmationEvidence;
@@ -32,6 +32,7 @@ interface BillApiResponse<T> {
 }
 
 export interface BillGateway {
+  listOrderHistory(customerID: string, limit?: number, cursor?: string): Promise<{ items: BillOrderRecord[]; hasMore: boolean; nextCursor: string | null }>;
   createOrder(input: CreateBillOrderInput): Promise<BillOrderRecord>;
   listOnlineOrders(
     customerID: string,
@@ -55,6 +56,17 @@ export interface BillGateway {
 
 export default class BillClientService implements BillGateway {
   private readonly baseUrl = SERVICE_BILL_URL.replace(/\/$/, "");
+
+  listOrderHistory(customerID: string, limit?: number, cursor?: string): Promise<{ items: BillOrderRecord[]; hasMore: boolean; nextCursor: string | null }> {
+    return this.call(
+      "read customer order history",
+      ["bill.storefront.read"],
+      (authorization) => axios.get(
+        `${this.baseUrl}/bill/storefront/history`,
+        { ...this.config(authorization), params: { customerID, limit, cursor } },
+      ),
+    );
+  }
 
   createOrder(input: CreateBillOrderInput): Promise<BillOrderRecord> {
     return this.call(

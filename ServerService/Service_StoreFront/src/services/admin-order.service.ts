@@ -35,6 +35,7 @@ export default class AdminOrderService {
     const evidence = order.confirmationEvidence;
     return {
       id: order.orderID,
+      source: order.source ?? "direct",
       customerID: order.customerID,
       date: order.createdAt,
       status: order.status,

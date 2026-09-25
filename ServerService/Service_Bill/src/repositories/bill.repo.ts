@@ -1,4 +1,5 @@
 import { Model } from "mongoose";
+import type { HistoryCursor } from "../utils/order-history";
 import { OrderSource, OrderStatus } from "../utils/enum";
 import { OrderDocument } from "../models/order.interface";
 import type { StoredConfirmationEvidence } from "../models/order.interface";
@@ -99,6 +100,16 @@ export default class BillRepo {
       source: OrderSource.Online,
       ...(orderID ? { orderID } : {}),
     }).sort({ createdAt: -1 });
+  }
+
+  async findHistoryByCustomer(customerID: string, limit: number, cursor?: HistoryCursor) {
+    return this.OrderModel.find({
+      customerID,
+      ...(cursor ? { $or: [
+        { createdAt: { $lt: cursor.createdAt } },
+        { createdAt: cursor.createdAt, orderID: { $lt: cursor.orderID } },
+      ] } : {}),
+    }).sort({ createdAt: -1, orderID: -1 }).limit(limit + 1);
   }
 
   async updateOnlineEvidence(

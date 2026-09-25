@@ -65,6 +65,7 @@ export interface StoredConfirmationEvidence {
 }
 
 export interface StorefrontOrder {
+  source: "online" | "direct";
   id: string;
   customerID: string;
   date: Date;

@@ -27,6 +27,8 @@ export default function billRoutes(
       controller.listPaymentConfirmations(req, res));
     router.get("/storefront", (req, res) =>
       controller.getStorefrontOrders(req, res));
+    router.get("/storefront/history", (req, res) =>
+      controller.getCustomerOrderHistory(req, res));
     router.post("/storefront", (req, res) =>
       controller.createStorefrontOrder(req, res));
     router.patch("/storefront/:orderID/evidence", (req, res) =>

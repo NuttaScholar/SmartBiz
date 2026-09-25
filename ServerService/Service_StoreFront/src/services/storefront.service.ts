@@ -84,10 +84,16 @@ export default class StorefrontService {
     return products.map((product) => this.mapProduct(product, discounts));
   }
 
-  async getOrders(token: string): Promise<StorefrontOrder[]> {
+  async getOrders(token: string, limitInput?: unknown, cursor?: unknown) {
     const access = await this.authenticate(token);
-    const orders = await this.billGateway.listOnlineOrders(access.customerID);
-    return Promise.all(orders.map((order) => this.mapOrder(order)));
+    const limit = limitInput === undefined ? 20 : Number(limitInput);
+    if ((limitInput !== undefined && typeof limitInput !== "string" && typeof limitInput !== "number")
+      || !Number.isInteger(limit) || limit < 1 || limit > 100
+      || (cursor !== undefined && (typeof cursor !== "string" || !cursor || cursor.length > 2048))) {
+      throw new AppError("Invalid history limit or cursor", 400);
+    }
+    const page = await this.billGateway.listOrderHistory(access.customerID, limit, cursor as string | undefined);
+    return { ...page, items: await Promise.all(page.items.map((order) => this.mapOrder(order))) };
   }
 
   async getOrder(token: string, orderID: string): Promise<StorefrontOrder> {
@@ -292,6 +298,7 @@ export default class StorefrontService {
 
     return {
       id: order.orderID,
+      source: order.source ?? "direct",
       customerID: order.customerID,
       date: order.createdAt,
       status: order.status,

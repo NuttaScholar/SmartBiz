@@ -1,4 +1,4 @@
-import { orderStatus_e, stockStatus_e } from '../../enum';
+import { orderSource_e, orderStatus_e, stockStatus_e } from '../../enum';
 
 export type StorefrontProduct = {
   id: string;
@@ -30,6 +30,7 @@ export type StorefrontOrderEvidence = {
 };
 
 export type StorefrontOrder = {
+  source: orderSource_e;
   id: string;
   customerID: string;
   date: string;

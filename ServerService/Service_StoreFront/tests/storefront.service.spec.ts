@@ -47,6 +47,7 @@ describe("StorefrontService", () => {
         }),
     };
     const billGateway = {
+      listOrderHistory: jasmine.createSpy("listOrderHistory").and.resolveTo([]),
       createOrder: jasmine.createSpy("createOrder").and.callFake((data) =>
         Promise.resolve({
           ...data,
@@ -112,6 +113,32 @@ describe("StorefrontService", () => {
       customerName: "Customer One",
       token,
     });
+  });
+
+  it("returns online, direct and legacy orders for the authenticated customer", async () => {
+    const { service, billGateway } = createService();
+    const base = { customerID: "CUST-001", createdAt: fixedNow, status: orderStatus_e.Completed, totalAmount: 100, items: [] };
+    billGateway.listOrderHistory.and.resolveTo({ items: [
+      { ...base, orderID: "SO-001", source: "online" },
+      { ...base, orderID: "DO-001", source: "direct" },
+      { ...base, orderID: "OLD-001" },
+    ], hasMore: true, nextCursor: "next-page" });
+
+    const page = await service.getOrders(token, "3", "previous-page");
+    const orders = page.items;
+
+    expect(billGateway.listOrderHistory).toHaveBeenCalledWith("CUST-001", 3, "previous-page");
+    expect(page.hasMore).toBeTrue();
+    expect(page.nextCursor).toBe("next-page");
+    expect(orders.map((order) => order.source)).toEqual(["online", "direct", "direct"]);
+    expect(orders.map((order) => order.id)).toEqual(["SO-001", "DO-001", "OLD-001"]);
+    expect(billGateway.listOnlineOrders).not.toHaveBeenCalled();
+  });
+
+  it("does not request history for an invalid customer link", async () => {
+    const { service, billGateway } = createService(false);
+    await expectAsync(service.getOrders(token)).toBeRejected();
+    expect(billGateway.listOrderHistory).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid or expired customer link", async () => {

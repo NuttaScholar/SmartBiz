@@ -193,6 +193,20 @@ export default class BillController {
     }
   }
 
+  async getCustomerOrderHistory(req: AuthRequest, res: Response) {
+    try {
+      if (!ensureBillUser(req, res, "bill.storefront.read")) return;
+      const data = await this.service.getCustomerOrderHistory(
+        req.query.customerID as string,
+        req.query.limit,
+        req.query.cursor,
+      );
+      return res.json({ success: true, data });
+    } catch (err: any) {
+      return handleError(res, err);
+    }
+  }
+
   async updateStorefrontEvidence(req: AuthRequest, res: Response) {
     try {
       if (!ensureBillUser(req, res, "bill.storefront.manage")) return;

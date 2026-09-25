@@ -34,6 +34,7 @@ describe("BillService", () => {
       deleteOrder: jasmine.createSpy("deleteOrder").and.resolveTo({ orderID: "ORD001" }),
       findByStatus: jasmine.createSpy("findByStatus").and.resolveTo([]),
       findOnlineByCustomer: jasmine.createSpy("findOnlineByCustomer").and.resolveTo([]),
+      findHistoryByCustomer: jasmine.createSpy("findHistoryByCustomer").and.resolveTo([]),
       updateOnlineEvidence: jasmine.createSpy("updateOnlineEvidence"),
       cancelOnline: jasmine.createSpy("cancelOnline"),
       cancelOnlineByAdmin: jasmine.createSpy("cancelOnlineByAdmin"),
@@ -64,6 +65,50 @@ describe("BillService", () => {
 
     return service;
   }
+
+  it("reads customer history across order sources", async () => {
+    const service = createService();
+    const orders = [{ source: OrderSource.Online, items: [] }, { source: OrderSource.Direct, items: [] }, { items: [] }];
+    service.repo.findHistoryByCustomer.and.resolveTo(orders);
+    const history = await service.getCustomerOrderHistory("CUST001");
+    expect(history.items.map((order: any) => order.source)).toEqual([OrderSource.Online, OrderSource.Direct, OrderSource.Direct]);
+    expect(history.hasMore).toBeFalse();
+    expect(history.nextCursor).toBeNull();
+    expect(service.repo.findHistoryByCustomer).toHaveBeenCalledWith("CUST001", 20, undefined);
+    expect(service.repo.findOnlineByCustomer).not.toHaveBeenCalled();
+  });
+
+  it("rejects history requests without a customer", async () => {
+    const service = createService();
+    await expectAsync(service.getCustomerOrderHistory(undefined)).toBeRejected();
+    expect(service.repo.findHistoryByCustomer).not.toHaveBeenCalled();
+  });
+
+  it("returns a bounded page and a cursor for the last returned order", async () => {
+    const service = createService();
+    const createdAt = new Date("2026-09-26T00:00:00.000Z");
+    service.repo.findHistoryByCustomer.and.resolveTo([
+      { orderID: "C", createdAt, items: [] },
+      { orderID: "B", createdAt, items: [] },
+      { orderID: "A", createdAt, items: [] },
+    ]);
+    const page = await service.getCustomerOrderHistory("CUST001", "2");
+    expect(page.items.map((order: any) => order.orderID)).toEqual(["C", "B"]);
+    expect(page.hasMore).toBeTrue();
+    service.repo.findHistoryByCustomer.and.resolveTo([]);
+    const last = await service.getCustomerOrderHistory("CUST001", "2", page.nextCursor);
+    expect(service.repo.findHistoryByCustomer).toHaveBeenCalledWith("CUST001", 2, { createdAt, orderID: "B" });
+    expect(last).toEqual({ items: [], hasMore: false, nextCursor: null });
+  });
+
+  it("rejects invalid pagination before querying orders", async () => {
+    const service = createService();
+    for (const limit of [0, 101, -1, 1.5, "bad", []]) {
+      await expectAsync(service.getCustomerOrderHistory("CUST001", limit)).toBeRejected();
+    }
+    await expectAsync(service.getCustomerOrderHistory("CUST001", 20, "invalid")).toBeRejected();
+    expect(service.repo.findHistoryByCustomer).not.toHaveBeenCalled();
+  });
 
   it("creates an order when customerID exists in Contact", async () => {
     const service = createService();

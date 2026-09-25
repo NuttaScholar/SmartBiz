@@ -78,6 +78,8 @@ export const OrderSchema = new Schema<OrderDocument>(
     { timestamps: true }
 );
 
+OrderSchema.index({ customerID: 1, createdAt: -1, orderID: -1 });
+
 OrderSchema.index(
     { updatedAt: 1 },
     {

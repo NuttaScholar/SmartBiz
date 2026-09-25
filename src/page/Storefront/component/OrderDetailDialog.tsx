@@ -16,7 +16,7 @@ import { forwardRef, useEffect, useState } from "react";
 import type { ChangeEvent, ReactElement, Ref } from "react";
 import { getStorefrontErrorMessage } from "../../../API/StorefrontService/Storefront";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
-import { orderStatus_e } from "../../../enum";
+import { orderSource_e, orderStatus_e } from "../../../enum";
 import type {
   StorefrontOrder,
   StorefrontOrderEvidence,
@@ -55,7 +55,7 @@ function OrderEvidence({ order, onUpload }: OrderEvidenceProps) {
   const [pendingEvidence, setPendingEvidence] = useState<StorefrontOrderEvidence | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const evidence = pendingEvidence ?? order.confirmationEvidence;
-  const canEdit = Boolean(onUpload) && (
+  const canEdit = order.source !== orderSource_e.Direct && Boolean(onUpload) && (
     order.status === orderStatus_e.Submitted
     || order.status === orderStatus_e.PaymentNotified
   );
@@ -265,7 +265,7 @@ export function OrderDetailDialog({
               onUpload={onEvidenceUpload}
             />
             {actionError && <Alert severity="error">{actionError}</Alert>}
-            {order.status === orderStatus_e.Submitted && onCancelOrder && (
+            {order.source !== orderSource_e.Direct && order.status === orderStatus_e.Submitted && onCancelOrder && (
               <Button
                 color="error"
                 variant="outlined"

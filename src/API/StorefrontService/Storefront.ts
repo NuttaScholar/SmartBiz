@@ -132,11 +132,12 @@ export function getStorefrontProducts(
 export function getStorefrontOrders(
   customerToken: string,
   signal?: AbortSignal,
-): Promise<StorefrontOrder[]> {
+  pagination?: { limit?: number; cursor?: string },
+): Promise<{ items: StorefrontOrder[]; hasMore: boolean; nextCursor: string | null }> {
   return request(() =>
     axios_storefront.get(
       `/storefront/${pathSegment(customerToken)}/orders`,
-      { signal },
+      { signal, params: pagination },
     ),
   );
 }

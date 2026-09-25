@@ -1,5 +1,5 @@
-import { Alert, Box, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Alert, Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
 import {
   cancelStorefrontOrder,
   getStorefrontErrorMessage,
@@ -18,15 +18,25 @@ export function OrderHistoryPage() {
   const [selectedOrder, setSelectedOrder] = useState<StorefrontOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const moreRequest = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!session) return;
 
     const controller = new AbortController();
+    setOrders([]);
+    setNextCursor(null);
+    setIsLoadingMore(false);
     setIsLoading(true);
     setError("");
     getStorefrontOrders(customerToken, controller.signal)
-      .then(setOrders)
+      .then((page) => {
+        if (controller.signal.aborted) return;
+        setOrders(page.items);
+        setNextCursor(page.hasMore ? page.nextCursor : null);
+      })
       .catch((requestError: unknown) => {
         if (!controller.signal.aborted) {
           setError(getStorefrontErrorMessage(requestError));
@@ -38,8 +48,36 @@ export function OrderHistoryPage() {
         }
       });
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      moreRequest.current?.abort();
+      moreRequest.current = null;
+    };
   }, [customerToken, session]);
+
+  async function loadMore() {
+    if (!nextCursor || moreRequest.current || isLoading) return;
+    const controller = new AbortController();
+    moreRequest.current = controller;
+    setIsLoadingMore(true);
+    setError("");
+    try {
+      const page = await getStorefrontOrders(customerToken, controller.signal, { cursor: nextCursor });
+      if (controller.signal.aborted) return;
+      setOrders((current) => {
+        const ids = new Set(current.map((order) => order.id));
+        return [...current, ...page.items.filter((order) => !ids.has(order.id))];
+      });
+      setNextCursor(page.hasMore ? page.nextCursor : null);
+    } catch (requestError) {
+      if (!controller.signal.aborted) setError(getStorefrontErrorMessage(requestError));
+    } finally {
+      if (!controller.signal.aborted) {
+        moreRequest.current = null;
+        setIsLoadingMore(false);
+      }
+    }
+  }
 
   function updateOrder(nextOrder: StorefrontOrder) {
     setOrders((current) =>
@@ -89,6 +127,11 @@ export function OrderHistoryPage() {
             <Paper variant="outlined" className="empty-state">
               <Typography color="text.secondary">ยังไม่มีประวัติคำสั่งซื้อ</Typography>
             </Paper>
+          )}
+          {!isLoading && nextCursor && (
+            <Button onClick={loadMore} disabled={isLoadingMore} variant="outlined">
+              {isLoadingMore ? "กำลังโหลด" : "โหลดเพิ่มเติม"}
+            </Button>
           )}
         </Stack>
       </Container>

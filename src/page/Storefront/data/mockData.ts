@@ -1,4 +1,4 @@
-import { orderStatus_e, stockStatus_e } from '../../../enum';
+import { orderSource_e, orderStatus_e, stockStatus_e } from '../../../enum';
 import type { StorefrontOrder, StorefrontProduct } from '../type';
 
 export const mockProducts: StorefrontProduct[] = [
@@ -73,6 +73,7 @@ export const mockProducts: StorefrontProduct[] = [
 export const seededOrders: StorefrontOrder[] = [
   {
     id: "SO-260704-001",
+    source: orderSource_e.Online,
     customerID: "CUST-001",
     date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
     status: orderStatus_e.PrepareShipment,
@@ -100,6 +101,7 @@ export const seededOrders: StorefrontOrder[] = [
   },
   {
     id: "SO-260704-002",
+    source: orderSource_e.Online,
     customerID: "CUST-001",
     date: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
     status: orderStatus_e.PaymentNotified,

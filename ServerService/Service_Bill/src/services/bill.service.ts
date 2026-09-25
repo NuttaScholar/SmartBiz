@@ -1,4 +1,5 @@
 import BillRepo from "../repositories/bill.repo";
+import { encodeHistoryCursor, parseHistoryQuery } from "../utils/order-history";
 import axios from "axios";
 import { errorCode_e, OrderSource, OrderStatus, productType_e, stockStatus_e, transactionType_e } from "../utils/enum";
 import { Model } from "mongoose";
@@ -362,6 +363,39 @@ export default class BillService {
   async getOnlineOrders(customerID: string, orderID?: string) {
     await this.ensureCustomerExists(customerID);
     return this.repo.findOnlineByCustomer(customerID, orderID);
+  }
+
+  async getCustomerOrderHistory(customerID: string, limitInput?: unknown, cursorInput?: unknown) {
+    const { limit, cursor } = parseHistoryQuery(limitInput, cursorInput);
+    await this.ensureCustomerExists(customerID);
+    const found = await this.repo.findHistoryByCustomer(customerID, limit, cursor);
+    const hasMore = found.length > limit;
+    const orders = found.slice(0, limit);
+    const products = await this.productRepo.findByIds(this.getProductIDs(orders));
+    const productById = new Map(products.map((product) => [product.id, product]));
+    const items = orders.map((order) => ({
+      orderID: order.orderID,
+      customerID: order.customerID,
+      source: order.source ?? OrderSource.Direct,
+      status: order.status,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      totalAmount: order.totalAmount,
+      confirmationEvidence: order.confirmationEvidence,
+      items: order.items.map((item) => {
+        const product = productById.get(item.productID);
+        return {
+          productID: item.productID,
+          quantity: item.quantity,
+          priceOriginal: item.priceOriginal,
+          priceAfterDiscount: item.priceAfterDiscount,
+          discountPercent: item.discountPercent ?? 0,
+          name: item.name ?? product?.name ?? item.productID,
+          img: this.getProductImageUrl(item.img ?? product?.img),
+        };
+      }),
+    }));
+    return { items, hasMore, nextCursor: hasMore ? encodeHistoryCursor(orders[orders.length - 1]) : null };
   }
 
   async updateOnlineEvidence(

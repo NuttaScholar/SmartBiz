@@ -48,7 +48,7 @@ export default class StorefrontController {
   ): Promise<void> => {
     try {
       response.json(
-        success(await this.service.getOrders(request.params.customerToken)),
+        success(await this.service.getOrders(request.params.customerToken, request.query.limit, request.query.cursor)),
       );
     } catch (thrown) {
       next(thrown);
