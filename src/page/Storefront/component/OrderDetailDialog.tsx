@@ -6,8 +6,6 @@ import {
   Button,
   Container,
   Dialog,
-  DialogActions,
-  DialogContent,
   Paper,
   Slide,
   Stack,
@@ -25,6 +23,7 @@ import type {
 } from "../type";
 import { OrderItems } from "./OrderItems";
 import { OrderSummary } from "./OrderSummary";
+import { DialogAlert } from "./DialogAlert";
 
 //*************************************************
 // Types
@@ -186,14 +185,7 @@ function OrderEvidence({ order, onUpload }: OrderEvidenceProps) {
           </Stack>
         )}
       </Stack>
-      <Dialog open={showSuccess} onClose={() => setShowSuccess(false)} aria-label="ทำรายการสำเร็จแล้ว">
-        <DialogContent>
-          <Alert severity="success">ทำรายการสำเร็จแล้ว</Alert>
-        </DialogContent>
-        <DialogActions>
-          <Button autoFocus onClick={() => setShowSuccess(false)}>ตกลง</Button>
-        </DialogActions>
-      </Dialog>
+      <DialogAlert open={showSuccess} onClose={() => setShowSuccess(false)} />
     </Paper>
   );
 }
