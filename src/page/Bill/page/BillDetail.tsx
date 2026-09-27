@@ -1,17 +1,5 @@
 import React from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, IconButton, Typography } from "@mui/material";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PrintIcon from "@mui/icons-material/Print";
@@ -36,6 +24,7 @@ import {
 } from "../../../enum";
 import { useAuth } from "../../../hooks/useAuth";
 import { ErrorString } from "../../../function/Enum";
+import { PaymentEvidenceDialog } from "../component/PaymentEvidenceDialog";
 import billWithRetry_f from "../lib/billWithRetry";
 import {
   redirectToLoginOnAuthError,
@@ -87,15 +76,14 @@ interface PageOrderDetailProps {
 //*************************************************
 function canEditOrder(order?: orderInfo_t) {
   return (
-    order?.source === orderSource_e.Direct &&
-    editableStatuses.has(order.status)
+    order?.source === orderSource_e.Direct && editableStatuses.has(order.status)
   );
 }
 
 function canCancelOnlineOrder(order?: orderInfo_t) {
   return (
-    order?.source === orderSource_e.Online
-    && cancellableOnlineStatuses.has(order.status)
+    order?.source === orderSource_e.Online &&
+    cancellableOnlineStatuses.has(order.status)
   );
 }
 
@@ -128,7 +116,9 @@ function toProductCardValue(item: orderInfo_t["list"][number]) {
     amount: item.amount,
     total: item.total,
     percentDiscount: item.percentDiscount,
-    priceAfterDiscount: item.percentDiscount ? item.priceAfterDiscount : undefined,
+    priceAfterDiscount: item.percentDiscount
+      ? item.priceAfterDiscount
+      : undefined,
   };
 }
 
@@ -199,8 +189,6 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
 
   const showPaymentEvidence = React.useCallback(
     async (selectedOrder: orderInfo_t) => {
-      if (selectedOrder.source !== orderSource_e.Online) return;
-
       setIsEvidenceOpen(true);
       setIsEvidenceLoading(true);
       setEvidenceOrder(null);
@@ -208,17 +196,18 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
       try {
         const storefrontOrder = await storefrontAdminWithRetry(
           authContext,
-          (accessToken) => getAdminStorefrontOrder(
-            accessToken,
-            selectedOrder.id,
-            selectedOrder.customerID,
-          ),
+          (accessToken) =>
+            getAdminStorefrontOrder(
+              accessToken,
+              selectedOrder.id,
+              selectedOrder.customerID,
+            ),
         );
         setEvidenceOrder(storefrontOrder);
       } catch (requestError) {
         if (
-          requestError instanceof StorefrontApiError
-          && requestError.status === 401
+          requestError instanceof StorefrontApiError &&
+          requestError.status === 401
         ) {
           redirectToLogin(navigate);
           return;
@@ -252,8 +241,8 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
     setIsUpdatingStatus(true);
     try {
       if (
-        order.source === orderSource_e.Online
-        && order.status === billStatus_e.PaymentNotified
+        order.source === orderSource_e.Online &&
+        order.status === billStatus_e.PaymentNotified
       ) {
         await storefrontAdminWithRetry(authContext, (accessToken) =>
           confirmAdminStorefrontPayment(accessToken, orderID),
@@ -329,10 +318,11 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
 
   const onDelete = React.useCallback(async () => {
     if (
-      !orderID
-      || !order
-      || (!canEditOrder(order) && !canCancelOnlineOrder(order))
-    ) return;
+      !orderID ||
+      !order ||
+      (!canEditOrder(order) && !canCancelOnlineOrder(order))
+    )
+      return;
 
     try {
       const res = await billWithRetry_f.delOrder(authContext, orderID);
@@ -432,11 +422,7 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
         >
           <IconButton
             color="inherit"
-            disabled={
-              !order ||
-              isUpdatingStatus ||
-              !canAdvanceOrder(order)
-            }
+            disabled={!order || isUpdatingStatus || !canAdvanceOrder(order)}
             onClick={onNext}
           >
             <SendIcon />
@@ -467,11 +453,7 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
           <CardOrder
             maxWidth="400px"
             value={{ ...order, list: [] }}
-            onClick={
-              order.source === orderSource_e.Online
-                ? showPaymentEvidence
-                : undefined
-            }
+            onClick={showPaymentEvidence}
           />
         )}
         {order && (
@@ -529,84 +511,13 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
         onCancel={() => updateBillingStatus(false)}
         onClose={closePaymentQuestion}
       />
-      <Dialog
+      <PaymentEvidenceDialog
         open={isEvidenceOpen}
         onClose={() => setIsEvidenceOpen(false)}
-        maxWidth="md"
-        fullWidth
-        aria-labelledby="payment-evidence-title"
-      >
-        <DialogTitle id="payment-evidence-title">
-          หลักฐานการชำระเงิน
-        </DialogTitle>
-        <DialogContent dividers>
-          {isEvidenceLoading && (
-            <Stack alignItems="center" spacing={1.5} sx={{ py: 4 }}>
-              <CircularProgress />
-              <Typography color="text.secondary">กำลังโหลดหลักฐาน</Typography>
-            </Stack>
-          )}
-          {!isEvidenceLoading && evidenceError && (
-            <Alert severity="error">{evidenceError}</Alert>
-          )}
-          {!isEvidenceLoading
-            && !evidenceError
-            && !evidenceOrder?.confirmationEvidence && (
-            <Typography color="text.secondary">
-              ยังไม่มีหลักฐานการชำระเงิน
-            </Typography>
-          )}
-          {!isEvidenceLoading && evidenceOrder?.confirmationEvidence && (
-            <Stack spacing={2}>
-              {evidenceOrder.confirmationEvidence.mimeType.startsWith("image/") && (
-                <Box
-                  component="img"
-                  src={evidenceOrder.confirmationEvidence.dataUrl}
-                  alt={`หลักฐาน ${evidenceOrder.confirmationEvidence.fileName}`}
-                  sx={{
-                    width: "100%",
-                    maxHeight: "70vh",
-                    objectFit: "contain",
-                    bgcolor: "action.hover",
-                    borderRadius: 1,
-                  }}
-                />
-              )}
-              {evidenceOrder.confirmationEvidence.mimeType === "application/pdf" && (
-                <Box
-                  component="iframe"
-                  src={evidenceOrder.confirmationEvidence.dataUrl}
-                  title={`หลักฐาน ${evidenceOrder.confirmationEvidence.fileName}`}
-                  sx={{ width: "100%", height: "70vh", border: 0 }}
-                />
-              )}
-              <Box>
-                <Typography fontWeight={600}>
-                  {evidenceOrder.confirmationEvidence.fileName}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  อัปเดตล่าสุด{" "}
-                  {new Date(
-                    evidenceOrder.confirmationEvidence.updatedAt,
-                  ).toLocaleString("th-TH")}
-                </Typography>
-              </Box>
-              <Button
-                component="a"
-                href={evidenceOrder.confirmationEvidence.dataUrl}
-                target="_blank"
-                rel="noreferrer"
-                variant="outlined"
-              >
-                เปิดหลักฐาน
-              </Button>
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsEvidenceOpen(false)}>ปิด</Button>
-        </DialogActions>
-      </Dialog>
+        isLoading={isEvidenceLoading}
+        error={evidenceError}
+        evidence={evidenceOrder?.confirmationEvidence}
+      />
     </>
   );
 };
