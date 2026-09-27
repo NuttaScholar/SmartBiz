@@ -9,14 +9,14 @@ import {
   StatusStepper,
   type StatusStep,
 } from "../../../component/Molecules/StatusStepper";
-import { orderStatus_e } from "../../../enum";
+import { orderSource_e, orderStatus_e } from "../../../enum";
 import { statusColor, statusLabel } from "../lib/format";
 import type { StorefrontOrder } from "../type";
 
 //*************************************************
 // Types
 //*************************************************
-type OrderSummaryProps = Pick<StorefrontOrder, "id" | "date" | "status">;
+type OrderSummaryProps = Pick<StorefrontOrder, "id" | "date" | "status" | "source">;
 
 //*************************************************
 // Constants
@@ -64,7 +64,9 @@ function formatOrderDate(date: string) {
 //*************************************************
 // Main component
 //*************************************************
-export function OrderSummary({ id, date, status }: OrderSummaryProps) {
+export function OrderSummary({ id, date, status, source }: OrderSummaryProps) {
+  const isDirect = source === orderSource_e.Direct;
+
   return (
     <Paper variant="outlined" className="detail-panel">
       <Stack
@@ -74,7 +76,14 @@ export function OrderSummary({ id, date, status }: OrderSummaryProps) {
         spacing={2}
       >
         <Box>
-          <Typography variant="h4">{id}</Typography>
+          <Stack direction="row" alignItems="center" spacing={1} useFlexGap flexWrap="wrap">
+            <Typography variant="h4">{id}</Typography>
+            <Chip
+              label={isDirect ? "สั่งโดยตรง" : "หน้าร้าน Online"}
+              color={isDirect ? "default" : "primary"}
+              size="small"
+            />
+          </Stack>
           <Typography color="text.secondary">
             {formatOrderDate(date)}
           </Typography>
@@ -82,7 +91,7 @@ export function OrderSummary({ id, date, status }: OrderSummaryProps) {
         <Chip label={statusLabel(status)} color={statusColor(status)} />
       </Stack>
 
-      {status !== orderStatus_e.Cancelled && (
+      {!isDirect && status !== orderStatus_e.Cancelled && (
         <StatusStepper statusStepList={ORDER_STATUS_STEPS} status={status} />
       )}
     </Paper>

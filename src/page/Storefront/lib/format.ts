@@ -19,9 +19,12 @@ export function statusLabel(status: orderStatus_e) {
     case orderStatus_e.PrepareProduct:
       return "เตรียมสินค้า";
     case orderStatus_e.PrepareShipment:
-      return "เตรียมจัดส่ง";
+    case orderStatus_e.Billing:
+      return "เตรียมจัดส่ง";    
     case orderStatus_e.Completed:
       return "จัดส่งสำเร็จ";
+    case orderStatus_e.WaitingPayment:
+      return "รอชำระเงิน";
     case orderStatus_e.Cancelled:
       return "ยกเลิกคำสั่งซื้อ";
     default:
@@ -32,9 +35,11 @@ export function statusLabel(status: orderStatus_e) {
 export function statusColor(status: orderStatus_e) {
   switch (status) {
     case orderStatus_e.Cancelled:
-      return "default";
+      return "default";    
     case orderStatus_e.Completed:
       return "success";
+    case orderStatus_e.WaitingPayment:
+      return "error";
     case orderStatus_e.PaymentNotified:
       return "error";
     case orderStatus_e.PaymentConfirmed:

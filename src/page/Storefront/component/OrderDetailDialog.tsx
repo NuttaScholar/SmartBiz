@@ -257,6 +257,7 @@ export function OrderDetailDialog({
               id={order.id}
               date={order.date}
               status={order.status}
+              source={order.source}
             />
             <OrderItems items={order.items} totalAmount={order.totalAmount} />
             <OrderEvidence
