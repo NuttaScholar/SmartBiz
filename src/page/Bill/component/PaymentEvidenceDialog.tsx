@@ -8,10 +8,13 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import { useRef, useState, type ChangeEvent } from "react";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { orderSource_e } from "../../../enum";
 import type { StorefrontOrder, StorefrontOrderEvidence } from "../../Storefront/type";
 
@@ -22,7 +25,7 @@ type PaymentEvidenceDialogProps = {
   error: string;
   evidence: StorefrontOrder["confirmationEvidence"];
   source: orderSource_e;
-  onUpload: (evidence: StorefrontOrderEvidence) => Promise<void>;
+  onUpload: (evidence: StorefrontOrderEvidence | { objectKey: string }) => Promise<void>;
 };
 
 export function PaymentEvidenceDialog({
@@ -38,6 +41,37 @@ export function PaymentEvidenceDialog({
   const [uploadError, setUploadError] = useState("");
   const [uploaded, setUploaded] = useState(false);
   const uploading = useRef(false);
+  const [objectKey, setObjectKey] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
+
+  async function handleUseExisting() {
+    if (!objectKey.trim() || uploading.current || isLoading || source !== orderSource_e.Direct) return;
+    uploading.current = true;
+    setIsUploading(true);
+    setUploadError("");
+    setUploaded(false);
+    setCopyMessage("");
+    try {
+      await onUpload({ objectKey: objectKey.trim() });
+      setObjectKey("");
+      setUploaded(true);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "ไม่สามารถใช้หลักฐานเดิมได้");
+    } finally {
+      uploading.current = false;
+      setIsUploading(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!evidence?.objectKey) return;
+    try {
+      await navigator.clipboard.writeText(evidence.objectKey);
+      setCopyMessage("คัดลอก objectKey แล้ว");
+    } catch {
+      setCopyMessage("คัดลอกไม่สำเร็จ กรุณาเลือกข้อความ objectKey แล้วคัดลอกด้วยตนเอง");
+    }
+  }
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -45,6 +79,7 @@ export function PaymentEvidenceDialog({
     if (!file || uploading.current || source !== orderSource_e.Direct) return;
     setUploadError("");
     setUploaded(false);
+    setCopyMessage("");
     if (file.size === 0 || file.size > 2 * 1024 * 1024) {
       setUploadError("กรุณาเลือกไฟล์ขนาดไม่เกิน 2 MB");
       return;
@@ -85,7 +120,8 @@ export function PaymentEvidenceDialog({
       </DialogTitle>
       <DialogContent dividers>
         {uploadError && <Alert severity="error" sx={{ mb: 2 }}>{uploadError}</Alert>}
-        {uploaded && <Alert severity="success" sx={{ mb: 2 }}>อัปโหลดหลักฐานสำเร็จแล้ว</Alert>}
+        {uploaded && <Alert severity="success" sx={{ mb: 2 }}>บันทึกหลักฐานสำเร็จแล้ว</Alert>}
+        {copyMessage && <Alert severity="info" sx={{ mb: 2 }}>{copyMessage}</Alert>}
         {isLoading && (
           <Stack alignItems="center" spacing={1.5} sx={{ py: 4 }}>
             <CircularProgress />
@@ -108,7 +144,7 @@ export function PaymentEvidenceDialog({
               <Box
                 component="img"
                 src={evidence.dataUrl}
-                alt={`หลักฐาน ${evidence.fileName}`}
+                alt={`หลักฐาน ${evidence.objectKey}`}
                 sx={{
                   width: "100%",
                   maxHeight: "70vh",
@@ -122,14 +158,35 @@ export function PaymentEvidenceDialog({
               <Box
                 component="iframe"
                 src={evidence.dataUrl}
-                title={`หลักฐาน ${evidence.fileName}`}
+                title={`หลักฐาน ${evidence.objectKey}`}
                 sx={{ width: "100%", height: "70vh", border: 0 }}
               />
             )}
             <Box>
-              <Typography fontWeight={600}>
-                {evidence.fileName}
+              <Typography variant="caption" color="text.secondary">objectKey</Typography>
+              <Typography fontWeight={600} sx={{ overflowWrap: "anywhere", userSelect: "text" }}>
+                {evidence.objectKey || "ไม่พบ objectKey"}
               </Typography>
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ my: 1 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<ContentCopyIcon />}
+                  onClick={handleCopy}
+                  disabled={!evidence.objectKey}
+                >
+                  คัดลอก objectKey
+                </Button>
+                <Button
+                  component="a"
+                  href={evidence.dataUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  variant="outlined"
+                  startIcon={<OpenInNewIcon />}
+                >
+                  เปิดหลักฐาน
+                </Button>
+              </Stack>
               <Typography variant="caption" color="text.secondary">
                 อัปเดตล่าสุด{" "}
                 {new Date(
@@ -137,14 +194,20 @@ export function PaymentEvidenceDialog({
                 ).toLocaleString("th-TH")}
               </Typography>
             </Box>
-            <Button
-              component="a"
-              href={evidence.dataUrl}
-              target="_blank"
-              rel="noreferrer"
-              variant="outlined"
-            >
-              เปิดหลักฐาน
+          </Stack>
+        )}
+        {source === orderSource_e.Direct && (
+          <Stack spacing={1.5} sx={{ mt: 2 }}>
+            <TextField
+              label="objectKey ของหลักฐานเดิม"
+              value={objectKey}
+              onChange={(event) => setObjectKey(event.target.value)}
+              disabled={isLoading || isUploading}
+              fullWidth
+              helperText="วาง objectKey ของรูปภาพหรือ PDF ที่มีอยู่ในระบบ"
+            />
+            <Button variant="outlined" onClick={handleUseExisting} disabled={!objectKey.trim() || isLoading || isUploading}>
+              ใช้หลักฐานเดิม
             </Button>
           </Stack>
         )}

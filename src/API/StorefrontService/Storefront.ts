@@ -253,7 +253,7 @@ export function uploadAdminDirectEvidence(
   accessToken: string,
   orderID: string,
   customerID: string,
-  evidence: StorefrontOrderEvidence,
+  evidence: StorefrontOrderEvidence | { objectKey: string },
 ): Promise<StorefrontOrder> {
   return request(() => axios_storefront.patch(
     `/storefront/admin/orders/${pathSegment(orderID)}/evidence`,

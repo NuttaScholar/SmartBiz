@@ -37,6 +37,7 @@ export type StorefrontOrder = {
   status: orderStatus_e;
   totalAmount: number;
   confirmationEvidence?: {
+    objectKey: string;
     fileName: StorefrontOrderEvidence["fileName"];
     mimeType: StorefrontOrderEvidence["mimeType"];
     dataUrl: StorefrontOrderEvidence["dataUrl"];

@@ -69,6 +69,7 @@ describe("StorefrontService", () => {
       confirmPayment: jasmine.createSpy("confirmPayment"),
     };
     const evidenceStorage = {
+      getEvidenceMetadata: jasmine.createSpy("getEvidenceMetadata"),
       uploadEvidence: jasmine
         .createSpy("uploadEvidence")
         .and.resolveTo({
@@ -306,7 +307,7 @@ describe("StorefrontService", () => {
     expect(evidenceStorage.uploadEvidence).not.toHaveBeenCalled();
   });
 
-  it("removes the previous private evidence after replacement", async () => {
+  it("retains previous evidence after replacement because other orders may reference it", async () => {
     const { service, billGateway, evidenceStorage } = createService();
     billGateway.getAdminEvidenceOrder.and.resolveTo({
       orderID: "SO-001",
@@ -346,6 +347,6 @@ describe("StorefrontService", () => {
     });
 
     expect(evidenceStorage.removeEvidence)
-      .toHaveBeenCalledWith("SO-001/old-evidence.png");
+      .not.toHaveBeenCalled();
   });
 });

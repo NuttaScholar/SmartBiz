@@ -116,6 +116,30 @@ export default class EvidenceStorageService {
     );
   }
 
+  async getEvidenceMetadata(objectKey: string): Promise<EvidenceUploadResult> {
+    if (!objectKey || objectKey.length > 1024 || /[\x00-\x1f]/.test(objectKey)) {
+      throw new AppError("Invalid evidence objectKey", 400);
+    }
+    let stat;
+    try {
+      stat = await this.client.statObject(PAYMENT_EVIDENCE_BUCKET, objectKey);
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      if (["NotFound", "NoSuchKey", "NoSuchObject"].includes(code ?? "")) {
+        throw new AppError("Evidence objectKey was not found", 404);
+      }
+      throw error;
+    }
+    const mimeType = String(stat.metaData["content-type"] ?? "").split(";")[0].trim().toLowerCase();
+    if (!["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"].includes(mimeType)) {
+      throw new AppError("Evidence must be an image or PDF", 400);
+    }
+    if (stat.size <= 0 || stat.size > 2 * 1024 * 1024) {
+      throw new AppError("Evidence must not exceed 2 MB", 413);
+    }
+    return { objectKey, mimeType, fileName: objectKey.split("/").pop() || objectKey };
+  }
+
   async removeEvidence(objectKey: string): Promise<void> {
     await this.client.removeObject(PAYMENT_EVIDENCE_BUCKET, objectKey);
   }

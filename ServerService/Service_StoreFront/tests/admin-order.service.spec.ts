@@ -44,6 +44,7 @@ describe("AdminOrderService", () => {
         }),
     };
     const evidenceStorage = {
+      getEvidenceMetadata: jasmine.createSpy("getEvidenceMetadata"),
       uploadEvidence: jasmine.createSpy("uploadEvidence"),
       getEvidenceUrl: jasmine
         .createSpy("getEvidenceUrl")
@@ -145,7 +146,7 @@ describe("AdminOrderService", () => {
       { fileName: "proof.pdf", mimeType: "application/pdf", dataUrl: "data:application/pdf;base64,JVBERi0=" });
     expect(result.status).toBe(orderStatus_e.WaitingPayment);
     expect(result.confirmationEvidence?.dataUrl).toBe("https://evidence/new");
-    expect(evidenceStorage.removeEvidence).toHaveBeenCalledWith("old");
+    expect(evidenceStorage.removeEvidence).not.toHaveBeenCalled();
   });
 
   it("rejects online uploads and invalid files before storing them", async () => {
@@ -165,5 +166,40 @@ describe("AdminOrderService", () => {
     await expectAsync(service.uploadDirectEvidence(paymentNotifiedOrder.orderID, "CUST-001",
       { fileName: "proof.pdf", mimeType: "application/pdf", dataUrl: "data:application/pdf;base64,JVBERi0=" })).toBeRejectedWithError("Bill unavailable");
     expect(evidenceStorage.removeEvidence).toHaveBeenCalledWith("new");
+  });
+
+  it("reuses an existing objectKey and exposes it without uploading or deleting files", async () => {
+    const { service, billGateway, evidenceStorage } = createService();
+    const order = { ...paymentNotifiedOrder, source: "direct", confirmationEvidence: { objectKey: "old" } };
+    billGateway.getAdminEvidenceOrder.and.resolveTo(order);
+    const metadata = { objectKey: "shared/proof.pdf", mimeType: "application/pdf", fileName: "proof.pdf" };
+    evidenceStorage.getEvidenceMetadata.and.resolveTo(metadata);
+    billGateway.updateDirectEvidence.and.callFake((_customer, _id, evidence) => Promise.resolve({ ...order, confirmationEvidence: evidence }));
+    const result = await service.uploadDirectEvidence(order.orderID, order.customerID, { objectKey: " shared/proof.pdf " });
+    expect(evidenceStorage.getEvidenceMetadata).toHaveBeenCalledWith("shared/proof.pdf");
+    expect(result.confirmationEvidence?.objectKey).toBe("shared/proof.pdf");
+    expect(result.confirmationEvidence?.dataUrl).toBe("https://evidence/shared/proof.pdf");
+    expect(evidenceStorage.uploadEvidence).not.toHaveBeenCalled();
+    expect(evidenceStorage.removeEvidence).not.toHaveBeenCalled();
+  });
+
+  it("does not delete an existing object when attaching it fails", async () => {
+    const { service, billGateway, evidenceStorage } = createService();
+    billGateway.getAdminEvidenceOrder.and.resolveTo({ ...paymentNotifiedOrder, source: "direct" });
+    evidenceStorage.getEvidenceMetadata.and.resolveTo({ objectKey: "shared", mimeType: "image/webp", fileName: "proof.webp" });
+    billGateway.updateDirectEvidence.and.rejectWith(new Error("Update failed"));
+    await expectAsync(service.uploadDirectEvidence(paymentNotifiedOrder.orderID, "CUST-001", { objectKey: "shared" })).toBeRejectedWithError("Update failed");
+    expect(evidenceStorage.removeEvidence).not.toHaveBeenCalled();
+  });
+
+  it("rejects missing objects, empty keys, and mixed upload inputs", async () => {
+    const { service, billGateway, evidenceStorage } = createService();
+    billGateway.getAdminEvidenceOrder.and.resolveTo({ ...paymentNotifiedOrder, source: "direct" });
+    evidenceStorage.getEvidenceMetadata.and.rejectWith(new Error("Evidence objectKey was not found"));
+    for (const input of [{ objectKey: "missing" }, { objectKey: " " }, { objectKey: "shared", dataUrl: "data:application/pdf;base64,YQ==" }]) {
+      await expectAsync(service.uploadDirectEvidence(paymentNotifiedOrder.orderID, "CUST-001", input)).toBeRejected();
+    }
+    expect(billGateway.updateDirectEvidence).not.toHaveBeenCalled();
+    expect(evidenceStorage.removeEvidence).not.toHaveBeenCalled();
   });
 });

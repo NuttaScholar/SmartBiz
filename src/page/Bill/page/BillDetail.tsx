@@ -222,7 +222,7 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
   );
 
   // API handlers *****************************
-  const uploadPaymentEvidence = async (evidence: StorefrontOrderEvidence) => {
+  const uploadPaymentEvidence = async (evidence: StorefrontOrderEvidence | { objectKey: string }) => {
     if (!order || order.source !== orderSource_e.Direct) throw new Error("รองรับเฉพาะคำสั่งซื้อสั่งโดยตรง");
     try {
       const updated = await storefrontAdminWithRetry(authContext, (accessToken) =>

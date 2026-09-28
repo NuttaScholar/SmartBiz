@@ -34,17 +34,23 @@ export default class AdminOrderService {
     const customer = this.requireText(customerID, "customerID");
     const current = await this.billGateway.getAdminEvidenceOrder(customer, id);
     if ((current.source ?? "direct") !== "direct") throw new AppError("Only direct orders support admin evidence upload", 409);
-    const parsed = parseEvidence(input);
-    const uploaded = await this.evidenceStorage.uploadEvidence(parsed.data, id, parsed.fileName, parsed.mimeType);
+    const value = input as { objectKey?: unknown; dataUrl?: unknown };
+    const isExisting = value?.objectKey !== undefined;
+    if (isExisting && value.dataUrl !== undefined) throw new AppError("Provide objectKey or a new file, not both", 400);
+    const uploaded = isExisting
+      ? await this.evidenceStorage.getEvidenceMetadata(this.requireText(value.objectKey, "objectKey"))
+      : await (async () => {
+          const parsed = parseEvidence(input);
+          return this.evidenceStorage.uploadEvidence(parsed.data, id, parsed.fileName, parsed.mimeType);
+        })();
     let updated;
     try {
       updated = await this.billGateway.updateDirectEvidence(customer, id, { ...uploaded, updatedAt: new Date() });
     } catch (error) {
-      await this.removeEvidenceSafely(uploaded.objectKey);
+      if (!isExisting) await this.removeEvidenceSafely(uploaded.objectKey);
       throw error;
     }
-    const previousKey = current.confirmationEvidence?.objectKey;
-    if (previousKey && previousKey !== uploaded.objectKey) await this.removeEvidenceSafely(previousKey);
+    // Replaced objects may still be used by another order; never delete them here.
     return this.mapOrder(updated);
   }
 
@@ -66,6 +72,7 @@ export default class AdminOrderService {
       totalAmount: order.totalAmount,
       ...(evidence
         ? { confirmationEvidence: {
+            objectKey: evidence.objectKey,
             fileName: evidence.fileName,
             mimeType: evidence.mimeType,
             dataUrl: await this.evidenceStorage.getEvidenceUrl(evidence.objectKey),

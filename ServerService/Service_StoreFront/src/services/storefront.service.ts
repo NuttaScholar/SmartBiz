@@ -22,6 +22,7 @@ import AppError from "../utils/app-error";
 import { orderStatus_e, stockStatus_e } from "../utils/enum";
 
 export interface EvidenceStorage {
+  getEvidenceMetadata(objectKey: string): Promise<{ objectKey: string; fileName: string; mimeType: string }>;
   uploadEvidence(
     data: Uint8Array,
     orderID: string,
@@ -208,10 +209,7 @@ export default class StorefrontService {
       await this.removeEvidenceSafely(uploadedEvidence.objectKey);
       throw thrown;
     }
-    const previousKey = currentOrder.confirmationEvidence?.objectKey;
-    if (previousKey && previousKey !== uploadedEvidence.objectKey) {
-      await this.removeEvidenceSafely(previousKey);
-    }
+    // Retain replaced files because other orders may reference the same objectKey.
     return this.mapOrder(updated);
   }
 
@@ -277,6 +275,7 @@ export default class StorefrontService {
     const confirmationEvidence: ConfirmationEvidence | undefined =
       storedEvidence
         ? {
+            objectKey: storedEvidence.objectKey,
             fileName: storedEvidence.fileName,
             mimeType: storedEvidence.mimeType,
             dataUrl: await this.evidenceStorage.getEvidenceUrl(

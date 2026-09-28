@@ -51,6 +51,7 @@ export interface StorefrontOrderItem {
 }
 
 export interface ConfirmationEvidence {
+  objectKey: string;
   fileName: string;
   mimeType: string;
   dataUrl: string;
