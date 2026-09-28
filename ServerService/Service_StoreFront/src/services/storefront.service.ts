@@ -163,15 +163,16 @@ export default class StorefrontService {
   ): Promise<StorefrontOrder> {
     const access = await this.authenticate(token);
     const normalizedOrderID = this.requireText(orderID, "orderID");
-    const currentOrder = await this.findOnlineOrder(
+    const currentOrder = await this.billGateway.getAdminEvidenceOrder(
       access.customerID,
       normalizedOrderID,
     );
-    if (!currentOrder) {
+    if (!currentOrder || currentOrder.customerID !== access.customerID || currentOrder.orderID !== normalizedOrderID) {
       throw new AppError("Order not found", 404);
     }
+    const isDirect = (currentOrder.source ?? "direct") === "direct";
     if (
-      currentOrder.status !== orderStatus_e.Submitted &&
+      !isDirect && currentOrder.status !== orderStatus_e.Submitted &&
       currentOrder.status !== orderStatus_e.PaymentNotified
     ) {
       throw new AppError(
@@ -194,21 +195,24 @@ export default class StorefrontService {
       updatedAt: this.now(),
     };
 
+    let updated: BillOrderRecord;
     try {
-      const updated = await this.billGateway.updateEvidence(
+      updated = await (isDirect
+        ? this.billGateway.updateDirectEvidence.bind(this.billGateway)
+        : this.billGateway.updateEvidence.bind(this.billGateway))(
         access.customerID,
         normalizedOrderID,
         evidence,
       );
-      const previousKey = currentOrder.confirmationEvidence?.objectKey;
-      if (previousKey && previousKey !== uploadedEvidence.objectKey) {
-        await this.removeEvidenceSafely(previousKey);
-      }
-      return this.mapOrder(updated);
     } catch (thrown) {
       await this.removeEvidenceSafely(uploadedEvidence.objectKey);
       throw thrown;
     }
+    const previousKey = currentOrder.confirmationEvidence?.objectKey;
+    if (previousKey && previousKey !== uploadedEvidence.objectKey) {
+      await this.removeEvidenceSafely(previousKey);
+    }
+    return this.mapOrder(updated);
   }
 
   async cancelOrder(

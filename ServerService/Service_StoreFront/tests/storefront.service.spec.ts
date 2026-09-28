@@ -47,6 +47,8 @@ describe("StorefrontService", () => {
         }),
     };
     const billGateway = {
+      getAdminEvidenceOrder: jasmine.createSpy("getAdminEvidenceOrder"),
+      updateDirectEvidence: jasmine.createSpy("updateDirectEvidence"),
       listOrderHistory: jasmine.createSpy("listOrderHistory").and.resolveTo([]),
       createOrder: jasmine.createSpy("createOrder").and.callFake((data) =>
         Promise.resolve({
@@ -220,7 +222,7 @@ describe("StorefrontService", () => {
 
   it("uploads evidence and advances the order to PaymentNotified", async () => {
     const { service, billGateway, evidenceStorage } = createService();
-    billGateway.listOnlineOrders.and.resolveTo([{
+    billGateway.getAdminEvidenceOrder.and.resolveTo({
       orderID: "SO-001",
       customerID: "CUST-001",
       status: orderStatus_e.Submitted,
@@ -229,7 +231,7 @@ describe("StorefrontService", () => {
       createdAt: fixedNow,
       updatedAt: fixedNow,
       source: "online",
-    }]);
+    });
     billGateway.updateEvidence.and.callFake(
       (_customerID: string, orderID: string, evidence: any) =>
         Promise.resolve({
@@ -273,9 +275,40 @@ describe("StorefrontService", () => {
     );
   });
 
+  it("uploads evidence for a direct order without changing its status", async () => {
+    const { service, billGateway } = createService();
+    const order = { orderID: "D1", customerID: "CUST-001", source: "direct", status: orderStatus_e.WaitingPayment,
+      items: [], totalAmount: 100, createdAt: fixedNow, updatedAt: fixedNow };
+    billGateway.getAdminEvidenceOrder.and.resolveTo(order);
+    billGateway.updateDirectEvidence.and.callFake((_customer, _id, evidence) =>
+      Promise.resolve({ ...order, confirmationEvidence: evidence }));
+    const updated = await service.updateEvidence(token, "D1", {
+      fileName: "proof.png", mimeType: "image/png", dataUrl: "data:image/png;base64,YQ==",
+    });
+    expect(updated.status).toBe(orderStatus_e.WaitingPayment);
+    expect(updated.source).toBe("direct");
+    expect(billGateway.getAdminEvidenceOrder).toHaveBeenCalledWith("CUST-001", "D1");
+    expect(billGateway.updateDirectEvidence).toHaveBeenCalledWith("CUST-001", "D1", jasmine.any(Object));
+    expect(billGateway.updateEvidence).not.toHaveBeenCalled();
+  });
+
+  it("rejects evidence for another customer before storing a file", async () => {
+    const { service, billGateway, evidenceStorage } = createService();
+    billGateway.getAdminEvidenceOrder.and.resolveTo({ orderID: "D1", customerID: "OTHER", source: "direct" });
+    await expectAsync(service.updateEvidence(token, "D1", {})).toBeRejectedWithError("Order not found");
+    expect(evidenceStorage.uploadEvidence).not.toHaveBeenCalled();
+  });
+
+  it("still rejects online evidence after payment confirmation", async () => {
+    const { service, billGateway, evidenceStorage } = createService();
+    billGateway.getAdminEvidenceOrder.and.resolveTo({ orderID: "O1", customerID: "CUST-001", source: "online", status: orderStatus_e.PrepareProduct });
+    await expectAsync(service.updateEvidence(token, "O1", {})).toBeRejectedWithError("Evidence can only be updated before payment confirmation");
+    expect(evidenceStorage.uploadEvidence).not.toHaveBeenCalled();
+  });
+
   it("removes the previous private evidence after replacement", async () => {
     const { service, billGateway, evidenceStorage } = createService();
-    billGateway.listOnlineOrders.and.resolveTo([{
+    billGateway.getAdminEvidenceOrder.and.resolveTo({
       orderID: "SO-001",
       customerID: "CUST-001",
       status: orderStatus_e.PaymentNotified,
@@ -290,7 +323,7 @@ describe("StorefrontService", () => {
       createdAt: fixedNow,
       updatedAt: fixedNow,
       source: "online",
-    }]);
+    });
     billGateway.updateEvidence.and.callFake(
       (_customerID: string, orderID: string, evidence: any) =>
         Promise.resolve({
