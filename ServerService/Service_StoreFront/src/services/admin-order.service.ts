@@ -1,5 +1,6 @@
 import type { PaymentConfirmationResult, StorefrontOrder } from "../type";
 import AppError from "../utils/app-error";
+import { parseEvidence } from "../utils/parse-evidence";
 import { orderStatus_e } from "../utils/enum";
 import type { BillGateway } from "./bill-client.service";
 import type { EvidenceStorage } from "./storefront.service";
@@ -19,14 +20,37 @@ export default class AdminOrderService {
   async getOrder(orderID: unknown, customerID: unknown): Promise<StorefrontOrder> {
     const normalizedOrderID = this.requireText(orderID, "orderID");
     const normalizedCustomerID = this.requireText(customerID, "customerID");
-    const orders = await this.billGateway.listOnlineOrders(
+    const order = await this.billGateway.getAdminEvidenceOrder(
       normalizedCustomerID,
       normalizedOrderID,
     );
-    const order = orders.find((item) => item.orderID === normalizedOrderID);
     if (!order) throw new AppError("Order not found", 404);
 
     return this.mapOrder(order);
+  }
+
+  async uploadDirectEvidence(orderID: unknown, customerID: unknown, input: unknown): Promise<StorefrontOrder> {
+    const id = this.requireText(orderID, "orderID");
+    const customer = this.requireText(customerID, "customerID");
+    const current = await this.billGateway.getAdminEvidenceOrder(customer, id);
+    if ((current.source ?? "direct") !== "direct") throw new AppError("Only direct orders support admin evidence upload", 409);
+    const parsed = parseEvidence(input);
+    const uploaded = await this.evidenceStorage.uploadEvidence(parsed.data, id, parsed.fileName, parsed.mimeType);
+    let updated;
+    try {
+      updated = await this.billGateway.updateDirectEvidence(customer, id, { ...uploaded, updatedAt: new Date() });
+    } catch (error) {
+      await this.removeEvidenceSafely(uploaded.objectKey);
+      throw error;
+    }
+    const previousKey = current.confirmationEvidence?.objectKey;
+    if (previousKey && previousKey !== uploaded.objectKey) await this.removeEvidenceSafely(previousKey);
+    return this.mapOrder(updated);
+  }
+
+  private async removeEvidenceSafely(key: string) {
+    try { await this.evidenceStorage.removeEvidence(key); }
+    catch (error) { console.error("Failed to remove payment evidence", error); }
   }
 
   private async mapOrder(

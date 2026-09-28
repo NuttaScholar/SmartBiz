@@ -94,6 +94,14 @@ export default class BillRepo {
     return this.OrderModel.findOne({ orderID });
   }
 
+  async updateDirectEvidence(customerID: string, orderID: string, evidence: StoredConfirmationEvidence) {
+    return this.OrderModel.findOneAndUpdate(
+      { customerID, orderID, source: sourceFilter(OrderSource.Direct) },
+      { $set: { confirmationEvidence: evidence } },
+      { new: true, runValidators: true },
+    );
+  }
+
   async findOnlineByCustomer(customerID: string, orderID?: string) {
     return this.OrderModel.find({
       customerID,

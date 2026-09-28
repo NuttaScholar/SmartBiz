@@ -24,6 +24,8 @@ describe("AdminOrderService", () => {
 
   function createService() {
     const billGateway = {
+      getAdminEvidenceOrder: jasmine.createSpy("getAdminEvidenceOrder"),
+      updateDirectEvidence: jasmine.createSpy("updateDirectEvidence"),
       listOrderHistory: jasmine.createSpy("listOrderHistory").and.resolveTo([]),
       createOrder: jasmine.createSpy("createOrder"),
       listOnlineOrders: jasmine.createSpy("listOnlineOrders"),
@@ -95,7 +97,7 @@ describe("AdminOrderService", () => {
 
   it("gets an online order with a signed payment evidence URL", async () => {
     const { service, billGateway, evidenceStorage } = createService();
-    billGateway.listOnlineOrders.and.resolveTo([{
+    billGateway.getAdminEvidenceOrder.and.resolveTo({
       ...paymentNotifiedOrder,
       confirmationEvidence: {
         fileName: "payment.png",
@@ -103,14 +105,14 @@ describe("AdminOrderService", () => {
         objectKey: "SO-001/payment.png",
         updatedAt: fixedNow,
       },
-    }]);
+    });
 
     const result = await service.getOrder(
       paymentNotifiedOrder.orderID,
       paymentNotifiedOrder.customerID,
     );
 
-    expect(billGateway.listOnlineOrders).toHaveBeenCalledWith(
+    expect(billGateway.getAdminEvidenceOrder).toHaveBeenCalledWith(
       paymentNotifiedOrder.customerID,
       paymentNotifiedOrder.orderID,
     );
@@ -130,5 +132,38 @@ describe("AdminOrderService", () => {
       paymentNotifiedOrder.orderID,
       "admin",
     )).toBeRejectedWithError("Invalid state");
+  });
+
+  it("uploads direct evidence and returns a signed URL without changing status", async () => {
+    const { service, billGateway, evidenceStorage } = createService();
+    const direct = { ...paymentNotifiedOrder, source: "direct", status: orderStatus_e.WaitingPayment,
+      confirmationEvidence: { objectKey: "old" } };
+    billGateway.getAdminEvidenceOrder.and.resolveTo(direct);
+    evidenceStorage.uploadEvidence.and.resolveTo({ objectKey: "new", fileName: "proof.pdf", mimeType: "application/pdf" });
+    billGateway.updateDirectEvidence.and.callFake((_customer, _id, evidence) => Promise.resolve({ ...direct, confirmationEvidence: evidence }));
+    const result = await service.uploadDirectEvidence(direct.orderID, direct.customerID,
+      { fileName: "proof.pdf", mimeType: "application/pdf", dataUrl: "data:application/pdf;base64,JVBERi0=" });
+    expect(result.status).toBe(orderStatus_e.WaitingPayment);
+    expect(result.confirmationEvidence?.dataUrl).toBe("https://evidence/new");
+    expect(evidenceStorage.removeEvidence).toHaveBeenCalledWith("old");
+  });
+
+  it("rejects online uploads and invalid files before storing them", async () => {
+    const { service, billGateway, evidenceStorage } = createService();
+    billGateway.getAdminEvidenceOrder.and.resolveTo(paymentNotifiedOrder);
+    await expectAsync(service.uploadDirectEvidence(paymentNotifiedOrder.orderID, "CUST-001", {})).toBeRejected();
+    billGateway.getAdminEvidenceOrder.and.resolveTo({ ...paymentNotifiedOrder, source: "direct" });
+    await expectAsync(service.uploadDirectEvidence(paymentNotifiedOrder.orderID, "CUST-001", {})).toBeRejected();
+    expect(evidenceStorage.uploadEvidence).not.toHaveBeenCalled();
+  });
+
+  it("removes the new object if Bill rejects the update", async () => {
+    const { service, billGateway, evidenceStorage } = createService();
+    billGateway.getAdminEvidenceOrder.and.resolveTo({ ...paymentNotifiedOrder, source: "direct" });
+    evidenceStorage.uploadEvidence.and.resolveTo({ objectKey: "new", fileName: "proof.pdf", mimeType: "application/pdf" });
+    billGateway.updateDirectEvidence.and.rejectWith(new Error("Bill unavailable"));
+    await expectAsync(service.uploadDirectEvidence(paymentNotifiedOrder.orderID, "CUST-001",
+      { fileName: "proof.pdf", mimeType: "application/pdf", dataUrl: "data:application/pdf;base64,JVBERi0=" })).toBeRejectedWithError("Bill unavailable");
+    expect(evidenceStorage.removeEvidence).toHaveBeenCalledWith("new");
   });
 });

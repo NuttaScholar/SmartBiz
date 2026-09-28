@@ -29,6 +29,7 @@ describe("BillService", () => {
       saveOrder: jasmine.createSpy("saveOrder").and.callFake((order) => Promise.resolve(order)),
       findByCustomerAndOrder: jasmine.createSpy("findByCustomerAndOrder").and.resolveTo([]),
       getOrder: jasmine.createSpy("getOrder"),
+      updateDirectEvidence: jasmine.createSpy("updateDirectEvidence"),
       updateOrder: jasmine.createSpy("updateOrder").and.callFake((orderID, data) => Promise.resolve({ orderID, ...data })),
       updateStatus: jasmine.createSpy("updateStatus").and.callFake((orderID, status) => Promise.resolve({ orderID, status })),
       deleteOrder: jasmine.createSpy("deleteOrder").and.resolveTo({ orderID: "ORD001" }),
@@ -76,6 +77,26 @@ describe("BillService", () => {
     expect(history.nextCursor).toBeNull();
     expect(service.repo.findHistoryByCustomer).toHaveBeenCalledWith("CUST001", 20, undefined);
     expect(service.repo.findOnlineByCustomer).not.toHaveBeenCalled();
+  });
+
+  it("stores direct evidence without changing the order status", async () => {
+    const service = createService();
+    const order = { orderID: "D1", customerID: "C1", source: OrderSource.Direct, status: OrderStatus.WaitingPayment };
+    const evidence = { fileName: "proof.pdf", mimeType: "application/pdf", objectKey: "D1/proof", updatedAt: new Date() };
+    service.repo.getOrder.and.resolveTo(order);
+    service.repo.updateDirectEvidence.and.resolveTo({ ...order, confirmationEvidence: evidence });
+    const result = await service.updateDirectEvidence("C1", "D1", evidence);
+    expect(result.status).toBe(OrderStatus.WaitingPayment);
+    expect(service.repo.updateDirectEvidence).toHaveBeenCalledWith("C1", "D1", evidence);
+    expect(service.repo.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it("rejects evidence access for a different customer and uploads to online orders", async () => {
+    const service = createService();
+    service.repo.getOrder.and.resolveTo({ customerID: "C1", source: OrderSource.Online });
+    await expectAsync(service.getAdminEvidenceOrder("C2", "O1")).toBeRejected();
+    await expectAsync(service.updateDirectEvidence("C1", "O1", {})).toBeRejected();
+    expect(service.repo.updateDirectEvidence).not.toHaveBeenCalled();
   });
 
   it("rejects history requests without a customer", async () => {

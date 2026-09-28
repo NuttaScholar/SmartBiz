@@ -33,11 +33,12 @@ import {
 } from "../../../lib/authRedirect";
 import {
   confirmAdminStorefrontPayment,
+  uploadAdminDirectEvidence,
   getAdminStorefrontOrder,
   getStorefrontErrorMessage,
   StorefrontApiError,
 } from "../../../API/StorefrontService/Storefront";
-import type { StorefrontOrder } from "../../Storefront/type";
+import type { StorefrontOrder, StorefrontOrderEvidence } from "../../Storefront/type";
 import { storefrontAdminWithRetry } from "../../Customer/lib/storefrontAdminWithRetry";
 
 //*************************************************
@@ -221,6 +222,20 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
   );
 
   // API handlers *****************************
+  const uploadPaymentEvidence = async (evidence: StorefrontOrderEvidence) => {
+    if (!order || order.source !== orderSource_e.Direct) throw new Error("รองรับเฉพาะคำสั่งซื้อสั่งโดยตรง");
+    try {
+      const updated = await storefrontAdminWithRetry(authContext, (accessToken) =>
+        uploadAdminDirectEvidence(accessToken, order.id, order.customerID, evidence),
+      );
+      setEvidenceOrder(updated);
+      setEvidenceError("");
+    } catch (error) {
+      if (error instanceof StorefrontApiError && error.status === 401) redirectToLogin(navigate);
+      throw error;
+    }
+  };
+
   const closePaymentQuestion = React.useCallback(() => {
     setIsPaymentQuestionOpen(false);
   }, []);
@@ -511,13 +526,16 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
         onCancel={() => updateBillingStatus(false)}
         onClose={closePaymentQuestion}
       />
-      <PaymentEvidenceDialog
+      {isEvidenceOpen && <PaymentEvidenceDialog
+        key={order?.id}
         open={isEvidenceOpen}
         onClose={() => setIsEvidenceOpen(false)}
         isLoading={isEvidenceLoading}
         error={evidenceError}
         evidence={evidenceOrder?.confirmationEvidence}
-      />
+        source={order?.source ?? source}
+        onUpload={uploadPaymentEvidence}
+      />}
     </>
   );
 };

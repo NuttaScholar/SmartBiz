@@ -365,6 +365,32 @@ export default class BillService {
     return this.repo.findOnlineByCustomer(customerID, orderID);
   }
 
+  async getAdminEvidenceOrder(customerID: string, orderID: string) {
+    this.requireText(customerID, "customerID");
+    this.requireText(orderID, "orderID");
+    const order = await this.repo.getOrder(orderID);
+    if (!order || order.customerID !== customerID) {
+      throw { code: errorCode_e.NotFoundError, message: "Order not found" };
+    }
+    return order;
+  }
+
+  async updateDirectEvidence(customerID: string, orderID: string, evidence: StoredConfirmationEvidence) {
+    const order = await this.getAdminEvidenceOrder(customerID, orderID);
+    if ((order.source ?? OrderSource.Direct) !== OrderSource.Direct) {
+      throw { code: errorCode_e.InvalidStateError, message: "Only direct orders support admin evidence upload" };
+    }
+    if (!evidence || typeof evidence.fileName !== "string" || !evidence.fileName.trim()
+      || typeof evidence.objectKey !== "string" || !evidence.objectKey.trim()
+      || !["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"].includes(evidence.mimeType)
+      || !evidence.updatedAt || !Number.isFinite(new Date(evidence.updatedAt).getTime())) {
+      throw { code: errorCode_e.InvalidInputError, message: "Valid evidence is required" };
+    }
+    const updated = await this.repo.updateDirectEvidence(customerID, orderID, evidence);
+    if (!updated) throw { code: errorCode_e.NotFoundError, message: "Direct order not found" };
+    return updated;
+  }
+
   async getCustomerOrderHistory(customerID: string, limitInput?: unknown, cursorInput?: unknown) {
     const { limit, cursor } = parseHistoryQuery(limitInput, cursorInput);
     await this.ensureCustomerExists(customerID);

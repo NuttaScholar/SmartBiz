@@ -207,6 +207,22 @@ export default class BillController {
     }
   }
 
+  async getAdminEvidenceOrder(req: AuthRequest, res: Response) {
+    try {
+      if (!ensureBillUser(req, res, "bill.storefront.read")) return;
+      const data = await this.service.getAdminEvidenceOrder(req.query.customerID as string, req.params.orderID);
+      return res.json({ success: true, data });
+    } catch (err: any) { return handleError(res, err); }
+  }
+
+  async updateDirectEvidence(req: AuthRequest, res: Response) {
+    try {
+      if (!ensureBillUser(req, res, "bill.storefront.manage")) return;
+      const data = await this.service.updateDirectEvidence(req.body?.customerID, req.params.orderID, req.body?.evidence);
+      return res.json({ success: true, data });
+    } catch (err: any) { return handleError(res, err); }
+  }
+
   async updateStorefrontEvidence(req: AuthRequest, res: Response) {
     try {
       if (!ensureBillUser(req, res, "bill.storefront.manage")) return;

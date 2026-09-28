@@ -22,6 +22,11 @@ export default function adminOrderRoutes(
     controller.getOrder,
   );
   router.patch(
+    "/:orderID/evidence",
+    adminOrServiceScope("storefront.payment.confirm"),
+    controller.uploadDirectEvidence,
+  );
+  router.patch(
     "/:orderID/payment-confirmation",
     adminOrServiceScope("storefront.payment.confirm"),
     controller.confirmPayment,

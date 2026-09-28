@@ -32,6 +32,8 @@ interface BillApiResponse<T> {
 }
 
 export interface BillGateway {
+  getAdminEvidenceOrder(customerID: string, orderID: string): Promise<BillOrderRecord>;
+  updateDirectEvidence(customerID: string, orderID: string, evidence: StoredConfirmationEvidence): Promise<BillOrderRecord>;
   listOrderHistory(customerID: string, limit?: number, cursor?: string): Promise<{ items: BillOrderRecord[]; hasMore: boolean; nextCursor: string | null }>;
   createOrder(input: CreateBillOrderInput): Promise<BillOrderRecord>;
   listOnlineOrders(
@@ -56,6 +58,20 @@ export interface BillGateway {
 
 export default class BillClientService implements BillGateway {
   private readonly baseUrl = SERVICE_BILL_URL.replace(/\/$/, "");
+
+  getAdminEvidenceOrder(customerID: string, orderID: string): Promise<BillOrderRecord> {
+    return this.call("read order evidence", ["bill.storefront.read"], (authorization) => axios.get(
+      `${this.baseUrl}/bill/evidence/${encodeURIComponent(orderID)}`,
+      { ...this.config(authorization), params: { customerID } },
+    ));
+  }
+
+  updateDirectEvidence(customerID: string, orderID: string, evidence: StoredConfirmationEvidence): Promise<BillOrderRecord> {
+    return this.call("upload direct order evidence", ["bill.storefront.manage"], (authorization) => axios.patch(
+      `${this.baseUrl}/bill/evidence/${encodeURIComponent(orderID)}`,
+      { customerID, evidence }, this.config(authorization),
+    ));
+  }
 
   listOrderHistory(customerID: string, limit?: number, cursor?: string): Promise<{ items: BillOrderRecord[]; hasMore: boolean; nextCursor: string | null }> {
     return this.call(

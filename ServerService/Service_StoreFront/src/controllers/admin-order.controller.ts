@@ -53,4 +53,12 @@ export default class AdminOrderController {
       next(thrown);
     }
   };
+
+  uploadDirectEvidence = async (request: AuthRequest, response: Response, next: NextFunction): Promise<void> => {
+    try {
+      response.json(success(await this.service.uploadDirectEvidence(
+        request.params.orderID, request.body?.customerID, request.body,
+      )));
+    } catch (error) { next(error); }
+  };
 }

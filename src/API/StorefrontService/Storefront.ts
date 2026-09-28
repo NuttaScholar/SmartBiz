@@ -249,6 +249,18 @@ export function confirmAdminStorefrontPayment(
   );
 }
 
+export function uploadAdminDirectEvidence(
+  accessToken: string,
+  orderID: string,
+  customerID: string,
+  evidence: StorefrontOrderEvidence,
+): Promise<StorefrontOrder> {
+  return request(() => axios_storefront.patch(
+    `/storefront/admin/orders/${pathSegment(orderID)}/evidence`,
+    { customerID, ...evidence }, adminAuth(accessToken),
+  ));
+}
+
 export function createCustomerLink(
   accessToken: string,
   customerID: string,

@@ -1,3 +1,4 @@
+import { parseEvidence } from "../utils/parse-evidence";
 import type { StorefrontAccessDocument } from "../models/storefront-access.interface";
 import type { ProductDocument } from "../models/product.interface";
 import DiscountRepo from "../repositories/discount.repo";
@@ -20,15 +21,6 @@ import type {
 import AppError from "../utils/app-error";
 import { orderStatus_e, stockStatus_e } from "../utils/enum";
 
-const MAX_EVIDENCE_BYTES = 2 * 1024 * 1024;
-const ACCEPTED_EVIDENCE_TYPES = new Set([
-  "application/pdf",
-  "image/gif",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
-
 export interface EvidenceStorage {
   uploadEvidence(
     data: Uint8Array,
@@ -42,12 +34,6 @@ export interface EvidenceStorage {
   }>;
   getEvidenceUrl(objectKey: string): Promise<string>;
   removeEvidence(objectKey: string): Promise<void>;
-}
-
-interface ParsedEvidence {
-  fileName: string;
-  mimeType: string;
-  data: Uint8Array;
 }
 
 export default class StorefrontService {
@@ -194,7 +180,7 @@ export default class StorefrontService {
       );
     }
 
-    const parsedEvidence = this.parseEvidence(input);
+    const parsedEvidence = parseEvidence(input);
     const uploadedEvidence = await this.evidenceStorage.uploadEvidence(
       parsedEvidence.data,
       normalizedOrderID,
@@ -330,35 +316,6 @@ export default class StorefrontService {
       seen.add(productID);
       return { productID, quantity: Number(item.quantity) };
     });
-  }
-
-  private parseEvidence(input: unknown): ParsedEvidence {
-    const value = input as Record<string, unknown>;
-    const fileName = this.requireText(value?.fileName, "fileName");
-    const mimeType = this.requireText(value?.mimeType, "mimeType")
-      .toLowerCase();
-    const dataUrl = this.requireText(value?.dataUrl, "dataUrl");
-
-    if (!ACCEPTED_EVIDENCE_TYPES.has(mimeType)) {
-      throw new AppError("Evidence must be an image or PDF", 400);
-    }
-
-    const match = /^data:([^;,]+);base64,([a-z0-9+/=\s]+)$/i.exec(dataUrl);
-    if (!match || match[1].toLowerCase() !== mimeType) {
-      throw new AppError("dataUrl does not match mimeType", 400);
-    }
-    let data: Uint8Array;
-    try {
-      const binary = globalThis.atob(match[2].replace(/\s/g, ""));
-      data = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-    } catch {
-      throw new AppError("Evidence dataUrl is not valid base64", 400);
-    }
-    if (data.byteLength === 0 || data.byteLength > MAX_EVIDENCE_BYTES) {
-      throw new AppError("Evidence must not exceed 2 MB", 413);
-    }
-
-    return { fileName, mimeType, data };
   }
 
   private async findOnlineOrder(
