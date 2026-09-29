@@ -24,9 +24,10 @@ export function OrderEvidence({ order, onUpload }: OrderEvidenceProps) {
   const [showSuccess, setShowSuccess] = useState(false);
   const evidence = pendingEvidence ?? order.confirmationEvidence;
   const canEdit = Boolean(onUpload) && (
-    order.source === orderSource_e.Direct
+    (order.source === orderSource_e.Direct
     || order.status === orderStatus_e.Submitted
-    || order.status === orderStatus_e.PaymentNotified
+    || order.status === orderStatus_e.PaymentNotified)
+    &&order.status !== orderStatus_e.Completed
   );
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
