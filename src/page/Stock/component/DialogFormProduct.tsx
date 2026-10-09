@@ -54,10 +54,12 @@ const DialogFormProduct: React.FC = () => {
   const navigate = useNavigate();
   const { state, setState } = useStockContext();
   const [type, setType] = useState<number | null>(productType_e.merchandise);
+  const [showInStorefront, setShowInStorefront] = useState(true);
   const [file, setFile] = useState<File | null>();
   React.useEffect(() => {
     if (state.dialogOpen === stockDialog_e.productForm) {
       setType(state.productForm?.type ?? productType_e.merchandise);
+      setShowInStorefront(state.productForm?.showInStorefront ?? true);
     }
   }, [state.dialogOpen, state.productForm]);
   // Local Function ***********
@@ -65,7 +67,7 @@ const DialogFormProduct: React.FC = () => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const formJson = Object.fromEntries((formData as any).entries());
-    const data = formJson as formProduct_t;
+    const data = { ...formJson, showInStorefront } as formProduct_t;
 
     try {
       if (state.productForm) {
@@ -214,6 +216,17 @@ const DialogFormProduct: React.FC = () => {
           list={typeList}
           defauleValue={state.productForm?.type.toString()}
           onChange={setType}
+        />
+        <FieldSelector
+          name="showInStorefront"
+          label="แสดงบน StoreFront"
+          required
+          list={[
+            { label: "แสดง", value: 1 },
+            { label: "ซ่อน", value: 0 },
+          ]}
+          value={showInStorefront ? "1" : "0"}
+          onChange={(value) => setShowInStorefront(value === 1)}
         />
         <FieldText
           name="description"

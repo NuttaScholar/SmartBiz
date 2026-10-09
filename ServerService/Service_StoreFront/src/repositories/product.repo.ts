@@ -18,6 +18,7 @@ export default class ProductRepo {
         ],
       },
       price: { $gte: 0 },
+      showInStorefront: { $ne: false },
     };
 
     if (query?.trim()) {
@@ -38,6 +39,7 @@ export default class ProductRepo {
         ],
       },
       price: { $gte: 0 },
+      showInStorefront: { $ne: false },
     });
   }
 }

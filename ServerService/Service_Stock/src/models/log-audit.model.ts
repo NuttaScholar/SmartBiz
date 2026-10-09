@@ -11,6 +11,7 @@ const ProductSnapshotSchema = new Schema(
     status: Number,
     price: Number,
     description: String,
+    showInStorefront: Boolean,
     amount: Number,
   },
   { _id: false },

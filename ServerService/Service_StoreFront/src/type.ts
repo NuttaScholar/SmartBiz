@@ -14,6 +14,7 @@ export type productInfo_t = {
   status?: stockStatus_e;
   price?: number;
   description?: string;
+  showInStorefront?: boolean;
   amount?: number;
 };
 

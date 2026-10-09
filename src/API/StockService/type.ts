@@ -9,6 +9,7 @@ export type productInfo_t = {
   status: stockStatus_e;
   price?: number;
   description?: string;
+  showInStorefront?: boolean;
   amount?: number;
   // For Bill
   total?: number;
@@ -23,6 +24,7 @@ export type formProduct_t = {
   condition?: number;
   price?: number;
   description?: string;
+  showInStorefront?: boolean;
   amount?: number;
 }
 export type queryProduct_t = {
@@ -127,6 +129,7 @@ export type ProductSnapshot_t = {
   status?: number;
   price?: number;
   description?: string;
+  showInStorefront?: boolean;
   amount?: number;
 };
 export type StockLogSnapshot_t = {

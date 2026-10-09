@@ -175,7 +175,7 @@ services:
 
   service_stock:
     <<: *app-defaults
-    image: nuttascholar/smartbiz_stock:1.4
+    image: nuttascholar/smartbiz_stock:1.5
     environment:
       SECRET: ${SECRET:?Set SECRET in the env file}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in the env file}

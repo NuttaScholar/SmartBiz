@@ -8,6 +8,7 @@ export const ProductSchema = new Schema<ProductDocument>({
   status: { type: Number, required: true },
   amount: { type: Number },
   description: { type: String },
+  showInStorefront: { type: Boolean, default: true },
   img: { type: String },
   price: { type: Number },
   condition: { type: Number },

@@ -140,6 +140,7 @@ export default class ProductRepo {
         status: "$status",
         price: "$price",
         description: "$description",
+        showInStorefront: { $ifNull: ["$showInStorefront", true] },
         amount: "$amount",
       },
     };

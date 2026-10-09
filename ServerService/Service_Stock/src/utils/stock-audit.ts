@@ -11,6 +11,7 @@ const SNAPSHOT_FIELDS: Array<keyof ProductSnapshot> = [
   "status",
   "price",
   "description",
+  "showInStorefront",
   "amount",
 ];
 
@@ -24,6 +25,7 @@ export function toProductSnapshot(product: ProductDocument): ProductSnapshot {
     status: product.status,
     price: product.price,
     description: product.description,
+    showInStorefront: product.showInStorefront ?? true,
     amount: product.amount,
   };
 }

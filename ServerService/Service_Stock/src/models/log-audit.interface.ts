@@ -23,6 +23,7 @@ export type ProductSnapshot = {
   status?: number;
   price?: number;
   description?: string;
+  showInStorefront?: boolean;
   amount?: number;
 };
 
