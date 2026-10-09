@@ -1,8 +1,6 @@
-# VPS deployment: see deploy/README.md.
-# MongoDB 4.4 (current VPS): MONGO_VERSION=4.4.29, MONGO_DEPLOY_DIR=mongodb-4.4, MONGO_SHELL=mongo.
-# MongoDB 8.0+: MONGO_VERSION=8.0.5 (or tested newer tag), MONGO_DEPLOY_DIR=mongodb-8.0, MONGO_SHELL=mongosh.
-# Set all three together in .env.vps; defaults preserve the existing 4.4 deployment.
-# Changing versions does not migrate an existing database volume.
+# Standalone home LAN deployment. See deploy/home/README.md.
+name: smartbiz-home
+
 services:
   mongo-keyfile-init:
     image: alpine:3.20
@@ -19,8 +17,7 @@ services:
     volumes:
       - mongo-keyfile:/keyfile
   mongo:
-    container_name: database
-    image: mongo:${MONGO_VERSION:-4.4.29}
+    image: mongo:${MONGO_VERSION:-8.0.5}
     restart: always
     command:
       - mongod
@@ -30,13 +27,11 @@ services:
       - '--keyFile'
       - /run/mongo-keyfile/mongo-keyfile
     networks:
-      private:
-        ipv4_address: 192.168.110.80
+      - private
     volumes:
       - mongo-data:/data/db
       - mongo-keyfile:/run/mongo-keyfile:ro
-      # 4.4: select mongodb-4.4 scripts; 8.0+: select mongodb-8.0 (all three mounts).
-      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-health.js:/opt/mongo-health.js:ro
+      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-8.0}/mongo-health.js:/opt/mongo-health.js:ro
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
@@ -46,8 +41,7 @@ services:
     healthcheck:
       test:
         - CMD
-        # 4.4 requires mongo; 8.0+ requires mongosh (also both init entrypoints).
-        - ${MONGO_SHELL:-mongo}
+        - ${MONGO_SHELL:-mongosh}
         - '--quiet'
         - '--nodb'
         - /opt/mongo-health.js
@@ -55,7 +49,7 @@ services:
       timeout: 5s
       retries: 30
   mongo-replica-init:
-    image: mongo:${MONGO_VERSION:-4.4.29}
+    image: mongo:${MONGO_VERSION:-8.0.5}
     restart: 'no'
     networks:
       - private
@@ -63,7 +57,7 @@ services:
       mongo:
         condition: service_healthy
     entrypoint:
-      - ${MONGO_SHELL:-mongo}
+      - ${MONGO_SHELL:-mongosh}
       - '--quiet'
       - '--nodb'
       - /opt/mongo-replica-init.js
@@ -71,16 +65,14 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
     volumes:
-      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-replica-init.js:/opt/mongo-replica-init.js:ro
+      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-8.0}/mongo-replica-init.js:/opt/mongo-replica-init.js:ro
   mongo-express:
-    container_name: web_database
     image: mongo-express:1.0.2-20-alpine3.19
     restart: always
     ports:
       - 127.0.0.1:${MONGO_EXPRESS_PORT:-8081}:8081
     networks:
-      private:
-        ipv4_address: 192.168.110.81
+      - private
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
@@ -96,7 +88,6 @@ services:
         condition: service_healthy
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
-    container_name: minio
     ports:
       - 127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001
     environment:
@@ -116,18 +107,17 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      private:
-        ipv4_address: 192.168.110.82
+      - private
     expose:
       - '9000'
     restart: unless-stopped
   service_account:
-    container_name: service_account
+    build: ./ServerService/Service_Account
     image: nuttascholar/smartbiz_account:2.5
     environment:
       SECRET: ${SECRET:?Set SECRET in deployment env}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in deployment env}
-      WEB_HOSTS: https://${ADMIN_DOMAIN},https://${STOREFRONT_DOMAIN}
+      WEB_HOSTS: http://${HOME_HOST:?Set HOME_HOST in .env.home}:${HOME_ADMIN_PORT:-8080},http://${HOME_HOST}:${HOME_SHOP_PORT:-8082}
       PORT: 3000
       DB_URL: mongodb://smartbiz_account:${MONGO_ACCOUNT_PASSWORD:?Set MONGO_ACCOUNT_PASSWORD in deployment env}@mongo:27017/Account?authSource=admin&replicaSet=rs0
       LOG_AUDIT_RETENTION_DAYS: ${LOG_AUDIT_RETENTION_DAYS:-365}
@@ -137,10 +127,10 @@ services:
       MINIO_USER: ${MINIO_USER:?Set MINIO_USER in deployment env}
       MINIO_PASSWORD: ${MINIO_PASSWORD:?Set MINIO_PASSWORD in deployment env}
       NODE_ENV: production
-      MINIO_PUBLIC_URL: https://${MEDIA_DOMAIN}
+      ALLOW_HTTP_PUBLIC_URL: 'true'
+      MINIO_PUBLIC_URL: http://${HOME_HOST}:${HOME_MEDIA_PORT:-9000}
     networks:
-      private:
-        ipv4_address: 192.168.110.90
+      - private
     expose:
       - '3000'
     depends_on:
@@ -148,7 +138,7 @@ services:
         condition: service_completed_successfully
       minio:
         condition: service_healthy
-    pull_policy: missing
+    pull_policy: never
     restart: unless-stopped
     init: true
     logging:
@@ -167,23 +157,23 @@ services:
       start_period: 60s
       retries: 3
   service_login:
-    container_name: service_login
+    build: ./ServerService/Service_Login
     image: nuttascholar/smartbiz_login:1.3
     environment:
       SECRET: ${SECRET:?Set SECRET in deployment env}
-      WEB_HOSTS: https://${ADMIN_DOMAIN}
+      WEB_HOSTS: http://${HOME_HOST:?Set HOME_HOST in .env.home}:${HOME_ADMIN_PORT:-8080}
       PORT: 3001
       DB_URL: mongodb://smartbiz_login:${MONGO_LOGIN_PASSWORD:?Set MONGO_LOGIN_PASSWORD in deployment env}@mongo:27017/User?authSource=admin&replicaSet=rs0
       NODE_ENV: production
+      COOKIE_SECURE: 'false'
     networks:
-      private:
-        ipv4_address: 192.168.110.91
+      - private
     expose:
       - '3001'
     depends_on:
       mongo-users-init:
         condition: service_completed_successfully
-    pull_policy: missing
+    pull_policy: never
     restart: unless-stopped
     init: true
     logging:
@@ -202,12 +192,12 @@ services:
       start_period: 60s
       retries: 3
   service_stock:
-    container_name: service_stock
+    build: ./ServerService/Service_Stock
     image: nuttascholar/smartbiz_stock:1.5
     environment:
       SECRET: ${SECRET:?Set SECRET in deployment env}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in deployment env}
-      WEB_HOSTS: https://${ADMIN_DOMAIN}
+      WEB_HOSTS: http://${HOME_HOST:?Set HOME_HOST in .env.home}:${HOME_ADMIN_PORT:-8080}
       PORT: 3003
       DB_URL: mongodb://smartbiz_stock:${MONGO_STOCK_PASSWORD:?Set MONGO_STOCK_PASSWORD in deployment env}@mongo:27017/Stock?authSource=admin&replicaSet=rs0
       LOG_AUDIT_RETENTION_DAYS: ${LOG_AUDIT_RETENTION_DAYS:-365}
@@ -220,10 +210,10 @@ services:
       SERVICE_BILL_URL: http://service_bill:3004
       TZ: Asia/Bangkok
       NODE_ENV: production
-      MINIO_PUBLIC_URL: https://${MEDIA_DOMAIN}
+      ALLOW_HTTP_PUBLIC_URL: 'true'
+      MINIO_PUBLIC_URL: http://${HOME_HOST}:${HOME_MEDIA_PORT:-9000}
     networks:
-      private:
-        ipv4_address: 192.168.110.93
+      - private
     expose:
       - '3003'
     depends_on:
@@ -231,7 +221,7 @@ services:
         condition: service_completed_successfully
       minio:
         condition: service_healthy
-    pull_policy: missing
+    pull_policy: never
     restart: unless-stopped
     init: true
     logging:
@@ -250,12 +240,12 @@ services:
       start_period: 60s
       retries: 3
   service_bill:
-    container_name: service_bill
+    build: ./ServerService/Service_Bill
     image: nuttascholar/smartbiz_bill:1.4
     environment:
       SECRET: ${SECRET:?Set SECRET in deployment env}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in deployment env}
-      WEB_HOSTS: https://${ADMIN_DOMAIN}
+      WEB_HOSTS: http://${HOME_HOST:?Set HOME_HOST in .env.home}:${HOME_ADMIN_PORT:-8080}
       PORT: 3004
       CANCELLED_ORDER_TTL_SECONDS: ${ORDER_TTL_SECONDS:-2592000}
       MONGO_URI_ACCOUNT: mongodb://smartbiz_bill:${MONGO_BILL_PASSWORD:?Set MONGO_BILL_PASSWORD in deployment env}@mongo:27017/Account?authSource=admin&replicaSet=rs0
@@ -268,10 +258,10 @@ services:
       SERVICE_STOCK_URL: http://service_stock:3003
       TZ: Asia/Bangkok
       NODE_ENV: production
-      MINIO_PUBLIC_URL: https://${MEDIA_DOMAIN}
+      ALLOW_HTTP_PUBLIC_URL: 'true'
+      MINIO_PUBLIC_URL: http://${HOME_HOST}:${HOME_MEDIA_PORT:-9000}
     networks:
-      private:
-        ipv4_address: 192.168.110.94
+      - private
     expose:
       - '3004'
     depends_on:
@@ -281,7 +271,7 @@ services:
         condition: service_healthy
       service_stock:
         condition: service_healthy
-    pull_policy: missing
+    pull_policy: never
     restart: unless-stopped
     init: true
     logging:
@@ -300,12 +290,12 @@ services:
       start_period: 60s
       retries: 3
   service_storage:
-    container_name: service_storage
+    build: ./ServerService/Service_Storage
     image: nuttascholar/smartbiz_storage:1.3
     environment:
       SECRET: ${SECRET:?Set SECRET in deployment env}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in deployment env}
-      WEB_HOSTS: https://${ADMIN_DOMAIN}
+      WEB_HOSTS: http://${HOME_HOST:?Set HOME_HOST in .env.home}:${HOME_ADMIN_PORT:-8080}
       PORT: 3002
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
@@ -313,16 +303,16 @@ services:
       MINIO_USER: ${MINIO_USER:?Set MINIO_USER in deployment env}
       MINIO_PASSWORD: ${MINIO_PASSWORD:?Set MINIO_PASSWORD in deployment env}
       NODE_ENV: production
-      MINIO_PUBLIC_URL: https://${MEDIA_DOMAIN}
+      ALLOW_HTTP_PUBLIC_URL: 'true'
+      MINIO_PUBLIC_URL: http://${HOME_HOST}:${HOME_MEDIA_PORT:-9000}
     networks:
-      private:
-        ipv4_address: 192.168.110.92
+      - private
     expose:
       - '3002'
     depends_on:
       minio:
         condition: service_healthy
-    pull_policy: missing
+    pull_policy: never
     restart: unless-stopped
     init: true
     logging:
@@ -341,12 +331,12 @@ services:
       start_period: 60s
       retries: 3
   service_storefront:
-    container_name: service_storefront
+    build: ./ServerService/Service_StoreFront
     image: nuttascholar/smartbiz_storefront:1.2
     environment:
       SECRET: ${SECRET:?Set SECRET in deployment env}
       SERVICE_AUTH_SECRET: ${SERVICE_AUTH_SECRET:?Set SERVICE_AUTH_SECRET in deployment env}
-      WEB_HOSTS: https://${ADMIN_DOMAIN},https://${STOREFRONT_DOMAIN}
+      WEB_HOSTS: http://${HOME_HOST:?Set HOME_HOST in .env.home}:${HOME_ADMIN_PORT:-8080},http://${HOME_HOST}:${HOME_SHOP_PORT:-8082}
       PORT: 3005
       MONGO_URI_ACCOUNT: mongodb://smartbiz_storefront:${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in deployment env}@mongo:27017/Account?authSource=admin&replicaSet=rs0
       MONGO_URI_BILL: mongodb://smartbiz_storefront:${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in deployment env}@mongo:27017/Bill?authSource=admin&replicaSet=rs0
@@ -361,10 +351,10 @@ services:
       SERVICE_BILL_URL: http://service_bill:3004
       TZ: Asia/Bangkok
       NODE_ENV: production
-      MINIO_PUBLIC_URL: https://${MEDIA_DOMAIN}
+      ALLOW_HTTP_PUBLIC_URL: 'true'
+      MINIO_PUBLIC_URL: http://${HOME_HOST}:${HOME_MEDIA_PORT:-9000}
     networks:
-      private:
-        ipv4_address: 192.168.110.95
+      - private
     expose:
       - '3005'
     depends_on:
@@ -374,7 +364,7 @@ services:
         condition: service_healthy
       service_bill:
         condition: service_healthy
-    pull_policy: missing
+    pull_policy: never
     restart: unless-stopped
     init: true
     logging:
@@ -393,18 +383,16 @@ services:
       start_period: 60s
       retries: 3
   web_gateway:
-    container_name: web_gateway
     image: nginx:1.27-alpine
     restart: unless-stopped
     volumes:
-      - ./templates:/etc/nginx/templates:ro
-      - ./dist:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    environment:
-      NGINX_PORT: 80
-      STOREFRONT_DOMAIN: ${STOREFRONT_DOMAIN:?Set STOREFRONT_DOMAIN in deployment env}
-      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set ADMIN_DOMAIN in deployment env}
-      MEDIA_DOMAIN: ${MEDIA_DOMAIN:?Set MEDIA_DOMAIN in deployment env}
+      - ./deploy/home/templates:/etc/nginx/templates:ro
+      - ./dist-home:/usr/share/nginx/html:ro
+      - ./deploy/home/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - '${HOME_BIND_IP:-0.0.0.0}:${HOME_ADMIN_PORT:-8080}:8080'
+      - '${HOME_BIND_IP:-0.0.0.0}:${HOME_SHOP_PORT:-8082}:8082'
+      - '${HOME_BIND_IP:-0.0.0.0}:${HOME_MEDIA_PORT:-9000}:9000'
     networks:
       - private
     depends_on:
@@ -425,15 +413,17 @@ services:
         - CMD
         - wget
         - '-qO-'
-        - http://127.0.0.1:80/gateway/health
+        - http://127.0.0.1:8080/gateway/health
       interval: 30s
       timeout: 3s
       start_period: 10s
       retries: 3
     expose:
-      - '80'
+      - '8080'
+      - '8082'
+      - '9000'
   mongo-users-init:
-    image: mongo:${MONGO_VERSION:-4.4.29}
+    image: mongo:${MONGO_VERSION:-8.0.5}
     restart: 'no'
     networks:
       - private
@@ -449,49 +439,16 @@ services:
       MONGO_BILL_PASSWORD: ${MONGO_BILL_PASSWORD:?Set MONGO_BILL_PASSWORD in deployment env}
       MONGO_STOREFRONT_PASSWORD: ${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in deployment env}
     volumes:
-      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-users.js:/opt/mongo-users.js:ro
+      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-8.0}/mongo-users.js:/opt/mongo-users.js:ro
     entrypoint:
-      - ${MONGO_SHELL:-mongo}
+      - ${MONGO_SHELL:-mongosh}
       - '--quiet'
       - '--nodb'
       - /opt/mongo-users.js
-  edge:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - '80:80'
-      - '443:443'
-      - 443:443/udp
-    environment:
-      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in deployment env}
-      STOREFRONT_DOMAIN: ${STOREFRONT_DOMAIN:?Set STOREFRONT_DOMAIN in deployment env}
-      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set ADMIN_DOMAIN in deployment env}
-      MEDIA_DOMAIN: ${MEDIA_DOMAIN:?Set MEDIA_DOMAIN in deployment env}
-    volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    networks:
-      private:
-        ipv4_address: 192.168.110.83
-    depends_on:
-      web_gateway:
-        condition: service_healthy
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: '3'
 networks:
   private:
     driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 192.168.110.0/24
 volumes:
   mongo-data: {}
   mongo-keyfile: {}
   minio-data: {}
-  caddy-data: {}
-  caddy-config: {}

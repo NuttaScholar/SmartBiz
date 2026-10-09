@@ -44,3 +44,7 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Home deployment
+.env.home
+/dist-home/

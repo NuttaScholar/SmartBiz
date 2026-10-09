@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "setup:home-env": "node deploy/home/create-env.mjs",
+    "build:home": "tsc -b && node deploy/home/build.mjs",
     "setup:dev-env": "node deploy/create-dev-env.mjs",
     "dev:services": "docker compose -p smartbiz-dev --env-file .env.dev -f docker-compose.dev.yml up -d --wait",
     "dev:services:down": "docker compose -p smartbiz-dev --env-file .env.dev -f docker-compose.dev.yml down",

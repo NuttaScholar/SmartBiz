@@ -1,0 +1,220 @@
+upstream account_api {
+    server service_account:3000;
+    keepalive 16;
+}
+
+upstream login_api {
+    server service_login:3001;
+    keepalive 16;
+}
+
+upstream storage_api {
+    server service_storage:3002;
+    keepalive 16;
+}
+
+upstream stock_api {
+    server service_stock:3003;
+    keepalive 16;
+}
+
+upstream bill_api {
+    server service_bill:3004;
+    keepalive 16;
+}
+
+upstream storefront_api {
+    server service_storefront:3005;
+    keepalive 16;
+}
+
+upstream minio_api {
+    server minio:9000;
+    keepalive 16;
+}
+
+# Main domain: customer Storefront only.
+server {
+    listen 8082 default_server;
+    listen [::]:8082 default_server;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index apps/storefront/index.html;
+
+    limit_conn connections_per_ip 30;
+
+    add_header X-Request-ID $request_id always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    # API traffic belongs to the Admin/API Gateway subdomain.
+    location ^~ /api/ {
+        default_type application/json;
+        return 404 '{"error":"API is not available on the Storefront domain","requestId":"$request_id"}';
+    }
+
+    location ~* ^/assets/.*\.(?:css|js|mjs|jpg|jpeg|gif|png|svg|ico|webp|woff2?)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Request-ID $request_id always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options SAMEORIGIN always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        try_files $uri =404;
+    }
+
+    location = /apps/storefront/index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header X-Request-ID $request_id always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options SAMEORIGIN always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri /apps/storefront/index.html;
+    }
+}
+
+# Admin subdomain: Admin SPA and all API Gateway routes.
+server {
+    listen 8080 default_server;
+    listen [::]:8080 default_server;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    client_max_body_size 25m;
+    limit_conn connections_per_ip 30;
+
+    add_header X-Request-ID $request_id always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    location = /gateway/health {
+        access_log off;
+        default_type application/json;
+        return 200 '{"status":"ok","service":"api-gateway"}';
+    }
+
+    location = /api/login      { return 308 /api/login/; }
+    location = /api/account    { return 308 /api/account/; }
+    location = /api/storage    { return 308 /api/storage/; }
+    location = /api/stock      { return 308 /api/stock/; }
+    location = /api/bill       { return 308 /api/bill/; }
+    location = /api/storefront { return 308 /api/storefront/; }
+
+    location ^~ /api/login/ {
+        limit_req zone=login_per_ip burst=10 nodelay;
+        proxy_pass http://login_api/;
+    }
+
+    location ^~ /api/account/ {
+        limit_req zone=api_per_ip burst=40 nodelay;
+        proxy_pass http://account_api/;
+    }
+
+    location ^~ /api/storage/ {
+        limit_req zone=api_per_ip burst=20 nodelay;
+        proxy_request_buffering off;
+        proxy_read_timeout 120s;
+        proxy_pass http://storage_api/;
+    }
+
+    location ^~ /api/stock/ {
+        limit_req zone=api_per_ip burst=40 nodelay;
+        proxy_pass http://stock_api/;
+    }
+
+    location ^~ /api/bill/ {
+        limit_req zone=api_per_ip burst=40 nodelay;
+        proxy_pass http://bill_api/;
+    }
+
+    location ^~ /api/storefront/ {
+        limit_req zone=api_per_ip burst=60 nodelay;
+        proxy_pass http://storefront_api/;
+    }
+
+    location ^~ /api/ {
+        default_type application/json;
+        return 404 '{"error":"API route not found","requestId":"$request_id"}';
+    }
+
+    error_page 429 = @rate_limited;
+    location @rate_limited {
+        default_type application/json;
+        add_header X-Request-ID $request_id always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options SAMEORIGIN always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        add_header Retry-After 1 always;
+        return 429 '{"error":"Too many requests","requestId":"$request_id"}';
+    }
+
+    error_page 502 503 504 = @gateway_unavailable;
+    location @gateway_unavailable {
+        default_type application/json;
+        add_header X-Request-ID $request_id always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options SAMEORIGIN always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        add_header Retry-After 5 always;
+        return 503 '{"error":"Upstream service unavailable","requestId":"$request_id"}';
+    }
+
+    location ~* ^/assets/.*\.(?:css|js|mjs|jpg|jpeg|gif|png|svg|ico|webp|woff2?)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Request-ID $request_id always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options SAMEORIGIN always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        try_files $uri =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header X-Request-ID $request_id always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options SAMEORIGIN always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+
+# Media subdomain: preserve the original host and URI for S3 signatures.
+server {
+    listen 9000 default_server;
+    listen [::]:9000 default_server;
+    server_name _;
+
+    client_max_body_size 100m;
+    limit_conn connections_per_ip 50;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy no-referrer always;
+
+    location / {
+        proxy_pass http://minio_api;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Host $http_host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_set_header Connection "";
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_intercept_errors off;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}
