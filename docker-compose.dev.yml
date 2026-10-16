@@ -95,7 +95,7 @@ services:
       mongo-users-init: { condition: service_completed_successfully }
 
   minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: nuttascholar/smartbiz_minio:0.0 
     restart: unless-stopped
     command: server /data --console-address ':9001'
     networks: [dev]
