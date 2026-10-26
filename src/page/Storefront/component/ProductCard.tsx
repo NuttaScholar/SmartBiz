@@ -53,7 +53,7 @@ export function ProductCard({
         </Stack>
         <Stack direction="row" spacing={1} alignItems="center">
           <Chip
-            label={product.percentDiscount > 0 ? `ลด ${product.percentDiscount}%` : "ราคาปกติ"}
+            label={product.percentDiscount > 0 ? `ลด ${product.percentDiscount.toFixed(2)}%` : "ราคาปกติ"}
             size="small"
             color={product.percentDiscount > 0 ? "error" : "default"}
             variant={product.percentDiscount > 0 ? "filled" : "outlined"}
