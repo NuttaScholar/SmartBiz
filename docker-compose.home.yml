@@ -68,7 +68,7 @@ services:
       - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-8.0}/mongo-replica-init.js:/opt/mongo-replica-init.js:ro
   mongo-express:
     image: mongo-express:1.0.2-20-alpine3.19
-    restart: always
+    restart: no
     ports:
       - 127.0.0.1:${MONGO_EXPRESS_PORT:-8081}:8081
     networks:

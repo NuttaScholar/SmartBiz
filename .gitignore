@@ -34,6 +34,9 @@ lerna-debug.log*
 # Local database backups
 /.mongo-backup/
 
+# Local incident evidence
+/incident-evidence/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
