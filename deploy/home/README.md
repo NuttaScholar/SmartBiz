@@ -19,7 +19,7 @@ Default URLs:
 | Storefront | http://192.168.1.50:8082 |
 | Media | http://192.168.1.50:9000 |
 
-Edit `HOME_HOST` and `HOME_*_PORT` in `.env.home` to change addresses. Re-run `npm run build:home` and the Compose command after changes. Vite reads `VITE_WEB_SHOP` and `VITE_API_GATEWAY_URL` from `.env.home`; no frontend source edits are needed. These variables are public browser configuration, never credentials. Build output is isolated in `dist-home`; the production `dist` directory is unaffected. As with Vite normally, shell environment variables and `.env.home.local` can override env-file values.
+Edit `HOME_HOST` and `HOME_*_PORT` in `.env.home` to change addresses. Re-run `npm run build:home` and the Compose command after changes. Vite reads `VITE_WEB_SHOP` and `VITE_API_GATEWAY_URL` from `.env.home`; no frontend source edits are needed. These variables are public browser configuration, never credentials. Build output is written to `dist`; building either target replaces the previous contents of that directory. As with Vite normally, shell environment variables and `.env.home.local` can override env-file values.
 
 Nginx configuration lives entirely in `deploy/home/`. It listens internally on fixed ports 8080 (Admin/API), 8082 (Storefront), and 9000 (Media); Compose maps the configurable host ports. Media preserves the incoming Host including its port for S3 signatures. Relative redirects preserve custom host ports.
 

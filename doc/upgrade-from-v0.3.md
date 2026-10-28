@@ -151,10 +151,10 @@ docker-compose.yml
 nginx.conf
 templates/
 dist/
-deploy/Caddyfile
-deploy/mongo-health.js
-deploy/mongo-replica-init.js
-deploy/mongo-users.js
+deploy/online/Caddyfile
+deploy/online/mongodb-4.4/mongo-health.js
+deploy/online/mongodb-4.4/mongo-replica-init.js
+deploy/online/mongodb-4.4/mongo-users.js
 ```
 
 ไม่จำเป็นต้องคัดลอก source code ใน `ServerService` ไปยัง VPS
@@ -188,7 +188,7 @@ MONGO_BILL_PASSWORD=<รหัสผ่านใหม่>
 MONGO_STOREFRONT_PASSWORD=<รหัสผ่านใหม่>
 ```
 
-กำหนดค่าอื่นให้ครบตาม `deploy/vps.env.example` โดยเฉพาะโดเมน, `ACME_EMAIL`, `SECRET` และ `SERVICE_AUTH_SECRET`
+กำหนดค่าอื่นให้ครบตาม `deploy/online/vps.env.example` โดยเฉพาะโดเมน, `ACME_EMAIL`, `SECRET` และ `SERVICE_AUTH_SECRET`
 
 การเปลี่ยน `MONGO_ROOT_PASSWORD` ใน `.env.vps` อย่างเดียวไม่ได้เปลี่ยนรหัสผ่านที่บันทึกอยู่ในฐานข้อมูลเดิม
 

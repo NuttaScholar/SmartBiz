@@ -1,6 +1,6 @@
 # SmartBiz
 
-> VPS / HTTPS deployment: follow [deploy/README.md](deploy/README.md).
+> VPS / HTTPS deployment: follow [deploy/online/README.md](deploy/online/README.md).
 > The root Compose now uses Caddy on ports 80/443, loads prebuilt backend images,
 > and requires a generated `.env.vps` with per-service MongoDB credentials.
 > The older release-package deployment instructions below do not describe this Compose setup.

@@ -50,4 +50,3 @@ lerna-debug.log*
 
 # Home deployment
 .env.home
-/dist-home/

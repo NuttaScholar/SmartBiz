@@ -11,7 +11,7 @@ import { createEnvironment } from './create-env.mjs';
 
 const require = createRequire(import.meta.url);
 const yaml = require('js-yaml');
-const compose = yaml.load(readFileSync(new URL('../docker-compose.yml', import.meta.url), 'utf8'));
+const compose = yaml.load(readFileSync(new URL('../../docker-compose.yml', import.meta.url), 'utf8'));
 const services = compose.services;
 
 test('public traffic enters through HTTPS edge; database and storage ports stay private', () => {
@@ -53,7 +53,7 @@ test('environment generator refuses to overwrite credentials', () => {
   try {
     const file = join(directory, '.env.vps');
     writeFileSync(file, 'existing credentials');
-    const result = spawnSync(process.execPath, [resolve('deploy/create-env.mjs'), 'example.com', 'ops@example.com'], { cwd: directory, encoding: 'utf8' });
+    const result = spawnSync(process.execPath, [resolve('deploy/online/create-env.mjs'), 'example.com', 'ops@example.com'], { cwd: directory, encoding: 'utf8' });
     assert.notEqual(result.status, 0);
     assert.equal(readFileSync(file, 'utf8'), 'existing credentials');
   } finally {
@@ -126,8 +126,8 @@ test('public presigned URLs use the HTTPS host, correct region and private clien
     MONGO_URI_ACCOUNT: 'mongodb://unused/Account', MONGO_URI_BILL: 'mongodb://unused/Bill',
     MONGO_URI_STOCK: 'mongodb://unused/Stock', MONGO_URI_STOREFRONT: 'mongodb://unused/StoreFront',
   });
-  const Storage = require('../ServerService/Service_Storage/dist/services/storage.service.js').default;
-  const Evidence = require('../ServerService/Service_StoreFront/dist/services/evidence-storage.service.js').default;
+  const Storage = require('../../ServerService/Service_Storage/dist/services/storage.service.js').default;
+  const Evidence = require('../../ServerService/Service_StoreFront/dist/services/evidence-storage.service.js').default;
   const storage = new Storage();
   // Exercise public service methods without a live object store; only bucket existence is stubbed.
   storage.client.bucketExists = async () => true;
@@ -155,7 +155,7 @@ test('public presigned URLs use the HTTPS host, correct region and private clien
     for (const part of credentialScope) key = createHmac('sha256', key).update(part).digest();
     assert.equal(createHmac('sha256', key).update(stringToSign).digest('hex'), signature);
   }
-  const { readPublicStorageUrl } = require('../ServerService/Service_Storage/dist/utils/public-storage-url.js');
+  const { readPublicStorageUrl } = require('../../ServerService/Service_Storage/dist/utils/public-storage-url.js');
   for (const value of [undefined, 'http://media.example.com', 'https://user:pass@media.example.com', 'https://media.example.com/path']) {
     assert.throws(() => readPublicStorageUrl(value, 'http://minio:9000'));
   }

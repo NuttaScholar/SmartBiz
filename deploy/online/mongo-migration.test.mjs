@@ -1,4 +1,4 @@
-// Explicit integration test: node --test deploy/mongo-migration.test.mjs
+// Explicit integration test: node --test deploy/online/mongo-migration.test.mjs
 // Only uses uniquely named disposable containers and a test-only data volume.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

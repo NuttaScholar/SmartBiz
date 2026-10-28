@@ -8,12 +8,12 @@
 
 1. ตั้งค่า DNS A record ของ `example.com`, `app.example.com` และ `media.example.com` ให้ชี้ไปยัง VPS สร้าง AAAA record เฉพาะเมื่อ IPv6 ใช้งานได้จริง เปิดรับ TCP พอร์ต 80/443 และ UDP พอร์ต 443 หากต้องการใช้ HTTP/3 พร้อมตรวจสอบว่ายังเชื่อมต่อ SSH ได้ ไม่จำเป็นต้องเปิดพอร์ตอื่นของแอปสู่ภายนอก และต้องตรวจว่า Docker subnet `192.168.110.0/24` ไม่ทับซ้อนกับ network ของ VPS หรือ VPN
 
-2. คัดลอกชุดไฟล์ deploy ไปยัง VPS โดยใช้เพียง `docker-compose.yml`, `.env.vps`, `nginx.conf`, `templates/`, `deploy/Caddyfile`, สคริปต์ `deploy/mongo-*.js` ทั้งสามไฟล์ และ `dist/` หากต้องติดตั้งแบบไม่เชื่อมต่อ Docker Hub ให้แนบ `smartbiz-images.tar` เพิ่มด้วย ไม่จำเป็นต้องมี source ในโฟลเดอร์ `ServerService` หรือ Node.js บน VPS ให้ติดตั้ง Docker Engine พร้อม Compose v2 และตรวจสอบว่าไม่มีโปรแกรมอื่นใช้พอร์ต 80/443
+2. คัดลอกชุดไฟล์ deploy ไปยัง VPS โดยใช้เพียง `docker-compose.yml`, `.env.vps`, `deploy/online/nginx.conf`, `deploy/online/templates/`, `deploy/online/Caddyfile`, โฟลเดอร์ `deploy/online/mongodb-4.4/` (หรือ `deploy/online/mongodb-8.0/` ตามค่า `MONGO_DEPLOY_DIR`) และ `dist/` หากต้องติดตั้งแบบไม่เชื่อมต่อ Docker Hub ให้แนบ `smartbiz-images.tar` เพิ่มด้วย ไม่จำเป็นต้องมี source ในโฟลเดอร์ `ServerService` หรือ Node.js บน VPS ให้ติดตั้ง Docker Engine พร้อม Compose v2 และตรวจสอบว่าไม่มีโปรแกรมอื่นใช้พอร์ต 80/443
 
 3. สร้าง credentials บน VPS หรือส่งไฟล์ที่สร้างไว้ไปยัง VPS ผ่านช่องทางที่ปลอดภัย:
 
    ```sh
-   node deploy/create-env.mjs example.com admin@example.com
+   node deploy/online/create-env.mjs example.com admin@example.com
    chmod 600 .env.vps
    ```
 

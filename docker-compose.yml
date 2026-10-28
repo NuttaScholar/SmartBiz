@@ -1,4 +1,4 @@
-# VPS deployment: see deploy/README.md.
+# VPS deployment: see deploy/online/README.md.
 # MongoDB 4.4 (current VPS): MONGO_VERSION=4.4.29, MONGO_DEPLOY_DIR=mongodb-4.4, MONGO_SHELL=mongo.
 # MongoDB 8.0+: MONGO_VERSION=8.0.5 (or tested newer tag), MONGO_DEPLOY_DIR=mongodb-8.0, MONGO_SHELL=mongosh.
 # Set all three together in .env.vps; defaults preserve the existing 4.4 deployment.
@@ -36,7 +36,7 @@ services:
       - mongo-data:/data/db
       - mongo-keyfile:/run/mongo-keyfile:ro
       # 4.4: select mongodb-4.4 scripts; 8.0+: select mongodb-8.0 (all three mounts).
-      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-health.js:/opt/mongo-health.js:ro
+      - ./deploy/online/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-health.js:/opt/mongo-health.js:ro
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
@@ -71,7 +71,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Set MONGO_ROOT_USER in deployment env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in deployment env}
     volumes:
-      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-replica-init.js:/opt/mongo-replica-init.js:ro
+      - ./deploy/online/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-replica-init.js:/opt/mongo-replica-init.js:ro
   mongo-express:
     container_name: web_database
     image: mongo-express:1.0.2-20-alpine3.19
@@ -397,9 +397,9 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     volumes:
-      - ./templates:/etc/nginx/templates:ro
+      - ./deploy/online/templates:/etc/nginx/templates:ro
       - ./dist:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/online/nginx.conf:/etc/nginx/nginx.conf:ro
     environment:
       NGINX_PORT: 80
       STOREFRONT_DOMAIN: ${STOREFRONT_DOMAIN:?Set STOREFRONT_DOMAIN in deployment env}
@@ -449,7 +449,7 @@ services:
       MONGO_BILL_PASSWORD: ${MONGO_BILL_PASSWORD:?Set MONGO_BILL_PASSWORD in deployment env}
       MONGO_STOREFRONT_PASSWORD: ${MONGO_STOREFRONT_PASSWORD:?Set MONGO_STOREFRONT_PASSWORD in deployment env}
     volumes:
-      - ./deploy/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-users.js:/opt/mongo-users.js:ro
+      - ./deploy/online/${MONGO_DEPLOY_DIR:-mongodb-4.4}/mongo-users.js:/opt/mongo-users.js:ro
     entrypoint:
       - ${MONGO_SHELL:-mongo}
       - '--quiet'
@@ -468,7 +468,7 @@ services:
       ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set ADMIN_DOMAIN in deployment env}
       MEDIA_DOMAIN: ${MEDIA_DOMAIN:?Set MEDIA_DOMAIN in deployment env}
     volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/online/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
     networks:

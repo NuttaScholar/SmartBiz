@@ -44,5 +44,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const content = createEnvironment(process.argv[2], process.argv[3]);
   // Never overwrite live credentials or print them. On Unix only the owner can read.
   writeFileSync(resolve('.env.vps'), content, { flag: 'wx', mode: 0o600 });
-  console.log('Created .env.vps. Keep this file private and backed up. Existing database volumes need the migration steps in deploy/README.md.');
+  console.log('Created .env.vps. Keep this file private and backed up. Existing database volumes need the migration steps in deploy/online/README.md.');
 }

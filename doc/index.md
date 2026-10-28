@@ -52,8 +52,8 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 | `tsconfig.node.json` | TypeScript config สำหรับไฟล์ config ที่รันบน Node เช่น Vite config |
 | `eslint.config.js` | ตั้งค่า ESLint สำหรับตรวจคุณภาพโค้ด frontend |
 | `docker-compose.yml` | ประกอบระบบ container ได้แก่ MongoDB, mongo-express, MinIO, account/login/stock/bill/storage service และ Nginx web |
-| `nginx.conf` | config หลักของ Nginx container |
-| `templates/default.conf.template` | server block template สำหรับ serve React SPA และ fallback ไป `index.html` |
+| `deploy/online/nginx.conf` | config หลักของ Nginx container |
+| `deploy/online/templates/default.conf.template` | server block template สำหรับ serve React SPA และ fallback ไป `index.html` |
 | `index.md` | รายงานภาพรวมโครงสร้างโปรเจคฉบับนี้ |
 
 ## โฟลเดอร์ระดับ Root
@@ -66,7 +66,7 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 | `public/` | static assets ที่ Vite serve ตรง เช่น `vite.svg` |
 | `src/` | source code frontend React |
 | `ServerService/` | source code backend service ย่อยทั้งหมด |
-| `templates/` | template config ของ Nginx ที่ mount เข้า container |
+| `deploy/online/templates/` | template config ของ Nginx ที่ mount เข้า container |
 
 ## Frontend: `src/`
 
@@ -324,8 +324,8 @@ Endpoint หลักของ Service_Bill:
 | --- | --- |
 | `docker-compose.yml` | รวม container หลักของระบบ: `mongo`, `mongo-express`, `minio`, `service_account`, `service_login`, `service_stock`, `service_bill`, `service_storage`, `web_gateway` |
 | `Dockerfile` | build frontend image จาก Node แล้วคัดลอกผลลัพธ์ไป Nginx |
-| `nginx.conf` | Nginx global config |
-| `templates/default.conf.template` | config สำหรับ serve React SPA และ redirect 404 กลับ `index.html` |
+| `deploy/online/nginx.conf` | Nginx global config |
+| `deploy/online/templates/default.conf.template` | config สำหรับ serve React SPA และ redirect 404 กลับ `index.html` |
 | `cert/cert.pem`, `cert/key.pem` | certificate/key สำหรับ local HTTPS หากเปิดใช้ |
 
 หมายเหตุ: `docker-compose.yml` ปัจจุบันประกาศ `service_bill` แล้ว โดยใช้ image `nuttascholar/smartbiz_bill:1.2`, port ภายใน `3004`, และ env `VITE_PORT_BILL` สำหรับ expose ไปยัง frontend
