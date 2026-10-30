@@ -94,7 +94,12 @@ SmartBiz เป็นเว็บแอปจัดการธุรกิจ�
 
 ## การรันแบบ Production
 
-ไฟล์ `docker-compose.yml` ที่ root ใช้สำหรับติดตั้งบน VPS ผ่าน HTTPS ด้วย Caddy และ backend images ที่ build ไว้แล้ว ขั้นตอนสร้าง `.env.vps`, build frontend และเปิดบริการอยู่ใน [คู่มือติดตั้งบน VPS](deploy/online/README.md)
+ดาวน์โหลดและแตกไฟล์แพ็กเกจจาก [Releases](https://github.com/NuttaScholar/SmartBiz/releases) แล้วเลือกรูปแบบการติดตั้ง:
+
+- **Online (VPS):** ใช้โดเมนสาธารณะและ HTTPS ผ่าน Caddy เริ่มที่ `Online/README.md` ซึ่งอธิบายการตั้งค่า DNS, การ build หน้าเว็บใน `Online/CreateWeb/`, การเตรียมค่าระบบ และการรัน Docker Compose จาก `Online/App/`
+- **Home (เครือข่ายภายใน):** ใช้ IP ของเครื่องใน LAN และ HTTP เริ่มที่ `Home/README.md` ซึ่งอธิบายการ build หน้าเว็บใน `Home/CreateWeb/` และการรัน Docker Compose จาก `Home/App/` โดยต้องเตรียม backend Docker images ตามที่คู่มือระบุ
+
+ทั้งสองรูปแบบต้อง build หน้าเว็บและคัดลอกผลลัพธ์ไปยัง `App/dist/` ก่อนเริ่มระบบ อ่านข้อกำหนดและคำเตือนเรื่องไฟล์ `.env`, Docker volumes และการย้ายข้อมูลเดิมใน README ของรูปแบบที่เลือกก่อนติดตั้งหรืออัปเดต
 
 ## คำสั่งตรวจสอบ
 
