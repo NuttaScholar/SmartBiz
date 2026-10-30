@@ -79,7 +79,6 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 | `src/type.ts` | type กลางของ frontend |
 | `src/enum.ts` | enum กลาง เช่น transaction type, product type, role, stock status, bill status และ error code |
 | `src/assets/` | รูปประกอบที่ import ใน React เช่น `NoImage.jpg`, `react.svg` |
-| `src/constants/` | ค่าคงที่ เช่น `urlbase.tsx` สำหรับประกอบ URL ของ MinIO จาก env |
 | `src/context/` | React context กลาง เช่น `AuthContext.tsx` สำหรับสถานะ authentication |
 | `src/hooks/` | custom hooks กลาง เช่น `useAuth.ts` |
 | `src/lib/` | utility กลาง เช่น axios instances, retry wrapper, local storage helper, calculate helper และ init page |

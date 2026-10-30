@@ -1,286 +1,115 @@
 # SmartBiz
 
-> VPS / HTTPS deployment: follow [deploy/online/README.md](deploy/online/README.md).
-> The root Compose now uses Caddy on ports 80/443, loads prebuilt backend images,
-> and requires a generated `.env.vps` with per-service MongoDB credentials.
-> The older release-package deployment instructions below do not describe this Compose setup.
-
-SmartBiz เป็นเว็บแอปสำหรับทดลองพัฒนาระบบจัดการธุรกิจขนาดเล็กด้วย React, TypeScript, Vite และ Material UI โดยฝั่ง backend แยก service ตามโดเมนงาน เช่น บัญชี ผู้ใช้ สต็อก บิล และพื้นที่จัดเก็บไฟล์ ระบบโดยรวมรันร่วมกันผ่าน Docker Compose
+SmartBiz เป็นเว็บแอปจัดการธุรกิจขนาดเล็ก มีหน้า Back Office และ Storefront พัฒนาด้วย React, TypeScript, Vite และ Material UI ส่วน backend แยกตามงานบัญชี ผู้ใช้ ไฟล์ สต็อก บิล และร้านค้า
 
 ## ความสามารถหลัก
 
-- ระบบบัญชีรายรับ-รายจ่าย
-- ระบบจัดการข้อมูลผู้ติดต่อและลูกค้า
-- ระบบจัดการสต็อกสินค้า
-- ระบบทำรายการซื้อขายและออกบิล
-- ระบบจัดเก็บไฟล์ผ่าน MinIO
-- ระบบผู้ใช้ เข้าสู่ระบบ และเปลี่ยนรหัสผ่าน
+- จัดการรายรับ รายจ่าย ผู้ติดต่อ และลูกค้า
+- จัดการสินค้าและสต็อก ทำรายการขาย ออกบิล และจัดการส่วนลด
+- เปิดหน้าร้าน Storefront และรับหลักฐานการชำระเงิน
+- จัดเก็บไฟล์ผ่าน MinIO และจัดการผู้ใช้ การเข้าสู่ระบบ และรหัสผ่าน
 
 ## เทคโนโลยีที่ใช้
 
-- React 18
-- TypeScript
-- Vite
-- Material UI
-- Axios
-- Docker Compose
-- MongoDB
-- MinIO
-- Nginx
+- Frontend: React 18, TypeScript, Vite 6, Material UI 7 และ Axios
+- Backend: Node.js services ที่รันเป็น Docker images
+- Infrastructure: Docker Compose, MongoDB replica set, MinIO และ Nginx API gateway
+- Production: Caddy สำหรับ HTTPS; ดู [คู่มือติดตั้งบน VPS](deploy/online/README.md)
 
-## โครงสร้าง Service
+## โครงสร้างบริการสำหรับพัฒนา
 
-| Service | Port | หน้าที่ |
+ไฟล์ [docker-compose.dev.yml](docker-compose.dev.yml) รัน backend และ infrastructure ส่วนหน้าเว็บรันด้วย Vite บนเครื่องพัฒนา พอร์ตของ backend และ MongoDB ใช้ภายใน Docker network ไม่ได้เปิดตรงสู่ host
+
+| บริการ | พอร์ตภายใน | หน้าที่ |
 | --- | ---: | --- |
-| `web_gateway` | 3030 | เสิร์ฟ frontend จากโฟลเดอร์ `dist` และส่งต่อ API ผ่าน Nginx |
-| `service_account` | 3000 | ข้อมูลบัญชี รายรับ-รายจ่าย และผู้ติดต่อ |
-| `service_login` | 3001 | เข้าสู่ระบบ จัดการ token และผู้ใช้ |
+| `service_account` | 3000 | บัญชี รายรับรายจ่าย และผู้ติดต่อ |
+| `service_login` | 3001 | ผู้ใช้และการเข้าสู่ระบบ |
 | `service_storage` | 3002 | จัดการไฟล์ผ่าน MinIO |
-| `service_stock` | 3003 | จัดการสินค้าและสต็อก |
-| `service_bill` | 3004 | จัดการบิล รายการขาย และส่วนลด |
-| `mongo` | 27017 | ฐานข้อมูล MongoDB ภายใน Docker network |
+| `service_stock` | 3003 | สินค้าและสต็อก |
+| `service_bill` | 3004 | บิลและรายการขาย |
+| `service_storefront` | 3005 | ข้อมูลและคำสั่งซื้อของหน้าร้าน |
+| `mongo` | 27017 | ฐานข้อมูลแบบ replica set |
+| `minio` | 9000, 9001 | Object storage และ console |
+| `api_gateway` | 80 | Nginx ส่งต่อ `/api/*` ไปยัง backend |
 | `mongo-express` | 8081 | หน้าเว็บจัดการ MongoDB |
-| `minio` | 9000, 9001 | Object storage และหน้า console |
+
+บนเครื่องพัฒนา API gateway เปิดที่ `127.0.0.1:8080`, MinIO API ที่ `127.0.0.1:19000`, MinIO console ที่ `127.0.0.1:19001` และ Mongo Express ที่ `127.0.0.1:18081` (เปลี่ยนพอร์ตหลังสุดได้ด้วย `MONGO_EXPRESS_PORT` ใน `.env.dev`)
 
 ## การติดตั้ง
 
 ### สิ่งที่ต้องมี
 
-- Node.js 20 ขึ้นไป
-- Docker Desktop
-- Git
+- Node.js 20 ขึ้นไป และ npm
+- Docker Engine หรือ Docker Desktop พร้อม Compose v2
+- Git สำหรับ clone โปรเจกต์
 
 ### ขั้นตอนสำหรับพัฒนา
 
-1. Clone โปรเจค
+1. Clone โปรเจกต์และติดตั้ง dependencies
 
-```bash
-git clone https://github.com/NuttaScholar/SmartBiz.git
-cd SmartBiz
-```
+   ```sh
+   git clone https://github.com/NuttaScholar/SmartBiz.git
+   cd SmartBiz
+   npm ci
+   ```
 
-2. ติดตั้ง dependency
+2. สร้าง `.env.dev` สำหรับ Compose จากสคริปต์ ซึ่งสุ่มรหัสผ่าน MongoDB แยกตาม service รวมถึง secrets ของแอปและ MinIO
 
-```bash
-npm install
-```
+   ```sh
+   npm run setup:dev-env
+   ```
 
-3. ตรวจสอบหรือสร้างไฟล์ `.env`
+   สคริปต์จะไม่เขียนทับ `.env.dev` ที่มีอยู่แล้ว เก็บไฟล์นี้ไว้ในเครื่องและอย่า commit หากต้องการเปลี่ยน credentials ของฐานข้อมูลที่มี volume เดิม ต้องเปลี่ยนรหัสผ่านใน MongoDB ให้ตรงกันด้วย
 
-```env
-SECRET="NuttaScholar"
-SERVICE_AUTH_SECRET="<random-secret-at-least-32-characters>"
+3. สร้าง `.env` สำหรับ Vite โดยใช้ค่าต่อไปนี้ (ไฟล์นี้แยกจาก `.env.dev`)
 
-VITE_WEB_BACKEND=http://localhost:3030
-VITE_WEB_SHOP=http://localhost:4030
-VITE_PORT_ACCESS=3000
-VITE_PORT_LOGIN=3001
-VITE_PORT_STORE=3002
-VITE_PORT_STOCK=3003
-VITE_PORT_BILL=3004
-VITE_PORT_STOREFRONT=3005
-VITE_PORT_MINIO=9000
+   ```dotenv
+   VITE_WEB_BACKEND=http://localhost:3030
+   VITE_WEB_SHOP=http://localhost:4030
+   ```
 
-MINIO_ENDPOINT=localhost
-MINIO_USER=admin
-MINIO_PASSWORD=StrongPass123!
-```
+   คำขอ `/api/*` ใช้ origin ของหน้าเว็บและ Vite proxy ไปยัง gateway ที่ `127.0.0.1:8080` จึงไม่ต้องตั้ง `VITE_API_GATEWAY_URL` สำหรับการพัฒนาบนเครื่องเดียวกัน หากมีค่าเก่าค้างอยู่ใน `.env` ให้ลบหรือเว้นว่างค่านี้
 
-ถ้ารันให้เครื่องอื่นในวง LAN ใช้งาน ให้เปลี่ยน host ใน `VITE_WEB_BACKEND`, `VITE_WEB_SHOP` และ `MINIO_ENDPOINT` เป็น IP ของเครื่องที่รัน service
+4. เริ่ม backend และ infrastructure
 
-4. เปิด backend และ infrastructure
+   ```sh
+   npm run dev:services
+   ```
 
-```bash
-docker compose up -d
-```
+   คำสั่งนี้ใช้ `docker-compose.dev.yml` กับ `.env.dev` และรอ healthcheck หากต้องการตรวจสถานะหรือดู log:
 
-5. รัน frontend สำหรับพัฒนา
+   ```sh
+   docker compose -p smartbiz-dev --env-file .env.dev -f docker-compose.dev.yml ps -a
+   docker compose -p smartbiz-dev --env-file .env.dev -f docker-compose.dev.yml logs -f
+   ```
 
-```bash
-npm run dev
-```
+5. รันหน้าเว็บใน terminal แยกกัน
 
-เปิดเว็บที่ `http://localhost:3030`
+   ```sh
+   npm run dev
+   npm run dev:storefront
+   ```
 
-## การรันแบบ Production ด้วย Docker
+   เปิด Back Office ที่ `http://localhost:3030` และ Storefront ที่ `http://localhost:4030` หรือ `http://localhost:3030/storefront` เมื่อเลิกใช้งาน หยุด Vite ด้วย Ctrl+C แล้วรัน `npm run dev:services:down` เพื่อหยุด containers โดยเก็บ volumes ข้อมูลไว้
 
-Production deploy ใช้ชุดไฟล์ Release asset `SmartBizV0_3` ที่จะแนบไว้ในหน้า GitHub Releases เมื่อแตกไฟล์แล้วจะได้โครงสร้างหลักดังนี้:
+## การรันแบบ Production
 
-```text
-SmartBizV0_3/
-  App/
-    docker-compose.yml
-    .env
-    nginx.conf
-    templates/
-    dist/
-  CreateWeb/
-    .env.production
-    package.json
-    package-lock.json
-    src/
-    public/
-    Dockerfile
-    nginx.conf
-    templates/
-```
+ไฟล์ `docker-compose.yml` ที่ root ใช้สำหรับติดตั้งบน VPS ผ่าน HTTPS ด้วย Caddy และ backend images ที่ build ไว้แล้ว ขั้นตอนสร้าง `.env.vps`, build frontend และเปิดบริการอยู่ใน [คู่มือติดตั้งบน VPS](deploy/online/README.md)
 
-โฟลเดอร์ `App` คือชุดสำหรับรันระบบจริงด้วย Docker Compose ส่วน `CreateWeb` คือชุด source frontend สำหรับ build `dist` ใหม่เมื่อเปลี่ยนค่า endpoint เช่น `VITE_WEB_BACKEND`
+## คำสั่งตรวจสอบ
 
-1. ดาวน์โหลด Release asset จากหน้า GitHub Releases แล้วแตกไฟล์ เช่น:
-
-```text
-E:\Releases\SmartBiz\ReleaseVersion\SmartBizV0_3
-```
-
-2. แก้ค่า config ใน `App\.env` ให้ตรงกับเครื่องหรือ server ที่ deploy
-
-```powershell
-notepad ./App/.env
-```
-
-ค่าที่ควรตรวจเป็นพิเศษ:
-
-- `VITE_WEB_BACKEND` - URL ของหน้า Back Office เช่น `http://localhost:3030` และใช้ hostname/protocol สำหรับเรียก backend services
-- `VITE_WEB_SHOP` - URL ของหน้า Storefront เช่น `http://localhost:4030`
-- `VITE_PORT_ACCESS`, `VITE_PORT_LOGIN`, `VITE_PORT_STORE`, `VITE_PORT_STOCK`, `VITE_PORT_BILL`, `VITE_PORT_STOREFRONT`, `VITE_PORT_MINIO`, `MONGO_EXPRESS_PORT`, `MINIO_CONSOLE_PORT` - port ที่เปิดออกจาก Docker Compose
-- `MINIO_ENDPOINT` - IP  ที่ backend ใช้ติดต่อ MinIO
-- `SECRET`, `MINIO_USER`, `MINIO_PASSWORD`, `MONGO_EXPRESS_USERNAME`, `MONGO_EXPRESS_PASSWORD` - ควรเปลี่ยนก่อนใช้งาน production จริง
-
-หมายเหตุ: frontend ใน `App\dist` ถูก build มากับค่า `VITE_*` แล้ว ถ้าเปลี่ยน `VITE_WEB_BACKEND`, `VITE_WEB_SHOP` หรือ `VITE_PORT_*` หลังแตกไฟล์ ควร build frontend ใหม่จาก `CreateWeb` แล้วคัดลอก `dist` กลับไปที่ `App`
-
-3. เริ่มระบบจากโฟลเดอร์ `App`
-
-```powershell
-cd App
-docker compose --env-file .env -f docker-compose.yml up -d
-```
-
-4. เปิดเว็บตามค่าใน `App\.env` ค่าเริ่มต้นคือ:
-
-```text
-http://localhost:3030
-```
- 
-5. เข้าสู่ระบบด้วยบัญชีเริ่มต้น
-```text
-Username: admin@default.com 
-Password: Default
-```
-Service อื่นที่เปิดตามค่าเริ่มต้น:
-
-- Mongo Express: `http://localhost:8081`
-- MinIO API: `http://localhost:9000`
-- MinIO Console: `http://localhost:9001`
-- Account Service: `http://localhost:3000`
-- Login Service: `http://localhost:3001`
-- Storage Service: `http://localhost:3002`
-- Stock Service: `http://localhost:3003`
-- Bill Service: `http://localhost:3004`
-
-ตรวจสถานะ container:
-
-```powershell
-docker compose --env-file .env -f docker-compose.yml ps
-```
-
-ดู log:
-
-```powershell
-docker compose --env-file .env -f docker-compose.yml logs -f
-```
-
-หยุดระบบโดยยังเก็บ volume ข้อมูลไว้:
-
-```powershell
-docker compose --env-file .env -f docker-compose.yml down
-```
-
-ถ้าต้องการลบ volume ฐานข้อมูลและไฟล์ storage ด้วย:
-
-```powershell
-docker compose --env-file .env -f docker-compose.yml down -v
-```
-
-### Build Frontend ใหม่จาก CreateWeb
-
-ใช้ขั้นตอนนี้เมื่อมีการเปลี่ยนค่า endpoint ของ frontend เช่น `VITE_WEB_BACKEND`, `VITE_WEB_SHOP` หรือ port ของ service ต่าง ๆ
-
-1. แก้ค่าใน `CreateWeb\.env.production` ให้ตรงกับ `App\.env`
-
-```powershell
-cd CreateWeb
-notepad .env.production
-```
-
-2. Build frontend ใหม่
-
-```powershell
-npm ci
-npm run build
-```
-
-3. คัดลอกผลลัพธ์ `dist` ไปให้ `App` ใช้งาน
-
-```powershell
-Remove-Item "../App/dist" -Recurse -Force
-Copy-Item "dist" "../App/dist" -Recurse
-```
-
-4. Restart web gateway container
-
-```powershell
-cd ../App
-docker compose --env-file .env -f docker-compose.yml up -d
-```
-
-## คำสั่งทดสอบ
-
-ตรวจ lint:
-
-```bash
+```sh
 npm run lint
-```
-
-ตรวจ TypeScript และ build frontend:
-
-```bash
 npm run build
+npm run build:storefront
+docker compose -p smartbiz-dev --env-file .env.dev -f docker-compose.dev.yml config --quiet
 ```
 
-preview ไฟล์หลัง build:
-
-```bash
-npm run preview -- --host 0.0.0.0
-```
-
-ตรวจ Docker Compose config:
-
-```bash
-docker compose config
-```
-
-## ผลการทดสอบล่าสุด
-
-ทดสอบเมื่อวันที่ 2026-06-06 ใน workspace นี้
-
-| รายการ | ผลลัพธ์ |
-| --- | --- |
-| `npm run lint` | ผ่าน ไม่มี error และไม่มี warning |
-| `npm run build` | ผ่าน ตรวจ TypeScript และสร้างไฟล์ใน `dist` ได้ |
-| `npm run preview -- --host 0.0.0.0` | ผ่าน หน้าเว็บตอบกลับ `HTTP 200`; ถ้า port `3030` ถูกใช้อยู่ Vite จะขยับไป port ถัดไป เช่น `3031` |
-| `docker compose config` | ผ่าน อ่านค่า `.env` และ render compose config ได้ |
-| `docker compose ps` | backend หลักทำงานอยู่ ได้แก่ MongoDB, MinIO, account, login, storage, stock และ bill |
-| `docker compose ps -a` | ตรวจสถานะ `web_gateway` และ `mongo-express`; Mongo Express เปิดเฉพาะเมื่อเรียก profile `admin` |
-| `npm ls @toolpad/core @mui/x-data-grid @mui/material` | ผ่าน ไม่พบ `@toolpad/core` และ `@mui/x-data-grid` แล้ว; ยังมี `@mui/material` เพราะ frontend ใช้งานจริง |
-| `npm audit --audit-level=moderate` | พบ 14 vulnerabilities แบ่งเป็น 7 moderate และ 7 high; ยังไม่ได้รัน `npm audit fix` เพราะอาจอัปเดต dependency หลายตัว |
-
-หมายเหตุ: ระหว่าง `npm run build` มี warning จาก dependency ใน `node_modules` เรื่อง directive `"use client"` ของ MUI แต่ build สำเร็จและไม่ใช่ warning จาก lint ของโค้ดใน `src`
+`npm run build` ตรวจ TypeScript และ build หน้า Back Office พร้อม Storefront ส่วน `npm run build:storefront` build เฉพาะ Storefront คำสั่งตรวจ Compose ต้องมี `.env.dev` ก่อนและ `--quiet` ช่วยไม่แสดงค่า secrets ที่ถูกแทนลงใน config
 
 ## หมายเหตุการใช้งาน
 
-- Frontend อ่าน hostname/protocol จาก `VITE_WEB_BACKEND` และใช้ร่วมกับ port ของ service ต่าง ๆ ใน `.env`
-- ถ้าเปลี่ยนค่า `.env` ต้อง restart dev server หรือ build ใหม่
-- `docker-compose.yml` ใช้ subnet `192.168.110.0/24` สำหรับ private network ของ service ภายใน
-- MinIO console เปิดได้ที่ `http://localhost:9001`
-- Mongo Express เปิดได้ที่ `http://localhost:8081` เมื่อ container `mongo-express` ถูกเปิดใช้งาน
+- Backend ในชุด dev ใช้ images จาก Docker Hub ตาม tag ใน `docker-compose.dev.yml`; การแก้ source ใน `ServerService` ไม่ทำให้ containers ที่กำลังรัน rebuild อัตโนมัติ
+- หากแก้ค่า `.env` ของ Vite ให้ restart dev server หากแก้ `.env.dev` ให้ recreate services ที่เกี่ยวข้อง
+- พอร์ตที่ Compose เปิดบน host ผูกกับ loopback (`127.0.0.1`) จึงใช้จากเครื่องอื่นใน LAN โดยตรงไม่ได้
+- ตรวจ gateway ได้ที่ `http://localhost:8080/gateway/health` และเปิด MinIO console ที่ `http://localhost:19001` หรือ Mongo Express ที่ `http://localhost:18081`
