@@ -12,14 +12,13 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import WidgetsIcon from "@mui/icons-material/Widgets";
 import AppBar_Mobile, { menuList_t } from "../Molecules/AppBar_Mobile";
 import AppBar_PC from "../Molecules/AppBar_PC";
-import ButtonOption from "../Molecules/ButtonOption";
+import AvatarOption from "../Molecules/AvatarOption";
 import Box_Mobile from "../Atoms/Box_Mobile";
 import Box_PC from "../Atoms/Box_PC";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { role_e } from "../../enum";
 import * as Login_f from "../../API/LoginService/Login";
-import { Typography } from "@mui/material";
 
 //************************************************
 // Define
@@ -67,6 +66,7 @@ const sidebarWidth = 240;
 interface myProps {
   children?: React.ReactNode;
 }
+
 //************************************************
 // Component
 //************************************************
@@ -116,7 +116,7 @@ const AppBar_c: React.FC<myProps> = (props) => {
           </Box_Mobile>
 
           <Box sx={{ flexGrow: 0 }}>
-            <ButtonOption menuList={menuList_Option} onClick={handleOption} />
+            <AvatarOption name={auth?.name} menuList={menuList_Option} onClick={handleOption} />
           </Box>
         </Toolbar>
       </AppBar>
@@ -178,7 +178,7 @@ const AppBar_c: React.FC<myProps> = (props) => {
           <AppBar_PC menuList={menuList_AppBar} value={index} />
           </Box>
           <Box sx={{ flexGrow: 0, pr: 1 }}>
-            <ButtonOption menuList={menuList_Option} onClick={handleOption} />
+            <AvatarOption name={auth?.name} menuList={menuList_Option} onClick={handleOption} />
           </Box>
         </Box>
         {props.children}

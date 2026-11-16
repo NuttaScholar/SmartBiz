@@ -42,7 +42,7 @@ export type tokenPackage_t = {
   role: role_e;
   type: "accessToken" | "refreshToken";
 }
-export type Auth_t = { token: string; role: role_e };
+export type Auth_t = { token: string; role: role_e; name: string };
 
 export type responstLogin_t<
   T extends

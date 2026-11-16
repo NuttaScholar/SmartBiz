@@ -139,7 +139,7 @@ services:
 
   service_login:
     <<: *app-defaults
-    image: nuttascholar/smartbiz_login:1.2
+    image: nuttascholar/smartbiz_login:1.4
     environment:
       SECRET: ${SECRET:?Set SECRET in the env file}
       WEB_HOSTS: https://localhost:3030,http://localhost:3030

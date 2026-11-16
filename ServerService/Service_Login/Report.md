@@ -90,6 +90,7 @@ Response:
 {
   "success": true,
   "data": {
+    "name": "NuttaScholar",
     "role": 0,
     "token": "<accessToken>"
   }

@@ -25,7 +25,7 @@ export default class UserController {
     try {
       const result = await this.service.login(req.body);
       res.cookie("refreshToken", result.refreshToken, cookieOptions());
-      return res.json({ success: true, data: { role: result.role, token: result.token } });
+      return res.json({ success: true, data: { name: result.name, role: result.role, token: result.token } });
     } catch (err) {
       return handleError(res, err);
     }

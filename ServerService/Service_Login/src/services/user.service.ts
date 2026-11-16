@@ -49,6 +49,7 @@ export default class UserService {
     }
 
     return {
+      name: resultDB.name,
       role: resultDB.role,
       token: this.tokenService.createAccessToken(resultDB.email, resultDB.role),
       refreshToken: this.tokenService.createRefreshToken(resultDB.email, resultDB.role),
@@ -74,9 +75,15 @@ export default class UserService {
       throw { code: errorCode_e.UnauthorizedError };
     }
 
+    const user = await this.repo.findByEmail(decoded.username);
+    if (!user) {
+      throw { code: errorCode_e.UnauthorizedError };
+    }
+
     return {
-      role: decoded.role,
-      token: this.tokenService.createAccessToken(decoded.username, decoded.role),
+      name: user.name,
+      role: user.role,
+      token: this.tokenService.createAccessToken(user.email, user.role),
     };
   }
 
