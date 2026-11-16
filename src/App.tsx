@@ -33,7 +33,6 @@ const Page_CustomerCreate = lazy(
 const Page_CustomerDiscount = lazy(
   () => import("./page/Customer/page/CustomerDiscount"),
 );
-const Page_CheckIn = lazy(() => import("./page/CheckIn"));
 const Page_NotFound = lazy(() => import("./page/NotFound"));
 const Page_SetUser = lazy(() => import("./page/SetUser"));
 const Page_SetPass = lazy(() => import("./page/SetPass"));
@@ -113,7 +112,6 @@ function App() {
                   element={<Page_CustomerDiscount />}
                 />
               </Route>
-              <Route path="/checkIn" element={<Page_CheckIn />} />
               <Route path="/stock">
                 <Route index element={<Page_Stock />} />
                 <Route path="in" element={<Page_StockIn />} />

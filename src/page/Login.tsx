@@ -18,7 +18,7 @@ import { role_e } from "../enum";
 function getDefaultPath(role: role_e) {
   if (role === role_e.admin) return "/access";
   if (role === role_e.cashier) return "/bill";
-  return "/checkIn";
+  return "/setpass";
 }
 
 function getRedirectPath(state: unknown, role: role_e) {

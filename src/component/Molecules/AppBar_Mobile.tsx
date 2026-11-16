@@ -46,15 +46,12 @@ const AppBar_Mobile: React.FC<myProps> = (props) => {
     menuList.path&&navigate(menuList.path);
   };
   /* Local Variable*/
-  const size_list = props.menuList.length;
-  let index = 0;
-  if (props.value !== undefined) {
-    if (props.value >= size_list) {
-      index = size_list - 1;
-    } else {
-      index = props.value;
-    }
-  }
+  const index =
+  props.value !== undefined &&
+  props.value >= 0 &&
+  props.value < props.menuList.length
+    ? props.value
+    : -1;
   /* Return */
   return (
     <Box sx={{ display: "flex", flexGrow: 1 }}>

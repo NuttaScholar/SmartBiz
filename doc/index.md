@@ -132,7 +132,6 @@ SmartBiz เป็น Web Application สำหรับงานธุรกิ
 | `src/page/SetUser.tsx` | หน้าจัดการผู้ใช้ |
 | `src/page/SetPass.tsx` | หน้าเปลี่ยนรหัสผ่าน |
 | `src/page/Cadit.tsx` | หน้าบันทึกรายการกู้ยืมหรือเครดิต |
-| `src/page/CheckIn.tsx` | หน้าบันทึกเวลาเข้าออกงาน |
 | `src/page/PageLoader.tsx` | loading fallback ตอน lazy load page |
 | `src/page/NotFound.tsx` | หน้า fallback เมื่อ route ไม่ตรง |
 | `src/page/test.tsx` | หน้า demo/test route |

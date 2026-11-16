@@ -1,17 +1,7 @@
 import * as React from "react";
-import Divider from "@mui/material/Divider";
-import Button from "@mui/material/Button";
-import { Box, SxProps, Theme } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 
-//*********************************************
-// Style
-//*********************************************
-const Button_Style: SxProps<Theme> = {
-  borderRadius: 0,
-  minWidth: "120px",
-  height: "48px",
-};
 //************************************************
 // Type
 //************************************************
@@ -27,49 +17,21 @@ export type menuList_t = {
 interface myProps {
   menuList: menuList_t[];
   value?: number;
-  onClick?: (page: menuList_t) => void;
 }
 //*********************************************
 // Component
 //*********************************************
-const AppBar_PC: React.FC<myProps> = (props) => {
-  /* Local Variable*/
-  const select = props.value ?? 0; //  ถ้า props.value เป็น undefine หรือ Null ให้ select = 0
-  const navigate = useNavigate();
+const AppBar_PC: React.FC<myProps> = ({ menuList, value }) => {
+  const page = value !== undefined && value >= 0 && value < menuList.length
+    ? menuList[value]
+    : undefined;
 
-  /* Local Function*/
-  const handleOnClick = (menuList: menuList_t) => {
-    props.onClick?.(menuList);
-    if (menuList.path) navigate(menuList.path);
-  };
   return (
-    <Box sx={{ display: "flex" }}>
-      {props.menuList.map((page, index) => (
-        <React.Fragment key={index}>
-          <Button
-            key={page.text}
-            onClick={() => {
-              handleOnClick(page);
-            }}
-            sx={{
-              color:
-                select === index
-                  ? "primary.contrastText"
-                  : "secondary.contrastText",
-              bgcolor:
-                select === index ? "primary.main" : "secondary.main" /* Note */,
-              m: index === 0 ? "0 4px 0 0" : "0 4px",
-              ...Button_Style,
-            }}
-            startIcon={page.icon}
-            variant="text"
-            size="large"
-          >
-            {page.text}
-          </Button>
-          <Divider orientation="vertical" variant="middle" flexItem />
-        </React.Fragment>
-      ))}
+    <Box sx={{ display: "flex", flexGrow: 1, alignItems: "center", justifyContent: "center", gap: "4px" }}>
+      {page?.icon}
+      <Typography variant="h5" noWrap sx={{ fontWeight: 500, color: "secondary.contrastText" }}>
+        {page?.text ?? "Page Not Found!"}
+      </Typography>
     </Box>
   );
 };

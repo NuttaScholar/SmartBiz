@@ -7,14 +7,16 @@ import { SxProps, Theme } from '@mui/material';
 //*************************************************
 interface myProps{
     children?: React.ReactNode,
-    sx?: SxProps<Theme>
+    sx?: SxProps<Theme>,
+    component?: React.ElementType,
+    'aria-label'?: string
 }
 //*************************************************
 // Function
 //*************************************************
 const Box_Mobile:React.FC<myProps> = (props) => {
   return (
-    <Box sx={{...props.sx, display:{ xs: 'flex', md: 'none'} }}>
+    <Box component={props.component ?? 'div'} aria-label={props['aria-label']} sx={{...props.sx, display:{ xs: 'flex', md: 'none'} }}>
       {props.children}
     </Box>
   );
