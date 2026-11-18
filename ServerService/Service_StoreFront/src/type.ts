@@ -20,6 +20,7 @@ export type productInfo_t = {
 
 export interface StorefrontProduct {
   id: string;
+  type: productType_e;
   name: string;
   img: string;
   description: string;

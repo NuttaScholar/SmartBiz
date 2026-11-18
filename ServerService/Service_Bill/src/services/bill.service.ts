@@ -25,7 +25,11 @@ type AccountApiResponse = {
   errCode?: errorCode_e;
   message?: string;
 };
-type StockApiResponse = AccountApiResponse;
+type StockApiResponse = AccountApiResponse & {
+  data?: {
+    items: Array<{ productID: string; beforeAmount: number; afterAmount: number }>;
+  };
+};
 
 const WORKFLOW = [
   OrderStatus.PrepareProduct,
@@ -135,7 +139,8 @@ export default class BillService {
     const stockChanges = this.getStockChanges(normalizedData.items);
     const order = this.repo.prepareOrder(normalizedData);
 
-    await this.applyStockChanges(stockChanges, order.orderID, "Reserve stock for order creation");
+    const adjustedStock = await this.applyStockChanges(stockChanges, order.orderID, "Reserve stock for order creation");
+    order.preOrder = adjustedStock.some((item) => item.afterAmount < 0);
     try {
       return await this.repo.saveOrder(order);
     } catch (error) {
@@ -644,6 +649,7 @@ export default class BillService {
 
     return {
       id: order.orderID,
+      preOrder: Boolean(order.preOrder),
       customerID: order.customerID,
       customer: contact?.billName ?? order.customerID,
       date: order.createdAt,
@@ -664,7 +670,7 @@ export default class BillService {
       type: product?.type ?? productType_e.merchandise,
       name: product?.name ?? item.name ?? item.productID,
       img: this.getProductImageUrl(product?.img ?? item.img),
-      status: stockStatus_e.normal,
+      status: product?.status ?? stockStatus_e.normal,
       price: item.priceOriginal,
       amount: quantity,
       total: this.roundMoney(quantity * priceAfterDiscount),
@@ -876,7 +882,7 @@ export default class BillService {
   }
 
   private async applyStockChanges(changes: StockChange[], reference: string, note: string) {
-    await this.requestStockAdjustment(
+    return this.requestStockAdjustment(
       changes.map((change) => ({
         productID: change.productID,
         delta: -change.quantity,
@@ -902,7 +908,7 @@ export default class BillService {
     reference: string,
     note: string,
   ) {
-    if (items.length === 0) return;
+    if (items.length === 0) return [];
 
     try {
       const serviceToken = this.serviceTokenFactory(
@@ -926,6 +932,7 @@ export default class BillService {
           message: response.data?.message ?? "Stock adjustment failed",
         };
       }
+      return response.data.data?.items ?? [];
     } catch (error: any) {
       if (typeof error?.code === "number" && !error?.response) {
         throw error;

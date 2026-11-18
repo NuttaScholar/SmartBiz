@@ -123,10 +123,10 @@ export default class StockService {
     }
 
     const { img: _requestedImg, ...requestedProductData } = data;
-    const amount = this.requireInventoryValue(
-      product.amount ?? data.amount,
-      "amount",
-    );
+    const amount = Number(product.amount ?? data.amount);
+    if (!Number.isFinite(amount) || ((product.type === productType_e.material || data.type === productType_e.material) && amount < 0)) {
+      throw { code: errorCode_e.InvalidInputError, message: "Invalid product stock amount" };
+    }
     const condition = this.requireInventoryValue(data.condition, "condition");
     const productData = {
       ...requestedProductData,
@@ -351,7 +351,7 @@ export default class StockService {
           }
 
           const afterAmount = beforeAmount + adjustment.delta;
-          if (afterAmount < 0) {
+          if (product.type === productType_e.material && afterAmount < 0) {
             throw {
               code: errorCode_e.InvalidStateError,
               message: `Insufficient stock for product ${adjustment.productID}. Available: ${beforeAmount}`,
@@ -473,7 +473,7 @@ export default class StockService {
         const nextProductAmount = log.type === stockLogType_e.in
           ? currentAmount + amount - previousLogAmount
           : currentAmount + previousLogAmount - amount;
-        if (nextProductAmount < 0) {
+        if (product.type === productType_e.material && nextProductAmount < 0) {
           throw {
             code: errorCode_e.InvalidStateError,
             message: "The edited amount would make stock negative",
@@ -596,7 +596,7 @@ export default class StockService {
         const nextProductAmount = log.type === stockLogType_e.in
           ? currentAmount - logAmount
           : currentAmount + logAmount;
-        if (nextProductAmount < 0) {
+        if (product.type === productType_e.material && nextProductAmount < 0) {
           throw {
             code: errorCode_e.InvalidStateError,
             message: "Deleting this log would make stock negative",
@@ -707,7 +707,7 @@ export default class StockService {
         errors.push(item);
         continue;
       }
-      if (type === stockLogType_e.out && currentAmount < itemAmount) {
+      if (type === stockLogType_e.out && product.type === productType_e.material && currentAmount < itemAmount) {
         errors.push(item);
         continue;
       }
@@ -753,6 +753,7 @@ export default class StockService {
   }
 
   private resolveStockStatus(amount: number, condition: number) {
+    if (amount < 0) return stockStatus_e.preOrder;
     if (amount === 0) return stockStatus_e.stockOut;
     if (amount < condition) return stockStatus_e.stockLow;
     return stockStatus_e.normal;

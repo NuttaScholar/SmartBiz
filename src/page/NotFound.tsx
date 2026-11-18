@@ -1,4 +1,3 @@
-import AppBar_c from "../component/Organisms/AppBar_c";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import SearchOffRoundedIcon from "@mui/icons-material/SearchOffRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";

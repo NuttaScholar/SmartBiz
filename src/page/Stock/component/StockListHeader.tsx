@@ -58,6 +58,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
       case stockFilter_e.stock:
       case stockFilter_e.stockLow:
       case stockFilter_e.stockOut:
+      case stockFilter_e.stockPreOrder:
         setState({
           ...state,
           filter: stockFilter_e.stock,
@@ -76,6 +77,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
       case stockFilter_e.another:
       case stockFilter_e.anotherLow:
       case stockFilter_e.anotherOut:
+      case stockFilter_e.anotherPreOrder:
       default:
         setState({
           ...state,
@@ -105,6 +107,9 @@ const StockListHeader: React.FC<myProps> = (props) => {
           status: stockStatus_e.stockOut,
         };
         break;
+      case stockFilter_e.anotherPreOrder:
+        query = { type: productType_e.another, name, status: stockStatus_e.preOrder };
+        break;
       case stockFilter_e.materialLow:
         query.status = stockStatus_e.stockLow;
         break;
@@ -125,6 +130,10 @@ const StockListHeader: React.FC<myProps> = (props) => {
           type: productType_e.merchandise,
           status: stockStatus_e.stockOut,
         };
+        break;
+      case stockFilter_e.stockPreOrder:
+        query = { type: productType_e.merchandise, name, status: stockStatus_e.preOrder };
+        break;
     }
     stockWithRetry_f
       .getProduct(authContext, query)
@@ -150,6 +159,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
       case stockFilter_e.stock:
       case stockFilter_e.stockLow:
       case stockFilter_e.stockOut:
+      case stockFilter_e.stockPreOrder:
         setTab(0);
         break;
       case stockFilter_e.material:
@@ -160,6 +170,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
       case stockFilter_e.another:
       case stockFilter_e.anotherLow:
       case stockFilter_e.anotherOut:
+      case stockFilter_e.anotherPreOrder:
         setTab(2);
         break;
       default:

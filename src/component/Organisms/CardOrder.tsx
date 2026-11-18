@@ -134,6 +134,14 @@ const CardOrder: React.FC<MyProps> = (props) => {
                 }
                 sx={{ mb: 0.5 }}
               />
+              {props.value.preOrder && (
+                <Chip
+                  size="small"
+                  color="warning"
+                  label="PreOrder"
+                  sx={{ mb: 0.5, ml: 0.5 }}
+                />
+              )}
               <Typography
                 variant="subtitle1"
                 component="div"

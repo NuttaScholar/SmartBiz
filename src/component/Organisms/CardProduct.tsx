@@ -4,6 +4,7 @@ import {
   CardActionArea,
   CardContent,
   CardMedia,
+  Chip,
   IconButton,
   Typography,
 } from "@mui/material";
@@ -70,6 +71,9 @@ const CardProduct: React.FC<MyProps> = (props) => {
             <Typography component="div" variant="h5">
               {props.value.name}
             </Typography>
+            {props.value.status === stockStatus_e.preOrder && (
+              <Chip label="PreOrder" color="warning" size="small" />
+            )}
             <Typography
               variant="subtitle2"
               component="div"
@@ -119,7 +123,9 @@ const CardProduct: React.FC<MyProps> = (props) => {
                   variant="subtitle1"
                   sx={{
                     color:
-                      props.value.status === stockStatus_e.stockLow
+                      props.value.status === stockStatus_e.preOrder
+                        ? "warning.main"
+                        : props.value.status === stockStatus_e.stockLow
                         ? "warning.light"
                         : props.value.status === stockStatus_e.stockOut
                           ? "error.light"

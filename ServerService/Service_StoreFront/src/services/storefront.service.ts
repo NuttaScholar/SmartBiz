@@ -19,7 +19,7 @@ import type {
   StoredConfirmationEvidence,
 } from "../type";
 import AppError from "../utils/app-error";
-import { orderStatus_e, stockStatus_e } from "../utils/enum";
+import { orderStatus_e, productType_e, stockStatus_e } from "../utils/enum";
 
 export interface EvidenceStorage {
   getEvidenceMetadata(objectKey: string): Promise<{ objectKey: string; fileName: string; mimeType: string }>;
@@ -118,10 +118,7 @@ export default class StorefrontService {
       }
 
       const available = Number(product.amount ?? 0);
-      if (
-        product.status === stockStatus_e.stockOut ||
-        item.quantity > available
-      ) {
+      if (product.type === productType_e.material && item.quantity > available) {
         throw new AppError(
           `Product ${item.productID} has insufficient stock`,
           409,
@@ -247,11 +244,12 @@ export default class StorefrontService {
 
     return {
       id: product.id,
+      type: product.type,
       name: product.name,
       img: this.getProductImageUrl(product.img),
       description: product.description ?? "",
       price,
-      amount: Math.max(0, Number(product.amount ?? 0)),
+      amount: Number(product.amount ?? 0),
       percentDiscount,
       priceAfterDiscount: this.roundMoney(
         price * (1 - percentDiscount / 100),

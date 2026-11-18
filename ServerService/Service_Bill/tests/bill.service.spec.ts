@@ -160,7 +160,27 @@ describe("BillService", () => {
       ...payload,
       orderID: "ORD-GENERATED",
       source: OrderSource.Direct,
+      preOrder: false,
     });
+  });
+
+  it("stores PreOrder when reservation makes stock negative", async () => {
+    const service = createService();
+    service.stockPost.and.resolveTo({
+      data: { success: true, data: { items: [
+        { productID: "PROD001", beforeAmount: 1, afterAmount: -1 },
+      ] } },
+    });
+
+    const order = await service.createOrder({
+      customerID: "CUST001",
+      status: OrderStatus.PrepareProduct,
+      items: [{ productID: "PROD001", quantity: 2, priceOriginal: 500, priceAfterDiscount: 500 }],
+      totalAmount: 1000,
+    });
+
+    expect(order.preOrder).toBe(true);
+    expect(service.repo.saveOrder).toHaveBeenCalledWith(jasmine.objectContaining({ preOrder: true }));
   });
 
   it("deducts stock when creating an order with an another product", async () => {
@@ -356,6 +376,7 @@ describe("BillService", () => {
     expect(result).toEqual([
       {
         id: "ORD001",
+        preOrder: false,
         customerID: "CUST001",
         customer: "Customer One",
         date: createdAt,
@@ -378,6 +399,30 @@ describe("BillService", () => {
         ],
       },
     ]);
+  });
+
+  it("reports a product's PreOrder status in search results", async () => {
+    const service = createService();
+    service.productRepo.findByIds.and.resolveTo([{
+      id: "PROD001",
+      type: productType_e.merchandise,
+      name: "Product One",
+      img: "product/PROD001.jpg",
+      status: stockStatus_e.preOrder,
+      amount: -2,
+    }]);
+    service.repo.findByCustomerAndOrder.and.resolveTo([{
+      orderID: "ORD001",
+      customerID: "CUST001",
+      status: OrderStatus.Billing,
+      source: OrderSource.Direct,
+      createdAt: new Date("2026-05-23T10:00:00.000Z"),
+      totalAmount: 500,
+      items: [{ productID: "PROD001", quantity: 1, priceOriginal: 500, priceAfterDiscount: 500 }],
+    }]);
+
+    const result = await service.searchOrders("CUST001", "ORD001", String(OrderStatus.Billing));
+    expect(result[0].list[0].status).toBe(stockStatus_e.preOrder);
   });
 
   it("rebases a legacy product image URL onto the configured MinIO host", async () => {

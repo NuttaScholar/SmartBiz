@@ -1,5 +1,5 @@
 import StorefrontService from "../src/services/storefront.service";
-import { orderStatus_e, stockStatus_e } from "../src/utils/enum";
+import { orderStatus_e, productType_e, stockStatus_e } from "../src/utils/enum";
 
 describe("StorefrontService", () => {
   const token = "customer-secret";
@@ -160,6 +160,7 @@ describe("StorefrontService", () => {
       .toHaveBeenCalledWith("CUST-001");
     expect(products[0]).toEqual({
       id: "P-001",
+      type: productType_e.merchandise,
       name: "Product One",
       img: "http://minio.example:9000/product/P-001.jpg",
       description: "Description",
@@ -210,9 +211,21 @@ describe("StorefrontService", () => {
     expect(created.totalAmount).toBe(180);
   });
 
-  it("rejects an order quantity greater than available stock", async () => {
+  it("accepts a pre-order quantity greater than available stock", async () => {
     const { service, billGateway } = createService();
 
+    await service.createOrder(token, {
+      items: [{ productID: "P-001", quantity: 6 }],
+    });
+    expect(billGateway.createOrder).toHaveBeenCalled();
+  });
+
+  it("rejects a material order quantity greater than available stock", async () => {
+    const { service, billGateway, productRepo } = createService();
+    productRepo.findByIds.and.resolveTo([{
+      id: "P-001", name: "Material", type: productType_e.material,
+      amount: 5, price: 100, status: stockStatus_e.normal,
+    }]);
     await expectAsync(service.createOrder(token, {
       items: [{ productID: "P-001", quantity: 6 }],
     })).toBeRejectedWithError(

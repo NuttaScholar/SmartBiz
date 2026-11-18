@@ -29,6 +29,7 @@ export type orderItemInfo_t = {
 
 export type orderInfo_t = {
   id: string;
+  preOrder: boolean;
   customerID: string;
   customer: string;
   date: Date;

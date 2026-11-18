@@ -65,6 +65,7 @@ export const OrderSchema = new Schema<OrderDocument>(
         },
 
         totalAmount: { type: Number, required: true, min: 0 },
+        preOrder: { type: Boolean, required: true, default: false },
 
         confirmationEvidence: {
             type: ConfirmationEvidenceSchema,

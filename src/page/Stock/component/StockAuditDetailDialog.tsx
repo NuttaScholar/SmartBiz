@@ -162,6 +162,7 @@ function stockStatusLabel(status?: number) {
     [stockStatus_e.normal]: "ปกติ",
     [stockStatus_e.stockLow]: "ใกล้หมด",
     [stockStatus_e.stockOut]: "หมด",
+    [stockStatus_e.preOrder]: "PreOrder",
   };
   return labels[status] || String(status);
 }

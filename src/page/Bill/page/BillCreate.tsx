@@ -7,6 +7,7 @@ import AddProductForm, {
   FormAddProduce_t,
 } from "../../../component/Organisms/AddProductForm";
 import SummaryBar from "../../../component/Organisms/SummaryBar";
+import DialogQuestion from "../../../component/Organisms/DialogQuestion";
 import { productInfo_t } from "../../../API/StockService/type";
 import {
   createOrderForm_t,
@@ -106,10 +107,7 @@ function getMaxEditableAmount(
 }
 
 function shouldLimitStock(product: productInfo_t) {
-  return (
-    product.type === productType_e.merchandise
-    || product.type === productType_e.another
-  );
+  return product.type === productType_e.material;
 }
 
 function createMerchProduct(
@@ -146,6 +144,19 @@ export default function Page_BillCreate() {
   const [originalOrderAmountMap, setOriginalOrderAmountMap] = React.useState<
     Map<string, number>
   >(new Map());
+  const [pendingPreOrder, setPendingPreOrder] = React.useState<{
+    customerID: string;
+    items: orderItem_t[];
+    totalAmount: number;
+    warnings: string[];
+  } | null>(null);
+  const [pendingAdd, setPendingAdd] = React.useState<{
+    productID: string;
+    amount: number;
+    productName: string;
+    requestedAmount: number;
+    availableAmount: number;
+  } | null>(null);
 
   // Local variables **************************
   const selectedCustomerID = state.billForm?.customer?.trim() || "";
@@ -234,6 +245,36 @@ export default function Page_BillCreate() {
   );
 
   // Product handlers *************************
+  const addProduct = React.useCallback(
+    (selectedProduct: productInfo_t, amount: number) => {
+      setState((prev) => {
+        const existingProductIndex = prev.merchList?.findIndex(
+          (item) => item.id === selectedProduct.id,
+        );
+        const existingProduct =
+          existingProductIndex !== undefined && existingProductIndex >= 0
+            ? prev.merchList?.[existingProductIndex]
+            : undefined;
+        const product = createMerchProduct(
+          selectedProduct,
+          (existingProduct?.amount || 0) + amount,
+        );
+        const newProduct = applyDiscount(product, customerDiscounts);
+
+        return {
+          ...prev,
+          merchList:
+            existingProductIndex !== undefined && existingProductIndex >= 0
+              ? prev.merchList?.map((item, index) =>
+                  index === existingProductIndex ? newProduct : item,
+                )
+              : [...(prev.merchList || []), newProduct],
+        };
+      });
+    },
+    [applyDiscount, customerDiscounts],
+  );
+
   const onAdd = React.useCallback(
     (form: FormAddProduce_t) => {
       const selectedProduct = listOption.find(
@@ -250,50 +291,36 @@ export default function Page_BillCreate() {
         return;
       }
 
-      const availableAmount = shouldLimitStock(selectedProduct)
-        ? getMaxEditableAmount(
-            selectedProduct,
-            selectedProduct.id,
-            orderID,
-            originalOrderAmountMap,
-          )
-        : Number.POSITIVE_INFINITY;
+      const availableAmount = getMaxEditableAmount(
+        selectedProduct,
+        selectedProduct.id,
+        orderID,
+        originalOrderAmountMap,
+      );
       const requestedAmount =
         getProductListAmount(state.merchList, selectedProduct.id) + form.amount;
 
-      if (requestedAmount > availableAmount) {
+      if (requestedAmount > availableAmount && shouldLimitStock(selectedProduct)) {
         alert(
           `จำนวนสินค้าไม่เพียงพอ\n${selectedProduct.name} สามารถใส่ได้สูงสุด ${availableAmount} ชิ้น`,
         );
         return;
       }
+      if (requestedAmount > availableAmount) {
+        setPendingAdd({
+          productID: selectedProduct.id,
+          amount: form.amount,
+          productName: selectedProduct.name,
+          requestedAmount,
+          availableAmount,
+        });
+        return;
+      }
 
-      const existingProductIndex = state.merchList?.findIndex(
-        (item) => item.id === selectedProduct.id,
-      );
-      const existingProduct =
-        existingProductIndex !== undefined && existingProductIndex >= 0
-          ? state.merchList?.[existingProductIndex]
-          : undefined;
-      const product = createMerchProduct(
-        selectedProduct,
-        (existingProduct?.amount || 0) + form.amount,
-      );
-      const newProduct = applyDiscount(product, customerDiscounts);
-
-      setState((prev) => ({
-        ...prev,
-        merchList:
-          existingProductIndex !== undefined && existingProductIndex >= 0
-            ? prev.merchList?.map((item, index) =>
-                index === existingProductIndex ? newProduct : item,
-              )
-            : [...(prev.merchList || []), newProduct],
-      }));
+      addProduct(selectedProduct, form.amount);
     },
     [
-      applyDiscount,
-      customerDiscounts,
+      addProduct,
       listOption,
       orderID,
       originalOrderAmountMap,
@@ -351,27 +378,11 @@ export default function Page_BillCreate() {
   );
 
   // API handlers *****************************
-  const onSave = React.useCallback(async () => {
-    const customerID = state.billForm?.customer?.trim();
-    const merchList = state.merchList || [];
-
-    if (!customerID) {
-      alert("กรุณาเลือกลูกค้า");
-      return;
-    }
-
-    if (merchList.length <= 0) {
-      alert("กรุณาเพิ่มสินค้าในใบสั่งซื้อ");
-      return;
-    }
-
-    const items = toOrderItems(merchList);
-    if (items.some(isInvalidOrderItem)) {
-      alert("กรุณาตรวจสอบรายการสินค้าและจำนวนสินค้า");
-      return;
-    }
-
-    const totalAmount = toTotalAmount(items);
+  const saveOrder = React.useCallback(async (
+    customerID: string,
+    items: orderItem_t[],
+    totalAmount: number,
+  ) => {
     const data: createOrderForm_t = {
       customerID,
       status: billStatus_e.PrepareProduct,
@@ -405,11 +416,67 @@ export default function Page_BillCreate() {
     } finally {
       setIsSaving(false);
     }
+  }, [authContext, navigate, orderID, orderDetailPath]);
+
+  const onSave = React.useCallback(async () => {
+    const customerID = state.billForm?.customer?.trim();
+    const merchList = state.merchList || [];
+
+    if (!customerID) {
+      alert("กรุณาเลือกลูกค้า");
+      return;
+    }
+
+    if (merchList.length <= 0) {
+      alert("กรุณาเพิ่มสินค้าในใบสั่งซื้อ");
+      return;
+    }
+
+    const items = toOrderItems(merchList);
+    if (items.some(isInvalidOrderItem)) {
+      alert("กรุณาตรวจสอบรายการสินค้าและจำนวนสินค้า");
+      return;
+    }
+
+    const totalAmount = toTotalAmount(items);
+    setIsSaving(true);
+    try {
+      const stockRes = await stockWithRetry_f.getStock(authContext, {
+        productType: [productType_e.merchandise, productType_e.another],
+      });
+      if (!stockRes.success || !stockRes.data) {
+        if (redirectToLoginOnAuthError(navigate, stockRes.errCode)) return;
+        alert(toErrorMessage(stockRes.errCode));
+        return;
+      }
+
+      const stockByID = new Map(stockRes.data.map((product) => [product.id, product]));
+      const warnings = items.flatMap((item) => {
+        const product = stockByID.get(item.productID);
+        if (!product) return [];
+        const available = (product.amount || 0) +
+          (orderID ? originalOrderAmountMap.get(item.productID) || 0 : 0);
+        if (item.quantity <= available) return [];
+        return [`${product.name}: ต้องการ ${item.quantity} ชิ้น, คงเหลือ ${Math.max(0, available)} ชิ้น (PreOrder ${item.quantity - available} ชิ้น)`];
+      });
+      if (warnings.length) {
+        setPendingPreOrder({ customerID, items, totalAmount, warnings });
+        return;
+      }
+    } catch (err) {
+      if (redirectToLoginOnThrownAuthError(navigate, err)) return;
+      alert("ตรวจสอบสต็อกไม่สำเร็จ");
+      return;
+    } finally {
+      setIsSaving(false);
+    }
+    await saveOrder(customerID, items, totalAmount);
   }, [
     authContext,
     navigate,
     orderID,
-    orderDetailPath,
+    originalOrderAmountMap,
+    saveOrder,
     state.billForm?.customer,
     state.merchList,
   ]);
@@ -574,6 +641,53 @@ export default function Page_BillCreate() {
         <SummaryBar value={total || 0} />
       </Box>
       <DialogBillEdit hideFieldPrice onSubmit={onSubmitEdit} />
+      <DialogQuestion
+        open={pendingAdd !== null}
+        title="จำนวนสินค้าเกินสต็อก"
+        content={pendingAdd && (
+          <>
+            <div>{pendingAdd.productName}: ต้องการ {pendingAdd.requestedAmount} ชิ้น</div>
+            <div>คงเหลือ {Math.max(0, pendingAdd.availableAmount)} ชิ้น</div>
+            <div>ยืนยันเพิ่มรายการเป็น PreOrder หรือไม่?</div>
+          </>
+        )}
+        confirmText="เพิ่มเป็น PreOrder"
+        cancelText="ยกเลิก"
+        confirmColor="warning"
+        onClose={() => setPendingAdd(null)}
+        onConfirm={() => {
+          if (!pendingAdd) return;
+          const product = listOption.find((item) => item.id === pendingAdd.productID);
+          if (product) addProduct(product, pendingAdd.amount);
+          setPendingAdd(null);
+        }}
+      />
+      <DialogQuestion
+        open={pendingPreOrder !== null}
+        title="สินค้ามีจำนวนไม่เพียงพอ"
+        content={
+          <>
+            <div>รายการต่อไปนี้จะเป็น PreOrder:</div>
+            {pendingPreOrder?.warnings.map((warning) => (
+              <div key={warning}>{warning}</div>
+            ))}
+            <div>ยืนยันการบันทึกบิลหรือไม่?</div>
+          </>
+        }
+        confirmText="ยืนยัน PreOrder"
+        cancelText="กลับไปแก้ไข"
+        confirmColor="warning"
+        onClose={() => setPendingPreOrder(null)}
+        onConfirm={() => {
+          if (!pendingPreOrder || isSaving) return;
+          setPendingPreOrder(null);
+          void saveOrder(
+            pendingPreOrder.customerID,
+            pendingPreOrder.items,
+            pendingPreOrder.totalAmount,
+          );
+        }}
+      />
     </BillContext.Provider>
   );
 }

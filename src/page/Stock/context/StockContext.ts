@@ -12,6 +12,8 @@ export enum stockFilter_e {
   another,
   anotherLow,
   anotherOut,
+  stockPreOrder,
+  anotherPreOrder,
 }
 export enum stockDialog_e {
   none,

@@ -10,7 +10,7 @@ import {
   getStorefrontProducts,
   uploadStorefrontEvidence,
 } from '../../../API/StorefrontService/Storefront';
-import { orderStatus_e } from '../../../enum';
+import { orderStatus_e, productType_e } from '../../../enum';
 import theme from '../../../theme';
 import { CartSummary } from '../component/CartSummary';
 import { OrderDetailDialog } from '../component/OrderDetailDialog';
@@ -77,7 +77,7 @@ export function ProductPage() {
       if (!existing) return [...current, { productID: product.id, quantity: 1 }];
       return current.map((item) =>
         item.productID === product.id
-          ? { ...item, quantity: Math.min(product.amount, item.quantity + 1) }
+          ? { ...item, quantity: product.type === productType_e.material ? Math.min(product.amount, item.quantity + 1) : item.quantity + 1 }
           : item,
       );
     });

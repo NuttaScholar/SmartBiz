@@ -13,6 +13,7 @@ export enum stockStatus_e {
   normal,
   stockLow,
   stockOut,
+  preOrder,
 }
 export enum role_e{
   admin,

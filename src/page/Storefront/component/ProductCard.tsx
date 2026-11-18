@@ -1,7 +1,7 @@
 import { Box, Chip, IconButton, Paper, Stack, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import { stockStatus_e } from '../../../enum';
+import { productType_e, stockStatus_e } from '../../../enum';
 import type { StorefrontProduct } from '../type';
 import { formatMoney, stockLabel } from '../lib/format';
 
@@ -16,7 +16,7 @@ export function ProductCard({
   onAdd: () => void;
   onRemove: () => void;
 }) {
-  const isOut = product.status === stockStatus_e.stockOut || product.amount <= 0;
+  const isOut = product.type === productType_e.material && product.amount <= 0;
 
   return (
     <Paper className="product-card" variant="outlined">
@@ -24,7 +24,7 @@ export function ProductCard({
         <img src={product.img} alt={product.name} className="product-image" />
         <Chip
           label={stockLabel(product)}
-          color={isOut ? "error" : product.status === stockStatus_e.stockLow ? "warning" : "success"}
+          color={isOut ? "error" : product.status === stockStatus_e.stockLow || product.amount <= 0 ? "warning" : "success"}
           size="small"
           className="product-stock"
         />
@@ -72,7 +72,7 @@ export function ProductCard({
           aria-label={`เพิ่ม ${product.name}`}
           color="primary"
           onClick={onAdd}
-          disabled={isOut || quantity >= product.amount}
+          disabled={isOut || (product.type === productType_e.material && quantity >= product.amount)}
         >
           <AddIcon />
         </IconButton>

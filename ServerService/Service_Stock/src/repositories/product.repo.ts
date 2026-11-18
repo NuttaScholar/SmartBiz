@@ -52,13 +52,19 @@ export default class ProductRepo {
           $set: {
             status: {
               $cond: [
-                { $eq: ["$amount", 0] },
-                stockStatus_e.stockOut,
+                { $lt: ["$amount", 0] },
+                stockStatus_e.preOrder,
                 {
                   $cond: [
-                    { $lt: ["$amount", "$condition"] },
-                    stockStatus_e.stockLow,
-                    stockStatus_e.normal,
+                    { $eq: ["$amount", 0] },
+                    stockStatus_e.stockOut,
+                    {
+                      $cond: [
+                        { $lt: ["$amount", "$condition"] },
+                        stockStatus_e.stockLow,
+                        stockStatus_e.normal,
+                      ],
+                    },
                   ],
                 },
               ],
@@ -103,6 +109,8 @@ export default class ProductRepo {
       anotherOut,
       anotherLow,
       anotherTotal,
+      stockPreOrder,
+      anotherPreOrder,
     ] = await Promise.all([
       this.ProductModel.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.stockOut }),
       this.ProductModel.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.stockLow }),
@@ -113,6 +121,8 @@ export default class ProductRepo {
       this.ProductModel.countDocuments({ type: productType_e.another, status: stockStatus_e.stockOut }),
       this.ProductModel.countDocuments({ type: productType_e.another, status: stockStatus_e.stockLow }),
       this.ProductModel.countDocuments({ type: productType_e.another }),
+      this.ProductModel.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.preOrder }),
+      this.ProductModel.countDocuments({ type: productType_e.another, status: stockStatus_e.preOrder }),
     ]);
 
     return {
@@ -125,6 +135,8 @@ export default class ProductRepo {
       anotherTotal,
       anotherLow,
       anotherOut,
+      stockPreOrder,
+      anotherPreOrder,
     };
   }
 

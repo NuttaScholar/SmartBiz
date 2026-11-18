@@ -33,6 +33,7 @@ export interface OrderDocument extends Document {
     source: OrderSource;
     items: OrderItem[];
     totalAmount: number;
+    preOrder: boolean;
     confirmationEvidence?: StoredConfirmationEvidence;
     paymentConfirmedAt?: Date;
     paymentConfirmedBy?: string;

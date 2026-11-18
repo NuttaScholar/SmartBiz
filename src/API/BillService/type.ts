@@ -4,6 +4,7 @@ import { errorCode_e } from "../../enum";
 
 export type orderInfo_t = {
     id: string;
+    preOrder: boolean;
     customerID: string;
     customer: string;
     date: Date;

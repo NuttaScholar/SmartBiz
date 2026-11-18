@@ -1,7 +1,8 @@
-import { orderSource_e, orderStatus_e, stockStatus_e } from '../../enum';
+import { orderSource_e, orderStatus_e, productType_e, stockStatus_e } from '../../enum';
 
 export type StorefrontProduct = {
   id: string;
+  type?: productType_e;
   name: string;
   img: string;
   description: string;

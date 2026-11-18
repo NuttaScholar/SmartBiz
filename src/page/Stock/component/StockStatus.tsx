@@ -20,6 +20,18 @@ const StockStatus: React.FC = () => {
   // Local Value **************************
   const list: listStatus_t = [
     {
+      label: "สินค้า PreOrder",
+      id: stockFilter_e.stockPreOrder,
+      color_value: "warning",
+      onClick: () => onClickCard(stockFilter_e.stockPreOrder),
+    },
+    {
+      label: "สินค้าอื่นๆ PreOrder",
+      id: stockFilter_e.anotherPreOrder,
+      color_value: "warning",
+      onClick: () => onClickCard(stockFilter_e.anotherPreOrder),
+    },
+    {
       label: "สินค้าหมด",
       id: stockFilter_e.stockOut,
       color_value: "error",
@@ -67,6 +79,8 @@ const StockStatus: React.FC = () => {
       list={list}
       state={state.filter}
       value={[
+        state.status?.stockPreOrder,
+        state.status?.anotherPreOrder,
         stockOut,
         materialOut,
         anotherOut,

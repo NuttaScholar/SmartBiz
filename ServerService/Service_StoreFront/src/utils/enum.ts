@@ -8,6 +8,7 @@ export enum stockStatus_e {
   normal,
   stockLow,
   stockOut,
+  preOrder,
 }
 
 export enum orderStatus_e {
