@@ -119,7 +119,9 @@ function Snapshot({
           <Info label="รหัสสินค้า" value={value.id} mono />
           <Info label="ชื่อสินค้า" value={value.name} />
           <Info label="ประเภท" value={productTypeLabel(value.type)} />
-          <Info label="จำนวน" value={formatOptionalNumber(value.amount)} />
+          <Info label="จำนวนสุทธิ" value={formatOptionalNumber(value.amount)} />
+          <Info label="มีอยู่จริง" value={formatOptionalNumber(value.actualAmount)} />
+          <Info label="รอจัดส่ง" value={formatOptionalNumber(value.pendingDeliveryAmount)} />
           <Info label="จุดแจ้งเตือน" value={formatNumber(value.condition)} />
           <Info label="สถานะ" value={stockStatusLabel(value.status)} />
           <Info label="ราคา" value={formatOptionalMoney(value.price)} />

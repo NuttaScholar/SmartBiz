@@ -71,7 +71,7 @@ export default class StockService {
   ) {
     await this.ensureProductIsUnique(data.id, data.name);
 
-    const { img: _requestedImg, ...productData } = data;
+    const { img: _requestedImg, actualAmount: _actualAmount, pendingDeliveryAmount: _pendingDeliveryAmount, ...productData } = data;
     const amount = this.requireInventoryValue(data.amount, "amount");
     const condition = this.requireInventoryValue(data.condition, "condition");
     const status = this.resolveStockStatus(amount, condition);
@@ -122,7 +122,7 @@ export default class StockService {
       throw { code: errorCode_e.AlreadyExistsError, message: "Product name already exists" };
     }
 
-    const { img: _requestedImg, ...requestedProductData } = data;
+    const { img: _requestedImg, actualAmount: _actualAmount, pendingDeliveryAmount: _pendingDeliveryAmount, ...requestedProductData } = data;
     const amount = Number(product.amount ?? data.amount);
     if (!Number.isFinite(amount) || ((product.type === productType_e.material || data.type === productType_e.material) && amount < 0)) {
       throw { code: errorCode_e.InvalidInputError, message: "Invalid product stock amount" };
@@ -320,6 +320,10 @@ export default class StockService {
     actor: AuditActor,
   ): Promise<stockAdjustmentResult_t> {
     const adjustments = this.normalizeAdjustments(data?.items);
+    const mode = data?.mode ?? "reservation";
+    if (!["reservation", "fulfillment", "physical"].includes(mode)) {
+      throw { code: errorCode_e.InvalidInputError, message: "Invalid stock adjustment mode" };
+    }
     const reference = this.optionalTrimmedString(data?.reference, "reference");
     const note = this.optionalTrimmedString(data?.note, "note");
     const date = new Date();
@@ -343,14 +347,28 @@ export default class StockService {
           }
 
           const beforeAmount = Number(product.amount);
-          if (!Number.isFinite(beforeAmount)) {
+          const currentActual = Number(product.actualAmount ?? Math.max(beforeAmount, 0));
+          const currentPending = Number(product.pendingDeliveryAmount ?? Math.max(-beforeAmount, 0));
+          if (![beforeAmount, currentActual, currentPending].every(Number.isFinite)) {
             throw {
               code: errorCode_e.InvalidStateError,
               message: `Product stock amount not found: ${adjustment.productID}`,
             };
           }
 
-          const afterAmount = beforeAmount + adjustment.delta;
+          const nextActual = mode === "reservation" ? currentActual : currentActual + adjustment.delta;
+          const nextPending = mode === "physical"
+            ? currentPending
+            : mode === "fulfillment"
+              ? currentPending + adjustment.delta
+              : currentPending - adjustment.delta;
+          if (nextActual < 0 || nextPending < 0) {
+            throw {
+              code: errorCode_e.InvalidStateError,
+              message: `Insufficient stock for product ${adjustment.productID}. Available: ${currentActual}`,
+            };
+          }
+          const afterAmount = nextActual - nextPending;
           if (product.type === productType_e.material && afterAmount < 0) {
             throw {
               code: errorCode_e.InvalidStateError,
@@ -366,6 +384,8 @@ export default class StockService {
             adjustment.productID,
             {
               amount: afterAmount,
+              actualAmount: nextActual,
+              pendingDeliveryAmount: nextPending,
               status: this.resolveStockStatus(
                 afterAmount,
                 Number(product.condition ?? 0),
@@ -473,10 +493,12 @@ export default class StockService {
         const nextProductAmount = log.type === stockLogType_e.in
           ? currentAmount + amount - previousLogAmount
           : currentAmount + previousLogAmount - amount;
-        if (product.type === productType_e.material && nextProductAmount < 0) {
+        const nextActual = Number(product.actualAmount ?? Math.max(currentAmount, 0))
+          + nextProductAmount - currentAmount;
+        if (nextActual < 0) {
           throw {
             code: errorCode_e.InvalidStateError,
-            message: "The edited amount would make stock negative",
+            message: "The edited amount would make physical stock negative",
           };
         }
 
@@ -507,6 +529,7 @@ export default class StockService {
           product.id,
           {
             amount: nextProductAmount,
+            actualAmount: nextActual,
             status: this.resolveStockStatus(
               nextProductAmount,
               Number(product.condition ?? 0),
@@ -596,10 +619,12 @@ export default class StockService {
         const nextProductAmount = log.type === stockLogType_e.in
           ? currentAmount - logAmount
           : currentAmount + logAmount;
-        if (product.type === productType_e.material && nextProductAmount < 0) {
+        const nextActual = Number(product.actualAmount ?? Math.max(currentAmount, 0))
+          + nextProductAmount - currentAmount;
+        if (nextActual < 0) {
           throw {
             code: errorCode_e.InvalidStateError,
-            message: "Deleting this log would make stock negative",
+            message: "Deleting this log would make physical stock negative",
           };
         }
 
@@ -608,6 +633,7 @@ export default class StockService {
           product.id,
           {
             amount: nextProductAmount,
+            actualAmount: nextActual,
             status: this.resolveStockStatus(
               nextProductAmount,
               Number(product.condition ?? 0),
@@ -703,23 +729,26 @@ export default class StockService {
       }
 
       const currentAmount = Number(product.amount ?? 0);
-      if (!Number.isFinite(currentAmount)) {
+      const currentActual = Number(product.actualAmount ?? Math.max(currentAmount, 0));
+      const currentPending = Number(product.pendingDeliveryAmount ?? Math.max(-currentAmount, 0));
+      if (![currentAmount, currentActual, currentPending].every(Number.isFinite)) {
         errors.push(item);
         continue;
       }
-      if (type === stockLogType_e.out && product.type === productType_e.material && currentAmount < itemAmount) {
+      if (type === stockLogType_e.out && currentActual < itemAmount) {
         errors.push(item);
         continue;
       }
 
       const before = toProductSnapshot(product);
-      const newAmount = type === stockLogType_e.in
-        ? currentAmount + itemAmount
-        : currentAmount - itemAmount;
+      const newActual = type === stockLogType_e.in
+        ? currentActual + itemAmount
+        : currentActual - itemAmount;
+      const newAmount = newActual - currentPending;
       const newStatus = this.resolveStockStatus(newAmount, Number(product.condition ?? 0));
       const updated = await this.productRepo.updateById(
         item.productID,
-        { amount: newAmount, status: newStatus },
+        { amount: newAmount, actualAmount: newActual, status: newStatus },
         session,
       );
       if (!updated) {

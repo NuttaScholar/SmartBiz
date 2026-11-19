@@ -1,8 +1,33 @@
 import BillService from "../src/services/bill.service";
 import { errorCode_e, OrderSource, OrderStatus, productType_e, stockStatus_e } from "../src/utils/enum";
 import axios from "axios";
+import { migrateInventoryDetails } from "../src/services/inventory-migration";
 
 describe("BillService", () => {
+  it("migrates legacy stock using orders that are still pending shipment", async () => {
+    const bulkWrite = jasmine.createSpy("bulkWrite").and.resolveTo(undefined);
+    const productModel = {
+      find: jasmine.createSpy("find").and.returnValue({
+        lean: () => Promise.resolve([{ _id: "mongo-id", id: "PROD001", amount: -2 }]),
+      }),
+      bulkWrite,
+    };
+    const orderModel = {
+      aggregate: jasmine.createSpy("aggregate").and.resolveTo([
+        { _id: "PROD001", quantity: 5 },
+      ]),
+    };
+
+    await migrateInventoryDetails(orderModel as any, productModel as any);
+
+    expect(bulkWrite).toHaveBeenCalledWith([{
+      updateOne: {
+        filter: { _id: "mongo-id", inventorySchemaVersion: { $ne: 2 } },
+        update: { $set: { actualAmount: 3, pendingDeliveryAmount: 5, inventorySchemaVersion: 2 } },
+      },
+    }]);
+  });
+
   function createService(contactExists = true) {
     const service = new BillService(
       {} as any,
@@ -557,11 +582,22 @@ describe("BillService", () => {
     service.repo.getOrder.and.resolveTo({
       orderID: "ORD001",
       status: OrderStatus.PrepareProduct,
+      items: [{ productID: "PROD001", quantity: 2, priceOriginal: 100, priceAfterDiscount: 100 }],
     });
 
     const result = await service.moveToNextStep("ORD001");
 
-    expect(service.repo.updateStatus).toHaveBeenCalledWith("ORD001", OrderStatus.PrepareShipment);
+    expect(service.repo.updateStatus).toHaveBeenCalledWith("ORD001", OrderStatus.PrepareShipment, OrderStatus.PrepareProduct);
+    expect(service.stockPost).toHaveBeenCalledWith(
+      "http://stock.example:3003/stock/adjust",
+      {
+        reference: "ORD001",
+        note: "Fulfill reserved stock for shipment preparation",
+        mode: "fulfillment",
+        items: [{ productID: "PROD001", delta: -2 }],
+      },
+      jasmine.any(Object),
+    );
     expect(result).toEqual({ orderID: "ORD001", status: OrderStatus.PrepareShipment });
   });
 

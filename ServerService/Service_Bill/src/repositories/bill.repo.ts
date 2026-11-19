@@ -82,9 +82,9 @@ export default class BillRepo {
     return this.OrderModel.findOneAndDelete({ orderID });
   }
 
-  async updateStatus(orderID: string, status: OrderStatus) {
+  async updateStatus(orderID: string, status: OrderStatus, expectedStatus?: OrderStatus) {
     return this.OrderModel.findOneAndUpdate(
-      { orderID },
+      { orderID, ...(expectedStatus === undefined ? {} : { status: expectedStatus }) },
       { status },
       { new: true, runValidators: true }
     );

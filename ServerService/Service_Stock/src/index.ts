@@ -38,7 +38,9 @@ async function startServer() {
   );
   const storageService = new StorageService();
 
-  await new ProductRepo(ProductModel).initializeAnotherInventory();
+  const productRepo = new ProductRepo(ProductModel);
+  await productRepo.initializeAnotherInventory();
+  await productRepo.initializeInventoryDetails();
   await storageService.initBucket(DEFAULT_BUCKET, false);
   await storageService.initBucket(BILL_BUCKET, true);
 

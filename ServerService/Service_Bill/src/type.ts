@@ -11,6 +11,9 @@ export type productInfo_t = {
   price?: number;
   description?: string;
   amount?: number;
+  actualAmount?: number;
+  pendingDeliveryAmount?: number;
+  inventorySchemaVersion?: number;
 }
 
 export type orderItemInfo_t = {

@@ -118,7 +118,9 @@ const CardProduct: React.FC<MyProps> = (props) => {
             )}
             {props.value.amount !== undefined && (
               <Box sx={{ display: "flex", flexDirection: "row", gap: 1 }}>
-                <Typography variant="subtitle1">จำนวน:</Typography>
+                <Typography variant="subtitle1">
+                  {props.value.actualAmount === undefined ? "จำนวน:" : "จำนวนสุทธิ:"}
+                </Typography>
                 <Typography
                   variant="subtitle1"
                   sx={{
@@ -134,6 +136,16 @@ const CardProduct: React.FC<MyProps> = (props) => {
                 >
                   {props.value.amount}
                 </Typography>
+              </Box>
+            )}
+            {props.value.actualAmount !== undefined && (
+              <Box sx={{ display: "flex", gap: 1.5, whiteSpace: "nowrap" }}>
+                <Typography variant="body2">มีอยู่จริง: {props.value.actualAmount}</Typography>
+                {props.value.pendingDeliveryAmount !== undefined && props.value.pendingDeliveryAmount > 0 && (
+                  <Typography variant="body2" color="warning.main">
+                    รอจัดส่ง: {props.value.pendingDeliveryAmount}
+                  </Typography>
+                )}
               </Box>
             )}
             {props.value.total !== undefined && (

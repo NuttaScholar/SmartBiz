@@ -11,6 +11,8 @@ export type productInfo_t = {
   description?: string;
   showInStorefront?: boolean;
   amount?: number;
+  actualAmount?: number;
+  pendingDeliveryAmount?: number;
   // For Bill
   total?: number;
   percentDiscount?: number;
@@ -133,6 +135,8 @@ export type ProductSnapshot_t = {
   description?: string;
   showInStorefront?: boolean;
   amount?: number;
+  actualAmount?: number;
+  pendingDeliveryAmount?: number;
 };
 export type StockLogSnapshot_t = {
   amount: number;

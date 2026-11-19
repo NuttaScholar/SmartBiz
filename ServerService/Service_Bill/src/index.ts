@@ -14,6 +14,7 @@ import { ProductDocument } from "./models/product.interface";
 import { ProductSchema } from "./models/product.model";
 import cors from "cors";
 import { PORT, WEB_HOSTS } from "./config";
+import { migrateInventoryDetails } from "./services/inventory-migration";
 
 const app = express();
 app.use(
@@ -41,6 +42,7 @@ async function startServer() {
   const DiscountModel = getDB("Bill").model<DiscountDocument>("Discount", DiscountSchema); // ⭐ สมมติชื่อเดียวกับไฟล์ model
   const ContactModel = getDB("Account").model<ContactDocument>("contact", ContactSchema);
   const ProductModel = getDB("Stock").model<ProductDocument>("product", ProductSchema);
+  await migrateInventoryDetails(OrderModel, ProductModel);
 
   // ⭐ ส่ง model เข้า routes (ถ้าต้องการ)
   app.get("/readyz", (_req, res) => {

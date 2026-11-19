@@ -12,6 +12,9 @@ export type productInfo_t = {
   description?: string;
   showInStorefront?: boolean;
   amount?: number;
+  actualAmount?: number;
+  pendingDeliveryAmount?: number;
+  inventorySchemaVersion?: number;
 }
 export type stockForm_t = {
   productID: string;
@@ -35,6 +38,7 @@ export type stockAdjustmentItem_t = {
 export type stockAdjustmentForm_t = {
   reference?: string;
   note?: string;
+  mode?: "reservation" | "fulfillment" | "physical";
   items: stockAdjustmentItem_t[];
 }
 export type stockAdjustmentResult_t = {

@@ -25,6 +25,8 @@ export type ProductSnapshot = {
   description?: string;
   showInStorefront?: boolean;
   amount?: number;
+  actualAmount?: number;
+  pendingDeliveryAmount?: number;
 };
 
 export type StockLogSnapshot = {

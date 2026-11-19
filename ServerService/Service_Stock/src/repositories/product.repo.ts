@@ -20,7 +20,11 @@ export default class ProductRepo {
   }
 
   create(data: productInfo_t, session?: ClientSession) {
-    const product = new this.ProductModel(data);
+    const product = new this.ProductModel({
+      ...data,
+      actualAmount: Number(data.amount ?? 0),
+      pendingDeliveryAmount: 0,
+    });
     return product.save({ session });
   }
 
@@ -73,6 +77,18 @@ export default class ProductRepo {
         },
       ],
     );
+  }
+
+  initializeInventoryDetails() {
+    return this.ProductModel.updateMany({}, [
+      { $set: { amount: { $ifNull: ["$amount", 0] } } },
+      {
+        $set: {
+          actualAmount: { $ifNull: ["$actualAmount", { $max: ["$amount", 0] }] },
+          pendingDeliveryAmount: { $ifNull: ["$pendingDeliveryAmount", { $max: [{ $multiply: ["$amount", -1] }, 0] }] },
+        },
+      },
+    ]);
   }
 
   async search(type?: string, name?: string, status?: string) {
@@ -154,7 +170,10 @@ export default class ProductRepo {
         description: "$description",
         showInStorefront: { $ifNull: ["$showInStorefront", true] },
         amount: "$amount",
+        actualAmount: "$actualAmount",
+        pendingDeliveryAmount: "$pendingDeliveryAmount",
       },
     };
   }
+
 }

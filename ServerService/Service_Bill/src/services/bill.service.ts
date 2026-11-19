@@ -30,6 +30,7 @@ type StockApiResponse = AccountApiResponse & {
     items: Array<{ productID: string; beforeAmount: number; afterAmount: number }>;
   };
 };
+type StockAdjustmentMode = "reservation" | "fulfillment" | "physical";
 
 const WORKFLOW = [
   OrderStatus.PrepareProduct,
@@ -181,11 +182,12 @@ export default class BillService {
     const updateData = this.pickOrderUpdate(data);
     const stockChanges = data?.items ? this.getStockChanges(data.items, order.items) : [];
 
-    await this.applyStockChanges(stockChanges, orderID, "Adjust stock for order update");
+    const adjustmentMode = order.status === OrderStatus.PrepareShipment ? "physical" : "reservation";
+    await this.applyStockChanges(stockChanges, orderID, "Adjust stock for order update", adjustmentMode);
     try {
       return await this.repo.updateOrder(orderID, updateData);
     } catch (error) {
-      await this.rollbackStockChanges(stockChanges, orderID, "Rollback stock after order update failed");
+      await this.rollbackStockChanges(stockChanges, orderID, "Rollback stock after order update failed", adjustmentMode);
       throw error;
     }
   }
@@ -236,7 +238,8 @@ export default class BillService {
     }
 
     const stockChanges = this.getStockChanges([], order.items);
-    await this.applyStockChanges(stockChanges, orderID, "Restore stock for order deletion");
+    const adjustmentMode = order.status === OrderStatus.PrepareShipment ? "physical" : "reservation";
+    await this.applyStockChanges(stockChanges, orderID, "Restore stock for order deletion", adjustmentMode);
     try {
       const deletedOrder = await this.repo.deleteOrder(orderID);
       if (!deletedOrder) {
@@ -246,7 +249,7 @@ export default class BillService {
         };
       }
     } catch (error) {
-      await this.rollbackStockChanges(stockChanges, orderID, "Rollback stock after order deletion failed");
+      await this.rollbackStockChanges(stockChanges, orderID, "Rollback stock after order deletion failed", adjustmentMode);
       throw error;
     }
 
@@ -273,7 +276,7 @@ export default class BillService {
     const source = order.source ?? OrderSource.Direct;
     if (source === OrderSource.Online) {
       if (status === OrderStatus.PrepareProduct) {
-        return this.repo.updateStatus(orderID, OrderStatus.PrepareShipment);
+        return this.fulfillAndPrepareShipment(order);
       }
       if (status === OrderStatus.PrepareShipment) {
         return this.completeOrderWithIncome(order);
@@ -311,6 +314,9 @@ export default class BillService {
       return this.completeOrderWithIncome(order);
     }
 
+    if (nextStatus === OrderStatus.PrepareShipment) {
+      return this.fulfillAndPrepareShipment(order);
+    }
     return this.repo.updateStatus(orderID, nextStatus);
   }
   /**
@@ -881,7 +887,36 @@ export default class BillService {
     }, new Map<string, number>());
   }
 
-  private async applyStockChanges(changes: StockChange[], reference: string, note: string) {
+  private async fulfillAndPrepareShipment(order: OrderDocument) {
+    const changes = this.getStockChanges(order.items);
+    await this.applyStockChanges(
+      changes,
+      order.orderID,
+      "Fulfill reserved stock for shipment preparation",
+      "fulfillment",
+    );
+    try {
+      const updated = await this.repo.updateStatus(
+        order.orderID,
+        OrderStatus.PrepareShipment,
+        OrderStatus.PrepareProduct,
+      );
+      if (!updated) {
+        throw { code: errorCode_e.InvalidStateError, message: "Order status changed before shipment preparation" };
+      }
+      return updated;
+    } catch (error) {
+      await this.rollbackStockChanges(
+        changes,
+        order.orderID,
+        "Rollback shipment preparation",
+        "fulfillment",
+      );
+      throw error;
+    }
+  }
+
+  private async applyStockChanges(changes: StockChange[], reference: string, note: string, mode: StockAdjustmentMode = "reservation") {
     return this.requestStockAdjustment(
       changes.map((change) => ({
         productID: change.productID,
@@ -889,10 +924,11 @@ export default class BillService {
       })),
       reference,
       note,
+      mode,
     );
   }
 
-  private async rollbackStockChanges(changes: StockChange[], reference: string, note: string) {
+  private async rollbackStockChanges(changes: StockChange[], reference: string, note: string, mode: StockAdjustmentMode = "reservation") {
     await this.requestStockAdjustment(
       changes.map((change) => ({
         productID: change.productID,
@@ -900,6 +936,7 @@ export default class BillService {
       })),
       reference,
       note,
+      mode,
     );
   }
 
@@ -907,6 +944,7 @@ export default class BillService {
     items: Array<{ productID: string; delta: number }>,
     reference: string,
     note: string,
+    mode: StockAdjustmentMode = "reservation",
   ) {
     if (items.length === 0) return [];
 
@@ -917,7 +955,7 @@ export default class BillService {
       );
       const response = await axios.post<StockApiResponse>(
         `${this.serviceStockUrl.replace(/\/$/, "")}/stock/adjust`,
-        { reference, note, items },
+        { reference, note, items, ...(mode === "reservation" ? {} : { mode }) },
         {
           headers: {
             Authorization: `Bearer ${serviceToken}`,

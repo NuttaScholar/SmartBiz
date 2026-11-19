@@ -13,6 +13,8 @@ const ProductSnapshotSchema = new Schema(
     description: String,
     showInStorefront: Boolean,
     amount: Number,
+    actualAmount: Number,
+    pendingDeliveryAmount: Number,
   },
   { _id: false },
 );
