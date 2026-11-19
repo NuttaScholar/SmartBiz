@@ -3,93 +3,80 @@ import { stockFilter_e } from "../context/StockContext";
 import { useStockContext } from "../hooks/useStockContex";
 import StatusPanel, { listStatus_t } from "../../../component/Organisms/StatusPanal";
 
-//*************************************************
-// Interface
-//*************************************************
-
-//*************************************************
-// Component
-//*************************************************
 const StockStatus: React.FC = () => {
-  // Hook ************************************
   const { state, setState } = useStockContext();
-  // Local function **************************
-  const onClickCard = (filter: stockFilter_e) => {
-    setState({ ...state, filter: filter });
+  const selectFilter = (filter: stockFilter_e) => {
+    setState((previous) => ({ ...previous, filter }));
   };
-  // Local Value **************************
+
+  const isMaterial = [
+    stockFilter_e.material,
+    stockFilter_e.materialLow,
+    stockFilter_e.materialOut,
+  ].includes(state.filter);
+  const isAnother = [
+    stockFilter_e.another,
+    stockFilter_e.anotherLow,
+    stockFilter_e.anotherOut,
+    stockFilter_e.anotherPreOrder,
+  ].includes(state.filter);
+
+  const allFilter = isMaterial
+    ? stockFilter_e.material
+    : isAnother
+      ? stockFilter_e.another
+      : stockFilter_e.stock;
+  const total = isMaterial
+    ? state.status?.materialTotal
+    : isAnother
+      ? state.status?.anotherTotal
+      : state.status?.stockTotal;
+  const lowFilter = isMaterial
+    ? stockFilter_e.materialLow
+    : isAnother
+      ? stockFilter_e.anotherLow
+      : stockFilter_e.stockLow;
+  const outFilter = isMaterial
+    ? stockFilter_e.materialOut
+    : isAnother
+      ? stockFilter_e.anotherOut
+      : stockFilter_e.stockOut;
+  const low = isMaterial
+    ? state.status?.materialLow
+    : isAnother
+      ? state.status?.anotherLow
+      : state.status?.stockLow;
+  const out = isMaterial
+    ? state.status?.materialOut
+    : isAnother
+      ? state.status?.anotherOut
+      : state.status?.stockOut;
+
   const list: listStatus_t = [
-    {
-      label: "สินค้า PreOrder",
-      id: stockFilter_e.stockPreOrder,
-      color_value: "warning",
-      onClick: () => onClickCard(stockFilter_e.stockPreOrder),
-    },
-    {
-      label: "สินค้าอื่นๆ PreOrder",
-      id: stockFilter_e.anotherPreOrder,
-      color_value: "warning",
-      onClick: () => onClickCard(stockFilter_e.anotherPreOrder),
-    },
-    {
-      label: "สินค้าหมด",
-      id: stockFilter_e.stockOut,
-      color_value: "error",
-      onClick: () => onClickCard(stockFilter_e.stockOut),
-    },
-    {
-      label: "วัตถุดิบหมด",
-      id: stockFilter_e.materialOut,
-      color_value: "error",
-      onClick: () => onClickCard(stockFilter_e.materialOut),
-    },
-    {
-      label: "สินค้าอื่นๆ หมด",
-      id: stockFilter_e.anotherOut,
-      color_value: "error",
-      onClick: () => onClickCard(stockFilter_e.anotherOut),
-    },
-    {
-      label: "สินค้าใกล้หมด",
-      id: stockFilter_e.stockLow,
-      color_value: "info",
-      onClick: () => onClickCard(stockFilter_e.stockLow),
-    },
-    {
-      label: "วัตถุดิบใกล้หมด",
-      id: stockFilter_e.materialLow,
-      color_value: "info",
-      onClick: () => onClickCard(stockFilter_e.materialLow),
-    },    
-    {
-      label: "สินค้าอื่นๆ ใกล้หมด",
-      id: stockFilter_e.anotherLow,
-      color_value: "info",
-      onClick: () => onClickCard(stockFilter_e.anotherLow),
-    },
+    { label: "ทั้งหมด", id: allFilter, color_value: "primary", onClick: () => selectFilter(allFilter) },
   ];
-  const stockOut = state.status ? state.status.stockOut : undefined;
-  const materialOut = state.status ? state.status.materialOut : undefined;
-  const stockLow = state.status ? state.status.stockLow : undefined;
-  const materialLow = state.status ? state.status.materialLow : undefined;
-  const anotherOut = state.status ? state.status.anotherOut : undefined;
-  const anotherLow = state.status ? state.status.anotherLow : undefined;
-  return (
-    <StatusPanel
-      list={list}
-      state={state.filter}
-      value={[
-        state.status?.stockPreOrder,
-        state.status?.anotherPreOrder,
-        stockOut,
-        materialOut,
-        anotherOut,
-        stockLow,
-        materialLow,        
-        anotherLow,
-      ]}
-    />
+  const values = [total];
+
+  if (!isMaterial) {
+    const preOrderFilter = isAnother
+      ? stockFilter_e.anotherPreOrder
+      : stockFilter_e.stockPreOrder;
+    list.push({
+      label: "PreOrder",
+      id: preOrderFilter,
+      color_value: "warning",
+      onClick: () => selectFilter(preOrderFilter),
+    });
+    values.push(isAnother ? state.status?.anotherPreOrder : state.status?.stockPreOrder);
+  }
+
+  list.push(
+    { label: "หมด", id: outFilter, color_value: "error", onClick: () => selectFilter(outFilter) },
+    { label: "ใกล้หมด", id: lowFilter, color_value: "info", onClick: () => selectFilter(lowFilter) },
   );
-};    
+  values.push(out, low);
+
+  return <StatusPanel list={list} state={state.filter} value={values} />;
+};
 
 export default StockStatus;

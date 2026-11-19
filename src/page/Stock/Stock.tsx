@@ -6,7 +6,6 @@ import {
   StockDefaultState,
   stockDialog_e,
 } from "./context/StockContext";
-import StockStatus from "./component/StockStatus";
 import StockList from "./component/StockList";
 import SpeedDial_Stock from "./component/SpeedDialStock";
 import DialogFormProduct from "./component/DialogFormProduct";
@@ -31,7 +30,6 @@ const Page_Stock: React.FC = () => {
   return (
     <StockContext.Provider value={{ state, setState }}>
       <AppBar_c>
-        <StockStatus />
         <StockListHeader>
           <StockList variant="editable" onClick={onClickList} />
         </StockListHeader>

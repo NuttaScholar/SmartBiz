@@ -1,6 +1,7 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import TabBox from "../../../component/Atoms/TabBox";
+import StockStatus from "./StockStatus";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockFilter_e } from "../context/StockContext";
 import FieldSearch from "../../../component/Molecules/FieldSearch";
@@ -182,6 +183,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
   return (
     <Box
       sx={{
+        mt: 2,
         width: "100%",
         display: "flex",
         flexDirection: "column",
@@ -202,6 +204,7 @@ const StockListHeader: React.FC<myProps> = (props) => {
         value={tab}
         maxWidth="1280px"
       >
+        <StockStatus />
         {props.children}
       </TabBox>
     </Box>
