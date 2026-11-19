@@ -20,7 +20,7 @@ type OrderItem = StorefrontOrder["items"][number];
 // Helper functions
 //*************************************************
 function formatOrderItemDescription(item: OrderItem) {
-  return `${item.quantity} x ${formatMoney(item.priceAfterDiscount)} | ส่วนลด ${item.discountPercent}%`;
+  return `${item.quantity} x ${formatMoney(item.priceAfterDiscount)} | ส่วนลด ${item.discountPercent.toFixed(2)}%`;
 }
 
 function getOrderItemTotal(item: OrderItem) {

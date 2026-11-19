@@ -77,7 +77,7 @@ export function OrderSummary({ id, date, status, source }: OrderSummaryProps) {
       >
         <Box>
           <Stack direction="row" alignItems="center" spacing={1} useFlexGap flexWrap="wrap">
-            <Typography variant="h4">{id}</Typography>
+            <Typography variant="h5">{id}</Typography>
             <Chip
               label={isDirect ? "สั่งโดยตรง" : "หน้าร้าน Online"}
               color={isDirect ? "default" : "primary"}
