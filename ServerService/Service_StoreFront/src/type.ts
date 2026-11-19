@@ -16,6 +16,7 @@ export type productInfo_t = {
   description?: string;
   showInStorefront?: boolean;
   amount?: number;
+  actualAmount?: number;
 };
 
 export interface StorefrontProduct {
@@ -26,6 +27,7 @@ export interface StorefrontProduct {
   description: string;
   price: number;
   amount: number;
+  actualAmount: number;
   percentDiscount: number;
   priceAfterDiscount: number;
   status: stockStatus_e;

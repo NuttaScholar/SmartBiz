@@ -140,7 +140,13 @@ export default class BillService {
     const stockChanges = this.getStockChanges(normalizedData.items);
     const order = this.repo.prepareOrder(normalizedData);
 
-    const adjustedStock = await this.applyStockChanges(stockChanges, order.orderID, "Reserve stock for order creation");
+    const adjustedStock = await this.applyStockChanges(
+      stockChanges,
+      order.orderID,
+      "Reserve stock for order creation",
+      "reservation",
+      source === OrderSource.Online,
+    );
     order.preOrder = adjustedStock.some((item) => item.afterAmount < 0);
     try {
       return await this.repo.saveOrder(order);
@@ -916,7 +922,7 @@ export default class BillService {
     }
   }
 
-  private async applyStockChanges(changes: StockChange[], reference: string, note: string, mode: StockAdjustmentMode = "reservation") {
+  private async applyStockChanges(changes: StockChange[], reference: string, note: string, mode: StockAdjustmentMode = "reservation", requireActualStock = false) {
     return this.requestStockAdjustment(
       changes.map((change) => ({
         productID: change.productID,
@@ -925,6 +931,7 @@ export default class BillService {
       reference,
       note,
       mode,
+      requireActualStock,
     );
   }
 
@@ -945,6 +952,7 @@ export default class BillService {
     reference: string,
     note: string,
     mode: StockAdjustmentMode = "reservation",
+    requireActualStock = false,
   ) {
     if (items.length === 0) return [];
 
@@ -955,7 +963,7 @@ export default class BillService {
       );
       const response = await axios.post<StockApiResponse>(
         `${this.serviceStockUrl.replace(/\/$/, "")}/stock/adjust`,
-        { reference, note, items, ...(mode === "reservation" ? {} : { mode }) },
+        { reference, note, items, ...(mode === "reservation" ? {} : { mode }), ...(requireActualStock ? { requireActualStock: true } : {}) },
         {
           headers: {
             Authorization: `Bearer ${serviceToken}`,

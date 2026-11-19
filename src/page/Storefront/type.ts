@@ -8,6 +8,7 @@ export type StorefrontProduct = {
   description: string;
   price: number;
   amount: number;
+  actualAmount?: number;
   percentDiscount: number;
   priceAfterDiscount: number;
   status: stockStatus_e;

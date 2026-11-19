@@ -166,6 +166,7 @@ describe("StorefrontService", () => {
       description: "Description",
       price: 100,
       amount: 5,
+      actualAmount: 5,
       percentDiscount: 10,
       priceAfterDiscount: 90,
       status: stockStatus_e.normal,
@@ -211,27 +212,23 @@ describe("StorefrontService", () => {
     expect(created.totalAmount).toBe(180);
   });
 
-  it("accepts a pre-order quantity greater than available stock", async () => {
+  it("rejects an order quantity greater than physical stock", async () => {
     const { service, billGateway } = createService();
 
-    await service.createOrder(token, {
-      items: [{ productID: "P-001", quantity: 6 }],
-    });
-    expect(billGateway.createOrder).toHaveBeenCalled();
-  });
-
-  it("rejects a material order quantity greater than available stock", async () => {
-    const { service, billGateway, productRepo } = createService();
-    productRepo.findByIds.and.resolveTo([{
-      id: "P-001", name: "Material", type: productType_e.material,
-      amount: 5, price: 100, status: stockStatus_e.normal,
-    }]);
     await expectAsync(service.createOrder(token, {
       items: [{ productID: "P-001", quantity: 6 }],
-    })).toBeRejectedWithError(
-      "Product P-001 has insufficient stock",
-    );
+    })).toBeRejectedWithError("Product P-001 has insufficient stock");
     expect(billGateway.createOrder).not.toHaveBeenCalled();
+  });
+
+  it("uses actual stock even when net stock is negative", async () => {
+    const { service, billGateway, productRepo } = createService();
+    productRepo.findByIds.and.resolveTo([{
+      id: "P-001", name: "Product", type: productType_e.merchandise,
+      amount: -2, actualAmount: 5, price: 100, status: stockStatus_e.preOrder,
+    }]);
+    await service.createOrder(token, { items: [{ productID: "P-001", quantity: 5 }] });
+    expect(billGateway.createOrder).toHaveBeenCalled();
   });
 
   it("uploads evidence and advances the order to PaymentNotified", async () => {

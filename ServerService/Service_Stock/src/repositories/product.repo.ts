@@ -52,29 +52,6 @@ export default class ProductRepo {
             condition: { $ifNull: ["$condition", 0] },
           },
         },
-        {
-          $set: {
-            status: {
-              $cond: [
-                { $lt: ["$amount", 0] },
-                stockStatus_e.preOrder,
-                {
-                  $cond: [
-                    { $eq: ["$amount", 0] },
-                    stockStatus_e.stockOut,
-                    {
-                      $cond: [
-                        { $lt: ["$amount", "$condition"] },
-                        stockStatus_e.stockLow,
-                        stockStatus_e.normal,
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          },
-        },
       ],
     );
   }
@@ -88,12 +65,38 @@ export default class ProductRepo {
           pendingDeliveryAmount: { $ifNull: ["$pendingDeliveryAmount", { $max: [{ $multiply: ["$amount", -1] }, 0] }] },
         },
       },
+      {
+        $set: {
+          status: {
+            $cond: [
+              { $lt: ["$amount", 0] },
+              stockStatus_e.preOrder,
+              {
+                $cond: [
+                  { $eq: ["$actualAmount", 0] },
+                  stockStatus_e.stockOut,
+                  {
+                    $cond: [
+                      { $lt: ["$amount", { $ifNull: ["$condition", 0] }] },
+                      stockStatus_e.stockLow,
+                      stockStatus_e.normal,
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
     ]);
   }
 
   async search(type?: string, name?: string, status?: string) {
     const filter: Record<string, number> = {};
-    if (status) filter.status = Number(status);
+    if (status) {
+      if (Number(status) === stockStatus_e.stockOut) filter.actualAmount = 0;
+      else filter.status = Number(status);
+    }
     if (type) filter.type = Number(type);
 
     const matchStage = name ? { $match: { name: { $regex: name, $options: "i" } } } : null;
@@ -128,13 +131,13 @@ export default class ProductRepo {
       stockPreOrder,
       anotherPreOrder,
     ] = await Promise.all([
-      this.ProductModel.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.stockOut }),
+      this.ProductModel.countDocuments({ type: productType_e.merchandise, actualAmount: 0 }),
       this.ProductModel.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.stockLow }),
       this.ProductModel.countDocuments({ type: productType_e.merchandise }),
-      this.ProductModel.countDocuments({ type: productType_e.material, status: stockStatus_e.stockOut }),
+      this.ProductModel.countDocuments({ type: productType_e.material, actualAmount: 0 }),
       this.ProductModel.countDocuments({ type: productType_e.material, status: stockStatus_e.stockLow }),
       this.ProductModel.countDocuments({ type: productType_e.material }),
-      this.ProductModel.countDocuments({ type: productType_e.another, status: stockStatus_e.stockOut }),
+      this.ProductModel.countDocuments({ type: productType_e.another, actualAmount: 0 }),
       this.ProductModel.countDocuments({ type: productType_e.another, status: stockStatus_e.stockLow }),
       this.ProductModel.countDocuments({ type: productType_e.another }),
       this.ProductModel.countDocuments({ type: productType_e.merchandise, status: stockStatus_e.preOrder }),

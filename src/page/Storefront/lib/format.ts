@@ -1,4 +1,4 @@
-import { orderStatus_e, productType_e, stockStatus_e } from '../../../enum';
+import { orderStatus_e } from '../../../enum';
 import type { StorefrontProduct } from '../type';
 
 export function formatMoney(value: number) {
@@ -50,9 +50,7 @@ export function statusColor(status: orderStatus_e) {
 }
 
 export function stockLabel(product: StorefrontProduct) {
-  if (product.type === productType_e.material && product.amount <= 0) return "วัตถุดิบหมด";
-  if (product.status === stockStatus_e.preOrder || product.amount < 0) return `PreOrder ${Math.abs(product.amount)} ชิ้น`;
-  if (product.status === stockStatus_e.stockOut || product.amount === 0) return "สินค้าหมด (สั่งล่วงหน้าได้)";
-  if (product.status === stockStatus_e.stockLow) return `ใกล้หมด ${product.amount}`;
-  return `คงคลัง ${product.amount}`;
+  const actualAmount = product.actualAmount ?? Math.max(product.amount, 0);
+  if (actualAmount <= 0) return "สินค้าหมด";
+  return `คงคลัง ${actualAmount}`;
 }

@@ -23,7 +23,28 @@ describe("BillService", () => {
     expect(bulkWrite).toHaveBeenCalledWith([{
       updateOne: {
         filter: { _id: "mongo-id", inventorySchemaVersion: { $ne: 2 } },
-        update: { $set: { actualAmount: 3, pendingDeliveryAmount: 5, inventorySchemaVersion: 2 } },
+        update: { $set: { actualAmount: 3, pendingDeliveryAmount: 5, status: stockStatus_e.preOrder, inventorySchemaVersion: 2 } },
+      },
+    }]);
+  });
+
+  it("preserves a legacy negative balance without enough pending orders", async () => {
+    const bulkWrite = jasmine.createSpy("bulkWrite").and.resolveTo(undefined);
+    const productModel = {
+      find: () => ({ lean: () => Promise.resolve([{ _id: "mongo-id", id: "P-OLD", amount: -34 }]) }),
+      bulkWrite,
+    };
+    const orderModel = {
+      aggregate: () => Promise.resolve([{ _id: "P-OLD", quantity: 2 }]),
+    };
+    spyOn(console, "warn");
+
+    await migrateInventoryDetails(orderModel as any, productModel as any);
+
+    expect(bulkWrite).toHaveBeenCalledWith([{
+      updateOne: {
+        filter: { _id: "mongo-id", inventorySchemaVersion: { $ne: 2 } },
+        update: { $set: { actualAmount: 0, pendingDeliveryAmount: 34, status: stockStatus_e.preOrder, inventorySchemaVersion: 2 } },
       },
     }]);
   });
@@ -617,6 +638,17 @@ describe("BillService", () => {
     };
 
     await service.createOrder(payload, OrderSource.Online);
+
+    expect(service.stockPost).toHaveBeenCalledWith(
+      "http://stock.example:3003/stock/adjust",
+      {
+        reference: "SO-001",
+        note: "Reserve stock for order creation",
+        items: [{ productID: "PROD001", delta: -1 }],
+        requireActualStock: true,
+      },
+      jasmine.any(Object),
+    );
 
     expect(service.repo.prepareOrder).toHaveBeenCalledWith({
       ...payload,

@@ -39,6 +39,7 @@ export type stockAdjustmentForm_t = {
   reference?: string;
   note?: string;
   mode?: "reservation" | "fulfillment" | "physical";
+  requireActualStock?: boolean;
   items: stockAdjustmentItem_t[];
 }
 export type stockAdjustmentResult_t = {

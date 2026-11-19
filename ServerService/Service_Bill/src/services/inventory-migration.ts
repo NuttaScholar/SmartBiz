@@ -1,7 +1,7 @@
 import { Model } from "mongoose";
 import { OrderDocument } from "../models/order.interface";
 import { ProductDocument } from "../models/product.interface";
-import { OrderStatus } from "../utils/enum";
+import { OrderStatus, stockStatus_e } from "../utils/enum";
 
 const pendingStatuses = [
   OrderStatus.Submitted,
@@ -26,15 +26,28 @@ export async function migrateInventoryDetails(
 
   const writes = products.map((product) => {
     const amount = Number(product.amount ?? 0);
-    const pendingDeliveryAmount = pending.get(product.id) ?? 0;
-    const actualAmount = amount + pendingDeliveryAmount;
-    if (!Number.isFinite(actualAmount) || actualAmount < 0) {
-      throw new Error(`Cannot migrate inventory for ${product.id}: physical stock would be negative`);
+    const orderPendingAmount = pending.get(product.id) ?? 0;
+    if (!Number.isFinite(amount) || !Number.isFinite(orderPendingAmount)) {
+      throw new Error(`Cannot migrate inventory for ${product.id}: invalid quantity`);
     }
+    const pendingDeliveryAmount = Math.max(orderPendingAmount, -amount);
+    const actualAmount = amount + pendingDeliveryAmount;
+    if (pendingDeliveryAmount > orderPendingAmount) {
+      console.warn(
+        `Inventory migration for ${product.id}: carrying ${pendingDeliveryAmount - orderPendingAmount} legacy units without an active pending order`,
+      );
+    }
+    const status = amount < 0
+      ? stockStatus_e.preOrder
+      : actualAmount === 0
+        ? stockStatus_e.stockOut
+        : amount < Number(product.condition ?? 0)
+          ? stockStatus_e.stockLow
+          : stockStatus_e.normal;
     return {
       updateOne: {
         filter: { _id: product._id, inventorySchemaVersion: { $ne: 2 } },
-        update: { $set: { actualAmount, pendingDeliveryAmount, inventorySchemaVersion: 2 } },
+        update: { $set: { actualAmount, pendingDeliveryAmount, status, inventorySchemaVersion: 2 } },
       },
     };
   });

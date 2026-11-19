@@ -74,7 +74,7 @@ export default class StockService {
     const { img: _requestedImg, actualAmount: _actualAmount, pendingDeliveryAmount: _pendingDeliveryAmount, ...productData } = data;
     const amount = this.requireInventoryValue(data.amount, "amount");
     const condition = this.requireInventoryValue(data.condition, "condition");
-    const status = this.resolveStockStatus(amount, condition);
+    const status = this.resolveStockStatus(amount, condition, amount);
     const img = file ? (await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url : undefined;
 
     const newProduct = {
@@ -133,7 +133,11 @@ export default class StockService {
       amount,
       condition,
     };
-    const status = this.resolveStockStatus(amount, condition);
+    const status = this.resolveStockStatus(
+      amount,
+      condition,
+      Number(product.actualAmount ?? Math.max(amount, 0)),
+    );
     const uploadedImg = file
       ? (await this.storageService.uploadImage(file.buffer, DEFAULT_BUCKET, data.id)).url
       : undefined;
@@ -324,6 +328,9 @@ export default class StockService {
     if (!["reservation", "fulfillment", "physical"].includes(mode)) {
       throw { code: errorCode_e.InvalidInputError, message: "Invalid stock adjustment mode" };
     }
+    if (data?.requireActualStock !== undefined && typeof data.requireActualStock !== "boolean") {
+      throw { code: errorCode_e.InvalidInputError, message: "requireActualStock must be a boolean" };
+    }
     const reference = this.optionalTrimmedString(data?.reference, "reference");
     const note = this.optionalTrimmedString(data?.note, "note");
     const date = new Date();
@@ -353,6 +360,13 @@ export default class StockService {
             throw {
               code: errorCode_e.InvalidStateError,
               message: `Product stock amount not found: ${adjustment.productID}`,
+            };
+          }
+
+          if (data.requireActualStock && mode === "reservation" && adjustment.delta < 0 && -adjustment.delta > currentActual) {
+            throw {
+              code: errorCode_e.InvalidStateError,
+              message: `Insufficient stock for product ${adjustment.productID}. Available: ${currentActual}`,
             };
           }
 
@@ -389,6 +403,7 @@ export default class StockService {
               status: this.resolveStockStatus(
                 afterAmount,
                 Number(product.condition ?? 0),
+                nextActual,
               ),
             },
             session,
@@ -533,6 +548,7 @@ export default class StockService {
             status: this.resolveStockStatus(
               nextProductAmount,
               Number(product.condition ?? 0),
+              nextActual,
             ),
           },
           session,
@@ -637,6 +653,7 @@ export default class StockService {
             status: this.resolveStockStatus(
               nextProductAmount,
               Number(product.condition ?? 0),
+              nextActual,
             ),
           },
           session,
@@ -745,7 +762,7 @@ export default class StockService {
         ? currentActual + itemAmount
         : currentActual - itemAmount;
       const newAmount = newActual - currentPending;
-      const newStatus = this.resolveStockStatus(newAmount, Number(product.condition ?? 0));
+      const newStatus = this.resolveStockStatus(newAmount, Number(product.condition ?? 0), newActual);
       const updated = await this.productRepo.updateById(
         item.productID,
         { amount: newAmount, actualAmount: newActual, status: newStatus },
@@ -781,9 +798,9 @@ export default class StockService {
     return { logs, errors };
   }
 
-  private resolveStockStatus(amount: number, condition: number) {
+  private resolveStockStatus(amount: number, condition: number, actualAmount: number) {
     if (amount < 0) return stockStatus_e.preOrder;
-    if (amount === 0) return stockStatus_e.stockOut;
+    if (actualAmount === 0) return stockStatus_e.stockOut;
     if (amount < condition) return stockStatus_e.stockLow;
     return stockStatus_e.normal;
   }
