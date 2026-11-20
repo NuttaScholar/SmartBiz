@@ -8,7 +8,7 @@ import { useBillContext } from "../hooks/useBillContex";
 import { orderInfo_t } from "../../../API/BillService/type";
 import billWithRetry_f from "../lib/billWithRetry";
 import { useAuth } from "../../../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
@@ -48,14 +48,19 @@ interface OrderListHeaderProps {
 }
 
 const OrderListHeader: React.FC<OrderListHeaderProps> = ({ children }) => {
-  const [tab, setTab] = React.useState(0);
   const [searchValue, setSearchValue] = React.useState("");
   const [statusCountList, setStatusCountList] = React.useState<number[]>([]);
   const { state, setState } = useBillContext();
   const authContext = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const source = state.sourceFilter;
   const tabs = React.useMemo(() => tabsFor(source), [source]);
+  const requestedStatus = new URLSearchParams(location.search).get("tab");
+  const requestedTab = requestedStatus === null
+    ? -1
+    : tabs.findIndex((item) => String(item.status) === requestedStatus);
+  const tab = requestedTab >= 0 ? requestedTab : 0;
   const selectedStatus = tabs[tab]?.status ?? tabs[0].status;
   const apiSource = source;
   const displayedStatusCounts = tabs.map((item, index) =>
@@ -192,6 +197,13 @@ const OrderListHeader: React.FC<OrderListHeaderProps> = ({ children }) => {
     navigate(`/bill/${nextSource}`);
   };
 
+  const changeTab = (nextTab: number) => {
+    navigate(
+      { pathname: location.pathname, search: `?tab=${tabs[nextTab].status}` },
+      { replace: true },
+    );
+  };
+
   return (
     <Box
       sx={{
@@ -232,7 +244,7 @@ const OrderListHeader: React.FC<OrderListHeaderProps> = ({ children }) => {
         list={tabs.map((item) => item.label)}
         height="calc(100vh - 240px)"
         alignItems="center"
-        onClick={setTab}
+        onClick={changeTab}
         valueList={displayedStatusCounts}
         value={tab}
         maxWidth="1280px"

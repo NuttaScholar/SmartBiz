@@ -6,7 +6,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import CardProduct from "../../../component/Organisms/CardProduct";
 import CardOrder from "../../../component/Organisms/CardOrder";
@@ -130,6 +130,7 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
   // Hooks ************************************
   const authContext = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { orderID } = useParams<{ orderID: string }>();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [order, setOrder] = React.useState<orderInfo_t>();
@@ -142,7 +143,7 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
   const [evidenceOrder, setEvidenceOrder] =
     React.useState<StorefrontOrder | null>(null);
   const [evidenceError, setEvidenceError] = React.useState("");
-  const orderListPath = `/bill/${source}`;
+  const orderListPath = `/bill/${source}${location.search}`;
 
   // Memo *************************************
   const menuList = React.useMemo<menuList_t[]>(() => {
@@ -157,7 +158,7 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
       actions.push({
         text: menuAction.edit,
         icon: <EditIcon />,
-        path: orderID ? `/bill/edit/${orderID}` : undefined,
+        path: orderID ? `/bill/edit/${orderID}${location.search}` : undefined,
       });
     }
 
@@ -169,7 +170,7 @@ const Page_OrderDetail: React.FC<PageOrderDetailProps> = ({ source }) => {
 
     actions.push(commonMenu[commonMenu.length - 1]);
     return actions;
-  }, [order, orderID]);
+  }, [location.search, order, orderID]);
 
   // UI handlers ******************************
   const scrollToTop = React.useCallback(() => {

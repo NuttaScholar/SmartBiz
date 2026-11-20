@@ -9,7 +9,7 @@ import OrderListHeader from "./component/OrderListHeader";
 import OrderList from "./component/OrderList";
 import SpeedDial_Bill from "./component/SpeedDialBill";
 import { orderInfo_t } from "../../API/BillService/type";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { orderSource_e } from "../../enum";
 
 interface PageBillProps {
@@ -20,6 +20,7 @@ interface PageBillProps {
 //*************************************************
 const Page_Bill: React.FC<PageBillProps> = ({ source }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [state, setState] = React.useState<billState_t>({
     ...BillDefaultState,
     sourceFilter: source,
@@ -27,7 +28,7 @@ const Page_Bill: React.FC<PageBillProps> = ({ source }) => {
   });
 
   const onClickOrderList = (value: orderInfo_t) => {
-    navigate(`/bill/${source}/detail/${value.id}`);
+    navigate(`/bill/${source}/detail/${value.id}${location.search}`);
   };
   return (
     <BillContext.Provider value={{ state, setState }}>

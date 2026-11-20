@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, IconButton } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import AddProductForm, {
   FormAddProduce_t,
@@ -132,6 +132,7 @@ export default function Page_BillCreate() {
   // Hooks ************************************
   const authContext = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { orderID } = useParams<{ orderID: string }>();
   const [state, setState] = React.useState(BillDefaultState);
   const [listOption, setListOption] = React.useState<productInfo_t[]>([]);
@@ -162,8 +163,8 @@ export default function Page_BillCreate() {
   const selectedCustomerID = state.billForm?.customer?.trim() || "";
   const orderListPath = `/bill/${state.sourceFilter}`;
   const orderDetailPath = orderID
-    ? `${orderListPath}/detail/${orderID}`
-    : orderListPath;
+    ? `${orderListPath}/detail/${orderID}${location.search}`
+    : `${orderListPath}${location.search}`;
 
   // Data mappers *****************************
   const applyDiscount = React.useCallback(
