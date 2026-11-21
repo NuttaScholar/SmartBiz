@@ -1,7 +1,7 @@
 import { Box, IconButton } from "@mui/material";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import FormStockHeader from "../component/FormStockHeader";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import SaveIcon from "@mui/icons-material/Save";
 import {
   stock_t,
@@ -33,6 +33,8 @@ export default function Page_StockOut() {
   // Hook ************************************
   const authContext = useAuth();
   const nevigate = useNavigate();
+  const location = useLocation();
+  const stockPath = `/stock${location.search}`;
   const [state, setState] = React.useState<stock_t>(() => ({
     ...StockDefaultState,
     billForm: { date: startOfToday() },
@@ -111,7 +113,7 @@ export default function Page_StockOut() {
           if (res.data?.length) {
             alert(`พบปัญหา! ไม่สามารถดำเนินการบางรายการได้`);
           }
-          nevigate("/stock");
+          nevigate(stockPath);
         } else {
           if (redirectToLoginOnAuthError(nevigate, res.errCode)) return;
 
@@ -180,7 +182,7 @@ export default function Page_StockOut() {
   // Render ************************************
   return (
     <StockContext.Provider value={{ state, setState }}>
-      <HeaderDialog label={"ตัดสต็อก"} onClick={() => nevigate("/stock")}>
+      <HeaderDialog label={"ตัดสต็อก"} onClick={() => nevigate(stockPath)}>
         <Box sx={{ display: "flex", flexGrow: 1, justifyContent: "flex-end" }}>
           <IconButton
             onClick={onSave}

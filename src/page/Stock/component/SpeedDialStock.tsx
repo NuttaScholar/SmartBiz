@@ -9,6 +9,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import HistoryIcon from "@mui/icons-material/History";
 import { useStockContext } from "../hooks/useStockContex";
 import { stockDialog_e } from "../context/StockContext";
+import { useLocation } from "react-router-dom";
 
 //*********************************************
 // Style
@@ -22,16 +23,17 @@ import { stockDialog_e } from "../context/StockContext";
 // Component
 //*********************************************
 const SpeedDial_Stock: React.FC = () => {
+  const location = useLocation();
   const { state, setState } = useStockContext();
   const menuList = React.useMemo<menuList_t[]>(
     () => [
       { text: "Create", icon: <AddIcon /> },
-      { text: "Stock In", icon: <DownloadIcon />, path: "/stock/in" },
-      { text: "Stock Out", icon: <UploadIcon />, path: "/stock/out" },
-      { text: "History", icon: <HistoryIcon />, path: "/stock/audit" },
+      { text: "Stock In", icon: <DownloadIcon />, path: `/stock/in${location.search}` },
+      { text: "Stock Out", icon: <UploadIcon />, path: `/stock/out${location.search}` },
+      { text: "History", icon: <HistoryIcon />, path: `/stock/audit${location.search}` },
       { text: "Go to Top", icon: <KeyboardArrowUpIcon /> },
     ],
-    [],
+    [location.search],
   );
   const speedDialHandler = (index: number) => {
     switch (index) {

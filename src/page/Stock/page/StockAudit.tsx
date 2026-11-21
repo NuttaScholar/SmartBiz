@@ -1,7 +1,7 @@
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { Alert, Box, CircularProgress, Fab, useMediaQuery } from "@mui/material";
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   LogAuditQuery_t,
   LogAudit_t,
@@ -36,6 +36,8 @@ const EMPTY_STOCK_AUDIT_FILTERS: StockAuditHistoryFilters_t = {
 
 export default function Page_StockAudit() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const stockPath = `/stock${location.search}`;
   const authContext = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [allowed, setAllowed] = React.useState(false);
@@ -58,7 +60,7 @@ export default function Page_StockAudit() {
       .then((auth) => {
         if (!active) return;
         if (auth.role !== role_e.admin) {
-          navigate("/stock", { replace: true });
+          navigate(stockPath, { replace: true });
           return;
         }
         setAllowed(true);
@@ -70,7 +72,7 @@ export default function Page_StockAudit() {
         setLoading(false);
       });
     return () => { active = false; };
-  }, [authContext, navigate]);
+  }, [authContext, navigate, stockPath]);
 
   React.useEffect(() => {
     if (!allowed) return;
@@ -150,7 +152,7 @@ export default function Page_StockAudit() {
 
   return (
     <>
-      <HeaderDialog label="ประวัติการทำรายการสต็อก" onClick={() => navigate("/stock")} />
+      <HeaderDialog label="ประวัติการทำรายการสต็อก" onClick={() => navigate(stockPath)} />
       <Box
         sx={{
           width: "100%",

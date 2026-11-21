@@ -5,16 +5,26 @@ import {
   StockContext,
   StockDefaultState,
   stockDialog_e,
+  stockFilter_e,
 } from "./context/StockContext";
 import StockList from "./component/StockList";
 import SpeedDial_Stock from "./component/SpeedDialStock";
 import DialogFormProduct from "./component/DialogFormProduct";
 import StockListHeader from "./component/StockListHeader";
 import { productInfo_t } from "../../API/StockService/type";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Page_Stock: React.FC = () => {
-  const [state, setState] = React.useState<stock_t>(StockDefaultState);
+  const location = useLocation();
+  const [state, setState] = React.useState<stock_t>(() => {
+    const tab = new URLSearchParams(location.search).get("tab");
+    const filter = tab === "1"
+      ? stockFilter_e.material
+      : tab === "2"
+        ? stockFilter_e.another
+        : stockFilter_e.stock;
+    return { ...StockDefaultState, filter };
+  });
   const navigate = useNavigate();
   const onClickList = (edit: boolean, value: productInfo_t) => {
     if (edit) {
@@ -24,7 +34,7 @@ const Page_Stock: React.FC = () => {
         productForm: value,
       });
     } else {
-      navigate(`/stock/history/${encodeURIComponent(value.id)}`);
+      navigate(`/stock/history/${encodeURIComponent(value.id)}${location.search}`);
     }
   };
   return (

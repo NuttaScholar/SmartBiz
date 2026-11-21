@@ -1,6 +1,6 @@
 import { Alert, Box, CircularProgress } from "@mui/material";
 import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { productInfo_t } from "../../../API/StockService/type";
 import HeaderDialog from "../../../component/Molecules/HeaderDialog";
 import CardProduct from "../../../component/Organisms/CardProduct";
@@ -18,6 +18,7 @@ export default function Page_StockHistory() {
   const { productID = "" } = useParams<{ productID: string }>();
   const authContext = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [product, setProduct] = React.useState<productInfo_t>();
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -72,7 +73,7 @@ export default function Page_StockHistory() {
     <>
       <HeaderDialog
         label="ประวัติการเคลื่อนไหว"
-        onClick={() => navigate("/stock")}
+        onClick={() => navigate(`/stock${location.search}`)}
       />
       <Box
         sx={{

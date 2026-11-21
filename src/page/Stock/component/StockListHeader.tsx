@@ -10,7 +10,7 @@ import stockWithRetry_f from "../lib/stockWithRetry";
 import { productType_e, stockStatus_e } from "../../../enum";
 import { ErrorString } from "../../../function/Enum";
 import { useAuth } from "../../../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   redirectToLoginOnAuthError,
   redirectToLoginOnThrownAuthError,
@@ -35,10 +35,17 @@ const StockListHeader: React.FC<myProps> = (props) => {
   const nevigate = useNavigate();
   const { state, setState } = useStockContext();
   const [tab, setTab] = React.useState(0);
+  const [, setSearchParams] = useSearchParams();
   const [name, setName] = React.useState("");
 
   // Local function **************************
   const handleTabChange = (newTab: number) => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (newTab === 0) next.delete("tab");
+      else next.set("tab", String(newTab));
+      return next;
+    }, { replace: true });
     switch (newTab) {
       case 0:
         setState({ ...state, filter: stockFilter_e.stock });
