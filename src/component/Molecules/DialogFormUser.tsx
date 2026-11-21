@@ -1,53 +1,28 @@
 import React from "react";
-import { Box, Button, Dialog, Slide } from "@mui/material";
-import { TransitionProps } from "@mui/material/transitions";
-import HeaderDialog from "./HeaderDialog";
-import FieldText from "./FieldText";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import ContactPageIcon from "@mui/icons-material/ContactPage";
-import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
-import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import {
-  EditUserFrom_t,
-  RegistFrom_t,
-  UserProfile_t,
-} from "../../API/LoginService/type";
-import FieldSelector, {
-  listSelect_t,
-} from "./FieldSelector";
+  Box,
+  Button,
+  Dialog,
+  MenuItem,
+  Paper,
+  Slide,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { TransitionProps } from "@mui/material/transitions";
+import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
+import HeaderDialog from "./HeaderDialog";
+import { EditUserFrom_t, RegistFrom_t, UserProfile_t } from "../../API/LoginService/type";
 import { role_e } from "../../enum";
 
-//*********************************************
-// Type
-//*********************************************
-
-//*********************************************
-// ListSelect
-//*********************************************
-const roleSelect: listSelect_t[] = [
-  { label: "Admin", value: role_e.admin },
-  { label: "Cashier", value: role_e.cashier },
-  { label: "Laber", value: role_e.laber },
-];
-const enSelect: listSelect_t[] = [
-  { label: "Disable", value: 0 },
-  { label: "Enable", value: 1 },
-];
-//*********************************************
-// Transition
-//*********************************************
 const Transition = React.forwardRef(function Transition(
-  props: TransitionProps & {
-    children: React.ReactElement<unknown>;
-  },
+  props: TransitionProps & { children: React.ReactElement<unknown> },
   ref: React.Ref<unknown>
 ) {
   return <Slide direction="left" ref={ref} {...props} />;
 });
 
-//*********************************************
-// Interface
-//*********************************************
 interface myProps {
   open: boolean;
   title?: string;
@@ -56,125 +31,72 @@ interface myProps {
   onAdd?: (data: RegistFrom_t) => void;
   onEdit?: (data: EditUserFrom_t) => void;
 }
-//*********************************************
-// Component
-//*********************************************
+
 const DialogFormUser: React.FC<myProps> = (props) => {
+  const isEditing = Boolean(props.defaultValue?._id);
+  const heading = props.title || (isEditing ? "แก้ไขผู้ใช้งาน" : "เพิ่มผู้ใช้งาน");
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const formJson = Object.fromEntries((formData as any).entries());
+    const data = new FormData(event.currentTarget);
+    const email = String(data.get("email") || "").trim();
+    const name = String(data.get("name") || "").trim();
+    const tel = String(data.get("tel") || "").trim();
+    const role = Number(data.get("role")) as role_e;
 
     if (props.defaultValue?._id) {
       const form: EditUserFrom_t = {
-        id: props.defaultValue._id || "",
-        ...formJson,
+        id: props.defaultValue._id,
+        email,
+        name,
+        role,
+        tel,
+        enable: data.get("enable") === "1",
       };
       props.onEdit?.(form);
     } else {
-      const { email, name, role, ...rest }: RegistFrom_t =
-        formJson as RegistFrom_t;
-      const form: RegistFrom_t = {
-        email: email,
-        name: name,
-        role: role,
-        ...rest,
-      };
+      const form: RegistFrom_t = { email, name, role, tel };
       props.onAdd?.(form);
     }
   };
 
   return (
-    <Dialog
-      fullScreen
-      open={props.open}
-      onClose={props.onClose}
-      slots={{
-        transition: Transition,
-      }}
-    >
-      <HeaderDialog
-        label={props.title || "แก้ไขรายการ"}
-        onClick={props.onClose}
-      />
-      <Box
-        component="form"
-        id="formAddContact"
-        onSubmit={handleSubmit}
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          width: "100%",
-          alignItems: "center",
-          my: "72px",
-          gap: "8px",
-        }}
-      >
-        <FieldText
-          icon={<AccountCircleIcon />}
-          required
-          label="Email"
-          name="email"
-          defauleValue={props.defaultValue?.email}
-        />
-        <FieldText
-          icon={<ContactPageIcon />}
-          required
-          label="Name"
-          name="name"
-          defauleValue={props.defaultValue?.name}
-        />
-        <FieldSelector
-          required
-          icon={<ManageAccountsIcon />}
-          defauleValue={props.defaultValue?.role.toString()}
-          name="role"
-          label="Role"
-          list={roleSelect}
-        />
-        <FieldText
-          icon={<LocalPhoneIcon />}
-          label="Tel."
-          name="tel"
-          defauleValue={props.defaultValue?.tel}
-        />
-        {props.defaultValue && (
-          <FieldSelector
-            required
-            icon={<ManageAccountsIcon />}
-            defauleValue={props.defaultValue?.enable ? "1" : "0"}
-            name="enable"
-            label="Enable"
-            list={enSelect}
-          />
-        )}
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: "16px",
-            my: "32px",
-          }}
-        >
-          <Button
-            variant="contained"
-            type="submit"
-            form="formAddContact"
-            sx={{ width: "150px" }}
-          >
-            save
-          </Button>
-          <Button
-            variant="outlined"
-            sx={{ width: "150px" }}
-            onClick={props.onClose}
-          >
-            cancle
-          </Button>
-        </Box>
+    <Dialog fullScreen open={props.open} onClose={props.onClose} slots={{ transition: Transition }}>
+      <HeaderDialog label={heading} onClick={props.onClose} />
+      <Box sx={{ minHeight: "100vh", bgcolor: "#f5f8fc", pt: { xs: 11, sm: 14 }, pb: 4, px: 2, boxSizing: "border-box" }}>
+        <Paper elevation={0} sx={{ maxWidth: 480, mx: "auto", p: { xs: 3, sm: 4 }, border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+          <Stack spacing={1} sx={{ mb: 3 }}>
+            <ManageAccountsOutlinedIcon color="primary" sx={{ fontSize: 36 }} />
+            <Typography variant="h5" fontWeight={600}>{heading}</Typography>
+            <Typography color="text.secondary">
+              {isEditing ? "ปรับข้อมูลและสิทธิ์การใช้งานของบัญชีนี้" : "กรอกข้อมูลเพื่อสร้างบัญชีผู้ใช้ใหม่"}
+            </Typography>
+          </Stack>
+          <Box component="form" key={props.defaultValue?._id || "new"} onSubmit={handleSubmit}>
+            <Stack spacing={2.5}>
+              <TextField required fullWidth label="อีเมล" name="email" type="email" autoComplete="email" defaultValue={props.defaultValue?.email || ""} />
+              <TextField required fullWidth label="ชื่อผู้ใช้" name="name" autoComplete="name" defaultValue={props.defaultValue?.name || ""} />
+              <TextField required fullWidth select label="สิทธิ์การใช้งาน" name="role" defaultValue={props.defaultValue?.role ?? ""}>
+                <MenuItem value={role_e.admin}>Admin</MenuItem>
+                <MenuItem value={role_e.cashier}>Cashier</MenuItem>
+              </TextField>
+              <TextField fullWidth label="เบอร์โทรศัพท์" name="tel" type="tel" autoComplete="tel" defaultValue={props.defaultValue?.tel || ""} />
+              {isEditing && (
+                <TextField required fullWidth select label="สถานะบัญชี" name="enable" defaultValue={props.defaultValue?.enable ? "1" : "0"}>
+                  <MenuItem value="1">เปิดใช้งาน</MenuItem>
+                  <MenuItem value="0">ปิดใช้งาน</MenuItem>
+                </TextField>
+              )}
+              <Stack direction={{ xs: "column-reverse", sm: "row" }} spacing={1.5} justifyContent="flex-end">
+                <Button variant="outlined" onClick={props.onClose}>ยกเลิก</Button>
+                <Button variant="contained" type="submit">{isEditing ? "บันทึกการแก้ไข" : "เพิ่มผู้ใช้"}</Button>
+              </Stack>
+            </Stack>
+          </Box>
+        </Paper>
       </Box>
     </Dialog>
   );
 };
+
 export default DialogFormUser;
